@@ -860,15 +860,15 @@ button:disabled {
      Smaller tiles keep two per row and put text back in proportion. */
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
+    gap: 14px;
   }
   .card-title {
     font-size: 12.5px;
     padding: 8px 9px;
   }
   .card-body {
-    padding: 8px 9px 10px;
-    gap: 6px;
+    padding: 9px 10px 11px;
+    gap: 8px;
   }
   .card-ownership-flag {
     font-size: 9px;
@@ -876,16 +876,24 @@ button:disabled {
     top: 7px;
     right: 7px;
   }
+  /* The slab flourish (holo strip + cert header) plus a full 4-5 row
+     stat block was a lot to pack into a ~150px-wide phone tile. Trim
+     the decoration and cap the visible stats so the card breathes. */
+  .slab-strip {
+    height: 3px;
+  }
+  .slab-header {
+    display: none;
+  }
+  .stat-rows .stat-row:nth-child(n + 4) {
+    display: none;
+  }
   .stat-row {
-    padding: 5px 8px;
+    padding: 6px 9px;
     font-size: 11px;
   }
   .stat-label {
     font-size: 9px;
-  }
-  .slab-wordmark,
-  .slab-cert {
-    font-size: 7.5px;
   }
   .badge {
     font-size: 9.5px;

@@ -87,12 +87,14 @@ export default function GameCard({ game, onClick }) {
             <span className="slab-wordmark">SHELF LIFE</span>
             <span className="slab-cert">#{game.id.slice(0, 8).toUpperCase()}</span>
           </div>
-          {statRows.map((row) => (
-            <div className="stat-row" key={row.label}>
-              <span className="stat-label">{row.label}</span>
-              <span className={`stat-value${row.isRating && stars ? ' stars' : ''}`}>{row.value}</span>
-            </div>
-          ))}
+          <div className="stat-rows">
+            {statRows.map((row) => (
+              <div className="stat-row" key={row.label}>
+                <span className="stat-label">{row.label}</span>
+                <span className={`stat-value${row.isRating && stars ? ' stars' : ''}`}>{row.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
         {((isComic && game.is_variant) || (game.tags || []).length > 0) && (
           <div className="badge-row">
