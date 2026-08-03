@@ -1,6 +1,7 @@
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import TrophyToastListener from '@/components/TrophyToastListener';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   title: 'Shelf Life — Collection Tracker',
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
         <Navbar />
         {children}
         <TrophyToastListener />
+        <Analytics />
       </body>
     </html>
   );
