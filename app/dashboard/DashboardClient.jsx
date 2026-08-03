@@ -14,6 +14,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fOwn, setFOwn] = useState('');
   const [fPlat, setFPlat] = useState('');
   const [fPlay, setFPlay] = useState('');
+  const [fType, setFType] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showSettings, setShowSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState({
@@ -35,8 +36,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const wishlist = games.filter((g) => g.ownership === 'wishlist');
     const completed = games.filter((g) => g.play_status === 'completed').length;
     const totalValue = owned.reduce((sum, g) => sum + (parseFloat(g.price) || 0), 0);
+    const gameCount = games.filter((g) => g.item_type !== 'comic').length;
+    const comicCount = games.filter((g) => g.item_type === 'comic').length;
     return [
-      { num: games.length, label: 'Total games' },
+      { num: games.length, label: 'Total items' },
+      { num: `${gameCount} / ${comicCount}`, label: 'Games / Comics' },
       { num: owned.length, label: 'Owned' },
       { num: wishlist.length, label: 'Wishlist' },
       { num: completed, label: 'Completed' },
@@ -48,7 +52,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const q = search.trim().toLowerCase();
     let list = games.filter((g) => {
       if (q) {
-        const hay = [g.title, (g.platforms || []).join(' '), g.genre, (g.tags || []).join(' '), g.barcode, g.notes]
+        const hay = [
+          g.title,
+          (g.platforms || []).join(' '),
+          g.genre,
+          (g.tags || []).join(' '),
+          g.barcode,
+          g.notes,
+          g.series,
+          g.issue_number,
+          g.publisher,
+          g.writer,
+          g.artist,
+        ]
           .join(' ')
           .toLowerCase();
         if (!hay.includes(q)) return false;
@@ -56,6 +72,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (fOwn && g.ownership !== fOwn) return false;
       if (fPlat && !(g.platforms || []).includes(fPlat)) return false;
       if (fPlay && g.play_status !== fPlay) return false;
+      if (fType && (g.item_type || 'game') !== fType) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -73,7 +90,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, sortBy]);
+  }, [games, search, fOwn, fPlat, fPlay, fType, sortBy]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -101,7 +118,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this game from your collection?')) return;
+    if (!confirm('Delete this item from your collection?')) return;
     const { error } = await supabase.from('games').delete().eq('id', id);
     if (!error) {
       setGames((gs) => gs.filter((g) => g.id !== id));
@@ -132,7 +149,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <h1 style={{ margin: 0, fontSize: 24 }}>My Collection</h1>
           {profile?.username && (
             <div className="sub" style={{ margin: '4px 0 0' }}>
-              Public profile: <Link href={`/u/${profile.username}`}>gameshelf.app/u/{profile.username}</Link>
+              Public profile: <Link href={`/u/${profile.username}`}>/u/{profile.username}</Link>
             </div>
           )}
         </div>
@@ -141,7 +158,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             Profile settings
           </button>
           <button className="btn-primary" onClick={() => setModalGame(null)} type="button">
-            + Add Game
+            + Add Item
           </button>
         </div>
       </div>
@@ -204,10 +221,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search title, platform, genre…"
+          placeholder="Search title, series, platform, publisher…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <select value={fType} onChange={(e) => setFType(e.target.value)}>
+          <option value="">All types</option>
+          <option value="game">Games</option>
+          <option value="comic">Comics</option>
+        </select>
         <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
           <option value="">All statuses</option>
           <option value="owned">Owned</option>
@@ -238,11 +260,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
       {games.length === 0 ? (
         <div className="empty-state">
-          <div>No games yet. Click <strong>+ Add Game</strong> to start your collection.</div>
+          <div>No items yet. Click <strong>+ Add Item</strong> to start your collection.</div>
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <div>No games match your filters.</div>
+          <div>No items match your filters.</div>
         </div>
       ) : (
         <div className="grid">

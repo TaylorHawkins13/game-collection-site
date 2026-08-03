@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
 
 const EMPTY = {
+  item_type: 'game',
   title: '',
   platforms: [],
   genre: '',
@@ -17,6 +18,14 @@ const EMPTY = {
   play_status: 'backlog',
   rating: 0,
   notes: '',
+  series: '',
+  issue_number: '',
+  publisher: '',
+  writer: '',
+  artist: '',
+  grade: '',
+  is_variant: false,
+  variant_notes: '',
 };
 
 export default function GameModal({ game, onClose, onSave, onDelete }) {
@@ -29,6 +38,7 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
   useEffect(() => {
     if (game) {
       setForm({
+        item_type: game.item_type || 'game',
         title: game.title || '',
         platforms: game.platforms || [],
         genre: game.genre || '',
@@ -42,6 +52,14 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
         play_status: game.play_status || 'backlog',
         rating: game.rating || 0,
         notes: game.notes || '',
+        series: game.series || '',
+        issue_number: game.issue_number || '',
+        publisher: game.publisher || '',
+        writer: game.writer || '',
+        artist: game.artist || '',
+        grade: game.grade || '',
+        is_variant: game.is_variant || false,
+        variant_notes: game.variant_notes || '',
       });
     } else {
       setForm(EMPTY);
@@ -53,6 +71,8 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
   function set(field, val) {
     setForm((f) => ({ ...f, [field]: val }));
   }
+
+  const isComic = form.item_type === 'comic';
 
   async function rawgSearch() {
     if (!form.title.trim()) return;
@@ -96,6 +116,18 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
       title: form.title.trim(),
       price: form.price === '' ? null : parseFloat(form.price),
       purchase_date: form.purchase_date || null,
+      // keep the fields that don't apply to this type cleared out
+      platforms: isComic ? [] : form.platforms,
+      play_status: isComic ? 'backlog' : form.play_status,
+      condition: isComic ? '' : form.condition,
+      series: isComic ? form.series : '',
+      issue_number: isComic ? form.issue_number : '',
+      publisher: isComic ? form.publisher : '',
+      writer: isComic ? form.writer : '',
+      artist: isComic ? form.artist : '',
+      grade: isComic ? form.grade : '',
+      is_variant: isComic ? form.is_variant : false,
+      variant_notes: isComic ? form.variant_notes : '',
     });
     setSaving(false);
   }
@@ -103,8 +135,32 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
-        <h2>{game ? 'Edit Game' : 'Add Game'}</h2>
-        <div className="sub">Fill in the details, or search RAWG to auto-fill cover art &amp; info.</div>
+        <h2>{game ? 'Edit Item' : 'Add Item'}</h2>
+        <div className="sub">
+          {isComic ? 'Fill in the comic details.' : 'Fill in the details, or search RAWG to auto-fill cover art & info.'}
+        </div>
+
+        <div className="field">
+          <label>Type</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className={!isComic ? 'btn-primary' : 'btn-ghost'}
+              onClick={() => set('item_type', 'game')}
+              style={{ flex: 1 }}
+            >
+              Game
+            </button>
+            <button
+              type="button"
+              className={isComic ? 'btn-primary' : 'btn-ghost'}
+              onClick={() => set('item_type', 'comic')}
+              style={{ flex: 1 }}
+            >
+              Comic
+            </button>
+          </div>
+        </div>
 
         <div className="field">
           <label>Title</label>
@@ -113,15 +169,17 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
               type="text"
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
-              placeholder="e.g. Chrono Trigger"
+              placeholder={isComic ? 'e.g. Amazing Spider-Man' : 'e.g. Chrono Trigger'}
               style={{ flex: 1 }}
             />
-            <button type="button" className="btn-ghost" onClick={rawgSearch} disabled={searching}>
-              Search
-            </button>
+            {!isComic && (
+              <button type="button" className="btn-ghost" onClick={rawgSearch} disabled={searching}>
+                Search
+              </button>
+            )}
           </div>
-          {rawgHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{rawgHint}</div>}
-          {rawgResults.length > 0 && (
+          {!isComic && rawgHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{rawgHint}</div>}
+          {!isComic && rawgResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {rawgResults.map((r) => (
                 <div
@@ -142,15 +200,74 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
           )}
         </div>
 
-        <div className="field">
-          <label>Platforms</label>
-          <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" />
-        </div>
+        {!isComic && (
+          <div className="field">
+            <label>Platforms</label>
+            <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" />
+          </div>
+        )}
+
+        {isComic && (
+          <>
+            <div className="row2">
+              <div className="field">
+                <label>Series</label>
+                <input type="text" value={form.series} onChange={(e) => set('series', e.target.value)} placeholder="e.g. Amazing Spider-Man" />
+              </div>
+              <div className="field">
+                <label>Issue number</label>
+                <input type="text" value={form.issue_number} onChange={(e) => set('issue_number', e.target.value)} placeholder="e.g. #300" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Publisher</label>
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Marvel" />
+              </div>
+              <div className="field">
+                <label>Grade</label>
+                <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. 9.8 or Near Mint" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Writer</label>
+                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Artist</label>
+                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} />
+              </div>
+            </div>
+            <div className="field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.is_variant}
+                  onChange={(e) => set('is_variant', e.target.checked)}
+                  style={{ width: 'auto', marginRight: 8 }}
+                />
+                This is a variant cover
+              </label>
+            </div>
+            {form.is_variant && (
+              <div className="field">
+                <label>Variant details</label>
+                <input
+                  type="text"
+                  value={form.variant_notes}
+                  onChange={(e) => set('variant_notes', e.target.value)}
+                  placeholder="e.g. 1:25 incentive, foil cover, retailer exclusive"
+                />
+              </div>
+            )}
+          </>
+        )}
 
         <div className="row2">
           <div className="field">
             <label>Genre</label>
-            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder="e.g. RPG" />
+            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={isComic ? 'e.g. Superhero' : 'e.g. RPG'} />
           </div>
           <div className="field">
             <label>Barcode / UPC</label>
@@ -177,17 +294,19 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
               <option value="sold">Sold</option>
             </select>
           </div>
-          <div className="field">
-            <label>Condition</label>
-            <select value={form.condition} onChange={(e) => set('condition', e.target.value)}>
-              <option value="">—</option>
-              <option value="sealed">Sealed</option>
-              <option value="mint">Mint</option>
-              <option value="good">Good</option>
-              <option value="fair">Fair</option>
-              <option value="poor">Poor</option>
-            </select>
-          </div>
+          {!isComic && (
+            <div className="field">
+              <label>Condition</label>
+              <select value={form.condition} onChange={(e) => set('condition', e.target.value)}>
+                <option value="">—</option>
+                <option value="sealed">Sealed</option>
+                <option value="mint">Mint</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="poor">Poor</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="row2">
@@ -202,15 +321,17 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
         </div>
 
         <div className="row2">
-          <div className="field">
-            <label>Play status</label>
-            <select value={form.play_status} onChange={(e) => set('play_status', e.target.value)}>
-              <option value="backlog">Backlog</option>
-              <option value="playing">Playing</option>
-              <option value="completed">Completed</option>
-              <option value="abandoned">Abandoned</option>
-            </select>
-          </div>
+          {!isComic && (
+            <div className="field">
+              <label>Play status</label>
+              <select value={form.play_status} onChange={(e) => set('play_status', e.target.value)}>
+                <option value="backlog">Backlog</option>
+                <option value="playing">Playing</option>
+                <option value="completed">Completed</option>
+                <option value="abandoned">Abandoned</option>
+              </select>
+            </div>
+          )}
           <div className="field">
             <label>Rating</label>
             <div className="rating-input">
@@ -243,7 +364,7 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
           <div className="right">
             <button className="btn-ghost" type="button" onClick={onClose}>Cancel</button>
             <button className="btn-primary" type="button" onClick={handleSave} disabled={saving || !form.title.trim()}>
-              {saving ? 'Saving…' : 'Save Game'}
+              {saving ? 'Saving…' : 'Save Item'}
             </button>
           </div>
         </div>

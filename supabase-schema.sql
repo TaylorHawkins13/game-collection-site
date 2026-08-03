@@ -60,6 +60,7 @@ create trigger on_auth_user_created
 create table if not exists games (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
+  item_type text not null default 'game' check (item_type in ('game', 'comic')),
   title text not null,
   platforms text[] not null default '{}',
   genre text default '',
@@ -73,12 +74,22 @@ create table if not exists games (
   tags text[] not null default '{}',
   barcode text default '',
   notes text default '',
+  -- comic-specific fields (ignored/blank for item_type = 'game')
+  series text default '',
+  issue_number text default '',
+  publisher text default '',
+  writer text default '',
+  artist text default '',
+  grade text default '',
+  is_variant boolean not null default false,
+  variant_notes text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index if not exists games_user_id_idx on games (user_id);
 create index if not exists games_title_idx on games (lower(title));
+create index if not exists games_item_type_idx on games (item_type);
 
 alter table games enable row level security;
 

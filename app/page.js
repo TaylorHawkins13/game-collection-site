@@ -4,10 +4,10 @@ export default function HomePage() {
   return (
     <main className="container">
       <div className="hero">
-        <h1>Track your game collection. Show it off.</h1>
+        <h1>Track your collection. Show it off.</h1>
         <p>
-          GameShelf is a free way to catalog what you own, what you want, and what you've
-          beaten — then share your shelf with other collectors and see how it stacks up.
+          Shelf Life is a free way to catalog the games and comics you own, want, and have
+          finished — then share your shelf with other collectors and see how it stacks up.
         </p>
         <div className="cta-row">
           <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 22px' }}>
@@ -24,7 +24,7 @@ export default function HomePage() {
           <div className="card-body">
             <div className="card-title">Full collection tracking</div>
             <div className="card-meta">
-              Platforms, genres, condition, purchase price, play status, ratings, tags, and barcodes — all in one place.
+              Games and comics side by side — platforms or issue details, condition, purchase price, ratings, tags, and barcodes, all in one place.
             </div>
           </div>
         </div>
@@ -40,7 +40,7 @@ export default function HomePage() {
           <div className="card-body">
             <div className="card-title">Community leaderboards</div>
             <div className="card-meta">
-              See the most-owned games, the biggest collections, and what's trending right now.
+              See the most-owned items, the biggest collections, and what's trending right now.
             </div>
           </div>
         </div>

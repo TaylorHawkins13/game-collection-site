@@ -19,7 +19,7 @@ export default async function LeaderboardPage() {
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', alignItems: 'start' }}>
         <section>
-          <h2 style={{ fontSize: 15 }}>Most-owned games</h2>
+          <h2 style={{ fontSize: 15 }}>Most-owned items</h2>
           {(mostOwned || []).length === 0 && <div className="sub">No data yet.</div>}
           {(mostOwned || []).map((row, i) => (
             <div className="leaderboard-row" key={row.title_key}>
@@ -39,7 +39,7 @@ export default async function LeaderboardPage() {
               <div style={{ flex: 1 }}>
                 <Link href={`/u/${row.username}`}>{row.display_name || row.username}</Link>
               </div>
-              <div className="sub" style={{ margin: 0 }}>{row.game_count} games</div>
+              <div className="sub" style={{ margin: 0 }}>{row.game_count} items</div>
             </div>
           ))}
         </section>

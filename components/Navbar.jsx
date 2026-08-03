@@ -54,8 +54,8 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <Link href="/" className="brand">
-        <span className="logo">G</span>
-        GameShelf
+        <span className="logo">S</span>
+        Shelf Life
       </Link>
       <div className="nav-links">
         <Link href="/leaderboard" className="nav-link">Leaderboard</Link>

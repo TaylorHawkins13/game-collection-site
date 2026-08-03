@@ -83,7 +83,7 @@ export default async function ProfilePage({ params }) {
           <div className="stats-bar">
             <div className="stat">
               <div className="num">{games.length}</div>
-              <div className="label">Total games</div>
+              <div className="label">Total items</div>
             </div>
             <div className="stat">
               <div className="num">{owned}</div>
@@ -97,7 +97,7 @@ export default async function ProfilePage({ params }) {
 
           {games.length === 0 ? (
             <div className="empty-state">
-              <div>No games on this shelf yet.</div>
+              <div>No items on this shelf yet.</div>
             </div>
           ) : (
             <div className="grid" style={{ marginBottom: 40 }}>
