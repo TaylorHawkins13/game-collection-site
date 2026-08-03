@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
@@ -11,6 +12,7 @@ const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
 export default function DashboardClient({ userId, profile, initialGames }) {
   const supabase = createClient();
+  const searchParams = useSearchParams();
   const [games, setGames] = useState(initialGames);
   const [modalGame, setModalGame] = useState(undefined); // undefined = closed, null = add, object = edit
   const [search, setSearch] = useState('');
@@ -20,6 +22,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fType, setFType] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showSettings, setShowSettings] = useState(false);
+
+  // Arriving from the profile page's "Edit profile" link (?settings=1) opens
+  // the settings panel automatically instead of making people find the button.
+  useEffect(() => {
+    if (searchParams.get('settings') === '1') {
+      setShowSettings(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [currency, setCurrency] = useState(profile?.currency || 'USD');
   const [settingsForm, setSettingsForm] = useState({
     display_name: profile?.display_name || '',

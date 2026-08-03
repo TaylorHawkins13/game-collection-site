@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 import FollowButton from './FollowButton';
@@ -71,6 +72,11 @@ export default async function ProfilePage({ params }) {
         </div>
         {viewer && !isOwner && (
           <FollowButton profileId={profile.id} initialFollowing={alreadyFollowing} />
+        )}
+        {isOwner && (
+          <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
+            Edit profile
+          </Link>
         )}
       </div>
 
