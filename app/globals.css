@@ -228,7 +228,6 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 18px;
-  align-items: start;
 }
 
 .card {
@@ -249,17 +248,15 @@ button:disabled {
   transform: translateY(-3px);
   background: var(--card-hover);
 }
-/* Full-bleed cover: sized to its own natural aspect ratio, so the whole
-   image shows edge-to-edge with no cropping and no letterboxing. Cards
-   in the same row can end up different heights — that's expected. */
+/* Fixed-size, fill-and-crop cover so every tile stays the same size. */
 .card .cover {
   width: 100%;
-  height: auto;
-  display: block;
+  aspect-ratio: 3/4;
+  object-fit: cover;
   background: var(--bg-alt);
+  display: block;
 }
 .card .cover.placeholder {
-  aspect-ratio: 3/4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,6 +309,34 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+/* Grading-slab flourish: a holo strip + cert-style header, like the
+   label on a graded trading card or comic slab. */
+.slab-strip {
+  height: 5px;
+  background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bff8f, #6bd4ff, #a06bff, #ff6bd4);
+  background-size: 200% 100%;
+}
+.slab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+}
+.slab-wordmark {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+}
+.slab-cert {
+  font-size: 8.5px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
 }
 .stat-row {
   display: flex;

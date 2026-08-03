@@ -48,6 +48,11 @@ export default function GameCard({ game, onClick }) {
       <div className="card-title">{game.title}</div>
       <div className="card-body">
         <div className="stat-list">
+          <div className="slab-strip" aria-hidden="true" />
+          <div className="slab-header">
+            <span className="slab-wordmark">SHELF LIFE</span>
+            <span className="slab-cert">#{game.id.slice(0, 8).toUpperCase()}</span>
+          </div>
           {statRows.map((row) => (
             <div className="stat-row" key={row.label}>
               <span className="stat-label">{row.label}</span>
