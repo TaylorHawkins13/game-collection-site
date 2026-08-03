@@ -138,7 +138,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
-            ⚙️ Profile settings
+            Profile settings
           </button>
           <button className="btn-primary" onClick={() => setModalGame(null)} type="button">
             + Add Game
@@ -238,12 +238,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
       {games.length === 0 ? (
         <div className="empty-state">
-          <div className="big">🕹️</div>
           <div>No games yet. Click <strong>+ Add Game</strong> to start your collection.</div>
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <div className="big">🔍</div>
           <div>No games match your filters.</div>
         </div>
       ) : (

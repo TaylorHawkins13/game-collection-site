@@ -117,7 +117,7 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
               style={{ flex: 1 }}
             />
             <button type="button" className="btn-ghost" onClick={rawgSearch} disabled={searching}>
-              🔍 Search
+              Search
             </button>
           </div>
           {rawgHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{rawgHint}</div>}

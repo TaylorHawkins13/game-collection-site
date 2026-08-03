@@ -13,11 +13,11 @@ export default function GameCard({ game, onClick }) {
           src={game.cover}
           alt={game.title}
           onError={(e) => {
-            e.currentTarget.outerHTML = '<div class="cover placeholder">🎮</div>';
+            e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
           }}
         />
       ) : (
-        <div className="cover placeholder">🎮</div>
+        <div className="cover placeholder">No Cover</div>
       )}
       <div className="card-body">
         <div className="card-title">{game.title}</div>

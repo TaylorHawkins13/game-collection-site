@@ -22,7 +22,7 @@ export default function HomePage() {
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: 40 }}>
         <div className="card" style={{ padding: 20 }}>
           <div className="card-body">
-            <div className="card-title">📚 Full collection tracking</div>
+            <div className="card-title">Full collection tracking</div>
             <div className="card-meta">
               Platforms, genres, condition, purchase price, play status, ratings, tags, and barcodes — all in one place.
             </div>
@@ -30,7 +30,7 @@ export default function HomePage() {
         </div>
         <div className="card" style={{ padding: 20 }}>
           <div className="card-body">
-            <div className="card-title">🌐 Public profiles</div>
+            <div className="card-title">Public profiles</div>
             <div className="card-meta">
               Share a link to your shelf. Other collectors can follow you and leave comments.
             </div>
@@ -38,7 +38,7 @@ export default function HomePage() {
         </div>
         <div className="card" style={{ padding: 20 }}>
           <div className="card-body">
-            <div className="card-title">🏆 Community leaderboards</div>
+            <div className="card-title">Community leaderboards</div>
             <div className="card-meta">
               See the most-owned games, the biggest collections, and what's trending right now.
             </div>

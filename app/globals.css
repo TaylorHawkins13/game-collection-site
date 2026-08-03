@@ -100,7 +100,9 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
 }
 
 .nav-links {
@@ -252,7 +254,9 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   color: var(--text-dim);
 }
 .card-body {

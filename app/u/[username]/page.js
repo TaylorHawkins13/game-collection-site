@@ -76,7 +76,6 @@ export default async function ProfilePage({ params }) {
 
       {!canView ? (
         <div className="empty-state">
-          <div className="big">🔒</div>
           <div>This collector's shelf is private.</div>
         </div>
       ) : (
@@ -98,7 +97,6 @@ export default async function ProfilePage({ params }) {
 
           {games.length === 0 ? (
             <div className="empty-state">
-              <div className="big">🕹️</div>
               <div>No games on this shelf yet.</div>
             </div>
           ) : (
