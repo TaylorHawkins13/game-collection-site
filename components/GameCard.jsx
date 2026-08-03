@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { getCoverColor, colorToCss, shadeColor, readableTextColor } from '@/lib/coverColor';
+
 function cap(s) {
   if (!s) return '';
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -8,6 +11,37 @@ function cap(s) {
 export default function GameCard({ game, onClick }) {
   const stars = game.rating ? '★'.repeat(game.rating) + '☆'.repeat(5 - game.rating) : '';
   const isComic = game.item_type === 'comic';
+  const [artColor, setArtColor] = useState(null);
+
+  // Pull a dominant color from the cover art (when the image host allows
+  // it) so the slab strip and nameplate feel tied to the artwork instead
+  // of always using the same fixed accent color.
+  useEffect(() => {
+    let active = true;
+    if (game.cover) {
+      getCoverColor(game.cover).then((c) => {
+        if (active) setArtColor(c);
+      });
+    } else {
+      setArtColor(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [game.cover]);
+
+  const titleStyle = artColor
+    ? {
+        background: `linear-gradient(135deg, ${colorToCss(artColor)}, ${shadeColor(artColor, -45)})`,
+        color: readableTextColor(artColor),
+      }
+    : undefined;
+  const stripStyle = artColor
+    ? {
+        background: `linear-gradient(90deg, ${shadeColor(artColor, 50)}, ${colorToCss(artColor)}, ${shadeColor(artColor, -35)})`,
+        backgroundSize: '200% 100%',
+      }
+    : undefined;
 
   const statRows = [];
   if (isComic) {
@@ -45,10 +79,10 @@ export default function GameCard({ game, onClick }) {
       ) : (
         <div className="cover placeholder">No Cover</div>
       )}
-      <div className="card-title">{game.title}</div>
+      <div className="card-title" style={titleStyle}>{game.title}</div>
       <div className="card-body">
         <div className="stat-list">
-          <div className="slab-strip" aria-hidden="true" />
+          <div className="slab-strip" style={stripStyle} aria-hidden="true" />
           <div className="slab-header">
             <span className="slab-wordmark">SHELF LIFE</span>
             <span className="slab-cert">#{game.id.slice(0, 8).toUpperCase()}</span>
