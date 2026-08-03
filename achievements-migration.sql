@@ -2,7 +2,8 @@
 -- Trophies / achievements migration
 -- Run this once in your Supabase project's SQL editor
 -- (Project → SQL Editor → New query → paste → Run)
--- Safe to run on an existing project — only adds new tables.
+-- Safe to run again later too — it's fully idempotent, and re-running
+-- it will re-backfill anyone who's earned new trophies since last time.
 -- ============================================================
 
 -- ------------------------------------------------------------
@@ -66,17 +67,18 @@ create policy "Earned achievements are publicly readable"
 grant select on user_achievements to anon, authenticated;
 
 -- Deliberately no insert/update/delete policy for regular users here.
--- Trophies are only ever awarded by the trusted function below, so
+-- Trophies are only ever awarded by the trusted functions below, so
 -- nobody can grant themselves a trophy by calling the API directly.
 
 -- ------------------------------------------------------------
--- check_and_award_achievements: the only way trophies get inserted.
--- Recomputes real stats from the games/comments/follows tables and
--- awards anything newly earned. Call it (as yourself) after actions
--- like adding an item, posting a comment, or following someone.
+-- award_achievements_for: the real logic. Recomputes stats from the
+-- games/comments/follows tables and awards anything newly earned,
+-- returning just the trophies that were newly unlocked (so callers can
+-- show a "trophy earned" popup). Not exposed to the API directly — only
+-- called from the two trusted wrappers below.
 -- ------------------------------------------------------------
-create or replace function check_and_award_achievements(p_user_id uuid)
-returns void
+create or replace function award_achievements_for(p_user_id uuid)
+returns table(key text, name text, tier text)
 language plpgsql
 security definer
 set search_path = public
@@ -94,9 +96,9 @@ declare
   v_following int;
   v_earned_count int;
   v_total_defs int;
+  v_new_keys text[];
 begin
-  -- Only ever award trophies for the calling user, never on someone else's behalf.
-  if p_user_id is null or p_user_id <> auth.uid() then
+  if p_user_id is null then
     return;
   end if;
 
@@ -114,33 +116,101 @@ begin
   select count(*) into v_followers from follows where following_id = p_user_id;
   select count(*) into v_following from follows where follower_id = p_user_id;
 
-  insert into user_achievements (user_id, key) select p_user_id, 'first-item'     where v_total_items >= 1   on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'first-comment'  where v_comments >= 1      on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'first-follow'   where v_following >= 1     on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'first-follower' where v_followers >= 1     on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'first-rating'   where v_rated >= 1         on conflict do nothing;
-
-  insert into user_achievements (user_id, key) select p_user_id, 'items-10'      where v_total_items >= 10   on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'comics-10'     where v_total_comics >= 10  on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'platforms-5'   where v_platforms >= 5      on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'genres-5'      where v_genres >= 5         on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'ratings-10'    where v_rated >= 10         on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'comments-10'   where v_comments >= 10      on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'followers-5'   where v_followers >= 5      on conflict do nothing;
-
-  insert into user_achievements (user_id, key) select p_user_id, 'items-100'     where v_total_items >= 100  on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'completed-25'  where v_completed >= 25     on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'variants-10'   where v_variants >= 10      on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'followers-25'  where v_followers >= 25     on conflict do nothing;
-  insert into user_achievements (user_id, key) select p_user_id, 'comics-50'     where v_total_comics >= 50  on conflict do nothing;
+  with ins as (
+    insert into user_achievements (user_id, key)
+    select p_user_id, t.k
+    from (values
+      ('first-item',     v_total_items  >= 1),
+      ('first-comment',  v_comments     >= 1),
+      ('first-follow',   v_following    >= 1),
+      ('first-follower', v_followers    >= 1),
+      ('first-rating',   v_rated        >= 1),
+      ('items-10',       v_total_items  >= 10),
+      ('comics-10',      v_total_comics >= 10),
+      ('platforms-5',    v_platforms    >= 5),
+      ('genres-5',       v_genres       >= 5),
+      ('ratings-10',     v_rated        >= 10),
+      ('comments-10',    v_comments     >= 10),
+      ('followers-5',    v_followers    >= 5),
+      ('items-100',      v_total_items  >= 100),
+      ('completed-25',   v_completed    >= 25),
+      ('variants-10',    v_variants     >= 10),
+      ('followers-25',   v_followers    >= 25),
+      ('comics-50',      v_total_comics >= 50)
+    ) as t(k, cond)
+    where t.cond
+    on conflict do nothing
+    returning key
+  )
+  select coalesce(array_agg(key), '{}'::text[]) into v_new_keys from ins;
 
   -- Platinum: earn every other trophy, same as a PlayStation platinum.
   select count(*) into v_earned_count from user_achievements where user_id = p_user_id and key <> 'platinum-shelf';
   select count(*) into v_total_defs from achievement_defs where key <> 'platinum-shelf';
   if v_total_defs > 0 and v_earned_count >= v_total_defs then
-    insert into user_achievements (user_id, key) select p_user_id, 'platinum-shelf' on conflict do nothing;
+    with ins2 as (
+      insert into user_achievements (user_id, key)
+      select p_user_id, 'platinum-shelf'
+      on conflict do nothing
+      returning key
+    )
+    select v_new_keys || coalesce(array_agg(key), '{}'::text[]) into v_new_keys from ins2;
   end if;
+
+  return query
+  select d.key, d.name, d.tier
+  from achievement_defs d
+  where d.key = any(v_new_keys)
+  order by d.sort_order;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- check_and_award_achievements: the only version exposed to the app.
+-- Only ever checks/awards for whoever is calling it (never on someone
+-- else's behalf), and hands back any trophies newly unlocked so the
+-- app can pop up a notification.
+-- ------------------------------------------------------------
+create or replace function check_and_award_achievements(p_user_id uuid)
+returns table(key text, name text, tier text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_user_id is null or p_user_id <> auth.uid() then
+    return;
+  end if;
+  return query select * from award_achievements_for(p_user_id);
 end;
 $$;
 
 grant execute on function check_and_award_achievements(uuid) to authenticated;
+-- award_achievements_for is deliberately NOT granted to anon/authenticated —
+-- it has no auth.uid() check, so it must only ever be reachable from the
+-- trusted SQL editor (via the backfill below) or the wrapper above.
+
+-- ------------------------------------------------------------
+-- backfill_all_achievements: retroactively awards trophies to every
+-- existing user based on their collection/comments/follows as they
+-- stand right now, instead of only awarding new trophies going forward.
+-- ------------------------------------------------------------
+create or replace function backfill_all_achievements()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  r record;
+begin
+  for r in select id from profiles loop
+    perform award_achievements_for(r.id);
+  end loop;
+end;
+$$;
+
+-- Run the backfill right now. Safe to re-run this whole file any time —
+-- everything here is idempotent, and this will simply top up anyone
+-- who's newly crossed a threshold since the last run.
+select backfill_all_achievements();

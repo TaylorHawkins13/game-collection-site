@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
+import { announceTrophies } from '@/lib/trophyToast';
 
 export default function FollowButton({ profileId, initialFollowing }) {
   const [following, setFollowing] = useState(initialFollowing);
@@ -23,7 +24,9 @@ export default function FollowButton({ profileId, initialFollowing }) {
     } else {
       await supabase.from('follows').insert({ follower_id: user.id, following_id: profileId });
       setFollowing(true);
-      supabase.rpc('check_and_award_achievements', { p_user_id: user.id }).then(() => {});
+      supabase.rpc('check_and_award_achievements', { p_user_id: user.id }).then(({ data }) => {
+        announceTrophies(data);
+      });
     }
     setBusy(false);
     router.refresh();

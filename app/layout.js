@@ -1,5 +1,6 @@
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import TrophyToastListener from '@/components/TrophyToastListener';
 
 export const metadata = {
   title: 'Shelf Life — Collection Tracker',
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
       <body>
         <Navbar />
         {children}
+        <TrophyToastListener />
       </body>
     </html>
   );

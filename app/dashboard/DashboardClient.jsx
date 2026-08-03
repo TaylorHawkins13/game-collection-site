@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
+import { announceTrophies } from '@/lib/trophyToast';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -35,7 +36,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // Catch up on any trophies earned since the last visit. Safe to call even
   // if the achievements migration hasn't been run yet — it'll just no-op.
   useEffect(() => {
-    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(() => {});
+    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data }) => {
+      announceTrophies(data);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [currency, setCurrency] = useState(profile?.currency || 'USD');
@@ -129,7 +132,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => gs.map((g) => (g.id === data.id ? data : g)));
         setModalGame(undefined);
-        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(() => {});
+        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
+          announceTrophies(newTrophies);
+        });
       }
       return {};
     } else {
@@ -142,7 +147,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => [...gs, data]);
         setModalGame(undefined);
-        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(() => {});
+        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
+          announceTrophies(newTrophies);
+        });
       }
       return {};
     }
