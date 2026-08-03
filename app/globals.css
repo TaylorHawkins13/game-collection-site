@@ -852,4 +852,64 @@ button:disabled {
   .row2 {
     grid-template-columns: 1fr;
   }
+
+  /* The item grid was collapsing to one giant card per row on narrow
+     phones (nothing else fit next to a 180px-minimum tile), which made
+     cover art huge while the stat text inside stayed the same small
+     size — exactly the "everything's big but unreadable" feeling.
+     Smaller tiles keep two per row and put text back in proportion. */
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .card-title {
+    font-size: 12.5px;
+    padding: 8px 9px;
+  }
+  .card-body {
+    padding: 8px 9px 10px;
+    gap: 6px;
+  }
+  .card-ownership-flag {
+    font-size: 9px;
+    padding: 3px 7px;
+    top: 7px;
+    right: 7px;
+  }
+  .stat-row {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  .stat-label {
+    font-size: 9px;
+  }
+  .slab-wordmark,
+  .slab-cert {
+    font-size: 7.5px;
+  }
+  .badge {
+    font-size: 9.5px;
+    padding: 2px 7px;
+  }
+
+  .hero {
+    padding: 56px 16px 40px;
+  }
+  .hero h1 {
+    font-size: 28px;
+  }
+  .hero p {
+    font-size: 14px;
+  }
+
+  .modal {
+    padding: 18px;
+  }
+  .overlay {
+    padding: 20px 12px;
+  }
+
+  .profile-name {
+    font-size: 19px;
+  }
 }
