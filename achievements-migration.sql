@@ -140,21 +140,25 @@ begin
     ) as t(k, cond)
     where t.cond
     on conflict do nothing
-    returning key
+    returning user_achievements.key
   )
-  select coalesce(array_agg(key), '{}'::text[]) into v_new_keys from ins;
+  select coalesce(array_agg(ins.key), '{}'::text[]) into v_new_keys from ins;
 
   -- Platinum: earn every other trophy, same as a PlayStation platinum.
-  select count(*) into v_earned_count from user_achievements where user_id = p_user_id and key <> 'platinum-shelf';
-  select count(*) into v_total_defs from achievement_defs where key <> 'platinum-shelf';
+  -- (The function's own RETURNS TABLE column is also called "key", so
+  -- every reference to the real table column below has to be qualified
+  -- with the table/alias name — otherwise Postgres can't tell which
+  -- "key" you mean and throws an ambiguous-column error.)
+  select count(*) into v_earned_count from user_achievements ua where ua.user_id = p_user_id and ua.key <> 'platinum-shelf';
+  select count(*) into v_total_defs from achievement_defs ad where ad.key <> 'platinum-shelf';
   if v_total_defs > 0 and v_earned_count >= v_total_defs then
     with ins2 as (
       insert into user_achievements (user_id, key)
       select p_user_id, 'platinum-shelf'
       on conflict do nothing
-      returning key
+      returning user_achievements.key
     )
-    select v_new_keys || coalesce(array_agg(key), '{}'::text[]) into v_new_keys from ins2;
+    select v_new_keys || coalesce(array_agg(ins2.key), '{}'::text[]) into v_new_keys from ins2;
   end if;
 
   return query
@@ -170,7 +174,15 @@ $$;
 -- Only ever checks/awards for whoever is calling it (never on someone
 -- else's behalf), and hands back any trophies newly unlocked so the
 -- app can pop up a notification.
+--
+-- An earlier version of this migration created this function with
+-- "returns void". Postgres won't let CREATE OR REPLACE change a
+-- function's return type, so we drop the old one first — otherwise
+-- this whole script errors out partway through and nothing after it
+-- (including the backfill below) runs.
 -- ------------------------------------------------------------
+drop function if exists check_and_award_achievements(uuid);
+
 create or replace function check_and_award_achievements(p_user_id uuid)
 returns table(key text, name text, tier text)
 language plpgsql

@@ -1,10 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
-import GameCard from '@/components/GameCard';
-import TrophyCase from '@/components/TrophyCase';
 import FollowButton from './FollowButton';
-import CommentSection from './CommentSection';
+import ProfileTabs from './ProfileTabs';
 
 export default async function ProfilePage({ params }) {
   const { username } = params;
@@ -111,30 +109,13 @@ export default async function ProfilePage({ params }) {
             </div>
           </div>
 
-          {games.length === 0 ? (
-            <div className="empty-state">
-              <div>No items on this shelf yet.</div>
-            </div>
-          ) : (
-            <div className="grid" style={{ marginBottom: 40 }}>
-              {games.map((g) => (
-                <GameCard key={g.id} game={g} />
-              ))}
-            </div>
-          )}
-
-          {achievementDefs && achievementDefs.length > 0 && (
-            <TrophyCase
-              defs={achievementDefs}
-              earnedKeys={(earnedAchievements || []).map((r) => r.key)}
-            />
-          )}
-
-          <h2 style={{ fontSize: 16, marginBottom: 12 }}>Comments</h2>
-          <CommentSection
-            profileId={profile.id}
-            initialComments={comments || []}
+          <ProfileTabs
+            games={games || []}
+            achievementDefs={achievementDefs || []}
+            earnedKeys={(earnedAchievements || []).map((r) => r.key)}
+            comments={comments || []}
             canComment={!!viewer}
+            profileId={profile.id}
           />
         </>
       )}
