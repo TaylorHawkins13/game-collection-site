@@ -58,6 +58,7 @@ export default function Navbar() {
         Shelf Life
       </Link>
       <div className="nav-links">
+        <Link href="/players" className="nav-link">Find Collectors</Link>
         <Link href="/leaderboard" className="nav-link">Leaderboard</Link>
         {!loading && profile && (
           <>
