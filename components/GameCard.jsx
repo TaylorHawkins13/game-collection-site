@@ -43,6 +43,10 @@ export default function GameCard({ game, onClick }) {
       }
     : undefined;
 
+  const isCard = game.item_type === 'trading_card';
+  const isVinyl = game.item_type === 'vinyl';
+  const isMedia = game.item_type === 'media';
+
   const statRows = [];
   if (isComic) {
     statRows.push({ label: 'Series', value: game.series || game.title });
@@ -52,6 +56,23 @@ export default function GameCard({ game, onClick }) {
       statRows.push({ label: 'Creators', value: [game.writer, game.artist].filter(Boolean).join(' / ') });
     }
     statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
+  } else if (isCard) {
+    statRows.push({ label: 'Set', value: game.card_set || '—' });
+    statRows.push({ label: 'Card #', value: game.card_number || '—' });
+    statRows.push({ label: 'Player', value: game.player_name || '—' });
+    statRows.push({ label: 'Brand', value: game.publisher || '—' });
+    statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
+  } else if (isVinyl) {
+    statRows.push({ label: 'Artist', value: game.artist || '—' });
+    statRows.push({ label: 'Label', value: game.publisher || '—' });
+    statRows.push({ label: 'Format', value: game.format || '—' });
+    if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
+  } else if (isMedia) {
+    const kindLabel = game.media_kind === 'dvd' ? 'Director' : game.media_kind === 'cd' ? 'Artist' : 'Author';
+    statRows.push({ label: 'Kind', value: cap(game.media_kind) || 'Book' });
+    statRows.push({ label: kindLabel, value: game.writer || '—' });
+    statRows.push({ label: 'Publisher', value: game.publisher || '—' });
+    if (game.format) statRows.push({ label: 'Format', value: game.format });
   } else {
     statRows.push({
       label: 'Platform',
@@ -96,9 +117,11 @@ export default function GameCard({ game, onClick }) {
             ))}
           </div>
         </div>
-        {((isComic && game.is_variant) || (game.tags || []).length > 0) && (
+        {(((isComic || isCard) && game.is_variant) || (game.tags || []).length > 0) && (
           <div className="badge-row">
-            {isComic && game.is_variant && <span className="badge tag">Variant</span>}
+            {(isComic || isCard) && game.is_variant && (
+              <span className="badge tag">{isCard ? 'Parallel' : 'Variant'}</span>
+            )}
             {(game.tags || []).map((t) => (
               <span className="badge tag" key={t}>{t}</span>
             ))}

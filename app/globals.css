@@ -683,6 +683,24 @@ button:disabled {
   justify-content: center;
 }
 
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.feature-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.feature-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
 /* ---------- Profile tabs ---------- */
 .profile-tabs {
   display: flex;

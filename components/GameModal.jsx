@@ -27,6 +27,12 @@ const EMPTY = {
   grade: '',
   is_variant: false,
   variant_notes: '',
+  format: '',
+  edition: '',
+  card_set: '',
+  card_number: '',
+  player_name: '',
+  media_kind: 'book',
 };
 
 export default function GameModal({ game, currency, onClose, onSave, onDelete }) {
@@ -62,6 +68,12 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
         grade: game.grade || '',
         is_variant: game.is_variant || false,
         variant_notes: game.variant_notes || '',
+        format: game.format || '',
+        edition: game.edition || '',
+        card_set: game.card_set || '',
+        card_number: game.card_number || '',
+        player_name: game.player_name || '',
+        media_kind: game.media_kind || 'book',
       });
     } else {
       setForm(EMPTY);
@@ -75,7 +87,23 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     setForm((f) => ({ ...f, [field]: val }));
   }
 
+  const isGame = form.item_type === 'game';
   const isComic = form.item_type === 'comic';
+  const isCard = form.item_type === 'trading_card';
+  const isVinyl = form.item_type === 'vinyl';
+  const isMedia = form.item_type === 'media';
+
+  const genrePlaceholder = isComic
+    ? 'e.g. Superhero'
+    : isCard
+    ? 'e.g. Sports, TCG'
+    : isVinyl
+    ? 'e.g. Rock, Jazz'
+    : isMedia
+    ? 'e.g. Fiction, Sci-Fi'
+    : 'e.g. RPG';
+
+  const mediaCreatorLabel = form.media_kind === 'dvd' ? 'Director' : form.media_kind === 'cd' ? 'Artist' : 'Author';
 
   async function rawgSearch() {
     if (!form.title.trim()) return;
@@ -121,17 +149,23 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
       price: form.price === '' ? null : parseFloat(form.price),
       purchase_date: form.purchase_date || null,
       // keep the fields that don't apply to this type cleared out
-      platforms: isComic ? [] : form.platforms,
-      play_status: isComic ? 'backlog' : form.play_status,
+      platforms: isGame ? form.platforms : [],
+      play_status: isGame ? form.play_status : 'backlog',
       condition: isComic ? '' : form.condition,
       series: isComic ? form.series : '',
       issue_number: isComic ? form.issue_number : '',
-      publisher: isComic ? form.publisher : '',
-      writer: isComic ? form.writer : '',
-      artist: isComic ? form.artist : '',
-      grade: isComic ? form.grade : '',
-      is_variant: isComic ? form.is_variant : false,
-      variant_notes: isComic ? form.variant_notes : '',
+      publisher: isComic || isCard || isVinyl || isMedia ? form.publisher : '',
+      writer: isComic || isMedia ? form.writer : '',
+      artist: isComic || isVinyl ? form.artist : '',
+      grade: isComic || isCard ? form.grade : '',
+      is_variant: isComic || isCard ? form.is_variant : false,
+      variant_notes: isComic || isCard ? form.variant_notes : '',
+      format: isVinyl || isMedia ? form.format : '',
+      edition: isVinyl || isMedia ? form.edition : '',
+      card_set: isCard ? form.card_set : '',
+      card_number: isCard ? form.card_number : '',
+      player_name: isCard ? form.player_name : '',
+      media_kind: isMedia ? form.media_kind : '',
     });
     setSaving(false);
     if (result?.error) {
@@ -144,29 +178,18 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
       <div className="modal">
         <h2>{game ? 'Edit Item' : 'Add Item'}</h2>
         <div className="sub">
-          {isComic ? 'Fill in the comic details.' : 'Fill in the details, or search RAWG to auto-fill cover art & info.'}
+          {isGame ? 'Fill in the details, or search RAWG to auto-fill cover art & info.' : 'Fill in the details.'}
         </div>
 
         <div className="field">
           <label>Type</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              className={!isComic ? 'btn-primary' : 'btn-ghost'}
-              onClick={() => set('item_type', 'game')}
-              style={{ flex: 1 }}
-            >
-              Game
-            </button>
-            <button
-              type="button"
-              className={isComic ? 'btn-primary' : 'btn-ghost'}
-              onClick={() => set('item_type', 'comic')}
-              style={{ flex: 1 }}
-            >
-              Comic
-            </button>
-          </div>
+          <select value={form.item_type} onChange={(e) => set('item_type', e.target.value)}>
+            <option value="game">Video Game</option>
+            <option value="comic">Comic</option>
+            <option value="trading_card">Trading Card</option>
+            <option value="vinyl">Vinyl Record</option>
+            <option value="media">Book / DVD / CD</option>
+          </select>
         </div>
 
         <div className="field">
@@ -176,17 +199,17 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
               type="text"
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
-              placeholder={isComic ? 'e.g. Amazing Spider-Man' : 'e.g. Chrono Trigger'}
+              placeholder={isComic ? 'e.g. Amazing Spider-Man' : isGame ? 'e.g. Chrono Trigger' : 'Title'}
               style={{ flex: 1 }}
             />
-            {!isComic && (
+            {isGame && (
               <button type="button" className="btn-ghost" onClick={rawgSearch} disabled={searching}>
                 Search
               </button>
             )}
           </div>
-          {!isComic && rawgHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{rawgHint}</div>}
-          {!isComic && rawgResults.length > 0 && (
+          {isGame && rawgHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{rawgHint}</div>}
+          {isGame && rawgResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {rawgResults.map((r) => (
                 <div
@@ -207,7 +230,7 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
           )}
         </div>
 
-        {!isComic && (
+        {isGame && (
           <div className="field">
             <label>Platforms</label>
             <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" />
@@ -271,10 +294,119 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
           </>
         )}
 
+        {isCard && (
+          <>
+            <div className="row2">
+              <div className="field">
+                <label>Set / expansion</label>
+                <input type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. 2023 Topps Chrome" />
+              </div>
+              <div className="field">
+                <label>Card number</label>
+                <input type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #150" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Player / character</label>
+                <input type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Manufacturer / brand</label>
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Topps, Panini, Pokémon" />
+              </div>
+            </div>
+            <div className="field">
+              <label>Grade</label>
+              <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. PSA 10, Raw" />
+            </div>
+            <div className="field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.is_variant}
+                  onChange={(e) => set('is_variant', e.target.checked)}
+                  style={{ width: 'auto', marginRight: 8 }}
+                />
+                This is a parallel / insert / special version
+              </label>
+            </div>
+            {form.is_variant && (
+              <div className="field">
+                <label>Details</label>
+                <input
+                  type="text"
+                  value={form.variant_notes}
+                  onChange={(e) => set('variant_notes', e.target.value)}
+                  placeholder="e.g. Gold refractor /50, silver prizm"
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {isVinyl && (
+          <>
+            <div className="row2">
+              <div className="field">
+                <label>Artist</label>
+                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Label</label>
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Sub Pop" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Format</label>
+                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder='e.g. LP, 7", box set' />
+              </div>
+              <div className="field">
+                <label>Edition / pressing</label>
+                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. 1st pressing, 180g reissue" />
+              </div>
+            </div>
+          </>
+        )}
+
+        {isMedia && (
+          <>
+            <div className="field">
+              <label>Kind</label>
+              <select value={form.media_kind} onChange={(e) => set('media_kind', e.target.value)}>
+                <option value="book">Book</option>
+                <option value="dvd">DVD / Blu-ray</option>
+                <option value="cd">CD</option>
+              </select>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>{mediaCreatorLabel}</label>
+                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Publisher / studio / label</label>
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Format</label>
+                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder="e.g. Hardcover, Blu-ray, CD" />
+              </div>
+              <div className="field">
+                <label>Edition</label>
+                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. Director's Cut, 2nd edition" />
+              </div>
+            </div>
+          </>
+        )}
+
         <div className="row2">
           <div className="field">
             <label>Genre</label>
-            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={isComic ? 'e.g. Superhero' : 'e.g. RPG'} />
+            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={genrePlaceholder} />
           </div>
           <div className="field">
             <label>Barcode / UPC</label>
@@ -328,7 +460,7 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
         </div>
 
         <div className="row2">
-          {!isComic && (
+          {isGame && (
             <div className="field">
               <label>Play status</label>
               <select value={form.play_status} onChange={(e) => set('play_status', e.target.value)}>

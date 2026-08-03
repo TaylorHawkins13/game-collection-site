@@ -13,6 +13,9 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Cover images fit the frame** — switched from cropping covers to fill the box to showing the whole image, letterboxed if needed.
 - **Edit profile shortcut** — your own profile page now has an "Edit profile" button that jumps straight to Profile Settings.
 - **Trophies** — a PlayStation Trophies-style achievement system: bronze/silver/gold/platinum badges for collection milestones (first item, 10/100 items, 25 completed, follower counts, variant hunting, etc.), shown as a trophy case on public profiles. Awarded server-side so they can't be gamed.
+- **Mobile layout pass** — smaller card grid, scaled-down type, and a decluttered card layout on phones so nothing feels oversized or cramped.
+- **Top Trumps-style card redesign** — full-bleed cover art, a color nameplate pulled from the art itself, and a grading-slab-style stat block instead of loose badges.
+- **More collectible types** — Trading Cards, Vinyl Records, and Books/DVDs/CDs added alongside Games and Comics, each with their own tailored fields (set/card number/player for cards, artist/label/format/edition for vinyl, author-or-director/publisher/format/edition for media).
 
 ## Next (small, self-contained additions)
 
@@ -25,7 +28,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Activity feed** — a feed of what people you follow have recently added, completed, or rated, instead of only visiting their profile directly.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
-- **More collectible types** — trading cards, vinyl records, board games — the comics work sets the pattern (a `type` field + type-specific fields) for adding more categories later without redesigning the schema again.
+- **Even more collectible types** — board games, action figures/toys, coins, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
 - **Price tracking integration** — pull current market value automatically for games/comics from a pricing API, rather than only manually-entered purchase price.
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
 

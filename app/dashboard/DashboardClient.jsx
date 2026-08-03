@@ -64,11 +64,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const wishlist = games.filter((g) => g.ownership === 'wishlist');
     const completed = games.filter((g) => g.play_status === 'completed').length;
     const totalValue = owned.reduce((sum, g) => sum + (parseFloat(g.price) || 0), 0);
-    const gameCount = games.filter((g) => g.item_type !== 'comic').length;
-    const comicCount = games.filter((g) => g.item_type === 'comic').length;
     return [
       { num: games.length, label: 'Total items' },
-      { num: `${gameCount} / ${comicCount}`, label: 'Games / Comics' },
       { num: owned.length, label: 'Owned' },
       { num: wishlist.length, label: 'Wishlist' },
       { num: completed, label: 'Completed' },
@@ -92,6 +89,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           g.publisher,
           g.writer,
           g.artist,
+          g.card_set,
+          g.card_number,
+          g.player_name,
+          g.format,
+          g.edition,
         ]
           .join(' ')
           .toLowerCase();
@@ -345,14 +347,17 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search title, series, platform, publisher…"
+          placeholder="Search title, series, set, artist, publisher…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select value={fType} onChange={(e) => setFType(e.target.value)}>
           <option value="">All types</option>
-          <option value="game">Games</option>
+          <option value="game">Video Games</option>
           <option value="comic">Comics</option>
+          <option value="trading_card">Trading Cards</option>
+          <option value="vinyl">Vinyl Records</option>
+          <option value="media">Books / DVDs / CDs</option>
         </select>
         <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
           <option value="">All statuses</option>

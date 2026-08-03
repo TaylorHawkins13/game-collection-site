@@ -61,7 +61,7 @@ create trigger on_auth_user_created
 create table if not exists games (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
-  item_type text not null default 'game' check (item_type in ('game', 'comic')),
+  item_type text not null default 'game' check (item_type in ('game', 'comic', 'trading_card', 'vinyl', 'media')),
   title text not null,
   platforms text[] not null default '{}',
   genre text default '',
@@ -75,7 +75,12 @@ create table if not exists games (
   tags text[] not null default '{}',
   barcode text default '',
   notes text default '',
-  -- comic-specific fields (ignored/blank for item_type = 'game')
+  -- comic-specific fields (ignored/blank for item_type = 'game').
+  -- Several of these are reused by newer types too: publisher doubles as
+  -- a vinyl "label" or media "publisher/studio", writer doubles as a
+  -- media "author/director", artist doubles as a vinyl "artist", grade
+  -- doubles as a trading-card grade, and is_variant/variant_notes double
+  -- as a trading-card "special version" flag.
   series text default '',
   issue_number text default '',
   publisher text default '',
@@ -84,6 +89,15 @@ create table if not exists games (
   grade text default '',
   is_variant boolean not null default false,
   variant_notes text default '',
+  -- shared fields for vinyl/media
+  format text default '',
+  edition text default '',
+  -- trading-card-specific fields
+  card_set text default '',
+  card_number text default '',
+  player_name text default '',
+  -- media-specific: 'book' | 'dvd' | 'cd'
+  media_kind text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

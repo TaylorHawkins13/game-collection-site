@@ -4,7 +4,7 @@ import TrophyToastListener from '@/components/TrophyToastListener';
 
 export const metadata = {
   title: 'Shelf Life — Collection Tracker',
-  description: 'Track your games and comics, share your shelf, and see how it stacks up.',
+  description: 'Track your games, comics, cards, vinyl, and more — share your shelf, and see how it stacks up.',
 };
 
 export default function RootLayout({ children }) {

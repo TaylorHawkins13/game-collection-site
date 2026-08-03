@@ -6,8 +6,9 @@ export default function HomePage() {
       <div className="hero">
         <h1>Track your collection. Show it off.</h1>
         <p>
-          Shelf Life is a free way to catalog the games and comics you own, want, and have
-          finished — then share your shelf with other collectors and see how it stacks up.
+          Shelf Life is a free way to catalog everything you collect — games, comics, trading
+          cards, vinyl, books, DVDs and CDs — then share your shelf with other collectors,
+          earn trophies, and see how it stacks up.
         </p>
         <div className="cta-row">
           <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 22px' }}>
@@ -20,28 +21,22 @@ export default function HomePage() {
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: 40 }}>
-        <div className="card" style={{ padding: 20 }}>
-          <div className="card-body">
-            <div className="card-title">Full collection tracking</div>
-            <div className="card-meta">
-              Games and comics side by side — platforms or issue details, condition, purchase price, ratings, tags, and barcodes, all in one place.
-            </div>
+        <div className="feature-card">
+          <div className="feature-title">Every kind of collection</div>
+          <div className="feature-text">
+            Video games, comics, trading cards, vinyl, books, DVDs and CDs — each with its own tailored details, side by side in one shelf.
           </div>
         </div>
-        <div className="card" style={{ padding: 20 }}>
-          <div className="card-body">
-            <div className="card-title">Public profiles</div>
-            <div className="card-meta">
-              Share a link to your shelf. Other collectors can follow you and leave comments.
-            </div>
+        <div className="feature-card">
+          <div className="feature-title">Public profiles &amp; trophies</div>
+          <div className="feature-text">
+            Share a link to your shelf, earn bronze-to-platinum trophies for milestones, and let other collectors follow you and leave comments.
           </div>
         </div>
-        <div className="card" style={{ padding: 20 }}>
-          <div className="card-body">
-            <div className="card-title">Community leaderboards</div>
-            <div className="card-meta">
-              See the most-owned items, the biggest collections, and what's trending right now.
-            </div>
+        <div className="feature-card">
+          <div className="feature-title">Community leaderboards</div>
+          <div className="feature-text">
+            See the most-owned items, the biggest collections, and what's trending right now.
           </div>
         </div>
       </div>

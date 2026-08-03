@@ -1,13 +1,13 @@
 # Shelf Life — Collection Tracker (multi-user)
 
-Next.js + Supabase app: accounts, cloud-synced collections (games and comics), public profiles, follows, comments, and a community leaderboard.
+Next.js + Supabase app: accounts, cloud-synced collections (video games, comics, trading cards, vinyl records, books/DVDs/CDs), public profiles, follows, comments, trophies, and a community leaderboard.
 
 ## 1. Create a Supabase project (free)
 
 1. Go to [supabase.com](https://supabase.com) → sign up → **New project**.
 2. Once it's created, open **SQL Editor** → **New query**, paste the contents of `supabase-schema.sql` (in this folder), and click **Run**. This creates all tables, security rules, and leaderboard views.
 3. Also run `storage-setup.sql` the same way (New query → paste → Run) — this sets up the storage bucket avatar uploads need. Without this, avatar upload will fail with a "bucket not found" error.
-4. If you're updating an **existing** project rather than starting fresh, also run `comics-migration.sql`, `currency-migration.sql`, and `achievements-migration.sql` (same New query → paste → Run process). Brand new projects can skip these — `supabase-schema.sql` already includes everything.
+4. If you're updating an **existing** project rather than starting fresh, also run `comics-migration.sql`, `currency-migration.sql`, `achievements-migration.sql`, and `collectibles-migration.sql` (same New query → paste → Run process). Brand new projects can skip these — `supabase-schema.sql` already includes everything.
 5. Go to **Authentication → Sign In / Providers → Email** and, for easy testing, turn **off** "Confirm email" (or leave it on and just check your inbox after signing up).
 6. Go to **Settings → API Keys** and copy the **Project URL** and the **publishable** (or legacy **anon public**) key.
 
@@ -38,7 +38,7 @@ That's it — from then on, every `git push` redeploys automatically.
 ## What's included
 
 - **Accounts**: email/password signup & login (Supabase Auth), auto-creates a public profile with a chosen username.
-- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across games and comics in one shelf, with type-specific fields (platforms for games; series/issue/publisher/writer/artist/grade/variant for comics), tags, barcodes, and RAWG auto-fill for games.
+- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across five collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author-or-director/publisher/format/edition for books, DVDs, and CDs — plus shared tags, barcodes, and RAWG auto-fill for games.
 - **Public profiles** (`/u/username`): view a collector's shelf, follow them, leave comments. Users can toggle their profile private in Profile Settings.
 - **Profile settings**: display name, bio, public/private toggle, preferred currency (for price display only — no live conversion), and avatar image upload (stored in Supabase Storage).
 - **Leaderboard** (`/leaderboard`): most-owned items, biggest public collections, trending titles (last 14 days) — computed from public collections only.
