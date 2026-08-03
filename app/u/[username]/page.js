@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
+import TrophyCase from '@/components/TrophyCase';
 import FollowButton from './FollowButton';
 import CommentSection from './CommentSection';
 
@@ -22,7 +23,14 @@ export default async function ProfilePage({ params }) {
   const isOwner = viewer?.id === profile.id;
   const canView = profile.is_public || isOwner;
 
-  const [{ data: games }, { count: followerCount }, { count: followingCount }, { data: comments }] = await Promise.all([
+  const [
+    { data: games },
+    { count: followerCount },
+    { count: followingCount },
+    { data: comments },
+    { data: achievementDefs },
+    { data: earnedAchievements },
+  ] = await Promise.all([
     canView
       ? supabase.from('games').select('*').eq('user_id', profile.id).order('title', { ascending: true })
       : Promise.resolve({ data: [] }),
@@ -36,6 +44,8 @@ export default async function ProfilePage({ params }) {
           .order('created_at', { ascending: false })
           .limit(50)
       : Promise.resolve({ data: [] }),
+    supabase.from('achievement_defs').select('*'),
+    supabase.from('user_achievements').select('key').eq('user_id', profile.id),
   ]);
 
   let alreadyFollowing = false;
@@ -111,6 +121,13 @@ export default async function ProfilePage({ params }) {
                 <GameCard key={g.id} game={g} />
               ))}
             </div>
+          )}
+
+          {achievementDefs && achievementDefs.length > 0 && (
+            <TrophyCase
+              defs={achievementDefs}
+              earnedKeys={(earnedAchievements || []).map((r) => r.key)}
+            />
           )}
 
           <h2 style={{ fontSize: 16, marginBottom: 12 }}>Comments</h2>

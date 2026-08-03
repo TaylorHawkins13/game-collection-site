@@ -28,6 +28,7 @@ export default function CommentSection({ profileId, initialComments, canComment 
     if (!error && data) {
       setComments((c) => [data, ...c]);
       setBody('');
+      supabase.rpc('check_and_award_achievements', { p_user_id: user.id }).then(() => {});
     }
   }
 

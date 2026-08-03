@@ -31,6 +31,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Catch up on any trophies earned since the last visit. Safe to call even
+  // if the achievements migration hasn't been run yet — it'll just no-op.
+  useEffect(() => {
+    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [currency, setCurrency] = useState(profile?.currency || 'USD');
   const [settingsForm, setSettingsForm] = useState({
     display_name: profile?.display_name || '',
@@ -122,6 +129,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => gs.map((g) => (g.id === data.id ? data : g)));
         setModalGame(undefined);
+        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(() => {});
       }
       return {};
     } else {
@@ -134,6 +142,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => [...gs, data]);
         setModalGame(undefined);
+        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(() => {});
       }
       return {};
     }
@@ -203,7 +212,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     if (!error) {
       setCurrency(settingsForm.currency);
     }
-    setSettingsMsg(error ? 'Failed to save.' : 'Saved!');
+    setSettingsMsg(error ? `Failed to save: ${error.message}` : 'Saved!');
   }
 
   return (
@@ -308,7 +317,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Make my profile and collection public
             </label>
           </div>
-          {settingsMsg && <div className="success-text">{settingsMsg}</div>}
+          {settingsMsg && (
+            <div className={settingsMsg.startsWith('Failed') ? 'error-text' : 'success-text'}>{settingsMsg}</div>
+          )}
           <button className="btn-primary" onClick={saveSettings} disabled={settingsSaving} type="button">
             {settingsSaving ? 'Saving…' : 'Save settings'}
           </button>

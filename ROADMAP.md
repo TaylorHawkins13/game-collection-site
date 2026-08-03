@@ -9,13 +9,16 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Currency selection** — pick a display currency in Profile Settings instead of being locked to USD (display only, no live conversion between currencies).
 - **Avatar upload** — upload a photo directly (via Supabase Storage) instead of only pasting an image URL.
 - **Per-type stats** — dashboard stats bar shows a Games/Comics split.
+- **Find Collectors search page** — search public profiles by username/display name, with a default "recently joined" list.
+- **Cover images fit the frame** — switched from cropping covers to fill the box to showing the whole image, letterboxed if needed.
+- **Edit profile shortcut** — your own profile page now has an "Edit profile" button that jumps straight to Profile Settings.
+- **Trophies** — a PlayStation Trophies-style achievement system: bronze/silver/gold/platinum badges for collection milestones (first item, 10/100 items, 25 completed, follower counts, variant hunting, etc.), shown as a trophy case on public profiles. Awarded server-side so they can't be gamed.
 
 ## Next (small, self-contained additions)
 
 - **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
 - **Barcode scanning via phone camera** — use the device camera to scan a UPC and auto-fill instead of typing it, especially handy for comics and physical game cases.
 - **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
-- **Public collection search** — a way to search across all public profiles/collections, not just look up one leaderboard.
 
 ## Later (bigger, more design work)
 

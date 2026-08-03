@@ -13,6 +13,10 @@
   --owned: #00d2a8;
   --wishlist: #6c5ce7;
   --sold: #ff5d7a;
+  --tier-bronze: #cd7f32;
+  --tier-silver: #b9c0d4;
+  --tier-gold: #e8c15a;
+  --tier-platinum: #cfe8ff;
   --radius: 12px;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
@@ -584,6 +588,73 @@ button:disabled {
   display: flex;
   gap: 12px;
   justify-content: center;
+}
+
+/* ---------- Trophy case ---------- */
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.trophy {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.trophy-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+.trophy-bronze .trophy-icon {
+  background: radial-gradient(circle at 35% 30%, #f0c090, var(--tier-bronze));
+}
+.trophy-silver .trophy-icon {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--tier-silver));
+}
+.trophy-gold .trophy-icon {
+  background: radial-gradient(circle at 35% 30%, #fff2c4, var(--tier-gold));
+}
+.trophy-platinum .trophy-icon {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--tier-platinum));
+  box-shadow: 0 0 0 2px var(--tier-platinum) inset;
+}
+.trophy-body {
+  min-width: 0;
+}
+.trophy-name {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.trophy-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.trophy-tier {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  color: var(--text-dim);
+}
+.trophy-locked {
+  opacity: 0.45;
+}
+.trophy-locked .trophy-icon {
+  background: var(--border) !important;
+  box-shadow: none !important;
+}
+.trophy-earned .trophy-tier {
+  color: var(--text);
 }
 
 @media (max-width: 640px) {

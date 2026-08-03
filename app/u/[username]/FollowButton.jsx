@@ -23,6 +23,7 @@ export default function FollowButton({ profileId, initialFollowing }) {
     } else {
       await supabase.from('follows').insert({ follower_id: user.id, following_id: profileId });
       setFollowing(true);
+      supabase.rpc('check_and_award_achievements', { p_user_id: user.id }).then(() => {});
     }
     setBusy(false);
     router.refresh();
