@@ -17,6 +17,7 @@ create table if not exists profiles (
   avatar_url text,
   bio text,
   is_public boolean not null default true,
+  currency text not null default 'USD',
   created_at timestamptz not null default now()
 );
 

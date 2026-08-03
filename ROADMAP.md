@@ -2,15 +2,16 @@
 
 A living list of where this could go next. Nothing here is committed or scheduled — just organized by how much work each would take, so you can pick what's worth building next.
 
-## Now
+## Done
 
 - **Comics support** — track comic books alongside games in the same collection: series, issue number, publisher, writer/artist, CGC-style grade, variant covers.
 - **Rebrand to Shelf Life** — new name across the app.
+- **Currency selection** — pick a display currency in Profile Settings instead of being locked to USD (display only, no live conversion between currencies).
+- **Avatar upload** — upload a photo directly (via Supabase Storage) instead of only pasting an image URL.
+- **Per-type stats** — dashboard stats bar shows a Games/Comics split.
 
 ## Next (small, self-contained additions)
 
-- **Avatar upload** — right now avatars are a pasted image URL. Supabase Storage would let people upload a photo directly instead of needing to host one elsewhere.
-- **Per-type stats** — split the dashboard stats bar by collectible type (e.g. "12 games, 34 comics") instead of one combined count.
 - **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
 - **Barcode scanning via phone camera** — use the device camera to scan a UPC and auto-fill instead of typing it, especially handy for comics and physical game cases.
 - **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.

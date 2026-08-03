@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
+import { currencySymbol } from '@/lib/currency';
 
 const EMPTY = {
   item_type: 'game',
@@ -28,9 +29,10 @@ const EMPTY = {
   variant_notes: '',
 };
 
-export default function GameModal({ game, onClose, onSave, onDelete }) {
+export default function GameModal({ game, currency, onClose, onSave, onDelete }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [rawgResults, setRawgResults] = useState([]);
   const [rawgHint, setRawgHint] = useState('');
   const [searching, setSearching] = useState(false);
@@ -66,6 +68,7 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
     }
     setRawgResults([]);
     setRawgHint('');
+    setSaveError('');
   }, [game]);
 
   function set(field, val) {
@@ -111,7 +114,8 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
   async function handleSave() {
     if (!form.title.trim()) return;
     setSaving(true);
-    await onSave({
+    setSaveError('');
+    const result = await onSave({
       ...form,
       title: form.title.trim(),
       price: form.price === '' ? null : parseFloat(form.price),
@@ -130,6 +134,9 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
       variant_notes: isComic ? form.variant_notes : '',
     });
     setSaving(false);
+    if (result?.error) {
+      setSaveError(result.error);
+    }
   }
 
   return (
@@ -311,7 +318,7 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
 
         <div className="row2">
           <div className="field">
-            <label>Purchase price ($)</label>
+            <label>Purchase price ({currencySymbol(currency)})</label>
             <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} />
           </div>
           <div className="field">
@@ -352,6 +359,8 @@ export default function GameModal({ game, onClose, onSave, onDelete }) {
           <label>Notes</label>
           <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Anything worth remembering…" />
         </div>
+
+        {saveError && <div className="error-text">Couldn't save: {saveError}</div>}
 
         <div className="modal-actions">
           {game ? (

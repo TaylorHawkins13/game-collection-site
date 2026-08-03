@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
+import { CURRENCIES, formatMoney } from '@/lib/currency';
+
+const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
 export default function DashboardClient({ userId, profile, initialGames }) {
   const supabase = createClient();
@@ -17,14 +20,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fType, setFType] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showSettings, setShowSettings] = useState(false);
+  const [currency, setCurrency] = useState(profile?.currency || 'USD');
   const [settingsForm, setSettingsForm] = useState({
     display_name: profile?.display_name || '',
     bio: profile?.bio || '',
     avatar_url: profile?.avatar_url || '',
     is_public: profile?.is_public ?? true,
+    currency: profile?.currency || 'USD',
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   const platformOptions = useMemo(
     () => [...new Set(games.flatMap((g) => g.platforms || []))].sort(),
@@ -44,9 +51,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       { num: owned.length, label: 'Owned' },
       { num: wishlist.length, label: 'Wishlist' },
       { num: completed, label: 'Completed' },
-      { num: `$${totalValue.toFixed(2)}`, label: 'Collection value' },
+      { num: formatMoney(totalValue, currency), label: 'Collection value' },
     ];
-  }, [games]);
+  }, [games, currency]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -100,20 +107,24 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         .eq('id', modalGame.id)
         .select()
         .single();
-      if (!error && data) {
+      if (error) return { error: error.message };
+      if (data) {
         setGames((gs) => gs.map((g) => (g.id === data.id ? data : g)));
         setModalGame(undefined);
       }
+      return {};
     } else {
       const { data, error } = await supabase
         .from('games')
         .insert({ ...formData, user_id: userId })
         .select()
         .single();
-      if (!error && data) {
+      if (error) return { error: error.message };
+      if (data) {
         setGames((gs) => [...gs, data]);
         setModalGame(undefined);
       }
+      return {};
     }
   }
 
@@ -126,6 +137,44 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     }
   }
 
+  async function handleAvatarFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+    setAvatarError('');
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please choose an image file.');
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setAvatarError('Image is too large (max 3MB).');
+      return;
+    }
+
+    setAvatarUploading(true);
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${userId}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true, cacheControl: '3600' });
+
+    if (uploadError) {
+      setAvatarUploading(false);
+      setAvatarError(
+        uploadError.message?.includes('Bucket not found')
+          ? 'Avatar storage isn’t set up yet on this project (see storage-setup.sql).'
+          : `Upload failed: ${uploadError.message}`
+      );
+      return;
+    }
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const bustedUrl = `${data.publicUrl}?t=${Date.now()}`;
+    setSettingsForm((f) => ({ ...f, avatar_url: bustedUrl }));
+    setAvatarUploading(false);
+  }
+
   async function saveSettings() {
     setSettingsSaving(true);
     setSettingsMsg('');
@@ -136,9 +185,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         bio: settingsForm.bio.trim(),
         avatar_url: settingsForm.avatar_url.trim(),
         is_public: settingsForm.is_public,
+        currency: settingsForm.currency,
       })
       .eq('id', userId);
     setSettingsSaving(false);
+    if (!error) {
+      setCurrency(settingsForm.currency);
+    }
     setSettingsMsg(error ? 'Failed to save.' : 'Saved!');
   }
 
@@ -176,14 +229,56 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               />
             </div>
             <div className="field">
-              <label>Avatar image URL</label>
-              <input
-                type="url"
-                value={settingsForm.avatar_url}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, avatar_url: e.target.value }))}
-              />
+              <label>Currency</label>
+              <select
+                value={settingsForm.currency}
+                onChange={(e) => setSettingsForm((f) => ({ ...f, currency: e.target.value }))}
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          <div className="field">
+            <label>Avatar</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="avatar" style={{ width: 56, height: 56, fontSize: 20 }}>
+                {settingsForm.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={settingsForm.avatar_url} alt="Avatar preview" />
+                ) : (
+                  (settingsForm.display_name || profile?.username || '?').slice(0, 1).toUpperCase()
+                )}
+              </div>
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFile}
+                  disabled={avatarUploading}
+                  id="avatarFile"
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="avatarFile" className="btn-ghost" style={{ display: 'inline-block', cursor: 'pointer' }}>
+                  {avatarUploading ? 'Uploading…' : 'Upload image'}
+                </label>
+                {settingsForm.avatar_url && (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    style={{ marginLeft: 8 }}
+                    onClick={() => setSettingsForm((f) => ({ ...f, avatar_url: '' }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+            {avatarError && <div className="error-text">{avatarError}</div>}
+          </div>
+
           <div className="field">
             <label>Bio</label>
             <textarea
@@ -277,6 +372,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       {modalGame !== undefined && (
         <GameModal
           game={modalGame}
+          currency={currency}
           onClose={() => setModalGame(undefined)}
           onSave={handleSave}
           onDelete={handleDelete}
