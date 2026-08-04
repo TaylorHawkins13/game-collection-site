@@ -8,6 +8,7 @@ import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
+import { getPlatformColor } from '@/lib/platformColors';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -413,6 +414,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 key={platform}
                 type="button"
                 className={`system-tile${fPlat === platform ? ' active' : ''}`}
+                style={{ '--tile-color': getPlatformColor(platform) }}
                 onClick={() => jumpToSystem(platform)}
               >
                 <span className="sys-name">{platform}</span>

@@ -236,18 +236,21 @@ button:disabled {
 .system-tile {
   background: var(--card);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--tile-color, var(--accent));
   border-radius: var(--radius);
-  padding: 14px 12px;
+  padding: 14px 12px 14px 14px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
 .system-tile:hover {
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 14%, var(--card));
+  transform: translateY(-1px);
 }
 .system-tile.active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+  border-color: var(--tile-color, var(--accent));
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 22%, var(--card));
+  box-shadow: 0 0 0 1px var(--tile-color, var(--accent)) inset;
 }
 .system-tile .sys-name {
   font-size: 14px;
