@@ -24,13 +24,17 @@ A living list of where this could go next. Nothing here is committed or schedule
 
 - **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
 - **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
+- **Duplicate/copy an item** — clone an existing item as a starting point instead of filling out every field from scratch (requested — speeds up adding similar items a lot).
+- **Region tags for games** — PAL / NTSC / NTSC-J as a field on games.
 
 ## Later (bigger, more design work)
 
 - **Activity feed** — a feed of what people you follow have recently added, completed, or rated, instead of only visiting their profile directly.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
-- **Even more collectible types** — board games, action figures/toys, coins, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
+- **Even more collectible types** — board games, action figures/toys, coins, consoles, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
+- **Browse by system on the dashboard** — big clickable buttons/tiles for each platform you own games for, to jump straight to that slice of your collection instead of scrolling/filtering.
+- **Profile showcase** — pin a handful of favorite items (with your own photos) to the top of your public profile instead of only the full shelf grid.
 - **Price tracking integration** — pull current market value automatically for games/comics from a pricing API, rather than only manually-entered purchase price.
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
 
