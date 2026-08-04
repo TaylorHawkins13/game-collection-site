@@ -35,7 +35,7 @@ const EMPTY = {
   player_name: '',
 };
 
-export default function GameModal({ game, currency, onClose, onSave, onDelete }) {
+export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -51,35 +51,40 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
   }, [form.cover]);
 
   useEffect(() => {
-    if (game) {
+    // Editing an existing item, or starting a new one pre-filled as a
+    // copy of an existing item (duplicateOf), both prefill the form the
+    // same way — the difference is just that duplicateOf has no id, so
+    // it stays in "Add Item" mode (no Delete button, saves as a new row).
+    const source = game || duplicateOf;
+    if (source) {
       setForm({
-        item_type: game.item_type || 'game',
-        title: game.title || '',
-        platforms: game.platforms || [],
-        genre: game.genre || '',
-        barcode: game.barcode || '',
-        tags: game.tags || [],
-        cover: game.cover || '',
-        ownership: game.ownership || 'owned',
-        condition: game.condition || '',
-        price: game.price ?? '',
-        purchase_date: game.purchase_date || '',
-        play_status: game.play_status || 'backlog',
-        rating: game.rating || 0,
-        notes: game.notes || '',
-        series: game.series || '',
-        issue_number: game.issue_number || '',
-        publisher: game.publisher || '',
-        writer: game.writer || '',
-        artist: game.artist || '',
-        grade: game.grade || '',
-        is_variant: game.is_variant || false,
-        variant_notes: game.variant_notes || '',
-        format: game.format || '',
-        edition: game.edition || '',
-        card_set: game.card_set || '',
-        card_number: game.card_number || '',
-        player_name: game.player_name || '',
+        item_type: source.item_type || 'game',
+        title: source.title || '',
+        platforms: source.platforms || [],
+        genre: source.genre || '',
+        barcode: source.barcode || '',
+        tags: source.tags || [],
+        cover: source.cover || '',
+        ownership: source.ownership || 'owned',
+        condition: source.condition || '',
+        price: source.price ?? '',
+        purchase_date: source.purchase_date || '',
+        play_status: source.play_status || 'backlog',
+        rating: source.rating || 0,
+        notes: source.notes || '',
+        series: source.series || '',
+        issue_number: source.issue_number || '',
+        publisher: source.publisher || '',
+        writer: source.writer || '',
+        artist: source.artist || '',
+        grade: source.grade || '',
+        is_variant: source.is_variant || false,
+        variant_notes: source.variant_notes || '',
+        format: source.format || '',
+        edition: source.edition || '',
+        card_set: source.card_set || '',
+        card_number: source.card_number || '',
+        player_name: source.player_name || '',
       });
     } else {
       setForm(EMPTY);
@@ -88,7 +93,7 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     setSearchHint('');
     setSaveError('');
     setBarcodeHint('');
-  }, [game]);
+  }, [game, duplicateOf]);
 
   function set(field, val) {
     setForm((f) => ({ ...f, [field]: val }));
@@ -269,7 +274,11 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
       <div className="modal">
         <h2>{game ? 'Edit Item' : 'Add Item'}</h2>
         <div className="sub">
-          {isGame ? 'Fill in the details, or search to auto-fill cover art & info.' : 'Fill in the details.'}
+          {duplicateOf
+            ? 'Pre-filled as a copy — adjust what\'s different, then save.'
+            : isGame
+            ? 'Fill in the details, or search to auto-fill cover art & info.'
+            : 'Fill in the details.'}
         </div>
 
         <div className="field">
@@ -616,9 +625,14 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
 
         <div className="modal-actions">
           {game ? (
-            <button className="btn-danger" type="button" onClick={() => onDelete(game.id)}>
-              Delete
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-danger" type="button" onClick={() => onDelete(game.id)}>
+                Delete
+              </button>
+              <button className="btn-ghost" type="button" onClick={() => onDuplicate(form)}>
+                Duplicate
+              </button>
+            </div>
           ) : (
             <div />
           )}

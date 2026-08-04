@@ -19,6 +19,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Home page redesign** — split hero with a card showcase, alternating value-prop rows built from the app's real trophy/leaderboard styling instead of generic template blocks.
 - **Switched game auto-fill from RAWG to IGDB** — RAWG had become unreliable (widely reported as unmaintained, frequent downtime). Auto-fill now runs through IGDB via a server-side route that keeps the Twitch client secret private.
 - **Barcode scanning via phone camera** — a "Scan" button next to the Barcode/UPC field opens the camera, reads the barcode, and looks it up to auto-fill title/cover (and author/artist/publisher where available): Open Library for books, a general UPC database for everything else. Works on Safari/iOS as well as Android/desktop. Coverage isn't universal — not every barcode is in either database, especially for older or niche items — and the free UPC lookup is capped at 100 lookups/day site-wide.
+- **Duplicate/copy an item** — a "Duplicate" button when editing an item opens a new Add form pre-filled with everything except the barcode, so adding a similar item (another card from the same set, another platform's copy of a game) doesn't mean retyping every field.
 
 ## Bugs (reported, not yet fixed)
 
@@ -30,14 +31,13 @@ Priority order — top is worth fixing soonest.
 
 ## Next (small, self-contained additions) — in priority order
 
-1. **Duplicate/copy an item** — clone an existing item as a starting point instead of filling out every field from scratch. Directly answers the "adding takes too long" feedback.
-2. **Browse by system on the dashboard** — big clickable platform tiles to jump straight to that slice of your collection, instead of scrolling/filtering. The other big "better UI" ask.
-3. **Region tags for games** — PAL / NTSC / NTSC-J as a field on games.
-4. **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
-5. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
-6. **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), and Box (box + game, no manual) as their own field, separate from general condition.
-7. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
-8. **Clickable followers/following lists** — tap the follower/following counts on a profile to see the actual list of who's in your (or someone else's) community, instead of just a number.
+1. **Browse by system on the dashboard** — big clickable platform tiles to jump straight to that slice of your collection, instead of scrolling/filtering. The other big "better UI" ask.
+2. **Region tags for games** — PAL / NTSC / NTSC-J as a field on games.
+3. **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
+4. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
+5. **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), and Box (box + game, no manual) as their own field, separate from general condition.
+6. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
+7. **Clickable followers/following lists** — tap the follower/following counts on a profile to see the actual list of who's in your (or someone else's) community, instead of just a number.
 
 ## Later (bigger, more design work)
 

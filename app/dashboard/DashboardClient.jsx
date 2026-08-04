@@ -16,6 +16,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const searchParams = useSearchParams();
   const [games, setGames] = useState(initialGames);
   const [modalGame, setModalGame] = useState(undefined); // undefined = closed, null = add, object = edit
+  const [duplicateOf, setDuplicateOf] = useState(undefined); // prefill data when adding a copy of an existing item
   const [search, setSearch] = useState('');
   const [fOwn, setFOwn] = useState('');
   const [fPlat, setFPlat] = useState('');
@@ -134,6 +135,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => gs.map((g) => (g.id === data.id ? data : g)));
         setModalGame(undefined);
+        setDuplicateOf(undefined);
         supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
           announceTrophies(newTrophies);
         });
@@ -164,6 +166,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       setGames((gs) => gs.filter((g) => g.id !== id));
       setModalGame(undefined);
     }
+  }
+
+  // Opens a fresh Add Item form pre-filled from an existing item, so
+  // similar items (another card from the same set, another platform's
+  // copy of a game, etc.) don't need every field typed out again.
+  function handleDuplicate(sourceData) {
+    const { id, created_at, user_id, ...rest } = sourceData;
+    setDuplicateOf({
+      ...rest,
+      title: rest.title ? `${rest.title} (copy)` : rest.title,
+      barcode: '', // usually item-specific, safer left blank than silently duplicated
+    });
+    setModalGame(null);
   }
 
   async function handleAvatarFile(e) {
@@ -408,10 +423,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       {modalGame !== undefined && (
         <GameModal
           game={modalGame}
+          duplicateOf={duplicateOf}
           currency={currency}
-          onClose={() => setModalGame(undefined)}
+          onClose={() => {
+            setModalGame(undefined);
+            setDuplicateOf(undefined);
+          }}
           onSave={handleSave}
           onDelete={handleDelete}
+          onDuplicate={handleDuplicate}
         />
       )}
     </main>
