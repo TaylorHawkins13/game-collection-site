@@ -334,6 +334,33 @@ button:disabled {
   flex: 1;
   min-width: 180px;
 }
+.toolbar .btn-ghost.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filters-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-top: -10px;
+  margin-bottom: 20px;
+}
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.filters-grid select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
 
 .grid {
   display: grid;
@@ -1341,6 +1368,12 @@ button:disabled {
   .toolbar select {
     width: 100%;
     min-width: 0;
+  }
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+  .filters-grid select {
+    min-height: 44px;
   }
 
   /* On phones, a wrapping grid of system tiles ate several rows of

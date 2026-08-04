@@ -32,6 +32,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fCopy, setFCopy] = useState('');
   const [fComplete, setFComplete] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
+  const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   // Arriving from the profile page's "Edit profile" link (?settings=1) opens
@@ -120,6 +121,17 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   function jumpToSystem(platform) {
     setFPlat((current) => (current === platform ? '' : platform));
     document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fPlay].filter(Boolean).length;
+
+  function clearFilters() {
+    setFType('');
+    setFOwn('');
+    setFCopy('');
+    setFComplete('');
+    setFPlat('');
+    setFPlay('');
   }
 
   // Autocomplete suggestions pulled from your own past entries — as you
@@ -593,45 +605,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <select value={fType} onChange={(e) => setFType(e.target.value)}>
-              <option value="">All types</option>
-              <option value="game">Video Games</option>
-              <option value="comic">Comics</option>
-              <option value="trading_card">Trading Cards</option>
-              <option value="vinyl">Vinyl Records</option>
-              <option value="book">Books</option>
-              <option value="dvd">DVDs / Blu-rays</option>
-              <option value="cd">CDs</option>
-            </select>
-            <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
-              <option value="">All statuses</option>
-              <option value="owned">Owned</option>
-              <option value="wishlist">Wishlist</option>
-              <option value="sold">Sold</option>
-            </select>
-            <select value={fCopy} onChange={(e) => setFCopy(e.target.value)}>
-              <option value="">Physical + digital</option>
-              <option value="physical">Physical only</option>
-              <option value="digital">Digital only</option>
-            </select>
-            <select value={fComplete} onChange={(e) => setFComplete(e.target.value)}>
-              <option value="">All completeness</option>
-              <option value="complete">100% complete only</option>
-              <option value="incomplete">Not yet 100%</option>
-            </select>
-            <select value={fPlat} onChange={(e) => setFPlat(e.target.value)}>
-              <option value="">All platforms</option>
-              {platformOptions.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-            <select value={fPlay} onChange={(e) => setFPlay(e.target.value)}>
-              <option value="">All play status</option>
-              <option value="backlog">Backlog</option>
-              <option value="playing">Playing</option>
-              <option value="completed">Completed</option>
-              <option value="abandoned">Abandoned</option>
-            </select>
+            <button
+              className={`btn-ghost${activeFilterCount > 0 ? ' active' : ''}`}
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+            >
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </button>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="titleAsc">Title A–Z</option>
               <option value="titleDesc">Title Z–A</option>
@@ -640,6 +620,57 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <option value="valueDesc">Highest Value</option>
             </select>
           </div>
+
+          {showFilters && (
+            <div className="filters-panel">
+              <div className="filters-grid">
+                <select value={fType} onChange={(e) => setFType(e.target.value)}>
+                  <option value="">All types</option>
+                  <option value="game">Video Games</option>
+                  <option value="comic">Comics</option>
+                  <option value="trading_card">Trading Cards</option>
+                  <option value="vinyl">Vinyl Records</option>
+                  <option value="book">Books</option>
+                  <option value="dvd">DVDs / Blu-rays</option>
+                  <option value="cd">CDs</option>
+                </select>
+                <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
+                  <option value="">All statuses</option>
+                  <option value="owned">Owned</option>
+                  <option value="wishlist">Wishlist</option>
+                  <option value="sold">Sold</option>
+                </select>
+                <select value={fCopy} onChange={(e) => setFCopy(e.target.value)}>
+                  <option value="">Physical + digital</option>
+                  <option value="physical">Physical only</option>
+                  <option value="digital">Digital only</option>
+                </select>
+                <select value={fComplete} onChange={(e) => setFComplete(e.target.value)}>
+                  <option value="">All completeness</option>
+                  <option value="complete">100% complete only</option>
+                  <option value="incomplete">Not yet 100%</option>
+                </select>
+                <select value={fPlat} onChange={(e) => setFPlat(e.target.value)}>
+                  <option value="">All platforms</option>
+                  {platformOptions.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+                <select value={fPlay} onChange={(e) => setFPlay(e.target.value)}>
+                  <option value="">All play status</option>
+                  <option value="backlog">Backlog</option>
+                  <option value="playing">Playing</option>
+                  <option value="completed">Completed</option>
+                  <option value="abandoned">Abandoned</option>
+                </select>
+              </div>
+              {activeFilterCount > 0 && (
+                <button className="btn-ghost" type="button" onClick={clearFilters} style={{ marginTop: 12 }}>
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          )}
 
           {filtered.length === 0 ? (
             <div className="empty-state">
