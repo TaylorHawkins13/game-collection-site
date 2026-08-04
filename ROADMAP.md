@@ -51,6 +51,7 @@ Priority order — top is worth fixing soonest.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
 - **Price tracking integration** — pull current market value automatically for games/comics from a pricing API, rather than only manually-entered purchase price.
+- **Console account integration** — connect a PlayStation, Xbox, or Steam account to import your owned digital games automatically instead of adding them one by one. Difficulty varies a lot by platform: Steam is the easy one (a free, well-documented public API — just a Steam API key and the user's SteamID64); Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API for this, so PSN integrations rely on unofficial/reverse-engineered access that can break or fall foul of their terms of service. Steam-only would be a reasonable first step if this gets picked up.
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)
