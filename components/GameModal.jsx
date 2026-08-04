@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
+import BarcodeScanner from './BarcodeScanner';
 import { currencySymbol } from '@/lib/currency';
 
 const EMPTY = {
@@ -41,6 +42,7 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
   const [searchResults, setSearchResults] = useState([]);
   const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (game) {
@@ -423,9 +425,29 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
           </div>
           <div className="field">
             <label>Barcode / UPC</label>
-            <input type="text" value={form.barcode} onChange={(e) => set('barcode', e.target.value)} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                value={form.barcode}
+                onChange={(e) => set('barcode', e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button type="button" className="btn-ghost" onClick={() => setScanning(true)}>
+                Scan
+              </button>
+            </div>
           </div>
         </div>
+
+        {scanning && (
+          <BarcodeScanner
+            onDetected={(code) => {
+              set('barcode', code);
+              setScanning(false);
+            }}
+            onClose={() => setScanning(false)}
+          />
+        )}
 
         <div className="field">
           <label>Tags</label>
