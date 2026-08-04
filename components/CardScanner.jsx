@@ -13,15 +13,66 @@ import { useEffect, useRef, useState } from 'react';
 // tesseract.js is dynamically imported only when a scan actually runs,
 // so it doesn't add to everyone's initial page load.
 
+// Grayscale + stretch contrast to the actual brightness range in the
+// photo. Card art is often busy/colorful/glossy, which generic OCR
+// (trained on plain documents) struggles with far more than it does
+// with flat high-contrast text — this alone tends to matter more than
+// resolution.
+function preprocessForOcr(canvas) {
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const d = imageData.data;
+
+  const gray = new Uint8ClampedArray(width * height);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    gray[p] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+  }
+
+  let min = 255;
+  let max = 0;
+  for (let p = 0; p < gray.length; p++) {
+    if (gray[p] < min) min = gray[p];
+    if (gray[p] > max) max = gray[p];
+  }
+  const range = Math.max(max - min, 1);
+
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const v = Math.round(((gray[p] - min) / range) * 255);
+    d[i] = v;
+    d[i + 1] = v;
+    d[i + 2] = v;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+const NOISE_WORDS = new Set(['hp', 'lv', 'no', 'stage', 'basic', 'ex', 'gx', 'vmax']);
+
 function guessCardName(rawText) {
   const lines = (rawText || '')
     .split('\n')
-    .map((l) => l.trim())
+    .map((l) => l.replace(/[^\w\s'’,.\-]/g, '').trim())
     .filter(Boolean);
-  // The name is almost always the first line with real letters in it —
-  // stats, HP, and card numbers are mostly digits/symbols.
-  const candidate = lines.find((l) => /[A-Za-z]{3,}/.test(l) && !/^\d+\s*\/\s*\d+$/.test(l));
-  return (candidate || lines[0] || '').replace(/[^\w\s'’,.\-]/g, '').trim();
+
+  // Score each line: real card names are a handful of words, mostly
+  // letters, not a single short stat/keyword and not a card number
+  // fraction. Prefer the best-looking line in the first several found,
+  // rather than blindly taking whichever line OCR happened to read first
+  // (which is often noise picked out of the card art/border).
+  const candidates = lines
+    .slice(0, 8)
+    .map((line, index) => {
+      const letters = (line.match(/[A-Za-z]/g) || []).length;
+      const words = line.split(/\s+/).filter(Boolean);
+      const isNoise = words.length === 1 && NOISE_WORDS.has(words[0].toLowerCase());
+      const isFraction = /^\d+\s*\/\s*\d+$/.test(line);
+      const score = letters - index * 2 - (isNoise || isFraction || letters < 3 ? 100 : 0);
+      return { line, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return candidates[0]?.line || lines[0] || '';
 }
 
 export default function CardScanner({ onCaptured, onClose }) {
@@ -90,9 +141,15 @@ export default function CardScanner({ onCaptured, onClose }) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
+      preprocessForOcr(canvas);
 
-      const { createWorker } = await import('tesseract.js');
+      const { createWorker, PSM } = await import('tesseract.js');
       const worker = await createWorker('eng');
+      // Card layouts are scattered text (name, HP, abilities, flavor
+      // text) over art, not one coherent paragraph — SPARSE_TEXT tells
+      // Tesseract to look for isolated text blocks anywhere in the
+      // image instead of assuming a normal page layout.
+      await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
       const { data } = await worker.recognize(canvas);
       await worker.terminate();
 
