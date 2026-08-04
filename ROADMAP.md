@@ -8,6 +8,7 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 ## Next (small, self-contained additions)
 
+- **Half-star ratings** — let ratings go in 0.5 steps (e.g. 3.5, 4.5) instead of only whole stars, for finer-grained rating. Touches the rating input UI, the star display on cards/profiles, and anywhere ratings feed into logic (recommendations, "Play next" weighting, trophies) — those would need to handle half-values instead of assuming an integer 0-5.
 - **Trophy leaderboard** — a new column on `/leaderboard` ranking collectors by Shelf Life trophies earned (or platinum count), alongside the existing most-owned/biggest-collection/trending ones.
 - **Trophies show up in the activity feed** — a fourth event type (alongside added/completed/rated) so followers see when someone lands a Shelf Life milestone, not just item-level activity.
 
