@@ -12,7 +12,6 @@ Nothing queued up right now — everything from the last round shipped. Pick som
 
 ## Later (bigger, more design work)
 
-- **Profile showcase** — pin a handful of favorite items (with your own photos) to the top of your public profile instead of only the full shelf grid.
 - **Even more collectible types** — board games, action figures/toys, coins, consoles, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
 - **Activity feed** — a feed of what people you follow have recently added, completed, or rated, instead of only visiting their profile directly.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.

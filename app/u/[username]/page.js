@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
 import ProfileTabs from './ProfileTabs';
 import ShareProfileButton from '@/components/ShareProfileButton';
+import GameCard from '@/components/GameCard';
 
 export async function generateMetadata({ params }) {
   const { username } = params;
@@ -107,6 +108,9 @@ export default async function ProfilePage({ params }) {
 
   const owned = (games || []).filter((g) => g.ownership === 'owned').length;
   const completed = (games || []).filter((g) => g.play_status === 'completed').length;
+  const showcaseGames = (games || [])
+    .filter((g) => g.showcase_order != null)
+    .sort((a, b) => a.showcase_order - b.showcase_order);
 
   return (
     <main className="container">
@@ -166,6 +170,17 @@ export default async function ProfilePage({ params }) {
               <div className="label">Completed</div>
             </div>
           </div>
+
+          {showcaseGames.length > 0 && (
+            <div className="profile-showcase">
+              <h3 className="profile-showcase-heading">⭐ Showcase</h3>
+              <div className="grid">
+                {showcaseGames.map((g) => (
+                  <GameCard key={g.id} game={g} />
+                ))}
+              </div>
+            </div>
+          )}
 
           <ProfileTabs
             games={games || []}

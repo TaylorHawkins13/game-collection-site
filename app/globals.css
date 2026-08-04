@@ -555,6 +555,10 @@ button:disabled {
   background: #00b89422;
   color: #00d9ac;
 }
+.badge.showcase-badge {
+  background: #ffd15c22;
+  color: #ffd15c;
+}
 .stars {
   color: var(--warn);
   font-size: 12px;
@@ -1071,6 +1075,76 @@ button:disabled {
 }
 
 /* ---------- Profile tabs ---------- */
+.profile-showcase {
+  margin-bottom: 32px;
+}
+.profile-showcase-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 10px;
+}
+
+.showcase-selected {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--bg);
+}
+.showcase-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.showcase-row:last-child {
+  border-bottom: none;
+}
+.showcase-row-title {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.showcase-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.showcase-row-actions .btn-icon {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.showcase-picker {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+.showcase-picker-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.showcase-picker-row:last-child {
+  border-bottom: none;
+}
+.showcase-picker-row:hover {
+  background: var(--card-hover);
+}
+
 .profile-tabs {
   display: flex;
   gap: 4px;

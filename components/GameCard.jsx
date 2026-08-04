@@ -129,7 +129,7 @@ export default function GameCard({ game, onClick }) {
             ))}
           </div>
         </div>
-        {(((isComic || isCard) && game.is_variant) || game.copy_type || game.fully_completed || (game.tags || []).length > 0) && (
+        {(((isComic || isCard) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
           <div className="badge-row">
             {(isComic || isCard) && game.is_variant && (
               <span className="badge tag">{isCard ? 'Parallel' : 'Variant'}</span>
@@ -139,6 +139,9 @@ export default function GameCard({ game, onClick }) {
             )}
             {game.fully_completed && (
               <span className="badge tag complete-100">100% Complete</span>
+            )}
+            {game.showcase_order != null && (
+              <span className="badge tag showcase-badge">⭐ Showcased</span>
             )}
             {(game.tags || []).map((t) => (
               <span className="badge tag" key={t}>{t}</span>

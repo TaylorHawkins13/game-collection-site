@@ -108,6 +108,8 @@ create table if not exists games (
   -- applies to any item type: fully completed (all extras/achievements
   -- done, full series/set collected, etc.) beyond play_status/condition
   fully_completed boolean not null default false,
+  -- null = not on the public profile showcase; 1..6 = display position
+  showcase_order integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
