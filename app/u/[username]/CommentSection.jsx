@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
 import { announceTrophies } from '@/lib/trophyToast';
 import { announceToast } from '@/lib/toast';
+import { notifyTrophies } from '@/lib/notifyTrophies';
 
 export default function CommentSection({ profileId, initialComments, canComment }) {
   const [comments, setComments] = useState(initialComments);
@@ -30,8 +31,17 @@ export default function CommentSection({ profileId, initialComments, canComment 
     if (!error && data) {
       setComments((c) => [data, ...c]);
       setBody('');
+      if (profileId !== user.id) {
+        supabase
+          .from('notifications')
+          .insert({ user_id: profileId, actor_id: user.id, type: 'comment', comment_id: data.id })
+          .then(({ error: notifyError }) => {
+            if (notifyError) console.error('comment notification insert failed', notifyError);
+          });
+      }
       supabase.rpc('check_and_award_achievements', { p_user_id: user.id }).then(({ data: newTrophies }) => {
         announceTrophies(newTrophies);
+        notifyTrophies(supabase, user.id, newTrophies);
       });
     } else {
       announceToast("Couldn't post that comment — try again in a moment.");

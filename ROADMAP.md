@@ -6,12 +6,6 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 1. **Game search/auto-fill doesn't work** — expected right now, not a bug: IGDB auto-fill needs Twitch API credentials that are still blocked on your end by Twitch's 2FA account bug. Manual entry (or the barcode scanner) works in the meantime.
 
-## For Xbox/PlayStation trophy & achievement hunters
-
-This is about *your real in-game trophies/achievements on Xbox and PlayStation* — separate from Shelf Life's own collection-milestone badges (the bronze/silver/gold/platinum system already built, which is about collecting, not playing).
-
-- **Filter/sort your collection by completion %** — find what's closest to platinum in your backlog, or sort your whole library by how close to 100% each game is.
-
 ## Later (bigger, more design work)
 
 - **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
@@ -20,9 +14,7 @@ This is about *your real in-game trophies/achievements on Xbox and PlayStation* 
 - **Even more collectible types** — board games, action figures/toys, coins, consoles, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
-- **Custom lists within your shelf** — curated sub-lists beyond the 5-item showcase (e.g. "Favorites," "For sale," "Currently replaying") for organizing a big collection into more than one flat grid.
-- **In-app notifications** — a small bell/inbox for follows, comments, and trophies you can check later, instead of only ever catching them as an in-the-moment toast.
-- **Notification digest emails** — an opt-in weekly summary of your stats or your followed collectors' activity, building on the activity feed.
+- **Notification digest emails** — an opt-in weekly summary of your stats or your followed collectors' activity, building on the activity feed and the in-app notification bell.
 - **Live currency conversion** — currency is display-only right now (no conversion between them); real conversion needs a rates API and a decision on what the "true" underlying value is when items were priced in different currencies.
 - **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority. (This is about connecting the account itself — see the section above for trophy/achievement-completion tracking specifically.)
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.

@@ -263,7 +263,17 @@ insert into achievement_defs (key, name, description, tier, sort_order) values
   ('variants-10',     'Variant Hunter',        'Own 10 variant comic covers.',                    'gold',    15),
   ('followers-25',    'Community Favorite',    'Gain 25 followers.',                              'gold',    16),
   ('comics-50',       'Longbox Legend',        'Own 50 comics.',                                  'gold',    17),
-  ('platinum-shelf',  'Platinum Shelf',        'Earn every other trophy.',                        'platinum', 18)
+  ('platinum-shelf',  'Platinum Shelf',        'Earn every other trophy.',                        'platinum', 18),
+  ('wishlist-10',           'Window Shopping',    'Add 10 items to your wishlist.',                    'bronze', 19),
+  ('types-5',                'Renaissance Collector', 'Own items across 5 different item types.',       'silver', 20),
+  ('cards-25',               'Card Shark',          'Own 25 trading cards.',                             'silver', 21),
+  ('vinyl-10',               'Crate Digger',        'Own 10 vinyl records.',                             'silver', 22),
+  ('showcase-full',          'Curator',             'Fill all 5 showcase slots.',                        'silver', 23),
+  ('following-10',           'Social Butterfly',    'Follow 10 collectors.',                             'silver', 24),
+  ('comments-received-10',   'Popular Shelf',       'Get 10 comments on your profile.',                  'silver', 25),
+  ('platforms-10',           'Platform Hopper',     'Own games across 10 different platforms.',          'gold',   26),
+  ('items-500',              'Half a Thousand',     'Own 500 items.',                                    'gold',   27),
+  ('first-platinum',         'First Platinum',      'Mark your first game fully Platinum''d.',           'gold',   28)
 on conflict (key) do nothing;
 
 create table if not exists user_achievements (
@@ -306,6 +316,13 @@ declare
   v_comments int;
   v_followers int;
   v_following int;
+  v_wishlist int;
+  v_types int;
+  v_cards int;
+  v_vinyl int;
+  v_showcase int;
+  v_comments_received int;
+  v_real_platinums int;
   v_earned_count int;
   v_total_defs int;
   v_new_keys text[];
@@ -327,28 +344,45 @@ begin
   select count(*) into v_comments from comments where author_id = p_user_id;
   select count(*) into v_followers from follows where following_id = p_user_id;
   select count(*) into v_following from follows where follower_id = p_user_id;
+  select count(*) into v_wishlist from games where user_id = p_user_id and ownership = 'wishlist';
+  select count(distinct item_type) into v_types from games where user_id = p_user_id;
+  select count(*) into v_cards from games where user_id = p_user_id and item_type = 'trading_card';
+  select count(*) into v_vinyl from games where user_id = p_user_id and item_type = 'vinyl';
+  select count(*) into v_showcase from games where user_id = p_user_id and showcase_order is not null;
+  select count(*) into v_comments_received from comments where profile_id = p_user_id;
+  select count(*) into v_real_platinums from games where user_id = p_user_id and trophy_platinum = true;
 
   with ins as (
     insert into user_achievements (user_id, key)
     select p_user_id, t.k
     from (values
-      ('first-item',     v_total_items  >= 1),
-      ('first-comment',  v_comments     >= 1),
-      ('first-follow',   v_following    >= 1),
-      ('first-follower', v_followers    >= 1),
-      ('first-rating',   v_rated        >= 1),
-      ('items-10',       v_total_items  >= 10),
-      ('comics-10',      v_total_comics >= 10),
-      ('platforms-5',    v_platforms    >= 5),
-      ('genres-5',       v_genres       >= 5),
-      ('ratings-10',     v_rated        >= 10),
-      ('comments-10',    v_comments     >= 10),
-      ('followers-5',    v_followers    >= 5),
-      ('items-100',      v_total_items  >= 100),
-      ('completed-25',   v_completed    >= 25),
-      ('variants-10',    v_variants     >= 10),
-      ('followers-25',   v_followers    >= 25),
-      ('comics-50',      v_total_comics >= 50)
+      ('first-item',            v_total_items  >= 1),
+      ('first-comment',         v_comments     >= 1),
+      ('first-follow',          v_following    >= 1),
+      ('first-follower',        v_followers    >= 1),
+      ('first-rating',          v_rated        >= 1),
+      ('items-10',               v_total_items  >= 10),
+      ('comics-10',              v_total_comics >= 10),
+      ('platforms-5',            v_platforms    >= 5),
+      ('genres-5',               v_genres       >= 5),
+      ('ratings-10',             v_rated        >= 10),
+      ('comments-10',            v_comments     >= 10),
+      ('followers-5',            v_followers    >= 5),
+      ('items-100',              v_total_items  >= 100),
+      ('completed-25',           v_completed    >= 25),
+      ('variants-10',            v_variants     >= 10),
+      ('followers-25',           v_followers    >= 25),
+      ('comics-50',              v_total_comics >= 50),
+      ('wishlist-10',            v_wishlist           >= 10),
+      ('types-5',                v_types              >= 5),
+      ('cards-25',               v_cards              >= 25),
+      ('vinyl-10',               v_vinyl              >= 10),
+      ('showcase-full',          v_showcase           >= 5),
+      ('following-10',           v_following          >= 10),
+      ('comments-received-10',   v_comments_received  >= 10),
+      ('platforms-10',           v_platforms          >= 10),
+      ('items-500',              v_total_items        >= 500),
+      ('first-platinum',         v_real_platinums     >= 1)
     ) as t(k, cond)
     where t.cond
     on conflict do nothing
@@ -424,6 +458,86 @@ create policy "Owners can insert their own value snapshots"
   with check (user_id = auth.uid());
 
 -- ------------------------------------------------------------
+-- custom_lists / custom_list_items: curated sub-lists within a
+-- collection (e.g. "Favorites," "For sale," "Currently replaying")
+-- beyond the 5-item showcase. Same visibility rule as everything else —
+-- readable by the owner, or by anyone if the owning profile is public.
+-- ------------------------------------------------------------
+create table if not exists custom_lists (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 60),
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists custom_lists_user_id_idx on custom_lists (user_id, sort_order);
+
+alter table custom_lists enable row level security;
+
+create policy "Lists readable if owner or profile is public"
+  on custom_lists for select
+  using (
+    user_id = auth.uid()
+    or exists (select 1 from profiles p where p.id = custom_lists.user_id and p.is_public = true)
+  );
+
+create policy "Owners can create their own lists"
+  on custom_lists for insert
+  with check (user_id = auth.uid());
+
+create policy "Owners can update their own lists"
+  on custom_lists for update
+  using (user_id = auth.uid());
+
+create policy "Owners can delete their own lists"
+  on custom_lists for delete
+  using (user_id = auth.uid());
+
+create table if not exists custom_list_items (
+  list_id uuid not null references custom_lists(id) on delete cascade,
+  game_id uuid not null references games(id) on delete cascade,
+  sort_order int not null default 0,
+  added_at timestamptz not null default now(),
+  primary key (list_id, game_id)
+);
+
+create index if not exists custom_list_items_list_id_idx on custom_list_items (list_id, sort_order);
+
+alter table custom_list_items enable row level security;
+
+create policy "List items readable if list is readable"
+  on custom_list_items for select
+  using (
+    exists (
+      select 1 from custom_lists l
+      where l.id = custom_list_items.list_id
+      and (
+        l.user_id = auth.uid()
+        or exists (select 1 from profiles p where p.id = l.user_id and p.is_public = true)
+      )
+    )
+  );
+
+create policy "Owners can add items to their own lists"
+  on custom_list_items for insert
+  with check (
+    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = auth.uid())
+  );
+
+create policy "Owners can reorder items in their own lists"
+  on custom_list_items for update
+  using (
+    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = auth.uid())
+  );
+
+create policy "Owners can remove items from their own lists"
+  on custom_list_items for delete
+  using (
+    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = auth.uid())
+  );
+
+-- ------------------------------------------------------------
 -- activity_events: a log of when someone adds, completes, or rates an
 -- item, shown to the people who follow them on /feed. Same visibility
 -- rule as games/comments — public profile, or the actor themself.
@@ -454,6 +568,48 @@ create policy "Activity readable if profile is public or owner"
 create policy "Owners can insert their own activity"
   on activity_events for insert
   with check (user_id = auth.uid());
+
+-- ------------------------------------------------------------
+-- notifications: a bell/inbox for follows, comments, and trophies, so
+-- those moments don't only exist as an in-the-moment toast. actor_id is
+-- who triggered it (null for trophy notifications, since those are about
+-- you and nobody else). Recipients only ever see their own inbox; only
+-- the actor (or, for trophies, the recipient themself) can create a row.
+-- ------------------------------------------------------------
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  actor_id uuid references profiles(id) on delete cascade,
+  type text not null check (type in ('follow', 'comment', 'trophy')),
+  comment_id uuid references comments(id) on delete cascade,
+  trophy_key text references achievement_defs(key) on delete cascade,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_user_id_idx on notifications (user_id, created_at desc);
+
+alter table notifications enable row level security;
+
+create policy "Recipients can read their own notifications"
+  on notifications for select
+  using (user_id = auth.uid());
+
+create policy "Actors can notify others, or notify themselves about trophies"
+  on notifications for insert
+  with check (
+    actor_id = auth.uid()
+    or (type = 'trophy' and actor_id is null and user_id = auth.uid())
+  );
+
+create policy "Recipients can mark their own notifications read"
+  on notifications for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Recipients can delete their own notifications"
+  on notifications for delete
+  using (user_id = auth.uid());
 
 -- ------------------------------------------------------------
 -- recommend_games: "Recommended for you" on the dashboard. Finds other

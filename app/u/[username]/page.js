@@ -5,6 +5,7 @@ import FollowButton from './FollowButton';
 import ProfileTabs from './ProfileTabs';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import ShowcaseButton from '@/components/ShowcaseButton';
+import CustomListsButton from '@/components/CustomListsButton';
 import GameCard from '@/components/GameCard';
 
 export async function generateMetadata({ params }) {
@@ -78,6 +79,7 @@ export default async function ProfilePage({ params }) {
     { data: comments },
     { data: achievementDefs },
     { data: earnedAchievements },
+    { data: customLists },
   ] = await Promise.all([
     canView
       ? supabase.from('games').select('*').eq('user_id', profile.id).order('title', { ascending: true })
@@ -94,7 +96,32 @@ export default async function ProfilePage({ params }) {
       : Promise.resolve({ data: [] }),
     supabase.from('achievement_defs').select('*'),
     supabase.from('user_achievements').select('key').eq('user_id', profile.id),
+    canView
+      ? supabase.from('custom_lists').select('*').eq('user_id', profile.id).order('sort_order', { ascending: true })
+      : Promise.resolve({ data: [] }),
   ]);
+
+  // Items per list — looked up from `games` (already fetched above) rather
+  // than a second join query, since the whole collection's already in memory.
+  let listsWithItems = [];
+  if (canView && customLists && customLists.length) {
+    const listIds = customLists.map((l) => l.id);
+    const { data: listItems } = await supabase
+      .from('custom_list_items')
+      .select('list_id, game_id, sort_order')
+      .in('list_id', listIds)
+      .order('sort_order', { ascending: true });
+    const gamesById = new Map((games || []).map((g) => [g.id, g]));
+    const itemsByList = {};
+    (listItems || []).forEach((it) => {
+      const game = gamesById.get(it.game_id);
+      if (!game) return;
+      (itemsByList[it.list_id] ||= []).push(game);
+    });
+    listsWithItems = customLists
+      .map((l) => ({ ...l, items: itemsByList[l.id] || [] }))
+      .filter((l) => l.items.length > 0);
+  }
 
   let alreadyFollowing = false;
   if (viewer && !isOwner) {
@@ -166,6 +193,7 @@ export default async function ProfilePage({ params }) {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <ShareProfileButton username={profile.username} itemCount={owned} />
             <ShowcaseButton userId={profile.id} />
+            <CustomListsButton userId={profile.id} />
             <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Edit profile
             </Link>
@@ -204,6 +232,17 @@ export default async function ProfilePage({ params }) {
               </div>
             </div>
           )}
+
+          {listsWithItems.map((list) => (
+            <div className="profile-list-block" key={list.id}>
+              <h3 className="profile-list-heading">{list.name}</h3>
+              <div className="grid">
+                {list.items.map((g) => (
+                  <GameCard key={g.id} game={g} />
+                ))}
+              </div>
+            </div>
+          ))}
 
           {trackedTrophyGames.length > 0 && (
             <div className="trophy-stats-panel">

@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
   const [profile, setProfile] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
@@ -19,6 +21,7 @@ export default function Navbar() {
       if (!active) return;
       if (!user) {
         setProfile(null);
+        setUserId(null);
         setLoading(false);
         return;
       }
@@ -29,6 +32,7 @@ export default function Navbar() {
         .single();
       if (!active) return;
       setProfile(prof || { username: null });
+      setUserId(user.id);
       setLoading(false);
     }
     load();
@@ -77,6 +81,7 @@ export default function Navbar() {
             {profile.username && (
               <Link href={`/u/${profile.username}`} className="nav-link" onClick={() => setMenuOpen(false)}>My Profile</Link>
             )}
+            <NotificationBell userId={userId} />
             <button className="btn-ghost" onClick={() => { setMenuOpen(false); logout(); }} type="button">Log out</button>
           </>
         )}

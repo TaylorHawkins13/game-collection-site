@@ -16,6 +16,7 @@ import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
+import { notifyTrophies } from '@/lib/notifyTrophies';
 import { getPlatformColor } from '@/lib/platformColors';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
@@ -38,6 +39,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fType, setFType] = useState('');
   const [fCopy, setFCopy] = useState('');
   const [fComplete, setFComplete] = useState('');
+  const [fTrophyPct, setFTrophyPct] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -192,7 +194,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fPlay].filter(Boolean).length;
+  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct].filter(Boolean).length;
 
   function clearFilters() {
     setFType('');
@@ -201,6 +203,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFComplete('');
     setFPlat('');
     setFPlay('');
+    setFTrophyPct('');
+  }
+
+  // Real Xbox/PlayStation completion %, not Shelf Life's own "100% complete"
+  // tag — platinum counts as 100 regardless of what trophy_completion says,
+  // since not everyone bothers typing 100 once they've hit platinum.
+  // Returns null for games that have never had either field touched, so
+  // they can be told apart from a genuine "0%".
+  function trophyPct(g) {
+    if (g.trophy_platinum) return 100;
+    if (g.trophy_completion == null) return null;
+    return Number(g.trophy_completion) || 0;
   }
 
   // Autocomplete suggestions pulled from your own past entries — as you
@@ -274,6 +288,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (fCopy && g.copy_type !== fCopy) return false;
       if (fComplete === 'complete' && !g.fully_completed) return false;
       if (fComplete === 'incomplete' && g.fully_completed) return false;
+      if (fTrophyPct) {
+        const pct = trophyPct(g);
+        if (fTrophyPct === 'untracked' && pct !== null) return false;
+        if (fTrophyPct !== 'untracked' && pct === null) return false;
+        if (fTrophyPct === 'platinum' && !g.trophy_platinum) return false;
+        if (fTrophyPct === '75plus' && !(pct >= 75)) return false;
+        if (fTrophyPct === '50to74' && !(pct >= 50 && pct < 75)) return false;
+        if (fTrophyPct === 'under50' && !(pct < 50)) return false;
+      }
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -286,12 +309,23 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           return (b.rating || 0) - (a.rating || 0);
         case 'valueDesc':
           return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+        case 'completionDesc': {
+          const pctA = trophyPct(a);
+          const pctB = trophyPct(b);
+          // Untracked games sink to the bottom rather than counting as 0%,
+          // so a huge untouched backlog doesn't bury the games you're
+          // actually closest to platinuming.
+          if (pctA === null && pctB === null) return a.title.localeCompare(b.title);
+          if (pctA === null) return 1;
+          if (pctB === null) return -1;
+          return pctB - pctA;
+        }
         default:
           return a.title.localeCompare(b.title);
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, sortBy]);
+  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -349,6 +383,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           newTrophies.map((t) => ({ user_id: userId, event_type: 'trophy', trophy_key: t.key }))
         );
       }
+      notifyTrophies(supabase, userId, newTrophies);
     });
   }
 
@@ -610,38 +645,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Refresh all prices
             </button>
           )}
-          <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
-            Import CSV
-          </button>
-          <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
-            Export CSV
-          </button>
-          {steamId && (
-            <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
-              Import from Steam
-            </button>
-          )}
-          {steamId && (
-            syncingAchievements ? (
-              <>
-                <span className="sub" style={{ margin: 0 }}>
-                  Syncing achievements… {syncProgress.done}/{syncProgress.total}
-                </span>
-                <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
-                  Stop
-                </button>
-              </>
-            ) : (
-              <button
-                className="btn-ghost"
-                onClick={handleSyncAchievements}
-                type="button"
-                disabled={!games.some((g) => g.steam_appid != null)}
-              >
-                Sync achievements from Steam
-              </button>
-            )
-          )}
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
             Profile settings
           </button>
@@ -758,6 +761,44 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Connecting lets you import your Steam library as owned/digital games. Your Steam profile's
               "Game details" privacy setting needs to be Public for the import to see your games.
             </p>
+          </div>
+
+          <div className="field">
+            <label>Collection tools</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
+                Import CSV
+              </button>
+              <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
+                Export CSV
+              </button>
+              {steamId && (
+                <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
+                  Import from Steam
+                </button>
+              )}
+              {steamId && (
+                syncingAchievements ? (
+                  <>
+                    <span className="sub" style={{ margin: 0 }}>
+                      Syncing achievements… {syncProgress.done}/{syncProgress.total}
+                    </span>
+                    <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
+                      Stop
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn-ghost"
+                    onClick={handleSyncAchievements}
+                    type="button"
+                    disabled={!games.some((g) => g.steam_appid != null)}
+                  >
+                    Sync achievements from Steam
+                  </button>
+                )
+              )}
+            </div>
           </div>
 
           {settingsMsg && (
@@ -913,6 +954,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <option value="recent">Recently Added</option>
               <option value="ratingDesc">Highest Rated</option>
               <option value="valueDesc">Highest Value</option>
+              <option value="completionDesc">Highest Trophy Completion %</option>
             </select>
           </div>
 
@@ -957,6 +999,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <option value="playing">Playing</option>
                   <option value="completed">Completed</option>
                   <option value="abandoned">Abandoned</option>
+                </select>
+                <select value={fTrophyPct} onChange={(e) => setFTrophyPct(e.target.value)}>
+                  <option value="">All trophy completion</option>
+                  <option value="platinum">Platinum only</option>
+                  <option value="75plus">75%+ complete</option>
+                  <option value="50to74">50-74% complete</option>
+                  <option value="under50">Under 50% complete</option>
+                  <option value="untracked">Not tracked yet</option>
                 </select>
               </div>
               {activeFilterCount > 0 && (
