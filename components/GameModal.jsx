@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
+import StarRating from './StarRating';
 import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
@@ -87,7 +88,9 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         price: source.price ?? '',
         purchase_date: source.purchase_date || '',
         play_status: source.play_status || 'backlog',
-        rating: source.rating || 0,
+        // Supabase can hand back numeric columns as strings — coerce to a
+        // real number so half-star comparisons (e.g. value === 3.5) work.
+        rating: source.rating != null ? Number(source.rating) : 0,
         notes: source.notes || '',
         series: source.series || '',
         issue_number: source.issue_number || '',
@@ -839,17 +842,10 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             </div>
           )}
           <div className="field">
-            <label>Rating</label>
-            <div className="rating-input">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <span
-                  key={n}
-                  className={n <= form.rating ? 'filled' : ''}
-                  onClick={() => set('rating', n === form.rating ? 0 : n)}
-                >
-                  ★
-                </span>
-              ))}
+            <label>Rating{form.rating > 0 ? ` (${form.rating})` : ''}</label>
+            <StarRating value={form.rating} onChange={(v) => set('rating', v)} interactive size={24} />
+            <div className="sub" style={{ margin: '4px 0 0' }}>
+              Click the left half of a star for a half rating (e.g. 3.5).
             </div>
           </div>
         </div>

@@ -73,7 +73,8 @@ create table if not exists games (
   price numeric,
   purchase_date date,
   play_status text not null default 'backlog' check (play_status in ('backlog','playing','completed','abandoned')),
-  rating int not null default 0 check (rating between 0 and 5),
+  -- half-star steps: 0, 0.5, 1, 1.5, ... 5
+  rating numeric(2,1) not null default 0 check (rating >= 0 and rating <= 5 and mod(rating * 10, 5) = 0),
   tags text[] not null default '{}',
   barcode text default '',
   notes text default '',
@@ -222,6 +223,182 @@ create policy "Authors or profile owners can delete comments"
   using (author_id = auth.uid() or profile_id = auth.uid());
 
 -- ------------------------------------------------------------
+-- achievement_defs / user_achievements: Shelf Life's own PlayStation
+-- Trophies-style badges for collection milestones (first item, 10/100
+-- items, follower counts, etc.) — separate from the trophy_platinum/
+-- trophy_completion fields on games, which track someone's *real*
+-- Xbox/PlayStation trophies and are entered by hand.
+-- ------------------------------------------------------------
+create table if not exists achievement_defs (
+  key text primary key,
+  name text not null,
+  description text not null,
+  tier text not null check (tier in ('bronze', 'silver', 'gold', 'platinum')),
+  sort_order int not null
+);
+
+alter table achievement_defs enable row level security;
+
+create policy "Achievement definitions are publicly readable"
+  on achievement_defs for select
+  using (true);
+
+grant select on achievement_defs to anon, authenticated;
+
+insert into achievement_defs (key, name, description, tier, sort_order) values
+  ('first-item',      'First Pickup',          'Add your first item to your collection.',        'bronze',   1),
+  ('first-comment',   'Say Something',         'Leave your first comment on someone''s shelf.',   'bronze',   2),
+  ('first-follow',    'Making Friends',        'Follow another collector.',                       'bronze',   3),
+  ('first-follower',  'Getting Noticed',       'Gain your first follower.',                       'bronze',   4),
+  ('first-rating',    'Critic in Training',    'Rate your first item.',                           'bronze',   5),
+  ('items-10',        'Double Digits',         'Own 10 items.',                                   'silver',   6),
+  ('comics-10',       'Bookworm',              'Own 10 comics.',                                  'silver',   7),
+  ('platforms-5',     'Multi-Platform',        'Own games across 5 different platforms.',         'silver',   8),
+  ('genres-5',        'Genre Explorer',        'Own items across 5 different genres.',            'silver',   9),
+  ('ratings-10',      'Seasoned Critic',       'Rate 10 items.',                                  'silver',  10),
+  ('comments-10',     'Regular',               'Leave 10 comments.',                              'silver',  11),
+  ('followers-5',     'Building a Following',  'Gain 5 followers.',                               'silver',  12),
+  ('items-100',       'Centurion',             'Own 100 items.',                                  'gold',    13),
+  ('completed-25',    'Completionist',         'Mark 25 items as completed.',                     'gold',    14),
+  ('variants-10',     'Variant Hunter',        'Own 10 variant comic covers.',                    'gold',    15),
+  ('followers-25',    'Community Favorite',    'Gain 25 followers.',                              'gold',    16),
+  ('comics-50',       'Longbox Legend',        'Own 50 comics.',                                  'gold',    17),
+  ('platinum-shelf',  'Platinum Shelf',        'Earn every other trophy.',                        'platinum', 18)
+on conflict (key) do nothing;
+
+create table if not exists user_achievements (
+  user_id uuid not null references profiles(id) on delete cascade,
+  key text not null references achievement_defs(key) on delete cascade,
+  earned_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+
+alter table user_achievements enable row level security;
+
+create policy "Earned achievements are publicly readable"
+  on user_achievements for select
+  using (true);
+
+grant select on user_achievements to anon, authenticated;
+
+-- Deliberately no insert/update/delete policy for regular users here.
+-- Trophies are only ever awarded by the trusted functions below, so
+-- nobody can grant themselves a trophy by calling the API directly.
+
+-- The real logic: recomputes stats from games/comments/follows and
+-- awards anything newly earned, returning just the newly-unlocked
+-- trophies (so callers can show a "trophy earned" popup). Not exposed
+-- to the API directly — only called from the trusted wrapper below.
+create or replace function award_achievements_for(p_user_id uuid)
+returns table(key text, name text, tier text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_total_items int;
+  v_total_comics int;
+  v_completed int;
+  v_rated int;
+  v_platforms int;
+  v_genres int;
+  v_variants int;
+  v_comments int;
+  v_followers int;
+  v_following int;
+  v_earned_count int;
+  v_total_defs int;
+  v_new_keys text[];
+begin
+  if p_user_id is null then
+    return;
+  end if;
+
+  select count(*) into v_total_items from games where user_id = p_user_id;
+  select count(*) into v_total_comics from games where user_id = p_user_id and item_type = 'comic';
+  select count(*) into v_completed from games where user_id = p_user_id and play_status = 'completed';
+  select count(*) into v_rated from games where user_id = p_user_id and rating > 0;
+  select count(distinct platform) into v_platforms
+    from games g, unnest(g.platforms) as platform
+    where g.user_id = p_user_id;
+  select count(distinct genre) into v_genres
+    from games where user_id = p_user_id and genre is not null and genre <> '';
+  select count(*) into v_variants from games where user_id = p_user_id and is_variant = true;
+  select count(*) into v_comments from comments where author_id = p_user_id;
+  select count(*) into v_followers from follows where following_id = p_user_id;
+  select count(*) into v_following from follows where follower_id = p_user_id;
+
+  with ins as (
+    insert into user_achievements (user_id, key)
+    select p_user_id, t.k
+    from (values
+      ('first-item',     v_total_items  >= 1),
+      ('first-comment',  v_comments     >= 1),
+      ('first-follow',   v_following    >= 1),
+      ('first-follower', v_followers    >= 1),
+      ('first-rating',   v_rated        >= 1),
+      ('items-10',       v_total_items  >= 10),
+      ('comics-10',      v_total_comics >= 10),
+      ('platforms-5',    v_platforms    >= 5),
+      ('genres-5',       v_genres       >= 5),
+      ('ratings-10',     v_rated        >= 10),
+      ('comments-10',    v_comments     >= 10),
+      ('followers-5',    v_followers    >= 5),
+      ('items-100',      v_total_items  >= 100),
+      ('completed-25',   v_completed    >= 25),
+      ('variants-10',    v_variants     >= 10),
+      ('followers-25',   v_followers    >= 25),
+      ('comics-50',      v_total_comics >= 50)
+    ) as t(k, cond)
+    where t.cond
+    on conflict do nothing
+    returning user_achievements.key
+  )
+  select coalesce(array_agg(ins.key), '{}'::text[]) into v_new_keys from ins;
+
+  -- Platinum: earn every other trophy, same as a PlayStation platinum.
+  select count(*) into v_earned_count from user_achievements ua where ua.user_id = p_user_id and ua.key <> 'platinum-shelf';
+  select count(*) into v_total_defs from achievement_defs ad where ad.key <> 'platinum-shelf';
+  if v_total_defs > 0 and v_earned_count >= v_total_defs then
+    with ins2 as (
+      insert into user_achievements (user_id, key)
+      select p_user_id, 'platinum-shelf'
+      on conflict do nothing
+      returning user_achievements.key
+    )
+    select v_new_keys || coalesce(array_agg(ins2.key), '{}'::text[]) into v_new_keys from ins2;
+  end if;
+
+  return query
+  select d.key, d.name, d.tier
+  from achievement_defs d
+  where d.key = any(v_new_keys)
+  order by d.sort_order;
+end;
+$$;
+
+-- The only version exposed to the app — only ever checks/awards for
+-- whoever is calling it, and hands back any trophies newly unlocked.
+create or replace function check_and_award_achievements(p_user_id uuid)
+returns table(key text, name text, tier text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_user_id is null or p_user_id <> auth.uid() then
+    return;
+  end if;
+  return query select * from award_achievements_for(p_user_id);
+end;
+$$;
+
+grant execute on function check_and_award_achievements(uuid) to authenticated;
+-- award_achievements_for is deliberately NOT granted to anon/authenticated —
+-- it has no auth.uid() check, so it must only ever be reachable from the
+-- trusted SQL editor or the wrapper above.
+
+-- ------------------------------------------------------------
 -- value_snapshots: periodic "collection value over time" data points,
 -- recorded automatically after "Refresh all prices" (or manually via
 -- "Record snapshot"). Owner-only — never shown on public profiles.
@@ -255,7 +432,10 @@ create table if not exists activity_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
   game_id uuid references games(id) on delete cascade,
-  event_type text not null check (event_type in ('added', 'completed', 'rated')),
+  event_type text not null check (event_type in ('added', 'completed', 'rated', 'trophy')),
+  -- set only for event_type = 'trophy' — which Shelf Life milestone badge
+  -- was earned
+  trophy_key text references achievement_defs(key) on delete cascade,
   created_at timestamptz not null default now()
 );
 
@@ -336,6 +516,7 @@ create or replace view leaderboard_most_owned as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at))[1] as title,
+  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover,
   count(*) as owner_count
 from games g
 join profiles p on p.id = g.user_id
@@ -362,6 +543,7 @@ create or replace view leaderboard_trending as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at desc))[1] as title,
+  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover,
   count(*) as recent_adds
 from games g
 join profiles p on p.id = g.user_id
@@ -370,7 +552,26 @@ group by lower(g.title)
 order by recent_adds desc
 limit 50;
 
+-- Ranks public collectors by Shelf Life trophies earned (bronze through
+-- platinum, from achievements-migration.sql), not by collection size.
+create or replace view leaderboard_trophies as
+select
+  p.id as user_id,
+  p.username,
+  p.display_name,
+  p.avatar_url,
+  count(ua.key) as trophy_count,
+  count(ua.key) filter (where ad.tier = 'platinum') as platinum_count
+from profiles p
+join user_achievements ua on ua.user_id = p.id
+join achievement_defs ad on ad.key = ua.key
+where p.is_public = true
+group by p.id, p.username, p.display_name, p.avatar_url
+order by trophy_count desc, platinum_count desc
+limit 50;
+
 -- Make sure the API roles can read the leaderboard views
 grant select on leaderboard_most_owned to anon, authenticated;
 grant select on leaderboard_biggest_collections to anon, authenticated;
 grant select on leaderboard_trending to anon, authenticated;
+grant select on leaderboard_trophies to anon, authenticated;

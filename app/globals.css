@@ -341,11 +341,6 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.playnext-suggestion-meta.stars {
-  color: var(--accent);
-  letter-spacing: 1px;
-}
-
 /* ---------- Recommendations ---------- */
 .recommend-panel {
   margin-bottom: 20px;
@@ -701,10 +696,6 @@ button:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.stat-value.stars {
-  color: var(--warn);
-  letter-spacing: 1px;
-}
 .badge-row {
   display: flex;
   gap: 6px;
@@ -753,12 +744,6 @@ button:disabled {
   background: #ffd15c22;
   color: #ffd15c;
 }
-.stars {
-  color: var(--warn);
-  font-size: 12px;
-  letter-spacing: 1px;
-}
-
 .empty-state {
   text-align: center;
   padding: 80px 20px;
@@ -1027,17 +1012,49 @@ button:disabled {
   gap: 8px;
 }
 
-.rating-input {
-  display: flex;
-  gap: 4px;
-  font-size: 22px;
+/* ---------- Star rating (half-star capable) ---------- */
+.star-rating {
+  display: inline-flex;
+  gap: 3px;
+  line-height: 1;
 }
-.rating-input span {
-  cursor: pointer;
+.star-rating-slot {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+}
+.star-rating-bg,
+.star-rating-fg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.star-rating-bg {
   color: var(--border);
+  width: 100%;
 }
-.rating-input span.filled {
+.star-rating-fg {
   color: var(--warn);
+}
+.star-rating-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.star-rating-hit-left {
+  left: 0;
+}
+.star-rating-hit-right {
+  right: 0;
 }
 
 /* ---------- Profile / social ---------- */
@@ -1109,6 +1126,48 @@ button:disabled {
   color: var(--text-dim);
   width: 28px;
   text-align: center;
+  flex: none;
+}
+.leaderboard-rank.medal-1 {
+  color: var(--tier-gold);
+  font-size: 17px;
+}
+.leaderboard-rank.medal-2 {
+  color: var(--tier-silver);
+  font-size: 16px;
+}
+.leaderboard-rank.medal-3 {
+  color: var(--tier-bronze);
+  font-size: 15px;
+}
+.leaderboard-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--bg-alt);
+  flex: none;
+}
+.leaderboard-thumb.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-align: center;
+}
+.leaderboard-avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.leaderboard-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Feed ---------- */
@@ -1147,6 +1206,27 @@ button:disabled {
 .feed-item-time {
   margin: 2px 0 0;
   font-size: 12px;
+}
+.feed-trophy-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.feed-trophy-dot.tier-bronze {
+  background: radial-gradient(circle at 35% 30%, #f0c090, var(--tier-bronze));
+}
+.feed-trophy-dot.tier-silver {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--tier-silver));
+}
+.feed-trophy-dot.tier-gold {
+  background: radial-gradient(circle at 35% 30%, #fff2c4, var(--tier-gold));
+}
+.feed-trophy-dot.tier-platinum {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--tier-platinum));
+  box-shadow: 0 0 0 1px var(--tier-platinum) inset;
 }
 .feed-sidebar {
   background: var(--card);

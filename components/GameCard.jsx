@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getCoverColor, colorToCss, shadeColor, readableTextColor } from '@/lib/coverColor';
+import StarRating from './StarRating';
 
 function cap(s) {
   if (!s) return '';
@@ -9,7 +10,9 @@ function cap(s) {
 }
 
 export default function GameCard({ game, onClick, featured = false }) {
-  const stars = game.rating ? '★'.repeat(game.rating) + '☆'.repeat(5 - game.rating) : '';
+  // Supabase can hand numeric columns back as strings — coerce before
+  // any arithmetic/comparison.
+  const rating = Number(game.rating) || 0;
   const isComic = game.item_type === 'comic';
   const [artColor, setArtColor] = useState(null);
 
@@ -100,7 +103,11 @@ export default function GameCard({ game, onClick, featured = false }) {
   if (game.market_price != null) {
     statRows.push({ label: 'Market value', value: `$${game.market_price}` });
   }
-  statRows.push({ label: 'Rating', value: stars || 'Unrated', isRating: true });
+  statRows.push({
+    label: 'Rating',
+    value: rating > 0 ? <StarRating value={rating} size={13} /> : 'Unrated',
+    isRating: true,
+  });
 
   return (
     <div className={`card${onClick ? ' clickable' : ''}${featured ? ' featured' : ''}`} onClick={onClick}>
@@ -131,7 +138,7 @@ export default function GameCard({ game, onClick, featured = false }) {
             {statRows.map((row) => (
               <div className="stat-row" key={row.label}>
                 <span className="stat-label">{row.label}</span>
-                <span className={`stat-value${row.isRating && stars ? ' stars' : ''}`}>{row.value}</span>
+                <span className="stat-value">{row.value}</span>
               </div>
             ))}
           </div>

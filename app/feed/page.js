@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import { WHATS_NEW } from '@/lib/whatsNew';
+import StarRating from '@/components/StarRating';
 
 export const metadata = {
   title: 'Feed',
@@ -12,6 +13,7 @@ function verb(eventType) {
   if (eventType === 'added') return 'added';
   if (eventType === 'completed') return 'completed';
   if (eventType === 'rated') return 'rated';
+  if (eventType === 'trophy') return 'earned the trophy';
   return eventType;
 }
 
@@ -31,12 +33,12 @@ export default async function FeedPage() {
     const { data } = await supabase
       .from('activity_events')
       .select(
-        'id, event_type, created_at, actor:profiles!activity_events_user_id_fkey(username, display_name, avatar_url), game:games(title, cover, item_type, rating)'
+        'id, event_type, created_at, actor:profiles!activity_events_user_id_fkey(username, display_name, avatar_url), game:games(title, cover, item_type, rating), trophy:achievement_defs(name, tier)'
       )
       .in('user_id', followingIds)
       .order('created_at', { ascending: false })
       .limit(50);
-    events = (data || []).filter((e) => e.actor && e.game);
+    events = (data || []).filter((e) => e.actor && (e.game || (e.event_type === 'trophy' && e.trophy)));
   }
 
   return (
@@ -76,13 +78,22 @@ export default async function FeedPage() {
                     <Link href={`/u/${e.actor.username}`} className="feed-item-name">
                       {e.actor.display_name || e.actor.username}
                     </Link>{' '}
-                    {verb(e.event_type)} <strong>{e.game.title}</strong>
-                    {e.event_type === 'rated' && e.game.rating ? (
-                      <span className="stars" style={{ marginLeft: 6 }}>
-                        {'★'.repeat(e.game.rating)}
-                        {'☆'.repeat(5 - e.game.rating)}
-                      </span>
-                    ) : null}
+                    {e.event_type === 'trophy' && e.trophy ? (
+                      <>
+                        {verb(e.event_type)}{' '}
+                        <span className={`feed-trophy-dot tier-${e.trophy.tier}`} aria-hidden="true" />
+                        <strong>{e.trophy.name}</strong>
+                      </>
+                    ) : (
+                      <>
+                        {verb(e.event_type)} <strong>{e.game.title}</strong>
+                        {e.event_type === 'rated' && Number(e.game.rating) > 0 ? (
+                          <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
+                            <StarRating value={Number(e.game.rating)} size={13} />
+                          </span>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                   <div className="sub feed-item-time">{new Date(e.created_at).toLocaleDateString()}</div>
                 </div>

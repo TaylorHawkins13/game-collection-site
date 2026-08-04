@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import CollapseToggle from './CollapseToggle';
+import StarRating from './StarRating';
 
 // Weighted-random pick — higher weight means more likely, not guaranteed,
 // so hitting "Try another" doesn't just cycle the same top pick over and
@@ -23,13 +24,17 @@ function weightedPick(candidates, weights) {
 // it needs is already in the `games` prop, no extra fetch.
 export default function PlayNextWidget({ games, onOpen, collapsed, onToggleCollapse }) {
   const { pool, genreScore, platformScore, hasRatings } = useMemo(() => {
-    const rated = games.filter((g) => g.item_type === 'game' && g.rating >= 4);
+    // Supabase can hand numeric columns back as strings — coerce before
+    // any arithmetic (a bare `+` between a number and a rating string
+    // would silently concatenate instead of adding).
+    const rated = games.filter((g) => g.item_type === 'game' && Number(g.rating) >= 4);
     const genreScore = {};
     const platformScore = {};
     rated.forEach((g) => {
-      if (g.genre) genreScore[g.genre] = (genreScore[g.genre] || 0) + g.rating;
+      const r = Number(g.rating) || 0;
+      if (g.genre) genreScore[g.genre] = (genreScore[g.genre] || 0) + r;
       (g.platforms || []).forEach((p) => {
-        platformScore[p] = (platformScore[p] || 0) + g.rating;
+        platformScore[p] = (platformScore[p] || 0) + r;
       });
     });
 
@@ -108,9 +113,9 @@ export default function PlayNextWidget({ games, onOpen, collapsed, onToggleColla
                 {suggestion.platforms && suggestion.platforms.length ? suggestion.platforms.join(', ') : 'Unknown platform'}
                 {suggestion.genre ? ` · ${suggestion.genre}` : ''}
               </div>
-              {suggestion.rating > 0 && (
-                <div className="playnext-suggestion-meta stars">
-                  {'★'.repeat(suggestion.rating)}{'☆'.repeat(5 - suggestion.rating)}
+              {Number(suggestion.rating) > 0 && (
+                <div className="playnext-suggestion-meta">
+                  <StarRating value={Number(suggestion.rating)} size={12} />
                 </div>
               )}
             </div>

@@ -86,12 +86,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Catch up on any trophies earned since the last visit. Safe to call even
-  // if the achievements migration hasn't been run yet — it'll just no-op.
+  // Catch up on any trophies earned since the last visit.
   useEffect(() => {
-    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data }) => {
-      announceTrophies(data);
-    });
+    checkTrophies();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [currency, setCurrency] = useState(profile?.currency || 'USD');
@@ -306,9 +303,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         setGames((gs) => gs.map((g) => (g.id === data.id ? data : g)));
         setModalGame(undefined);
         setDuplicateOf(undefined);
-        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
-          announceTrophies(newTrophies);
-        });
+        checkTrophies();
         logActivity(buildActivityEvents(userId, data.id, modalGame, data));
       }
       return {};
@@ -322,9 +317,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => [...gs, data]);
         setModalGame(undefined);
-        supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
-          announceTrophies(newTrophies);
-        });
+        checkTrophies();
         logActivity(buildActivityEvents(userId, data.id, null, data));
       }
       return {};
@@ -338,6 +331,21 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     if (!events.length) return;
     supabase.from('activity_events').insert(events).then(({ error }) => {
       if (error) console.error('activity event insert failed', error);
+    });
+  }
+
+  // Checks for newly-earned Shelf Life trophies, pops the toast, and logs
+  // a 'trophy' activity event for each one so followers see it on /feed.
+  // Safe to call even if the achievements migration hasn't been run yet —
+  // the RPC just no-ops.
+  function checkTrophies() {
+    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
+      announceTrophies(newTrophies);
+      if (newTrophies && newTrophies.length) {
+        logActivity(
+          newTrophies.map((t) => ({ user_id: userId, event_type: 'trophy', trophy_key: t.key }))
+        );
+      }
     });
   }
 
@@ -434,9 +442,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // still visible; it only closes when the user clicks Close.
   function handleImported(newRows) {
     setGames((gs) => [...gs, ...newRows]);
-    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
-      announceTrophies(newTrophies);
-    });
+    checkTrophies();
   }
 
   // Full-collection CSV backup, generated client-side from what's already
@@ -460,9 +466,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // Same shape as handleImported — used by SteamImportModal instead of CSV.
   function handleSteamImported(newRows) {
     setGames((gs) => [...gs, ...newRows]);
-    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
-      announceTrophies(newTrophies);
-    });
+    checkTrophies();
   }
 
   async function handleDisconnectSteam() {

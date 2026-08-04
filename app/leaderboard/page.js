@@ -3,16 +3,53 @@ import { createClient } from '@/lib/supabaseServer';
 
 export const metadata = {
   title: 'Leaderboard',
-  description: 'Most-owned items, biggest public collections, and trending titles across Shelf Life collectors.',
+  description: 'Most-owned items, biggest public collections, trending titles, and trophy counts across Shelf Life collectors.',
 };
+
+function rankClass(i) {
+  if (i === 0) return ' medal-1';
+  if (i === 1) return ' medal-2';
+  if (i === 2) return ' medal-3';
+  return '';
+}
+
+function CoverThumb({ cover, title }) {
+  return cover ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className="leaderboard-thumb"
+      src={cover}
+      alt={title}
+      onError={(e) => {
+        e.currentTarget.outerHTML = '<div class="leaderboard-thumb placeholder">No Cover</div>';
+      }}
+    />
+  ) : (
+    <div className="leaderboard-thumb placeholder">No Cover</div>
+  );
+}
+
+function PersonAvatar({ avatarUrl, name }) {
+  return (
+    <div className="avatar leaderboard-avatar">
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={avatarUrl} alt={name} />
+      ) : (
+        (name || '?').slice(0, 1).toUpperCase()
+      )}
+    </div>
+  );
+}
 
 export default async function LeaderboardPage() {
   const supabase = createClient();
 
-  const [{ data: mostOwned }, { data: biggest }, { data: trending }] = await Promise.all([
+  const [{ data: mostOwned }, { data: biggest }, { data: trending }, { data: trophies }] = await Promise.all([
     supabase.from('leaderboard_most_owned').select('*').limit(15),
     supabase.from('leaderboard_biggest_collections').select('*').limit(15),
     supabase.from('leaderboard_trending').select('*').limit(15),
+    supabase.from('leaderboard_trophies').select('*').limit(15),
   ]);
 
   return (
@@ -28,8 +65,9 @@ export default async function LeaderboardPage() {
           {(mostOwned || []).length === 0 && <div className="sub">No data yet.</div>}
           {(mostOwned || []).map((row, i) => (
             <div className="leaderboard-row" key={row.title_key}>
-              <div className="leaderboard-rank">{i + 1}</div>
-              <div style={{ flex: 1 }}>{row.title}</div>
+              <div className={`leaderboard-rank${rankClass(i)}`}>{i + 1}</div>
+              <CoverThumb cover={row.cover} title={row.title} />
+              <div style={{ flex: 1, minWidth: 0 }} className="leaderboard-name">{row.title}</div>
               <div className="sub" style={{ margin: 0 }}>{row.owner_count} owners</div>
             </div>
           ))}
@@ -40,8 +78,9 @@ export default async function LeaderboardPage() {
           {(biggest || []).length === 0 && <div className="sub">No data yet.</div>}
           {(biggest || []).map((row, i) => (
             <div className="leaderboard-row" key={row.user_id}>
-              <div className="leaderboard-rank">{i + 1}</div>
-              <div style={{ flex: 1 }}>
+              <div className={`leaderboard-rank${rankClass(i)}`}>{i + 1}</div>
+              <PersonAvatar avatarUrl={row.avatar_url} name={row.display_name || row.username} />
+              <div style={{ flex: 1, minWidth: 0 }} className="leaderboard-name">
                 <Link href={`/u/${row.username}`}>{row.display_name || row.username}</Link>
               </div>
               <div className="sub" style={{ margin: 0 }}>{row.game_count} items</div>
@@ -54,9 +93,28 @@ export default async function LeaderboardPage() {
           {(trending || []).length === 0 && <div className="sub">No data yet.</div>}
           {(trending || []).map((row, i) => (
             <div className="leaderboard-row" key={row.title_key}>
-              <div className="leaderboard-rank">{i + 1}</div>
-              <div style={{ flex: 1 }}>{row.title}</div>
+              <div className={`leaderboard-rank${rankClass(i)}`}>{i + 1}</div>
+              <CoverThumb cover={row.cover} title={row.title} />
+              <div style={{ flex: 1, minWidth: 0 }} className="leaderboard-name">{row.title}</div>
               <div className="sub" style={{ margin: 0 }}>+{row.recent_adds}</div>
+            </div>
+          ))}
+        </section>
+
+        <section>
+          <h2 style={{ fontSize: 15 }}>Trophy case</h2>
+          <p className="sub" style={{ margin: '0 0 10px' }}>Ranked by Shelf Life trophies earned.</p>
+          {(trophies || []).length === 0 && <div className="sub">No data yet.</div>}
+          {(trophies || []).map((row, i) => (
+            <div className="leaderboard-row" key={row.user_id}>
+              <div className={`leaderboard-rank${rankClass(i)}`}>{i + 1}</div>
+              <PersonAvatar avatarUrl={row.avatar_url} name={row.display_name || row.username} />
+              <div style={{ flex: 1, minWidth: 0 }} className="leaderboard-name">
+                <Link href={`/u/${row.username}`}>{row.display_name || row.username}</Link>
+              </div>
+              <div className="sub" style={{ margin: 0 }}>
+                {row.trophy_count} trophies{row.platinum_count > 0 ? ` · ${row.platinum_count} platinum` : ''}
+              </div>
             </div>
           ))}
         </section>
