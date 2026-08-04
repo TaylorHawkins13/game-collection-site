@@ -516,8 +516,8 @@ create or replace view leaderboard_most_owned as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at))[1] as title,
-  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover,
-  count(*) as owner_count
+  count(*) as owner_count,
+  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover
 from games g
 join profiles p on p.id = g.user_id
 where g.ownership = 'owned' and p.is_public = true
@@ -543,8 +543,8 @@ create or replace view leaderboard_trending as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at desc))[1] as title,
-  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover,
-  count(*) as recent_adds
+  count(*) as recent_adds,
+  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover
 from games g
 join profiles p on p.id = g.user_id
 where p.is_public = true and g.created_at > now() - interval '14 days'
