@@ -8,7 +8,7 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default function GameCard({ game, onClick }) {
+export default function GameCard({ game, onClick, featured = false }) {
   const stars = game.rating ? '★'.repeat(game.rating) + '☆'.repeat(5 - game.rating) : '';
   const isComic = game.item_type === 'comic';
   const [artColor, setArtColor] = useState(null);
@@ -97,7 +97,8 @@ export default function GameCard({ game, onClick }) {
   statRows.push({ label: 'Rating', value: stars || 'Unrated', isRating: true });
 
   return (
-    <div className={`card${onClick ? ' clickable' : ''}`} onClick={onClick}>
+    <div className={`card${onClick ? ' clickable' : ''}${featured ? ' featured' : ''}`} onClick={onClick}>
+      {featured && <div className="card-featured-flag">Featured</div>}
       <div className={`card-ownership-flag ${game.ownership}`}>{game.ownership}</div>
       {game.cover ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -141,7 +142,7 @@ export default function GameCard({ game, onClick }) {
               <span className="badge tag complete-100">100% Complete</span>
             )}
             {game.showcase_order != null && (
-              <span className="badge tag showcase-badge">⭐ Showcased</span>
+              <span className="badge tag showcase-badge">Showcased</span>
             )}
             {(game.tags || []).map((t) => (
               <span className="badge tag" key={t}>{t}</span>

@@ -173,10 +173,10 @@ export default async function ProfilePage({ params }) {
 
           {showcaseGames.length > 0 && (
             <div className="profile-showcase">
-              <h3 className="profile-showcase-heading">⭐ Showcase</h3>
-              <div className="grid">
+              <h3 className="profile-showcase-heading">Showcase</h3>
+              <div className="grid showcase-grid">
                 {showcaseGames.map((g) => (
-                  <GameCard key={g.id} game={g} />
+                  <GameCard key={g.id} game={g} featured />
                 ))}
               </div>
             </div>

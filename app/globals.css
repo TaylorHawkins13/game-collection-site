@@ -403,6 +403,25 @@ button:disabled {
   letter-spacing: 0.3px;
   color: var(--text-dim);
 }
+.card.featured {
+  border-color: #d4a017;
+  box-shadow: 0 0 0 1px #d4a01755, 0 10px 28px rgba(212, 160, 23, 0.18);
+}
+.card-featured-flag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: #d4a017;
+  color: #1a1400;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
 .card-ownership-flag {
   position: absolute;
   top: 10px;
@@ -1077,14 +1096,21 @@ button:disabled {
 /* ---------- Profile tabs ---------- */
 .profile-showcase {
   margin-bottom: 32px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #d4a01722, transparent 60%), var(--card);
+  border: 1px solid #d4a01755;
 }
 .profile-showcase-heading {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-dim);
+  font-weight: 700;
+  color: #e0ac2b;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 10px;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
+}
+.showcase-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
 }
 
 .showcase-selected {
