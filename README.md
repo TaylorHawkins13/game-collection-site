@@ -43,6 +43,20 @@ Open http://localhost:3000, sign up, and try it out.
 3. In the project's **Environment Variables** settings, add the same variables from your `.env.local`.
 4. Click **Deploy**. Vercel gives you a live URL — you can add a custom domain later in Vercel's project settings.
 
+## 5. Turn on ads (optional)
+
+The site's already wired up for Google AdSense (a cookie-consent banner, the ad script, an `ads.txt` route, and a Privacy Policy page all exist — they just need your AdSense account's ID to switch on). Ads only start showing once you set the env var below **and** a visitor accepts the cookie banner.
+
+1. Your site needs to be **live at a real URL first** (step 4 above) — AdSense reviews the deployed site, not localhost.
+2. Go to [adsense.google.com](https://www.google.com/adsense/start/) and sign up with a Google account. Add your site's URL when asked.
+3. AdSense will give you a **publisher ID** that looks like `ca-pub-XXXXXXXXXXXXXXXX`. Add it to your Vercel project's **Environment Variables** as `NEXT_PUBLIC_ADSENSE_CLIENT_ID`, then redeploy (Vercel → Deployments → ⋯ → Redeploy) so it takes effect.
+4. Back in AdSense, click through their site-verification step — it should detect the ad script automatically now that it's live (this is also what serves your `ads.txt` file at `yoursite.com/ads.txt`, which AdSense checks for).
+5. **Review takes time** — anywhere from a day to a few weeks, and Google can reject new/low-traffic sites on the first pass and ask you to reapply later. This is normal, not a sign anything's broken; a friends-and-family collection tracker is a genuinely small site by ad-network standards, so don't be surprised if approval takes a few tries as real traffic builds up.
+6. Once approved, turn on **Auto ads** in the AdSense dashboard (Ads → By site → toggle it on for your site). Auto ads means Google's own placement logic decides where ads go across the whole site — no per-page code to add here, which keeps this simple to maintain.
+7. Payouts: AdSense pays out once your balance clears $100, via bank transfer — you'll need to add tax and payment info in the AdSense dashboard when you get close. Realistically, expect this to take a while at hobby-project traffic levels.
+
+Worth knowing: the cookie banner defaults to **not** loading ads until a visitor clicks Accept, which is the honest baseline for EU/UK cookie-consent rules — it's a simple accept/decline banner, not a full certified consent platform. If this ever grows into something with real traffic/revenue, it'd be worth a proper look at compliance (and the Privacy Policy at `/privacy`) rather than relying on what's here.
+
 That's it — from then on, every `git push` redeploys automatically.
 
 ## What's included

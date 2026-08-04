@@ -1,6 +1,8 @@
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import TrophyToastListener from '@/components/TrophyToastListener';
+import AdsGate from '@/components/AdsGate';
 
 export const metadata = {
   title: 'Shelf Life — Collection Tracker',
@@ -13,7 +15,9 @@ export default function RootLayout({ children }) {
       <body>
         <Navbar />
         {children}
+        <Footer />
         <TrophyToastListener />
+        <AdsGate />
       </body>
     </html>
   );
