@@ -3,6 +3,19 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import ProfileCard from '@/components/ProfileCard';
 
+export async function generateMetadata({ params }) {
+  const { username } = params;
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username, display_name')
+    .eq('username', username)
+    .single();
+  if (!profile) return { title: 'Collector not found' };
+  const name = profile.display_name || profile.username;
+  return { title: `Who ${name} follows` };
+}
+
 export default async function FollowingPage({ params }) {
   const { username } = params;
   const supabase = createClient();

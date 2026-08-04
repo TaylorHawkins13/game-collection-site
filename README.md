@@ -57,6 +57,14 @@ The site's already wired up for Google AdSense (a cookie-consent banner, the ad 
 
 Worth knowing: the cookie banner defaults to **not** loading ads until a visitor clicks Accept, which is the honest baseline for EU/UK cookie-consent rules — it's a simple accept/decline banner, not a full certified consent platform. If this ever grows into something with real traffic/revenue, it'd be worth a proper look at compliance (and the Privacy Policy at `/privacy`) rather than relying on what's here.
 
+## 6. Get found in search (optional but recommended)
+
+The site already generates `sitemap.xml` and `robots.txt` automatically (home, Find Collectors, Leaderboard, and every public profile — private profiles are excluded), plus a branded image that shows up when a link gets shared on Discord/Reddit/iMessage/etc. None of that requires any setup. What actually gets Google/Bing to crawl and index the site is submitting it to their tools directly:
+
+1. Go to [Google Search Console](https://search.google.com/search-console), add `https://shelflife.site` as a property, verify ownership (the easiest method is usually the DNS TXT record through whoever you registered the domain with), then under **Sitemaps** submit `https://shelflife.site/sitemap.xml`.
+2. Same idea at [Bing Webmaster Tools](https://www.bing.com/webmasters) — Bing also actually lets you import directly from a verified Google Search Console property, which skips the separate verification step.
+3. Indexing isn't instant — expect days to a couple of weeks before pages start showing up in search results, and a brand-new small site won't rank highly right away. This step is what makes ranking possible over time, not an instant traffic switch.
+
 That's it — from then on, every `git push` redeploys automatically.
 
 ## What's included

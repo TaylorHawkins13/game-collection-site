@@ -4,6 +4,53 @@ import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
 import ProfileTabs from './ProfileTabs';
 
+export async function generateMetadata({ params }) {
+  const { username } = params;
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, bio, avatar_url, is_public')
+    .eq('username', username)
+    .single();
+
+  if (!profile) return { title: 'Collector not found' };
+
+  const name = profile.display_name || profile.username;
+  if (!profile.is_public) {
+    return {
+      title: `@${profile.username}`,
+      description: `${name}'s shelf on Shelf Life is private.`,
+      robots: { index: false },
+    };
+  }
+
+  const { count } = await supabase
+    .from('games')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', profile.id)
+    .eq('ownership', 'owned');
+
+  const description =
+    profile.bio ||
+    `See ${name}'s collection on Shelf Life${count ? ` — ${count} item${count === 1 ? '' : 's'} and counting.` : '.'}`;
+
+  return {
+    title: `@${profile.username}`,
+    description,
+    openGraph: {
+      title: `${name} (@${profile.username}) on Shelf Life`,
+      description,
+      type: 'profile',
+      images: profile.avatar_url ? [profile.avatar_url] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${name} (@${profile.username}) on Shelf Life`,
+      description,
+    },
+  };
+}
+
 export default async function ProfilePage({ params }) {
   const { username } = params;
   const supabase = createClient();

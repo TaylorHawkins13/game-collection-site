@@ -32,6 +32,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **CSV/spreadsheet import** — an "Import CSV" button on the dashboard bulk-adds items from a spreadsheet instead of one at a time. Includes a downloadable template with the right columns and an example row for every item type. Shows a preview of what's about to be added plus any warnings (unrecognized item type, bad date, etc. — those rows still import with sensible defaults rather than failing outright), then imports in batches with a progress readout.
 - **"100% complete" tag** — a checkbox on any item ("all extras/achievements done, a full series or set collected, etc.") beyond the existing play-status/condition fields. Shows as a badge on the card, has its own dashboard filter, and is importable via CSV. Requires `fullycompleted-migration.sql` on existing projects.
 - **Collection value over time chart** — a mini chart on the dashboard tracking your estimated collection value (last "Check eBay price" result where you've checked one, purchase price otherwise) across snapshots in time. A snapshot is recorded automatically every time "Refresh all prices" finishes, or manually via a "Record snapshot" button — needs at least two snapshots before a trend line shows up. eBay prices are always USD, so if your display currency isn't USD the total is a mix and only approximate. Requires `valuesnapshots-migration.sql` on existing projects.
+- **SEO/discoverability basics** — a real `sitemap.xml` (home, Find Collectors, Leaderboard, and every public profile) and `robots.txt` (keeps the login-gated dashboard and auth pages out of search, points crawlers at the sitemap), a branded social-share preview image that shows up when a link gets posted to Discord/Reddit/iMessage/etc., and proper page titles/descriptions site-wide including per-collector ones on public profiles (e.g. "See Alex's collection — 214 items and counting"). None of this needs anything from you to keep working — it updates itself as people join and make their profiles public.
 
 ## Bugs (reported, not yet fixed)
 
@@ -43,7 +44,8 @@ A living list of where this could go next. Nothing here is committed or schedule
 
 ## Next (small, self-contained additions) — in priority order
 
-Nothing queued up right now — everything that was on this list has shipped. Pick something from "Later" below, or let me know what you want next.
+1. **Submit the sitemap to Google/Bing** — a quick manual step now that `sitemap.xml` exists: add the site in [Google Search Console](https://search.google.com/search-console) and [Bing Webmaster Tools](https://www.bing.com/webmasters) and submit `https://shelflife.site/sitemap.xml` in each — this is what actually gets the site indexed and searchable, the sitemap file alone doesn't do that automatically.
+2. **Invite/share features** — a "share your shelf" link or button on your own profile, and/or a lightweight invite-code flow, to make it easier for people to bring friends in directly rather than just word of mouth.
 
 ## Later (bigger, more design work)
 

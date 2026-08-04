@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 
+export const metadata = {
+  title: 'Leaderboard',
+  description: 'Most-owned items, biggest public collections, and trending titles across Shelf Life collectors.',
+};
+
 export default async function LeaderboardPage() {
   const supabase = createClient();
 
