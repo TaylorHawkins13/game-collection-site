@@ -32,7 +32,6 @@ const EMPTY = {
   card_set: '',
   card_number: '',
   player_name: '',
-  media_kind: 'book',
 };
 
 export default function GameModal({ game, currency, onClose, onSave, onDelete }) {
@@ -73,7 +72,6 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
         card_set: game.card_set || '',
         card_number: game.card_number || '',
         player_name: game.player_name || '',
-        media_kind: game.media_kind || 'book',
       });
     } else {
       setForm(EMPTY);
@@ -91,7 +89,10 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
   const isComic = form.item_type === 'comic';
   const isCard = form.item_type === 'trading_card';
   const isVinyl = form.item_type === 'vinyl';
-  const isMedia = form.item_type === 'media';
+  const isBook = form.item_type === 'book';
+  const isDvd = form.item_type === 'dvd';
+  const isCd = form.item_type === 'cd';
+  const isMediaLike = isBook || isDvd || isCd;
 
   const genrePlaceholder = isComic
     ? 'e.g. Superhero'
@@ -99,11 +100,26 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     ? 'e.g. Sports, TCG'
     : isVinyl
     ? 'e.g. Rock, Jazz'
-    : isMedia
+    : isDvd
+    ? 'e.g. Action, Drama'
+    : isCd
+    ? 'e.g. Rock, Hip-Hop'
+    : isBook
     ? 'e.g. Fiction, Sci-Fi'
     : 'e.g. RPG';
 
-  const mediaCreatorLabel = form.media_kind === 'dvd' ? 'Director' : form.media_kind === 'cd' ? 'Artist' : 'Author';
+  const mediaCreatorLabel = isDvd ? 'Director' : isCd ? 'Artist' : 'Author';
+  const mediaPublisherLabel = isDvd ? 'Studio' : isCd ? 'Label' : 'Publisher';
+  const mediaFormatPlaceholder = isDvd
+    ? 'e.g. DVD, Blu-ray, 4K'
+    : isCd
+    ? 'e.g. CD, Digipak, Box Set'
+    : 'e.g. Hardcover, Paperback, eBook';
+  const mediaEditionPlaceholder = isDvd
+    ? "e.g. Director's Cut, Extended"
+    : isCd
+    ? 'e.g. Deluxe Edition, Remaster'
+    : 'e.g. 2nd Edition, Anniversary Edition';
 
   async function rawgSearch() {
     if (!form.title.trim()) return;
@@ -154,18 +170,17 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
       condition: isComic ? '' : form.condition,
       series: isComic ? form.series : '',
       issue_number: isComic ? form.issue_number : '',
-      publisher: isComic || isCard || isVinyl || isMedia ? form.publisher : '',
-      writer: isComic || isMedia ? form.writer : '',
+      publisher: isComic || isCard || isVinyl || isMediaLike ? form.publisher : '',
+      writer: isComic || isMediaLike ? form.writer : '',
       artist: isComic || isVinyl ? form.artist : '',
       grade: isComic || isCard ? form.grade : '',
       is_variant: isComic || isCard ? form.is_variant : false,
       variant_notes: isComic || isCard ? form.variant_notes : '',
-      format: isVinyl || isMedia ? form.format : '',
-      edition: isVinyl || isMedia ? form.edition : '',
+      format: isVinyl || isMediaLike ? form.format : '',
+      edition: isVinyl || isMediaLike ? form.edition : '',
       card_set: isCard ? form.card_set : '',
       card_number: isCard ? form.card_number : '',
       player_name: isCard ? form.player_name : '',
-      media_kind: isMedia ? form.media_kind : '',
     });
     setSaving(false);
     if (result?.error) {
@@ -188,7 +203,9 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
             <option value="comic">Comic</option>
             <option value="trading_card">Trading Card</option>
             <option value="vinyl">Vinyl Record</option>
-            <option value="media">Book / DVD / CD</option>
+            <option value="book">Book</option>
+            <option value="dvd">DVD / Blu-ray</option>
+            <option value="cd">CD</option>
           </select>
         </div>
 
@@ -370,34 +387,26 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
           </>
         )}
 
-        {isMedia && (
+        {isMediaLike && (
           <>
-            <div className="field">
-              <label>Kind</label>
-              <select value={form.media_kind} onChange={(e) => set('media_kind', e.target.value)}>
-                <option value="book">Book</option>
-                <option value="dvd">DVD / Blu-ray</option>
-                <option value="cd">CD</option>
-              </select>
-            </div>
             <div className="row2">
               <div className="field">
                 <label>{mediaCreatorLabel}</label>
                 <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} />
               </div>
               <div className="field">
-                <label>Publisher / studio / label</label>
+                <label>{mediaPublisherLabel}</label>
                 <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} />
               </div>
             </div>
             <div className="row2">
               <div className="field">
                 <label>Format</label>
-                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder="e.g. Hardcover, Blu-ray, CD" />
+                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder={mediaFormatPlaceholder} />
               </div>
               <div className="field">
                 <label>Edition</label>
-                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. Director's Cut, 2nd edition" />
+                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder={mediaEditionPlaceholder} />
               </div>
             </div>
           </>

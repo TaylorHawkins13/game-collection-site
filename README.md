@@ -1,6 +1,6 @@
 # Shelf Life — Collection Tracker (multi-user)
 
-Next.js + Supabase app: accounts, cloud-synced collections (video games, comics, trading cards, vinyl records, books/DVDs/CDs), public profiles, follows, comments, trophies, and a community leaderboard.
+Next.js + Supabase app: accounts, cloud-synced collections (video games, comics, trading cards, vinyl records, books, DVDs, and CDs), public profiles, follows, comments, trophies, and a community leaderboard.
 
 ## 1. Create a Supabase project (free)
 
@@ -38,7 +38,7 @@ That's it — from then on, every `git push` redeploys automatically.
 ## What's included
 
 - **Accounts**: email/password signup & login (Supabase Auth), auto-creates a public profile with a chosen username.
-- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across five collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author-or-director/publisher/format/edition for books, DVDs, and CDs — plus shared tags, barcodes, and RAWG auto-fill for games.
+- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across seven collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author/publisher/format/edition for books (director/studio for DVDs, artist/label for CDs) — plus shared tags, barcodes, and RAWG auto-fill for games.
 - **Public profiles** (`/u/username`): view a collector's shelf, follow them, leave comments. Users can toggle their profile private in Profile Settings.
 - **Profile settings**: display name, bio, public/private toggle, preferred currency (for price display only — no live conversion), and avatar image upload (stored in Supabase Storage).
 - **Leaderboard** (`/leaderboard`): most-owned items, biggest public collections, trending titles (last 14 days) — computed from public collections only.

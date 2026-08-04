@@ -45,7 +45,10 @@ export default function GameCard({ game, onClick }) {
 
   const isCard = game.item_type === 'trading_card';
   const isVinyl = game.item_type === 'vinyl';
-  const isMedia = game.item_type === 'media';
+  const isBook = game.item_type === 'book';
+  const isDvd = game.item_type === 'dvd';
+  const isCd = game.item_type === 'cd';
+  const isMediaLike = isBook || isDvd || isCd;
 
   const statRows = [];
   if (isComic) {
@@ -67,12 +70,13 @@ export default function GameCard({ game, onClick }) {
     statRows.push({ label: 'Label', value: game.publisher || '—' });
     statRows.push({ label: 'Format', value: game.format || '—' });
     if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
-  } else if (isMedia) {
-    const kindLabel = game.media_kind === 'dvd' ? 'Director' : game.media_kind === 'cd' ? 'Artist' : 'Author';
-    statRows.push({ label: 'Kind', value: cap(game.media_kind) || 'Book' });
-    statRows.push({ label: kindLabel, value: game.writer || '—' });
-    statRows.push({ label: 'Publisher', value: game.publisher || '—' });
-    if (game.format) statRows.push({ label: 'Format', value: game.format });
+  } else if (isMediaLike) {
+    const creatorLabel = isDvd ? 'Director' : isCd ? 'Artist' : 'Author';
+    const publisherLabel = isDvd ? 'Studio' : isCd ? 'Label' : 'Publisher';
+    statRows.push({ label: creatorLabel, value: game.writer || '—' });
+    statRows.push({ label: publisherLabel, value: game.publisher || '—' });
+    statRows.push({ label: 'Format', value: game.format || '—' });
+    if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
   } else {
     statRows.push({
       label: 'Platform',

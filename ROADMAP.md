@@ -15,7 +15,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Trophies** — a PlayStation Trophies-style achievement system: bronze/silver/gold/platinum badges for collection milestones (first item, 10/100 items, 25 completed, follower counts, variant hunting, etc.), shown as a trophy case on public profiles. Awarded server-side so they can't be gamed.
 - **Mobile layout pass** — smaller card grid, scaled-down type, and a decluttered card layout on phones so nothing feels oversized or cramped.
 - **Top Trumps-style card redesign** — full-bleed cover art, a color nameplate pulled from the art itself, and a grading-slab-style stat block instead of loose badges.
-- **More collectible types** — Trading Cards, Vinyl Records, and Books/DVDs/CDs added alongside Games and Comics, each with their own tailored fields (set/card number/player for cards, artist/label/format/edition for vinyl, author-or-director/publisher/format/edition for media).
+- **More collectible types** — Trading Cards, Vinyl Records, Books, DVDs, and CDs added alongside Games and Comics (seven types total), each fully separate with their own tailored fields.
 
 ## Next (small, self-contained additions)
 
