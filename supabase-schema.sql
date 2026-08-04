@@ -98,6 +98,8 @@ create table if not exists games (
   player_name text default '',
   -- game-specific: PAL / NTSC-U / NTSC-J / etc
   region text default '',
+  -- game-specific: loose / cib / box
+  completeness text default '',
   -- applies to any item type: 'physical' or 'digital'
   copy_type text default '',
   -- last "Check eBay price" result: average of current active US listings

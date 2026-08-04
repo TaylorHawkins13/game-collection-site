@@ -37,6 +37,7 @@ const EMPTY = {
   player_name: '',
   region: '',
   copy_type: '',
+  completeness: '',
   market_price: null,
   market_price_checked_at: null,
 };
@@ -100,6 +101,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         player_name: source.player_name || '',
         region: source.region || '',
         copy_type: source.copy_type || '',
+        completeness: source.completeness || '',
         market_price: duplicateOf ? null : source.market_price ?? null,
         market_price_checked_at: duplicateOf ? null : source.market_price_checked_at || null,
       });
@@ -405,6 +407,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       card_number: isCard ? form.card_number : '',
       player_name: isCard ? form.player_name : '',
       region: isGame ? form.region : '',
+      completeness: isGame ? form.completeness : '',
     });
     setSaving(false);
     if (result?.error) {
@@ -766,6 +769,17 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               <option value="digital">Digital</option>
             </select>
           </div>
+          {isGame && (
+            <div className="field">
+              <label>Completeness</label>
+              <select value={form.completeness} onChange={(e) => set('completeness', e.target.value)}>
+                <option value="">—</option>
+                <option value="loose">Loose (cart/disc only)</option>
+                <option value="cib">CIB (complete in box)</option>
+                <option value="box">Box only (no manual)</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="row2">

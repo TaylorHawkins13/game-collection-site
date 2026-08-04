@@ -86,6 +86,10 @@ export default function GameCard({ game, onClick }) {
     statRows.push({ label: 'Genre', value: game.genre || '—' });
     statRows.push({ label: 'Progress', value: cap(game.play_status) || 'Backlog' });
     if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
+    if (game.completeness) {
+      const compLabel = { loose: 'Loose', cib: 'CIB', box: 'Box only' }[game.completeness] || game.completeness;
+      statRows.push({ label: 'Completeness', value: compLabel });
+    }
   }
   if (game.market_price != null) {
     statRows.push({ label: 'Market value', value: `$${game.market_price}` });
