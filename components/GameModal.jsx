@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
 import { currencySymbol } from '@/lib/currency';
+import { createClient } from '@/lib/supabaseClient';
 
 const EMPTY = {
   item_type: 'game',
@@ -37,6 +38,7 @@ const EMPTY = {
 
 export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
   const sg = suggestions || {};
+  const supabase = createClient();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -46,6 +48,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const [scanning, setScanning] = useState(false);
   const [barcodeHint, setBarcodeHint] = useState('');
   const [coverBroken, setCoverBroken] = useState(false);
+  const [communityResults, setCommunityResults] = useState([]);
+  const [communityHint, setCommunityHint] = useState('');
 
   useEffect(() => {
     setCoverBroken(false);
@@ -94,10 +98,71 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setSearchHint('');
     setSaveError('');
     setBarcodeHint('');
+    setCommunityResults([]);
+    setCommunityHint('');
   }, [game, duplicateOf]);
 
   function set(field, val) {
     setForm((f) => ({ ...f, [field]: val }));
+  }
+
+  // As you type a title, check whether anyone else (or you, previously)
+  // has already added something matching — if so, their entry can fill
+  // in the details instead of typing them out again. This only ever
+  // surfaces items from your own collection or from public profiles: the
+  // same database rule that keeps private collections out of the
+  // leaderboard applies here automatically, so nothing extra was needed
+  // to keep private collectors' items from leaking into this.
+  useEffect(() => {
+    const q = form.title.trim();
+    if (q.length < 3) {
+      setCommunityResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        let query = supabase
+          .from('games')
+          .select(
+            'id,title,item_type,cover,platforms,genre,publisher,writer,artist,card_set,card_number,player_name,format,edition,series,issue_number'
+          )
+          .eq('item_type', form.item_type)
+          .ilike('title', `%${q}%`)
+          .limit(6);
+        if (game?.id) query = query.neq('id', game.id);
+        const { data } = await query;
+        if (!cancelled) setCommunityResults(data || []);
+      } catch {
+        if (!cancelled) setCommunityResults([]);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.title, form.item_type]);
+
+  function applyCommunityResult(item) {
+    set('title', item.title || form.title);
+    if (item.cover) set('cover', item.cover);
+    if (item.genre) set('genre', item.genre);
+    if (item.publisher) set('publisher', item.publisher);
+    if (item.writer) set('writer', item.writer);
+    if (item.artist) set('artist', item.artist);
+    if (item.format) set('format', item.format);
+    if (item.edition) set('edition', item.edition);
+    if (item.series) set('series', item.series);
+    if (item.issue_number) set('issue_number', item.issue_number);
+    if (item.card_set) set('card_set', item.card_set);
+    if (item.card_number) set('card_number', item.card_number);
+    if (item.player_name) set('player_name', item.player_name);
+    if (isGame && form.platforms.length === 0 && (item.platforms || []).length) {
+      set('platforms', item.platforms);
+    }
+    setCommunityResults([]);
+    setCommunityHint(`Filled from another collector's entry: ${item.title}`);
   }
 
   // Lock background scroll while this modal (and anything it opens, like
@@ -370,6 +435,29 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               ))}
             </div>
           )}
+          {communityResults.length > 0 && (
+            <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
+              <div className="sub" style={{ margin: '6px 10px' }}>Already in the community — click to fill in details:</div>
+              {communityResults.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => applyCommunityResult(r)}
+                  style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+                >
+                  {r.cover && (
+                    <img src={r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                  )}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{r.title}</div>
+                    <div className="sub" style={{ margin: 0 }}>
+                      {[r.publisher, r.card_set, (r.platforms || []).join(', ')].filter(Boolean)[0] || '—'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {communityHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{communityHint}</div>}
         </div>
 
         {isGame && (
