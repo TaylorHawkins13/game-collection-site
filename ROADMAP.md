@@ -6,6 +6,24 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 1. **Game search/auto-fill doesn't work** — expected right now, not a bug: IGDB auto-fill needs Twitch API credentials that are still blocked on your end by Twitch's 2FA account bug. Manual entry (or the barcode scanner) works in the meantime.
 
+## Ideas from Claude (new, not yet reviewed)
+
+A batch of ideas I came up with on my own — nothing here has your buy-in yet, just things I noticed would fit well given what's already built. Go through these whenever you're ready; keep what's useful (I'll fold it into the sections below, or just tell me to build straight from here) and toss the rest.
+
+- **Bulk edit / multi-select on the dashboard** — a checkbox on each card to select several items at once, then bulk-change platform, tags, or ownership status, or delete them together, instead of opening each item individually. Gets more valuable as a collection grows past a hundred-plus items.
+- **Saved filter views** — save a filter/sort combo as a named shortcut ("PS5 backlog," "Comics worth price-checking") for one-click reuse instead of re-picking the same dropdowns every visit.
+- **Collection insights page** — a dedicated stats page beyond the value chart: genre/platform/decade breakdowns as charts, spending by month, busiest month for adding items. Purely derived from data you already have, no new inputs needed.
+- **Price-drop alerts** — piggybacking on the new notification bell: get notified when a wishlist item's eBay price drops below a threshold you set.
+- **Undo on delete** — deleting an item today is a plain "are you sure?" with no way back; a brief "Undo" toast (or a short-lived recently-deleted view) would prevent an accidental permanent loss.
+- **Loan tracker** — mark an item as "loaned to ___" with a date, so lent-out books/games/discs don't quietly disappear from memory.
+- **Bulk barcode scanning session** — scan several items back-to-back without closing and reopening the Add form each time, for digitizing a big physical pile in one sitting.
+- **Import from Goodreads / Discogs** — same idea as the Steam import, for Books and Vinyl/CDs respectively — both offer exportable data (Goodreads CSV export, Discogs collection API) that could seed a bulk import.
+- **Shareable yearly recap** — a "Your Year in Shelf Life" summary (items added, completed, trophies earned) generated each January, shareable as an image — same spirit as Spotify Wrapped or GitHub's contribution graph.
+- **Friends-only leaderboard** — a version of the leaderboard scoped to just the people you follow, for a smaller, more personal "who's ahead" than the site-wide rankings.
+- **Auto-generated stats card image** — an OG-image-style PNG of your collection stats (item count, top platform, trophy count) for posting outside the site — distinct from just sharing the profile link.
+- **Photo attachments for condition proof** — attach a couple of real photos to a physical item (separate from cover art), useful for high-value collectibles where the actual condition or grading matters.
+- **Accessibility pass** — screen-reader labels and full keyboard navigation for modals/dropdowns haven't been audited yet; worth a dedicated pass once the feature set slows down.
+
 ## Later (bigger, more design work)
 
 - **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
