@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import ImportCsvModal from '@/components/ImportCsvModal';
-import ShowcaseManagerModal from '@/components/ShowcaseManagerModal';
 import ValueChart from '@/components/ValueChart';
 import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
@@ -69,7 +68,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
   const [showImport, setShowImport] = useState(false);
-  const [showShowcase, setShowShowcase] = useState(false);
   const [snapshots, setSnapshots] = useState([]);
   const [snapshotSaving, setSnapshotSaving] = useState(false);
 
@@ -346,15 +344,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     });
   }
 
-  // Called by ShowcaseManagerModal after it's written the new showcase_order
-  // values to Supabase — just needs to fold the same values into local
-  // state so the cards' "Showcased" badges update without a refetch.
-  function handleShowcaseSaved(updates) {
-    const byId = new Map(updates.map((u) => [u.id, u.showcase_order]));
-    setGames((gs) => gs.map((g) => (byId.has(g.id) ? { ...g, showcase_order: byId.get(g.id) } : g)));
-    setShowShowcase(false);
-  }
-
   async function handleAvatarFile(e) {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file later
@@ -441,9 +430,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           )}
           <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
             Import CSV
-          </button>
-          <button className="btn-ghost" onClick={() => setShowShowcase(true)} type="button" disabled={games.length === 0}>
-            Manage showcase
           </button>
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
             Profile settings
@@ -725,13 +711,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         />
       )}
 
-      {showShowcase && (
-        <ShowcaseManagerModal
-          games={games}
-          onClose={() => setShowShowcase(false)}
-          onSaved={handleShowcaseSaved}
-        />
-      )}
     </main>
   );
 }

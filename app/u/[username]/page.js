@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
 import ProfileTabs from './ProfileTabs';
 import ShareProfileButton from '@/components/ShareProfileButton';
+import ShowcaseButton from '@/components/ShowcaseButton';
 import GameCard from '@/components/GameCard';
 
 export async function generateMetadata({ params }) {
@@ -143,6 +144,7 @@ export default async function ProfilePage({ params }) {
         {isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <ShareProfileButton username={profile.username} itemCount={owned} />
+            <ShowcaseButton userId={profile.id} />
             <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Edit profile
             </Link>
