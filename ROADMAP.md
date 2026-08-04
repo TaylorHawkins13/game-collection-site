@@ -10,7 +10,6 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 This is about *your real in-game trophies/achievements on Xbox and PlayStation* — separate from Shelf Life's own collection-milestone badges (the bronze/silver/gold/platinum system already built, which is about collecting, not playing).
 
-- **Platinum count / average completion on your profile** — a stat real trophy hunters care about — "14 platinums, 78% average completion across your library" — shown clearly as its own thing, not mixed in with Shelf Life's own trophy case.
 - **Filter/sort your collection by completion %** — find what's closest to platinum in your backlog, or sort your whole library by how close to 100% each game is.
 
 ## Later (bigger, more design work)
