@@ -212,6 +212,31 @@ create policy "Authors or profile owners can delete comments"
   using (author_id = auth.uid() or profile_id = auth.uid());
 
 -- ------------------------------------------------------------
+-- value_snapshots: periodic "collection value over time" data points,
+-- recorded automatically after "Refresh all prices" (or manually via
+-- "Record snapshot"). Owner-only — never shown on public profiles.
+-- ------------------------------------------------------------
+create table if not exists value_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  total_value numeric not null,
+  item_count int not null,
+  taken_at timestamptz not null default now()
+);
+
+create index if not exists value_snapshots_user_id_idx on value_snapshots (user_id, taken_at);
+
+alter table value_snapshots enable row level security;
+
+create policy "Owners can read their own value snapshots"
+  on value_snapshots for select
+  using (user_id = auth.uid());
+
+create policy "Owners can insert their own value snapshots"
+  on value_snapshots for insert
+  with check (user_id = auth.uid());
+
+-- ------------------------------------------------------------
 -- Leaderboard views (only consider public profiles)
 -- ------------------------------------------------------------
 create or replace view leaderboard_most_owned as

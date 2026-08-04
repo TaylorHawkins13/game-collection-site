@@ -7,10 +7,12 @@ import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import ImportCsvModal from '@/components/ImportCsvModal';
+import ValueChart from '@/components/ValueChart';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { getPlatformColor } from '@/lib/platformColors';
 import { buildPriceQuery } from '@/lib/marketPrice';
+import { estimateCollectionValue } from '@/lib/valueSnapshot';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -63,6 +65,36 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
   const [showImport, setShowImport] = useState(false);
+  const [snapshots, setSnapshots] = useState([]);
+  const [snapshotSaving, setSnapshotSaving] = useState(false);
+
+  // Load the collection's value history for the "value over time" chart.
+  // Owner-only data (RLS-scoped), never shown on the public profile.
+  useEffect(() => {
+    supabase
+      .from('value_snapshots')
+      .select('total_value, item_count, taken_at')
+      .eq('user_id', userId)
+      .order('taken_at', { ascending: true })
+      .then(({ data }) => {
+        if (data) setSnapshots(data);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function recordSnapshot(gamesList) {
+    const { total, itemCount } = estimateCollectionValue(gamesList || games);
+    setSnapshotSaving(true);
+    const { data, error } = await supabase
+      .from('value_snapshots')
+      .insert({ user_id: userId, total_value: total, item_count: itemCount })
+      .select('total_value, item_count, taken_at')
+      .single();
+    setSnapshotSaving(false);
+    if (!error && data) {
+      setSnapshots((s) => [...s, data]);
+    }
+  }
 
   const platformOptions = useMemo(
     () => [...new Set(games.flatMap((g) => g.platforms || []))].sort(),
@@ -250,6 +282,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setRefreshingAll(true);
     setRefreshProgress({ done: 0, total: targets.length });
 
+    // Tracked locally rather than reading the `games` state var, since
+    // state updates from setGames() inside this loop won't be reflected
+    // in a closed-over `games` reference until after this function returns.
+    let currentGames = games;
+
     for (let i = 0; i < targets.length; i++) {
       if (refreshStopRef.current) break;
       const item = targets[i];
@@ -264,7 +301,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             .select()
             .single();
           if (updated) {
-            setGames((gs) => gs.map((g) => (g.id === updated.id ? updated : g)));
+            currentGames = currentGames.map((g) => (g.id === updated.id ? updated : g));
+            setGames(currentGames);
           }
         }
       } catch {
@@ -276,6 +314,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     }
     setRefreshingAll(false);
+    recordSnapshot(currentGames);
   }
 
   // Called by ImportCsvModal once its batch insert finishes — the modal
@@ -482,6 +521,37 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           </div>
         ))}
       </div>
+
+      {games.length > 0 && (
+        <div className="form-card" style={{ margin: '0 0 20px', maxWidth: 'none' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
+            <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
+              {snapshotSaving ? 'Recording…' : 'Record snapshot'}
+            </button>
+          </div>
+          {snapshots.length >= 2 ? (
+            <>
+              <div style={{ marginTop: 12 }}>
+                <ValueChart snapshots={snapshots} currency={currency} />
+              </div>
+              <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
+                Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
+                {snapshots[snapshots.length - 1].item_count} owned item
+                {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
+                {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
+                {currency !== 'USD' && ' eBay prices are always in USD, so totals mix currencies and are approximate.'}
+              </div>
+            </>
+          ) : (
+            <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
+              Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
+              or click "Record snapshot" above to log the current estimated value (eBay price where checked,
+              purchase price otherwise) right now.
+            </div>
+          )}
+        </div>
+      )}
 
       {platformCounts.length > 0 && (
         <div className="system-tiles-wrap">

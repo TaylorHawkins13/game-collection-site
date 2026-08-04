@@ -31,6 +31,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), or Box only (no manual), as its own field separate from general condition. Feeds directly into the eBay price check too — completeness swings a game's real resale value a lot (a loose cart vs. a CIB copy of the same game can be several times apart in price), so the price lookup now searches with the right term included instead of averaging loose and CIB listings together. Requires `completeness-migration.sql` on existing projects.
 - **CSV/spreadsheet import** — an "Import CSV" button on the dashboard bulk-adds items from a spreadsheet instead of one at a time. Includes a downloadable template with the right columns and an example row for every item type. Shows a preview of what's about to be added plus any warnings (unrecognized item type, bad date, etc. — those rows still import with sensible defaults rather than failing outright), then imports in batches with a progress readout.
 - **"100% complete" tag** — a checkbox on any item ("all extras/achievements done, a full series or set collected, etc.") beyond the existing play-status/condition fields. Shows as a badge on the card, has its own dashboard filter, and is importable via CSV. Requires `fullycompleted-migration.sql` on existing projects.
+- **Collection value over time chart** — a mini chart on the dashboard tracking your estimated collection value (last "Check eBay price" result where you've checked one, purchase price otherwise) across snapshots in time. A snapshot is recorded automatically every time "Refresh all prices" finishes, or manually via a "Record snapshot" button — needs at least two snapshots before a trend line shows up. eBay prices are always USD, so if your display currency isn't USD the total is a mix and only approximate. Requires `valuesnapshots-migration.sql` on existing projects.
 
 ## Bugs (reported, not yet fixed)
 
@@ -42,7 +43,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 
 ## Next (small, self-contained additions) — in priority order
 
-1. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
+Nothing queued up right now — everything that was on this list has shipped. Pick something from "Later" below, or let me know what you want next.
 
 ## Later (bigger, more design work)
 
