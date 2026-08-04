@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
 import ProfileTabs from './ProfileTabs';
+import ShareProfileButton from '@/components/ShareProfileButton';
 
 export async function generateMetadata({ params }) {
   const { username } = params;
@@ -136,9 +137,12 @@ export default async function ProfilePage({ params }) {
           <FollowButton profileId={profile.id} initialFollowing={alreadyFollowing} />
         )}
         {isOwner && (
-          <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
-            Edit profile
-          </Link>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <ShareProfileButton username={profile.username} itemCount={owned} />
+            <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Edit profile
+            </Link>
+          </div>
         )}
       </div>
 

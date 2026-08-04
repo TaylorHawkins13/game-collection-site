@@ -37,6 +37,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Fixed silent failures on follow/comment/delete** — found during a pass on loading/error states: following/unfollowing, posting a comment, and deleting an item all failed with zero feedback if something went wrong (and Follow's button could get visually stuck as "Following" even when the database call actually failed). All three now show a small error message (a new toast in the bottom-left corner) instead of quietly doing nothing.
 - **Mobile pass: nav, tap targets, toolbar** — the navbar collapses behind a hamburger menu on phones instead of wrapping into 2-3 messy lines; buttons and form fields got a 44px minimum tap height (were as small as ~34px); the dashboard's filter toolbar stacks full-width on narrow screens instead of wrapping into a ragged grid.
 - **Consolidated dashboard filters** — the 6 filter dropdowns (Type, Status, Copy, Completeness, Platform, Play status) are now tucked behind a single "Filters" button instead of always taking up a row, with a count badge when any are active and a "Clear all filters" shortcut.
+- **Share your shelf** — a "Share my shelf" button on your own public profile. On a phone it opens the native share sheet (Messages, WhatsApp, Mail, etc.); on desktop it copies your profile link to the clipboard.
 
 ## Bugs (reported, not yet fixed)
 
@@ -46,10 +47,9 @@ A living list of where this could go next. Nothing here is committed or schedule
 - *Email verification link went to localhost* — fixed via Supabase Auth → URL Configuration (Site URL/Redirect URLs updated to the real site).
 - *Cover images: .png didn't load, .jpg did* — no repro ever turned up (no broken URL or screenshot), most likely a one-off hotlink block on a specific image host rather than a site-wide bug. Reopen if it happens again with a URL to check.
 
-## Next (small, self-contained additions) — in priority order
+## Next (small, self-contained additions)
 
-1. **Submit the sitemap to Google/Bing** — a quick manual step now that `sitemap.xml` exists: add the site in [Google Search Console](https://search.google.com/search-console) and [Bing Webmaster Tools](https://www.bing.com/webmasters) and submit `https://shelflife.site/sitemap.xml` in each — this is what actually gets the site indexed and searchable, the sitemap file alone doesn't do that automatically.
-2. **Invite/share features** — a "share your shelf" link or button on your own profile, and/or a lightweight invite-code flow, to make it easier for people to bring friends in directly rather than just word of mouth.
+Nothing queued up right now — everything from the last round shipped (sitemap submitted to Google/Bing, share button live). Pick something from Later below, or from the polish list, whenever you're ready.
 
 ## Later (bigger, more design work)
 
