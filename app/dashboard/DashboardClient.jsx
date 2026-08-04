@@ -138,6 +138,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           g.player_name,
           g.format,
           g.edition,
+          g.region,
         ]
           .join(' ')
           .toLowerCase();

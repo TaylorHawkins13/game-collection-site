@@ -34,6 +34,7 @@ const EMPTY = {
   card_set: '',
   card_number: '',
   player_name: '',
+  region: '',
 };
 
 export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
@@ -90,6 +91,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         card_set: source.card_set || '',
         card_number: source.card_number || '',
         player_name: source.player_name || '',
+        region: source.region || '',
       });
     } else {
       setForm(EMPTY);
@@ -362,6 +364,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       card_set: isCard ? form.card_set : '',
       card_number: isCard ? form.card_number : '',
       player_name: isCard ? form.player_name : '',
+      region: isGame ? form.region : '',
     });
     setSaving(false);
     if (result?.error) {
@@ -461,9 +464,21 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         </div>
 
         {isGame && (
-          <div className="field">
-            <label>Platforms</label>
-            <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" suggestions={sg.platforms} />
+          <div className="row2">
+            <div className="field">
+              <label>Platforms</label>
+              <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" suggestions={sg.platforms} />
+            </div>
+            <div className="field">
+              <label>Region</label>
+              <select value={form.region} onChange={(e) => set('region', e.target.value)}>
+                <option value="">—</option>
+                <option value="NTSC-U/C">NTSC-U/C (North America)</option>
+                <option value="NTSC-J">NTSC-J (Japan)</option>
+                <option value="PAL">PAL (Europe/Australia)</option>
+                <option value="Region-Free">Region-Free</option>
+              </select>
+            </div>
           </div>
         )}
 

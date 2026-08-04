@@ -82,6 +82,7 @@ export default function GameCard({ game, onClick }) {
       label: 'Platform',
       value: game.platforms && game.platforms.length ? game.platforms.join(', ') : 'Unknown',
     });
+    if (game.region) statRows.push({ label: 'Region', value: game.region });
     statRows.push({ label: 'Genre', value: game.genre || '—' });
     statRows.push({ label: 'Progress', value: cap(game.play_status) || 'Backlog' });
     if (game.condition) statRows.push({ label: 'Condition', value: game.condition });

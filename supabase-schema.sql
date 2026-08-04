@@ -96,6 +96,8 @@ create table if not exists games (
   card_set text default '',
   card_number text default '',
   player_name text default '',
+  -- game-specific: PAL / NTSC-U / NTSC-J / etc
+  region text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

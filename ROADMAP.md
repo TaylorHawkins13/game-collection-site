@@ -25,6 +25,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Community suggestions while adding an item** — as you type a title, if anyone else has already added a matching item (or you have, previously), it shows up in a "already in the community" list — click it and it fills in cover, platform, publisher, and the rest from their entry instead of typing it all out. Only ever pulls from your own items or from public profiles, using the same privacy rule that already keeps private collections out of the leaderboard.
 - **Browse by system on the dashboard** — a row of big tappable tiles above the filter bar, one per platform you own games for, each showing how many items you've got, color-coded by platform brand. Tap one to filter straight to that system; tap again (or Clear) to go back to everything.
 - **Clickable followers/following lists** — the follower/following counts on a profile are now links to a full list of who's actually there, each linking through to their own profile. Same privacy behavior as the counts already had (visible regardless of whether the collection itself is public).
+- **Region tags for games** — NTSC-U/C, NTSC-J, PAL, or Region-Free as a field on games, shown on the card and searchable. Requires `region-migration.sql` on existing projects.
 
 ## Bugs (reported, not yet fixed)
 
@@ -36,11 +37,10 @@ Priority order — top is worth fixing soonest.
 
 ## Next (small, self-contained additions) — in priority order
 
-1. **Region tags for games** — PAL / NTSC / NTSC-J as a field on games.
-2. **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
-3. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
-4. **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), and Box (box + game, no manual) as their own field, separate from general condition.
-5. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
+1. **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
+2. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
+3. **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), and Box (box + game, no manual) as their own field, separate from general condition.
+4. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
 
 ## Later (bigger, more design work)
 
