@@ -1111,26 +1111,6 @@ button:disabled {
   margin-bottom: 4px;
 }
 
-.leaderboard-list {
-  max-width: 640px;
-}
-.leaderboard-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  border-radius: 10px;
-  margin-bottom: 8px;
-}
-.leaderboard-rank {
-  font-weight: 700;
-  color: var(--text-dim);
-  width: 28px;
-  text-align: center;
-  flex: none;
-}
 .leaderboard-thumb {
   width: 34px;
   height: 34px;
@@ -1153,12 +1133,6 @@ button:disabled {
   height: 34px;
   font-size: 13px;
   flex-shrink: 0;
-}
-.leaderboard-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ---------- Leaderboard podium (top 3 of the active tab) ---------- */

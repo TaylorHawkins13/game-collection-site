@@ -87,36 +87,12 @@ function PodiumPlace({ place, type, row, tabKey }) {
   );
 }
 
-function ListRow({ rank, type, row, tabKey }) {
-  const name = type === 'person' ? row.display_name || row.username : row.title;
-  return (
-    <div className="leaderboard-row">
-      <div className="leaderboard-rank">{rank}</div>
-      {type === 'person' ? (
-        <PersonAvatar avatarUrl={row.avatar_url} name={name} />
-      ) : (
-        <CoverThumb cover={row.cover} title={name} />
-      )}
-      <div className="leaderboard-name" style={{ flex: 1, minWidth: 0 }}>
-        {type === 'person' ? <Link href={`/u/${row.username}`}>{name}</Link> : name}
-      </div>
-      <div className="sub" style={{ margin: 0 }}>
-        {statFor(tabKey, row)}
-      </div>
-    </div>
-  );
-}
-
 export default function LeaderboardClient({ mostOwned, biggest, trending, trophies }) {
   const [tab, setTab] = useState('trophies');
 
   const dataByTab = { trophies, biggest, mostOwned, trending };
   const active = TABS.find((t) => t.key === tab);
-  const rows = dataByTab[tab] || [];
-  const hasPodium = rows.length >= 3;
-  const podiumRows = hasPodium ? rows.slice(0, 3) : [];
-  const restRows = hasPodium ? rows.slice(3) : rows;
-  const restStartRank = hasPodium ? 4 : 1;
+  const podiumRows = (dataByTab[tab] || []).slice(0, 3);
 
   return (
     <div>
@@ -137,33 +113,16 @@ export default function LeaderboardClient({ mostOwned, biggest, trending, trophi
         {active.sub}
       </p>
 
-      {rows.length === 0 ? (
+      {podiumRows.length === 0 ? (
         <div className="empty-state">
           <div>{active.empty}</div>
         </div>
       ) : (
-        <>
-          {hasPodium && (
-            <div className="leaderboard-podium">
-              {podiumRows.map((row, i) => (
-                <PodiumPlace key={rowKey(active.type, row)} place={i + 1} type={active.type} row={row} tabKey={tab} />
-              ))}
-            </div>
-          )}
-          {restRows.length > 0 && (
-            <div className="leaderboard-list">
-              {restRows.map((row, i) => (
-                <ListRow
-                  key={rowKey(active.type, row)}
-                  rank={restStartRank + i}
-                  type={active.type}
-                  row={row}
-                  tabKey={tab}
-                />
-              ))}
-            </div>
-          )}
-        </>
+        <div className="leaderboard-podium">
+          {podiumRows.map((row, i) => (
+            <PodiumPlace key={rowKey(active.type, row)} place={i + 1} type={active.type} row={row} tabKey={tab} />
+          ))}
+        </div>
       )}
     </div>
   );

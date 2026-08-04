@@ -9,11 +9,12 @@ export const metadata = {
 export default async function LeaderboardPage() {
   const supabase = createClient();
 
+  // Only the top 3 (a podium) ever show on this page now.
   const [{ data: mostOwned }, { data: biggest }, { data: trending }, { data: trophies }] = await Promise.all([
-    supabase.from('leaderboard_most_owned').select('*').limit(15),
-    supabase.from('leaderboard_biggest_collections').select('*').limit(15),
-    supabase.from('leaderboard_trending').select('*').limit(15),
-    supabase.from('leaderboard_trophies').select('*').limit(15),
+    supabase.from('leaderboard_most_owned').select('*').limit(3),
+    supabase.from('leaderboard_biggest_collections').select('*').limit(3),
+    supabase.from('leaderboard_trending').select('*').limit(3),
+    supabase.from('leaderboard_trophies').select('*').limit(3),
   ]);
 
   return (
