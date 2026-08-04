@@ -18,6 +18,8 @@ create table if not exists profiles (
   bio text,
   is_public boolean not null default true,
   currency text not null default 'USD',
+  -- verified SteamID64 from "Log in with Steam" — null if not connected
+  steam_id text,
   created_at timestamptz not null default now()
 );
 
@@ -110,6 +112,8 @@ create table if not exists games (
   fully_completed boolean not null default false,
   -- null = not on the public profile showcase; 1..5 = display position
   showcase_order integer,
+  -- set when this row was imported from Steam, so re-importing skips it
+  steam_appid integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

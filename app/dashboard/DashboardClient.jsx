@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import ImportCsvModal from '@/components/ImportCsvModal';
+import SteamImportModal from '@/components/SteamImportModal';
 import ValueChart from '@/components/ValueChart';
 import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
@@ -45,6 +46,21 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The Steam OpenID round trip ends with a full-page redirect back here
+  // (?steam=connected/cancelled/failed) rather than a client-side callback,
+  // since Steam only supports the old redirect-based login flow.
+  useEffect(() => {
+    const steamResult = searchParams.get('steam');
+    if (steamResult === 'connected') {
+      announceToast('Steam connected.', 'success');
+    } else if (steamResult === 'failed') {
+      announceToast("Couldn't verify your Steam login — try connecting again.");
+    }
+    // 'cancelled' means the person backed out of the Steam login screen —
+    // not worth a toast for that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Catch up on any trophies earned since the last visit. Safe to call even
   // if the achievements migration hasn't been run yet — it'll just no-op.
   useEffect(() => {
@@ -63,6 +79,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
+  const [steamId, setSteamId] = useState(profile?.steam_id || null);
+  const [steamDisconnecting, setSteamDisconnecting] = useState(false);
+  const [showSteamImport, setShowSteamImport] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const [refreshingAll, setRefreshingAll] = useState(false);
@@ -102,6 +121,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
   const platformOptions = useMemo(
     () => [...new Set(games.flatMap((g) => g.platforms || []))].sort(),
+    [games]
+  );
+
+  // Steam appids already in the collection, so SteamImportModal only
+  // offers games that aren't already here (regardless of how they were
+  // originally added — manually, CSV, or an earlier Steam import).
+  const steamAppIds = useMemo(
+    () => new Set(games.filter((g) => g.steam_appid != null).map((g) => g.steam_appid)),
     [games]
   );
 
@@ -296,6 +323,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       market_price: null, // a fresh copy needs its own price check, not the original's
       market_price_checked_at: null,
       showcase_order: null, // don't silently double up a showcase slot
+      steam_appid: null, // a duplicate is a manual copy, not another Steam import
     });
     setModalGame(null);
   }
@@ -355,6 +383,25 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
       announceTrophies(newTrophies);
     });
+  }
+
+  // Same shape as handleImported — used by SteamImportModal instead of CSV.
+  function handleSteamImported(newRows) {
+    setGames((gs) => [...gs, ...newRows]);
+    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
+      announceTrophies(newTrophies);
+    });
+  }
+
+  async function handleDisconnectSteam() {
+    setSteamDisconnecting(true);
+    const { error } = await supabase.from('profiles').update({ steam_id: null }).eq('id', userId);
+    setSteamDisconnecting(false);
+    if (error) {
+      announceToast("Couldn't disconnect Steam — try again in a moment.");
+      return;
+    }
+    setSteamId(null);
   }
 
   async function handleAvatarFile(e) {
@@ -444,6 +491,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
             Import CSV
           </button>
+          {steamId && (
+            <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
+              Import from Steam
+            </button>
+          )}
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
             Profile settings
           </button>
@@ -534,6 +586,34 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Make my profile and collection public
             </label>
           </div>
+
+          <div className="field">
+            <label>Connected accounts</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <span className="sub" style={{ margin: 0 }}>
+                Steam: {steamId ? `Connected (SteamID ${steamId})` : 'Not connected'}
+              </span>
+              {steamId ? (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleDisconnectSteam}
+                  disabled={steamDisconnecting}
+                >
+                  {steamDisconnecting ? 'Disconnecting…' : 'Disconnect'}
+                </button>
+              ) : (
+                <a href="/api/steam-login" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                  Log in with Steam
+                </a>
+              )}
+            </div>
+            <p className="sub" style={{ marginTop: 6 }}>
+              Connecting lets you import your Steam library as owned/digital games. Your Steam profile's
+              "Game details" privacy setting needs to be Public for the import to see your games.
+            </p>
+          </div>
+
           {settingsMsg && (
             <div className={settingsMsg.startsWith('Failed') ? 'error-text' : 'success-text'}>{settingsMsg}</div>
           )}
@@ -721,6 +801,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           userId={userId}
           onClose={() => setShowImport(false)}
           onImported={handleImported}
+        />
+      )}
+
+      {showSteamImport && (
+        <SteamImportModal
+          userId={userId}
+          existingAppIds={steamAppIds}
+          onClose={() => setShowSteamImport(false)}
+          onImported={handleSteamImported}
         />
       )}
 
