@@ -41,6 +41,8 @@ const EMPTY = {
   fully_completed: false,
   market_price: null,
   market_price_checked_at: null,
+  trophy_platinum: false,
+  trophy_completion: null,
 };
 
 export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
@@ -106,6 +108,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         fully_completed: source.fully_completed || false,
         market_price: duplicateOf ? null : source.market_price ?? null,
         market_price_checked_at: duplicateOf ? null : source.market_price_checked_at || null,
+        trophy_platinum: duplicateOf ? false : source.trophy_platinum || false,
+        trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
       });
     } else {
       setForm(EMPTY);
@@ -410,6 +414,12 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       player_name: isCard ? form.player_name : '',
       region: isGame ? form.region : '',
       completeness: isGame ? form.completeness : '',
+      trophy_platinum: isGame ? form.trophy_platinum : false,
+      trophy_completion: isGame
+        ? form.trophy_completion === '' || form.trophy_completion == null
+          ? null
+          : Math.max(0, Math.min(100, parseFloat(form.trophy_completion)))
+        : null,
     });
     setSaving(false);
     if (result?.error) {
@@ -843,6 +853,40 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             </div>
           </div>
         </div>
+
+        {isGame && (
+          <div className="field">
+            <label>Xbox/PlayStation trophies or achievements</label>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
+                <input
+                  type="checkbox"
+                  checked={form.trophy_platinum}
+                  onChange={(e) => set('trophy_platinum', e.target.checked)}
+                  style={{ width: 'auto' }}
+                />
+                Platinum'd
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  placeholder="Completion %"
+                  value={form.trophy_completion ?? ''}
+                  onChange={(e) => set('trophy_completion', e.target.value)}
+                  style={{ width: 90 }}
+                />
+                <span className="sub" style={{ margin: 0 }}>% trophies/achievements earned</span>
+              </div>
+            </div>
+            <div className="sub" style={{ margin: '4px 0 0' }}>
+              Your real in-game completion — separate from Shelf Life's own collection trophies. No official API for
+              this on Xbox/PlayStation, so it's tracked here by hand.
+            </div>
+          </div>
+        )}
 
         <div className="field">
           <label>

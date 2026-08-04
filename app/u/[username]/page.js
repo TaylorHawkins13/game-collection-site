@@ -113,6 +113,22 @@ export default async function ProfilePage({ params }) {
     .filter((g) => g.showcase_order != null)
     .sort((a, b) => a.showcase_order - b.showcase_order);
 
+  // Real Xbox/PlayStation trophy/achievement stats — separate from the
+  // Shelf Life collection-milestone trophies shown in the Trophies tab.
+  // Only shown once someone's actually used the fields, so a collector
+  // who's never touched this doesn't get a "0% average" callout.
+  const trackedTrophyGames = (games || []).filter(
+    (g) => g.item_type === 'game' && (g.trophy_platinum || g.trophy_completion != null)
+  );
+  const platinumCount = trackedTrophyGames.filter((g) => g.trophy_platinum).length;
+  const avgCompletion =
+    trackedTrophyGames.length > 0
+      ? Math.round(
+          trackedTrophyGames.reduce((sum, g) => sum + (g.trophy_platinum ? 100 : g.trophy_completion || 0), 0) /
+            trackedTrophyGames.length
+        )
+      : null;
+
   return (
     <main className="container">
       <div className="profile-header" style={{ marginTop: 20 }}>
@@ -180,6 +196,26 @@ export default async function ProfilePage({ params }) {
                 {showcaseGames.map((g) => (
                   <GameCard key={g.id} game={g} featured />
                 ))}
+              </div>
+            </div>
+          )}
+
+          {trackedTrophyGames.length > 0 && (
+            <div className="trophy-stats-panel">
+              <h3 className="trophy-stats-heading">Xbox/PlayStation trophies &amp; achievements</h3>
+              <div className="trophy-stats-row">
+                <div className="trophy-stat">
+                  <div className="num">{platinumCount}</div>
+                  <div className="label">Platinum{platinumCount === 1 ? '' : 's'}</div>
+                </div>
+                <div className="trophy-stat">
+                  <div className="num">{avgCompletion}%</div>
+                  <div className="label">Avg completion</div>
+                </div>
+                <div className="trophy-stat">
+                  <div className="num">{trackedTrophyGames.length}</div>
+                  <div className="label">Games tracked</div>
+                </div>
               </div>
             </div>
           )}

@@ -90,6 +90,12 @@ export default function GameCard({ game, onClick, featured = false }) {
       const compLabel = { loose: 'Loose', cib: 'CIB', box: 'Box only' }[game.completeness] || game.completeness;
       statRows.push({ label: 'Completeness', value: compLabel });
     }
+    if (game.trophy_platinum || game.trophy_completion != null) {
+      statRows.push({
+        label: 'Trophies',
+        value: game.trophy_platinum ? 'Platinum' : `${game.trophy_completion}%`,
+      });
+    }
   }
   if (game.market_price != null) {
     statRows.push({ label: 'Market value', value: `$${game.market_price}` });

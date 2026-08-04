@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import Papa from 'papaparse';
 import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
@@ -10,6 +11,7 @@ import ImportCsvModal from '@/components/ImportCsvModal';
 import SteamImportModal from '@/components/SteamImportModal';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
+import PlayNextWidget from '@/components/PlayNextWidget';
 import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
@@ -18,6 +20,7 @@ import { buildPriceQuery } from '@/lib/marketPrice';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
 import { announceToast } from '@/lib/toast';
 import { buildActivityEvents } from '@/lib/activityEvents';
+import { gamesToCsvRows } from '@/lib/csvExport';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -415,6 +418,24 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     });
   }
 
+  // Full-collection CSV backup, generated client-side from what's already
+  // loaded — no server round-trip needed. Column order matches the import
+  // template so the file can be re-imported as-is if needed.
+  function handleExport() {
+    if (games.length === 0) return;
+    const csv = Papa.unparse(gamesToCsvRows(games));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `shelf-life-export-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   // Same shape as handleImported — used by SteamImportModal instead of CSV.
   function handleSteamImported(newRows) {
     setGames((gs) => [...gs, ...newRows]);
@@ -520,6 +541,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           )}
           <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
             Import CSV
+          </button>
+          <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
+            Export CSV
           </button>
           {steamId && (
             <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
@@ -669,6 +693,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               </div>
             ))}
           </div>
+
+          <PlayNextWidget games={games} onOpen={(g) => setModalGame(g)} />
 
           {!recsError && recommendations && recommendations.length > 0 && (
             <div className="recommend-panel">

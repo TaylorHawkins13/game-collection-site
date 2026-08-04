@@ -255,6 +255,26 @@ button:disabled {
   margin-top: 2px;
 }
 
+/* ---------- Play next ---------- */
+.playnext-panel {
+  margin-bottom: 20px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #6c5ce71a, transparent 60%), var(--card);
+  border: 1px solid #6c5ce744;
+}
+.playnext-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.playnext-card-wrap {
+  width: 200px;
+  margin-top: 14px;
+}
+
 /* ---------- Recommendations ---------- */
 .recommend-panel {
   margin-bottom: 20px;
@@ -1272,6 +1292,39 @@ button:disabled {
 }
 .showcase-grid {
   grid-template-columns: repeat(5, 1fr);
+}
+
+.trophy-stats-panel {
+  margin-bottom: 32px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.trophy-stats-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
+}
+.trophy-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.trophy-stat {
+  text-align: center;
+}
+.trophy-stat .num {
+  font-size: 22px;
+  font-weight: 700;
+}
+.trophy-stat .label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
 }
 
 .showcase-selected {

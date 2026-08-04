@@ -8,16 +8,13 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 ## Next (small, self-contained additions)
 
-- **"Play next" suggestion** — recommend something from your own backlog/wishlist to play next, weighted toward the genres/platforms of the games you've rated highest, instead of a plain random pick. Uses data already on your shelf (rating, genre, play status) — no external data needed. Falls back to a random pick if there's not enough rating history yet to weight anything.
 - **Trophy leaderboard** — a new column on `/leaderboard` ranking collectors by Shelf Life trophies earned (or platinum count), alongside the existing most-owned/biggest-collection/trending ones.
 - **Trophies show up in the activity feed** — a fourth event type (alongside added/completed/rated) so followers see when someone lands a Shelf Life milestone, not just item-level activity.
-- **Export your collection** — a CSV download of your whole shelf, the flip side of the existing CSV import. Useful as a backup or for moving data elsewhere — "it's your data" is a nice thing to actually mean.
 
 ## For Xbox/PlayStation trophy & achievement hunters
 
 This is about *your real in-game trophies/achievements on Xbox and PlayStation* — separate from Shelf Life's own collection-milestone badges (the bronze/silver/gold/platinum system already built, which is about collecting, not playing).
 
-- **Platinum status + trophy/achievement completion fields per game** — a "Platinum'd" checkbox and a trophy-completion % for PlayStation games, and an achievement-completion % (or Gamerscore earned/total) for Xbox ones, right on the item — same idea as the existing Loose/CIB/Box completeness field. Sony and Microsoft don't offer a way to pull this in automatically for a personal site (see the PlayStation integration note below), so this would be manual entry, same as everything was before Steam import existed.
 - **Automatic achievement % for Steam-imported games** — the one exception: Steam *does* have a public API for a player's per-game achievement progress. Since Steam-imported games already store their `steam_appid`, their completion percentage could be pulled in automatically instead of typed by hand — worth building once manual tracking proves people actually want this.
 - **Platinum count / average completion on your profile** — a stat real trophy hunters care about — "14 platinums, 78% average completion across your library" — shown clearly as its own thing, not mixed in with Shelf Life's own trophy case.
 - **Filter/sort your collection by completion %** — find what's closest to platinum in your backlog, or sort your whole library by how close to 100% each game is.

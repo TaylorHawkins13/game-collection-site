@@ -114,6 +114,10 @@ create table if not exists games (
   showcase_order integer,
   -- set when this row was imported from Steam, so re-importing skips it
   steam_appid integer,
+  -- real Xbox/PlayStation trophy or achievement completion for this game —
+  -- separate from Shelf Life's own collection-milestone trophies
+  trophy_platinum boolean not null default false,
+  trophy_completion numeric,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
