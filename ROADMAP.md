@@ -32,11 +32,11 @@ A living list of where this could go next. Nothing here is committed or schedule
 
 ## Bugs (reported, not yet fixed)
 
-Priority order — top is worth fixing soonest.
+1. **Game search/auto-fill doesn't work** — expected right now, not a bug: IGDB auto-fill needs Twitch API credentials that are still blocked on your end by Twitch's 2FA account bug. Manual entry (or the barcode scanner) works in the meantime.
 
-1. **Email verification link goes to localhost** — a friend testing the live site got a confirmation email whose link pointed at `localhost` instead of the real site, and could log in unverified anyway. This is a Supabase dashboard setting (Auth → URL Configuration → Site URL/Redirect URLs still pointing at `localhost:3000`), not a code fix — I can walk you through updating it whenever you want.
-2. **Cover images: .png doesn't load, .jpg does** — reported by the same friend. I checked the code and there's nothing that treats file types differently, so this is most likely a specific image URL that blocks hotlinking/external embedding rather than a site-wide PNG bug — I'd need the actual URL (or a screenshot of the broken one) to confirm and fix properly.
-3. **Game search/auto-fill doesn't work** — expected right now, not a bug: IGDB auto-fill needs Twitch API credentials that are still blocked on your end by Twitch's 2FA account bug. Manual entry (or the new barcode scanner) works in the meantime.
+**Closed:**
+- *Email verification link went to localhost* — fixed via Supabase Auth → URL Configuration (Site URL/Redirect URLs updated to the real site).
+- *Cover images: .png didn't load, .jpg did* — no repro ever turned up (no broken URL or screenshot), most likely a one-off hotlink block on a specific image host rather than a site-wide bug. Reopen if it happens again with a URL to check.
 
 ## Next (small, self-contained additions) — in priority order
 
@@ -56,9 +56,9 @@ Priority order — top is worth fixing soonest.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)
 
-- **Email confirmation back on** — currently off for easy testing; worth re-enabling before wide public use so signups are verified (related to bug #1 above).
+- **Email confirmation back on** — currently off for easy testing; worth re-enabling before wide public use so signups are verified (the localhost link issue above is fixed, but confirmation itself is still optional).
 - **Rate limiting on comments** — nothing currently stops spam comment posting; low risk while the user base is small, worth adding once there's real traffic.
-- **Image handling for cover art** — cover URLs are trusted as-is right now; downloading and re-hosting them (or at least validating them) would be more robust than relying on external links staying alive (related to bug #2 above).
+- **Image handling for cover art** — cover URLs are trusted as-is right now; downloading and re-hosting them (or at least validating them) would be more robust than relying on external links staying alive.
 - **Automated tests** — there currently aren't any automated tests; worth adding once the feature set stabilizes, so future changes don't need this much manual click-testing.
 
 ---
