@@ -637,6 +637,15 @@ button:disabled {
   .welcome-steps {
     grid-template-columns: 1fr;
   }
+  /* The What's New sidebar next to a 300px-wide column only works with
+     real room to spare — stack it below the feed instead of squeezing
+     both into a narrow viewport. */
+  .feed-layout {
+    grid-template-columns: 1fr;
+  }
+  .feed-sidebar {
+    position: static;
+  }
 }
 
 /* ---------- Forms ---------- */
@@ -925,6 +934,84 @@ button:disabled {
   color: var(--text-dim);
   width: 28px;
   text-align: center;
+}
+
+/* ---------- Feed ---------- */
+.feed-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+.feed-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.feed-item-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.feed-item-body {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.feed-item-name {
+  font-weight: 600;
+  color: var(--text);
+}
+.feed-item-time {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+.feed-sidebar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  position: sticky;
+  top: 20px;
+}
+.feed-sidebar-heading {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin: 0 0 14px;
+}
+.whats-new-item {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.whats-new-item:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.whats-new-date {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.whats-new-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  margin: 3px 0 3px;
+}
+.whats-new-body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
 /* ---------- Landing page ---------- */

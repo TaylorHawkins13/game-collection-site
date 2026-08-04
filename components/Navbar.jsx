@@ -72,6 +72,7 @@ export default function Navbar() {
         <Link href="/leaderboard" className="nav-link" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
         {!loading && profile && (
           <>
+            <Link href="/feed" className="nav-link" onClick={() => setMenuOpen(false)}>Feed</Link>
             <Link href="/dashboard" className="nav-link" onClick={() => setMenuOpen(false)}>My Collection</Link>
             {profile.username && (
               <Link href={`/u/${profile.username}`} className="nav-link" onClick={() => setMenuOpen(false)}>My Profile</Link>

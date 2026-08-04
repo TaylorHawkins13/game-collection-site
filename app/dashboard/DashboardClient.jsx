@@ -15,6 +15,7 @@ import { getPlatformColor } from '@/lib/platformColors';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
 import { announceToast } from '@/lib/toast';
+import { buildActivityEvents } from '@/lib/activityEvents';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -240,6 +241,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
           announceTrophies(newTrophies);
         });
+        logActivity(buildActivityEvents(userId, data.id, modalGame, data));
       }
       return {};
     } else {
@@ -255,9 +257,20 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
           announceTrophies(newTrophies);
         });
+        logActivity(buildActivityEvents(userId, data.id, null, data));
       }
       return {};
     }
+  }
+
+  // Fire-and-forget: a missing feed entry isn't worth interrupting the
+  // save that just succeeded over, so this only logs to the console
+  // rather than surfacing a toast.
+  function logActivity(events) {
+    if (!events.length) return;
+    supabase.from('activity_events').insert(events).then(({ error }) => {
+      if (error) console.error('activity event insert failed', error);
+    });
   }
 
   async function handleDelete(id) {
