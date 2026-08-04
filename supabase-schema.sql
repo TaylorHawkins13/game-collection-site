@@ -105,6 +105,9 @@ create table if not exists games (
   -- last "Check eBay price" result: average of current active US listings
   market_price numeric,
   market_price_checked_at timestamptz,
+  -- applies to any item type: fully completed (all extras/achievements
+  -- done, full series/set collected, etc.) beyond play_status/condition
+  fully_completed boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

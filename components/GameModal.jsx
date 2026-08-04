@@ -38,6 +38,7 @@ const EMPTY = {
   region: '',
   copy_type: '',
   completeness: '',
+  fully_completed: false,
   market_price: null,
   market_price_checked_at: null,
 };
@@ -102,6 +103,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         region: source.region || '',
         copy_type: source.copy_type || '',
         completeness: source.completeness || '',
+        fully_completed: source.fully_completed || false,
         market_price: duplicateOf ? null : source.market_price ?? null,
         market_price_checked_at: duplicateOf ? null : source.market_price_checked_at || null,
       });
@@ -839,6 +841,21 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
                 </span>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className="field">
+          <label>
+            <input
+              type="checkbox"
+              checked={form.fully_completed}
+              onChange={(e) => set('fully_completed', e.target.checked)}
+              style={{ width: 'auto', marginRight: 8 }}
+            />
+            100% complete
+          </label>
+          <div className="sub" style={{ margin: '4px 0 0' }}>
+            All extras/achievements done, a full series or set collected, etc. — beyond just Play status or Condition.
           </div>
         </div>
 

@@ -26,6 +26,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fPlay, setFPlay] = useState('');
   const [fType, setFType] = useState('');
   const [fCopy, setFCopy] = useState('');
+  const [fComplete, setFComplete] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showSettings, setShowSettings] = useState(false);
 
@@ -156,6 +157,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (fPlay && g.play_status !== fPlay) return false;
       if (fType && (g.item_type || 'game') !== fType) return false;
       if (fCopy && g.copy_type !== fCopy) return false;
+      if (fComplete === 'complete' && !g.fully_completed) return false;
+      if (fComplete === 'incomplete' && g.fully_completed) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -173,7 +176,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, sortBy]);
+  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, sortBy]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -530,6 +533,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <option value="">Physical + digital</option>
           <option value="physical">Physical only</option>
           <option value="digital">Digital only</option>
+        </select>
+        <select value={fComplete} onChange={(e) => setFComplete(e.target.value)}>
+          <option value="">All completeness</option>
+          <option value="complete">100% complete only</option>
+          <option value="incomplete">Not yet 100%</option>
         </select>
         <select value={fPlat} onChange={(e) => setFPlat(e.target.value)}>
           <option value="">All platforms</option>
