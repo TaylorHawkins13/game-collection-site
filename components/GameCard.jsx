@@ -122,10 +122,13 @@ export default function GameCard({ game, onClick }) {
             ))}
           </div>
         </div>
-        {(((isComic || isCard) && game.is_variant) || (game.tags || []).length > 0) && (
+        {(((isComic || isCard) && game.is_variant) || game.copy_type || (game.tags || []).length > 0) && (
           <div className="badge-row">
             {(isComic || isCard) && game.is_variant && (
               <span className="badge tag">{isCard ? 'Parallel' : 'Variant'}</span>
+            )}
+            {game.copy_type && (
+              <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>
             )}
             {(game.tags || []).map((t) => (
               <span className="badge tag" key={t}>{t}</span>

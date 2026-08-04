@@ -23,6 +23,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fPlat, setFPlat] = useState('');
   const [fPlay, setFPlay] = useState('');
   const [fType, setFType] = useState('');
+  const [fCopy, setFCopy] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showSettings, setShowSettings] = useState(false);
 
@@ -148,6 +149,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (fPlat && !(g.platforms || []).includes(fPlat)) return false;
       if (fPlay && g.play_status !== fPlay) return false;
       if (fType && (g.item_type || 'game') !== fType) return false;
+      if (fCopy && g.copy_type !== fCopy) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -165,7 +167,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, fType, sortBy]);
+  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, sortBy]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -448,6 +450,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <option value="owned">Owned</option>
           <option value="wishlist">Wishlist</option>
           <option value="sold">Sold</option>
+        </select>
+        <select value={fCopy} onChange={(e) => setFCopy(e.target.value)}>
+          <option value="">Physical + digital</option>
+          <option value="physical">Physical only</option>
+          <option value="digital">Digital only</option>
         </select>
         <select value={fPlat} onChange={(e) => setFPlat(e.target.value)}>
           <option value="">All platforms</option>

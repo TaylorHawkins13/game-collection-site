@@ -464,6 +464,14 @@ button:disabled {
   background: #00d2a81a;
   color: var(--accent-2);
 }
+.badge.copy-digital {
+  background: #6c5ce722;
+  color: #a29bfe;
+}
+.badge.copy-physical {
+  background: #fdcb6e22;
+  color: #fdcb6e;
+}
 .stars {
   color: var(--warn);
   font-size: 12px;

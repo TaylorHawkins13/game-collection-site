@@ -35,6 +35,7 @@ const EMPTY = {
   card_number: '',
   player_name: '',
   region: '',
+  copy_type: '',
 };
 
 export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
@@ -92,6 +93,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         card_number: source.card_number || '',
         player_name: source.player_name || '',
         region: source.region || '',
+        copy_type: source.copy_type || '',
       });
     } else {
       setForm(EMPTY);
@@ -718,6 +720,14 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </select>
             </div>
           )}
+          <div className="field">
+            <label>Copy</label>
+            <select value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
+              <option value="">—</option>
+              <option value="physical">Physical</option>
+              <option value="digital">Digital</option>
+            </select>
+          </div>
         </div>
 
         <div className="row2">

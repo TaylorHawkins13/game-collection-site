@@ -26,6 +26,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Browse by system on the dashboard** — a row of big tappable tiles above the filter bar, one per platform you own games for, each showing how many items you've got, color-coded by platform brand. Tap one to filter straight to that system; tap again (or Clear) to go back to everything.
 - **Clickable followers/following lists** — the follower/following counts on a profile are now links to a full list of who's actually there, each linking through to their own profile. Same privacy behavior as the counts already had (visible regardless of whether the collection itself is public).
 - **Region tags for games** — NTSC-U/C, NTSC-J, PAL, or Region-Free as a field on games, shown on the card and searchable. Requires `region-migration.sql` on existing projects.
+- **Physical/Digital tag** — a "Copy" field (Physical or Digital) works on any item type, shows as a badge on the card, and has its own dashboard filter. Requires `copytype-migration.sql` on existing projects.
 
 ## Bugs (reported, not yet fixed)
 

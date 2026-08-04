@@ -98,6 +98,8 @@ create table if not exists games (
   player_name text default '',
   -- game-specific: PAL / NTSC-U / NTSC-J / etc
   region text default '',
+  -- applies to any item type: 'physical' or 'digital'
+  copy_type text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
