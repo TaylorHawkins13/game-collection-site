@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import GameCard from './GameCard';
 
 // Weighted-random pick — higher weight means more likely, not guaranteed,
 // so hitting "Try another" doesn't just cycle the same top pick over and
@@ -78,9 +77,33 @@ export default function PlayNextWidget({ games, onOpen }) {
       </div>
       {suggestion && (
         <>
-          <div className="playnext-card-wrap">
-            <GameCard game={suggestion} onClick={() => onOpen(suggestion)} />
-          </div>
+          <button type="button" className="playnext-suggestion" onClick={() => onOpen(suggestion)}>
+            {suggestion.cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className="playnext-suggestion-cover"
+                src={suggestion.cover}
+                alt={suggestion.title}
+                onError={(e) => {
+                  e.currentTarget.outerHTML = '<div class="playnext-suggestion-cover placeholder">No Cover</div>';
+                }}
+              />
+            ) : (
+              <div className="playnext-suggestion-cover placeholder">No Cover</div>
+            )}
+            <div className="playnext-suggestion-body">
+              <div className="playnext-suggestion-title">{suggestion.title}</div>
+              <div className="playnext-suggestion-meta">
+                {suggestion.platforms && suggestion.platforms.length ? suggestion.platforms.join(', ') : 'Unknown platform'}
+                {suggestion.genre ? ` · ${suggestion.genre}` : ''}
+              </div>
+              {suggestion.rating > 0 && (
+                <div className="playnext-suggestion-meta stars">
+                  {'★'.repeat(suggestion.rating)}{'☆'.repeat(5 - suggestion.rating)}
+                </div>
+              )}
+            </div>
+          </button>
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>
             {hasRatings
               ? "Picked from your backlog, weighted toward genres/platforms you've rated highly."
