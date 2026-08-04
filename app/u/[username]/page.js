@@ -74,7 +74,14 @@ export default async function ProfilePage({ params }) {
         <div style={{ flex: 1 }}>
           <div className="profile-name">{profile.display_name || profile.username}</div>
           <div className="profile-username">
-            @{profile.username} · {followerCount || 0} followers · {followingCount || 0} following
+            @{profile.username} ·{' '}
+            <Link href={`/u/${profile.username}/followers`} style={{ color: 'inherit' }}>
+              {followerCount || 0} followers
+            </Link>{' '}
+            ·{' '}
+            <Link href={`/u/${profile.username}/following`} style={{ color: 'inherit' }}>
+              {followingCount || 0} following
+            </Link>
           </div>
           {profile.bio && <div className="profile-bio">{profile.bio}</div>}
         </div>

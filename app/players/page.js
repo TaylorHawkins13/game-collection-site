@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
+import ProfileCard from '@/components/ProfileCard';
 
 export default function PlayersPage() {
   const supabase = createClient();
@@ -77,27 +77,7 @@ export default function PlayersPage() {
           {!hasSearched && <div className="sub" style={{ marginBottom: 12 }}>Recently joined:</div>}
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
             {results.map((p) => (
-              <Link
-                key={p.id}
-                href={`/u/${p.username}`}
-                className="card"
-                style={{ textDecoration: 'none', color: 'inherit', padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}
-              >
-                <div className="avatar" style={{ width: 48, height: 48, fontSize: 18, flexShrink: 0 }}>
-                  {p.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.avatar_url} alt={p.username} />
-                  ) : (
-                    (p.display_name || p.username || '?').slice(0, 1).toUpperCase()
-                  )}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.display_name || p.username}
-                  </div>
-                  <div className="sub" style={{ margin: 0 }}>@{p.username}</div>
-                </div>
-              </Link>
+              <ProfileCard key={p.id} profile={p} />
             ))}
           </div>
         </>
