@@ -18,7 +18,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **More collectible types** — Trading Cards, Vinyl Records, Books, DVDs, and CDs added alongside Games and Comics (seven types total), each fully separate with their own tailored fields.
 - **Home page redesign** — split hero with a card showcase, alternating value-prop rows built from the app's real trophy/leaderboard styling instead of generic template blocks.
 - **Switched game auto-fill from RAWG to IGDB** — RAWG had become unreliable (widely reported as unmaintained, frequent downtime). Auto-fill now runs through IGDB via a server-side route that keeps the Twitch client secret private.
-- **Barcode scanning via phone camera** — a "Scan" button next to the Barcode/UPC field opens the camera and auto-fills the code once it reads a barcode. Works on Safari/iOS as well as Android/desktop.
+- **Barcode scanning via phone camera** — a "Scan" button next to the Barcode/UPC field opens the camera, reads the barcode, and looks it up to auto-fill title/cover (and author/artist/publisher where available): Open Library for books, a general UPC database for everything else. Works on Safari/iOS as well as Android/desktop. Coverage isn't universal — not every barcode is in either database, especially for older or niche items — and the free UPC lookup is capped at 100 lookups/day site-wide.
 
 ## Bugs (reported, not yet fixed)
 
