@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
+import CardScanner from './CardScanner';
 import { currencySymbol } from '@/lib/currency';
 
 const EMPTY = {
@@ -43,6 +44,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [cardScanning, setCardScanning] = useState(false);
   const [barcodeHint, setBarcodeHint] = useState('');
   const [coverBroken, setCoverBroken] = useState(false);
 
@@ -93,6 +95,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setSearchHint('');
     setSaveError('');
     setBarcodeHint('');
+    setCardScanning(false);
   }, [game, duplicateOf]);
 
   function set(field, val) {
@@ -186,15 +189,60 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     runGameSearch(form.title);
   }
 
+  async function runCardSearch(query) {
+    const q = (query || '').trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchHint('Searching…');
+    try {
+      const res = await fetch(`/api/card-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const list = data.results || [];
+      setSearchResults(list);
+      setSearchHint(
+        list.length
+          ? `${list.length} result(s) — click one to auto-fill`
+          : 'No matches found (works best for Pokémon and Magic — other TCGs and sports cards aren\'t covered yet).'
+      );
+    } catch {
+      setSearchHint('Search failed — check your connection.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function cardSearch() {
+    runCardSearch(form.title);
+  }
+
   function applySearchResult(item) {
     set('title', item.name || form.title);
     set('cover', item.cover || form.cover);
-    set('genre', (item.genres || []).join(', '));
-    if (form.platforms.length === 0) {
-      set('platforms', item.platforms || []);
+    if (item.kind === 'card') {
+      if (item.set) set('card_set', item.set);
+      if (item.number) set('card_number', item.number);
+      if (item.publisher) set('publisher', item.publisher);
+      if (item.player_name) set('player_name', item.player_name);
+      setSearchHint(`Filled from ${item.publisher || 'card database'}: ${item.name}`);
+    } else {
+      set('genre', (item.genres || []).join(', '));
+      if (form.platforms.length === 0) {
+        set('platforms', item.platforms || []);
+      }
+      setSearchHint(`Filled from IGDB: ${item.name}`);
     }
     setSearchResults([]);
-    setSearchHint(`Filled from IGDB: ${item.name}`);
+  }
+
+  function handleCardCaptured(guess) {
+    setCardScanning(false);
+    if (guess) {
+      set('title', guess);
+      setSearchResults([]);
+      setSearchHint(`Read "${guess}" off the card — tap Search to look it up, or fix the title first if that's wrong.`);
+    } else {
+      setSearchHint("Couldn't read any text off that photo — try again with better light, or type the title in.");
+    }
   }
 
   async function handleBarcodeDetected(code) {
@@ -309,9 +357,19 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
                 Search
               </button>
             )}
+            {isCard && (
+              <>
+                <button type="button" className="btn-ghost" onClick={cardSearch} disabled={searching}>
+                  Search
+                </button>
+                <button type="button" className="btn-ghost" onClick={() => setCardScanning(true)}>
+                  Scan Card
+                </button>
+              </>
+            )}
           </div>
-          {isGame && searchHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>}
-          {isGame && searchResults.length > 0 && (
+          {(isGame || isCard) && searchHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>}
+          {(isGame || isCard) && searchResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {searchResults.map((r) => (
                 <div
@@ -319,18 +377,22 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
                   onClick={() => applySearchResult(r)}
                   style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                 >
-                  {r.thumb && (
-                    <img src={r.thumb} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                  {(r.thumb || r.cover) && (
+                    <img src={r.thumb || r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
                   )}
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                    <div className="sub" style={{ margin: 0 }}>{r.year || '—'}</div>
+                    <div className="sub" style={{ margin: 0 }}>{r.subtitle || r.year || '—'}</div>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {cardScanning && (
+          <CardScanner onCaptured={handleCardCaptured} onClose={() => setCardScanning(false)} />
+        )}
 
         {isGame && (
           <div className="field">
