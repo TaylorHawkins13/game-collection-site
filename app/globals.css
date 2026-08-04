@@ -177,6 +177,10 @@ textarea {
   color: var(--text);
 }
 
+.nav-toggle {
+  display: none;
+}
+
 /* ---------- Buttons ---------- */
 button {
   cursor: pointer;
@@ -1267,6 +1271,76 @@ button:disabled {
   }
   .row2 {
     grid-template-columns: 1fr;
+  }
+
+  /* Five-plus nav links plus a theme toggle used to just wrap onto
+     2-3 messy lines under the logo. A collapsible menu keeps the top
+     bar to one line and puts every link at full tappable width when
+     it's open, instead of a cramped row of small chips. */
+  .navbar {
+    position: relative;
+  }
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    font-size: 17px;
+  }
+  .nav-links {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin-top: 14px;
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .nav-link {
+    padding: 12px 10px;
+  }
+  .nav-links .btn-primary,
+  .nav-links .btn-ghost {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  /* Tap targets: buttons and form controls were sized for a mouse
+     cursor (10px padding, no minimum height) — comfortably clickable,
+     but tight for a thumb. Bump the minimum height up on touch-sized
+     screens without changing how anything looks on desktop. */
+  .btn-primary,
+  .btn-ghost,
+  .btn-danger,
+  .btn-icon {
+    min-height: 44px;
+  }
+  .field input[type='text'],
+  .field input[type='email'],
+  .field input[type='password'],
+  .field input[type='number'],
+  .field input[type='date'],
+  .field input[type='url'],
+  .field select,
+  .toolbar select {
+    min-height: 44px;
+  }
+
+  /* The filter toolbar's ~7 inputs/selects have no fixed width, so on
+     a phone they wrapped into a ragged, inconsistent grid. Stacking
+     them full-width one per row is easier to scan and tap. */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .toolbar input[type='text'],
+  .toolbar select {
+    width: 100%;
+    min-width: 0;
   }
 
   /* On phones, a wrapping grid of system tiles ate several rows of

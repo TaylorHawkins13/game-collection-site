@@ -8,6 +8,7 @@ import ThemeToggle from './ThemeToggle';
 export default function Navbar() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -53,26 +54,40 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link href={profile ? '/dashboard' : '/'} className="brand">
+      <Link href={profile ? '/dashboard' : '/'} className="brand" onClick={() => setMenuOpen(false)}>
         <span className="logo">S</span>
         Shelf Life
       </Link>
-      <div className="nav-links">
-        <Link href="/players" className="nav-link">Find Collectors</Link>
-        <Link href="/leaderboard" className="nav-link">Leaderboard</Link>
+      <button
+        type="button"
+        className="btn-icon nav-toggle"
+        onClick={() => setMenuOpen((o) => !o)}
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={menuOpen}
+      >
+        {menuOpen ? '✕' : '☰'}
+      </button>
+      <div className={`nav-links${menuOpen ? ' open' : ''}`}>
+        <Link href="/players" className="nav-link" onClick={() => setMenuOpen(false)}>Find Collectors</Link>
+        <Link href="/leaderboard" className="nav-link" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
         {!loading && profile && (
           <>
-            <Link href="/dashboard" className="nav-link">My Collection</Link>
+            <Link href="/dashboard" className="nav-link" onClick={() => setMenuOpen(false)}>My Collection</Link>
             {profile.username && (
-              <Link href={`/u/${profile.username}`} className="nav-link">My Profile</Link>
+              <Link href={`/u/${profile.username}`} className="nav-link" onClick={() => setMenuOpen(false)}>My Profile</Link>
             )}
-            <button className="btn-ghost" onClick={logout} type="button">Log out</button>
+            <button className="btn-ghost" onClick={() => { setMenuOpen(false); logout(); }} type="button">Log out</button>
           </>
         )}
         {!loading && !profile && (
           <>
-            <Link href="/login" className="nav-link">Log in</Link>
-            <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-block' }}>
+            <Link href="/login" className="nav-link" onClick={() => setMenuOpen(false)}>Log in</Link>
+            <Link
+              href="/signup"
+              className="btn-primary"
+              style={{ textDecoration: 'none', display: 'inline-block' }}
+              onClick={() => setMenuOpen(false)}
+            >
               Sign up
             </Link>
           </>
