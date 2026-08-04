@@ -223,6 +223,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       ...rest,
       title: rest.title ? `${rest.title} (copy)` : rest.title,
       barcode: '', // usually item-specific, safer left blank than silently duplicated
+      market_price: null, // a fresh copy needs its own price check, not the original's
+      market_price_checked_at: null,
     });
     setModalGame(null);
   }

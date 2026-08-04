@@ -100,6 +100,9 @@ create table if not exists games (
   region text default '',
   -- applies to any item type: 'physical' or 'digital'
   copy_type text default '',
+  -- last "Check eBay price" result: average of current active US listings
+  market_price numeric,
+  market_price_checked_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

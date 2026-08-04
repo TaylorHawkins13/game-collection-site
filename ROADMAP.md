@@ -27,6 +27,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Clickable followers/following lists** — the follower/following counts on a profile are now links to a full list of who's actually there, each linking through to their own profile. Same privacy behavior as the counts already had (visible regardless of whether the collection itself is public).
 - **Region tags for games** — NTSC-U/C, NTSC-J, PAL, or Region-Free as a field on games, shown on the card and searchable. Requires `region-migration.sql` on existing projects.
 - **Physical/Digital tag** — a "Copy" field (Physical or Digital) works on any item type, shows as a badge on the card, and has its own dashboard filter. Requires `copytype-migration.sql` on existing projects.
+- **Check eBay price** — a button in the item form looks up current eBay (US) listings for that item and shows the low/average/high asking price, which then shows on the card too. This is *current active listings*, not confirmed sale prices — eBay doesn't offer free public access to sold-listing data anymore, so this is "what it's going for right now" rather than a guaranteed resale value. On-demand only (you click Check, it doesn't run automatically), free with an eBay developer account. Requires `ebayprice-migration.sql` on existing projects, plus `EBAY_CLIENT_ID`/`EBAY_CLIENT_SECRET` in `.env.local` (see README).
 
 ## Bugs (reported, not yet fixed)
 
@@ -50,7 +51,6 @@ Priority order — top is worth fixing soonest.
 - **Activity feed** — a feed of what people you follow have recently added, completed, or rated, instead of only visiting their profile directly.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
-- **Price tracking integration** — pull current market value automatically for games/comics from a pricing API, rather than only manually-entered purchase price.
 - **Console account integration** — connect a PlayStation, Xbox, or Steam account to import your owned digital games automatically instead of adding them one by one. Difficulty varies a lot by platform: Steam is the easy one (a free, well-documented public API — just a Steam API key and the user's SteamID64); Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API for this, so PSN integrations rely on unofficial/reverse-engineered access that can break or fall foul of their terms of service. Steam-only would be a reasonable first step if this gets picked up.
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
 

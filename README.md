@@ -7,7 +7,7 @@ Next.js + Supabase app: accounts, cloud-synced collections (video games, comics,
 1. Go to [supabase.com](https://supabase.com) → sign up → **New project**.
 2. Once it's created, open **SQL Editor** → **New query**, paste the contents of `supabase-schema.sql` (in this folder), and click **Run**. This creates all tables, security rules, and leaderboard views.
 3. Also run `storage-setup.sql` the same way (New query → paste → Run) — this sets up the storage bucket avatar uploads need. Without this, avatar upload will fail with a "bucket not found" error.
-4. If you're updating an **existing** project rather than starting fresh, also run `comics-migration.sql`, `currency-migration.sql`, `achievements-migration.sql`, `collectibles-migration.sql`, `region-migration.sql`, and `copytype-migration.sql` (same New query → paste → Run process). Brand new projects can skip these — `supabase-schema.sql` already includes everything.
+4. If you're updating an **existing** project rather than starting fresh, also run `comics-migration.sql`, `currency-migration.sql`, `achievements-migration.sql`, `collectibles-migration.sql`, `region-migration.sql`, `copytype-migration.sql`, and `ebayprice-migration.sql` (same New query → paste → Run process). Brand new projects can skip these — `supabase-schema.sql` already includes everything.
 5. Go to **Authentication → Sign In / Providers → Email** and, for easy testing, turn **off** "Confirm email" (or leave it on and just check your inbox after signing up).
 6. Go to **Settings → API Keys** and copy the **Project URL** and the **publishable** (or legacy **anon public**) key.
 
@@ -20,6 +20,12 @@ Next.js + Supabase app: accounts, cloud-synced collections (video games, comics,
    2. Click **Register Your Application**. Name it anything (e.g. "Shelf Life"), set **OAuth Redirect URLs** to `https://localhost` (required by the form, not actually used since this app never does a browser-based Twitch login), and pick **Category: Application Integration**.
    3. Open the app you just created and copy the **Client ID**. Click **New Secret** to generate a **Client Secret** — copy that too (it's only shown once).
    4. Paste both into `.env.local` as `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET`. Unlike the Supabase keys, these are **not** prefixed with `NEXT_PUBLIC_` — they're used only by a server-side route (`app/api/igdb-search/route.js`) and are never sent to the browser, since exposing the client secret would let anyone use your Twitch app's quota.
+4. (Optional) Enable the "Check eBay price" button (shows current active eBay US listing prices for an item) by setting up a free eBay developer account:
+   1. Go to [developer.ebay.com/join](https://developer.ebay.com/join) and sign up (it's free — no subscription needed for this).
+   2. Once logged in, go to **Application Keysets** (top-right menu after signing in, or [developer.ebay.com/my/keys](https://developer.ebay.com/my/keys)) and create a **Production** keyset (name it anything, e.g. "Shelf Life").
+   3. Copy the **App ID (Client ID)** and **Cert ID (Client Secret)** it gives you.
+   4. Paste both into `.env.local` as `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. Same as the IGDB keys, these are server-only and never sent to the browser (`app/api/ebay-price/route.js`).
+   5. Note: this only sees eBay's *current active listings* (mostly "Buy It Now" asking prices), not confirmed sale prices — eBay stopped offering free public access to sold-listing data a while back. It's still a useful "what's it going for right now" signal, just not a guaranteed resale value. Free tier covers 5,000 lookups/day across the whole site, which is far more than a personal collection site needs.
 
 ## 3. Run it locally
 

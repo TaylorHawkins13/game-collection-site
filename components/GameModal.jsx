@@ -36,6 +36,8 @@ const EMPTY = {
   player_name: '',
   region: '',
   copy_type: '',
+  market_price: null,
+  market_price_checked_at: null,
 };
 
 export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
@@ -52,6 +54,9 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const [coverBroken, setCoverBroken] = useState(false);
   const [communityResults, setCommunityResults] = useState([]);
   const [communityHint, setCommunityHint] = useState('');
+  const [priceChecking, setPriceChecking] = useState(false);
+  const [priceCheck, setPriceCheck] = useState(null);
+  const [priceHint, setPriceHint] = useState('');
 
   useEffect(() => {
     setCoverBroken(false);
@@ -94,6 +99,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         player_name: source.player_name || '',
         region: source.region || '',
         copy_type: source.copy_type || '',
+        market_price: duplicateOf ? null : source.market_price ?? null,
+        market_price_checked_at: duplicateOf ? null : source.market_price_checked_at || null,
       });
     } else {
       setForm(EMPTY);
@@ -104,6 +111,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setBarcodeHint('');
     setCommunityResults([]);
     setCommunityHint('');
+    setPriceCheck(null);
+    setPriceHint('');
   }, [game, duplicateOf]);
 
   function set(field, val) {
@@ -337,6 +346,46 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       }
     } catch {
       setBarcodeHint("Code filled in, but the lookup failed — fill the rest in manually.");
+    }
+  }
+
+  // Builds a search string tailored to the item type — a bare title finds
+  // a lot of unrelated junk on eBay, so tack on whatever extra detail
+  // narrows it down best for that type.
+  function buildPriceQuery() {
+    const parts = [form.title.trim()];
+    if (isGame && form.platforms[0]) parts.push(form.platforms[0]);
+    if (isCard && form.card_set) parts.push(form.card_set);
+    if (isVinyl && form.format) parts.push(form.format);
+    if (isComic && form.issue_number) parts.push(form.issue_number);
+    return parts.filter(Boolean).join(' ');
+  }
+
+  async function checkEbayPrice() {
+    const q = buildPriceQuery();
+    if (!q) return;
+    setPriceChecking(true);
+    setPriceHint('Checking eBay…');
+    setPriceCheck(null);
+    try {
+      const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.error === 'not_configured') {
+        setPriceHint("eBay price lookup isn't configured on this site (no eBay API credentials set).");
+        return;
+      }
+      if (data.error || !data.count) {
+        setPriceHint('No current eBay listings found for that search.');
+        return;
+      }
+      setPriceCheck(data);
+      set('market_price', data.avg);
+      set('market_price_checked_at', new Date().toISOString());
+      setPriceHint('');
+    } catch {
+      setPriceHint('Lookup failed — check your connection.');
+    } finally {
+      setPriceChecking(false);
     }
   }
 
@@ -739,6 +788,27 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <label>Purchase date</label>
             <input type="date" value={form.purchase_date || ''} onChange={(e) => set('purchase_date', e.target.value)} />
           </div>
+        </div>
+
+        <div className="field">
+          <label>Current market value</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button type="button" className="btn-ghost" onClick={checkEbayPrice} disabled={priceChecking || !form.title.trim()}>
+              {priceChecking ? 'Checking…' : 'Check eBay price'}
+            </button>
+            {form.market_price != null && (
+              <span className="sub" style={{ margin: 0 }}>
+                ${form.market_price} avg
+                {priceCheck ? ` (range $${priceCheck.low}–$${priceCheck.high}, ${priceCheck.count} listings)` : ''}
+              </span>
+            )}
+          </div>
+          {priceHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{priceHint}</div>}
+          {form.market_price_checked_at && (
+            <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
+              Last checked {new Date(form.market_price_checked_at).toLocaleDateString()} · current active eBay (US) listings, not a guaranteed sale price
+            </div>
+          )}
         </div>
 
         <div className="row2">
