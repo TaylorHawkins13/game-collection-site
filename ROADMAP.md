@@ -8,21 +8,27 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 ## Next (small, self-contained additions)
 
-- **Trophy progress bars** — locked trophies currently just show as locked; showing "62/100 items" style progress toward the next one (using data the achievements system already tracks) gives trophy hunters something to chase instead of a surprise pop when it happens.
-- **Trophy leaderboard** — a new column on `/leaderboard` ranking collectors by trophies earned (or platinum count), alongside the existing most-owned/biggest-collection/trending ones.
-- **Trophies show up in the activity feed** — a fourth event type (alongside added/completed/rated) so followers see when someone lands a milestone, not just item-level activity.
+- **"Play next" suggestion** — recommend something from your own backlog/wishlist to play next, weighted toward the genres/platforms of the games you've rated highest, instead of a plain random pick. Uses data already on your shelf (rating, genre, play status) — no external data needed. Falls back to a random pick if there's not enough rating history yet to weight anything.
+- **Trophy leaderboard** — a new column on `/leaderboard` ranking collectors by Shelf Life trophies earned (or platinum count), alongside the existing most-owned/biggest-collection/trending ones.
+- **Trophies show up in the activity feed** — a fourth event type (alongside added/completed/rated) so followers see when someone lands a Shelf Life milestone, not just item-level activity.
 - **Export your collection** — a CSV download of your whole shelf, the flip side of the existing CSV import. Useful as a backup or for moving data elsewhere — "it's your data" is a nice thing to actually mean.
-- **A "shuffle" button** — randomly picks something from your backlog or wishlist for when you can't decide what to play/read/watch next.
 
-## For trophy/achievement hunters
+## For Xbox/PlayStation trophy & achievement hunters
 
-- **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each trophy, computed from real site-wide data once there's enough of it to be meaningful.
-- **Collector level / trophy points** — combine bronze/silver/gold/platinum into one overall score or level shown on your profile, the way PSN trophy levels roll everything into a single number people compare.
-- **More milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.
-- **Collection comparison** — put your shelf (and trophy case) side-by-side with another collector's — what you both own, what's different, who's closer to platinum on a shared milestone.
+This is about *your real in-game trophies/achievements on Xbox and PlayStation* — separate from Shelf Life's own collection-milestone badges (the bronze/silver/gold/platinum system already built, which is about collecting, not playing).
+
+- **Platinum status + trophy/achievement completion fields per game** — a "Platinum'd" checkbox and a trophy-completion % for PlayStation games, and an achievement-completion % (or Gamerscore earned/total) for Xbox ones, right on the item — same idea as the existing Loose/CIB/Box completeness field. Sony and Microsoft don't offer a way to pull this in automatically for a personal site (see the PlayStation integration note below), so this would be manual entry, same as everything was before Steam import existed.
+- **Automatic achievement % for Steam-imported games** — the one exception: Steam *does* have a public API for a player's per-game achievement progress. Since Steam-imported games already store their `steam_appid`, their completion percentage could be pulled in automatically instead of typed by hand — worth building once manual tracking proves people actually want this.
+- **Platinum count / average completion on your profile** — a stat real trophy hunters care about — "14 platinums, 78% average completion across your library" — shown clearly as its own thing, not mixed in with Shelf Life's own trophy case.
+- **Filter/sort your collection by completion %** — find what's closest to platinum in your backlog, or sort your whole library by how close to 100% each game is.
 
 ## Later (bigger, more design work)
 
+- **Recommend games you don't own yet** — the bigger version of the "Play next" idea above: instead of only pulling from your own backlog, suggest titles you don't have at all, based on what similar-taste collectors (people who rated the same games highly) own and rated well. Needs enough site-wide rating data to be meaningful, and care to avoid suggesting things already on someone's shelf or wishlist.
+- **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
+- **Collector level / trophy points** — combine Shelf Life's bronze/silver/gold/platinum badges into one overall score or level shown on your profile, the way PSN trophy levels roll everything into a single number people compare.
+- **More Shelf Life milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.
+- **Collection comparison** — put your shelf (and trophy case) side-by-side with another collector's — what you both own, what's different, who's closer to platinum on a shared milestone.
 - **Even more collectible types** — board games, action figures/toys, coins, consoles, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
@@ -31,10 +37,9 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 - **In-app notifications** — a small bell/inbox for follows, comments, and trophies you can check later, instead of only ever catching them as an in-the-moment toast.
 - **Notification digest emails** — an opt-in weekly summary of your stats or your followed collectors' activity, building on the activity feed.
 - **Live currency conversion** — currency is display-only right now (no conversion between them); real conversion needs a rates API and a decision on what the "true" underlying value is when items were priced in different currencies.
-- **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority.
+- **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority. (This is about connecting the account itself — see the section above for trophy/achievement-completion tracking specifically.)
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
 - **Global chat** — a site-wide chat/message board any user can post in, separate from the per-profile comment walls that exist today. Bigger than it sounds: needs real-time updates (not just page-refresh), and some kind of moderation/spam handling once it's not just friends talking.
-- **Game recommendations** — suggest titles someone might like based on what's already in their collection (shared genre/platform with other public collections, "collectors who own X also own Y," etc.). Needs some thought on what data actually makes a recommendation feel useful rather than random.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)
 
