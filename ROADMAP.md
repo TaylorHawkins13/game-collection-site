@@ -16,6 +16,8 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Mobile layout pass** — smaller card grid, scaled-down type, and a decluttered card layout on phones so nothing feels oversized or cramped.
 - **Top Trumps-style card redesign** — full-bleed cover art, a color nameplate pulled from the art itself, and a grading-slab-style stat block instead of loose badges.
 - **More collectible types** — Trading Cards, Vinyl Records, Books, DVDs, and CDs added alongside Games and Comics (seven types total), each fully separate with their own tailored fields.
+- **Home page redesign** — split hero with a card showcase, alternating value-prop rows built from the app's real trophy/leaderboard styling instead of generic template blocks.
+- **Switched game auto-fill from RAWG to IGDB** — RAWG had become unreliable (widely reported as unmaintained, frequent downtime). Auto-fill now runs through IGDB via a server-side route that keeps the Twitch client secret private.
 
 ## Next (small, self-contained additions)
 

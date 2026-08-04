@@ -38,8 +38,8 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [rawgResults, setRawgResults] = useState([]);
-  const [rawgHint, setRawgHint] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
@@ -76,8 +76,8 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     } else {
       setForm(EMPTY);
     }
-    setRawgResults([]);
-    setRawgHint('');
+    setSearchResults([]);
+    setSearchHint('');
     setSaveError('');
   }, [game]);
 
@@ -121,38 +121,42 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     ? 'e.g. Deluxe Edition, Remaster'
     : 'e.g. 2nd Edition, Anniversary Edition';
 
-  async function rawgSearch() {
+  async function gameSearch() {
     if (!form.title.trim()) return;
-    const apiKey = process.env.NEXT_PUBLIC_RAWG_API_KEY;
-    if (!apiKey) {
-      setRawgHint('Auto-fill is not configured on this site (no RAWG API key set).');
-      return;
-    }
     setSearching(true);
-    setRawgHint('Searching…');
+    setSearchHint('Searching…');
     try {
-      const url = `https://api.rawg.io/api/games?key=${encodeURIComponent(apiKey)}&search=${encodeURIComponent(form.title.trim())}&page_size=8`;
-      const res = await fetch(url);
+      const res = await fetch(`/api/igdb-search?q=${encodeURIComponent(form.title.trim())}`);
       const data = await res.json();
+      if (data.error === 'not_configured') {
+        setSearchHint('Auto-fill is not configured on this site (no IGDB credentials set).');
+        setSearchResults([]);
+        return;
+      }
+      if (data.error) {
+        setSearchHint('Search failed — try again in a moment.');
+        setSearchResults([]);
+        return;
+      }
       const list = data.results || [];
-      setRawgResults(list);
-      setRawgHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No results found.');
+      setSearchResults(list);
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No results found.');
     } catch {
-      setRawgHint('Search failed — check your connection.');
+      setSearchHint('Search failed — check your connection.');
     } finally {
       setSearching(false);
     }
   }
 
-  function applyRawgResult(item) {
+  function applySearchResult(item) {
     set('title', item.name || form.title);
-    set('cover', item.background_image || form.cover);
-    set('genre', (item.genres || []).map((g) => g.name).join(', '));
+    set('cover', item.cover || form.cover);
+    set('genre', (item.genres || []).join(', '));
     if (form.platforms.length === 0) {
-      set('platforms', (item.platforms || []).map((p) => p.platform.name));
+      set('platforms', item.platforms || []);
     }
-    setRawgResults([]);
-    setRawgHint(`Filled from RAWG: ${item.name}`);
+    setSearchResults([]);
+    setSearchHint(`Filled from IGDB: ${item.name}`);
   }
 
   async function handleSave() {
@@ -193,7 +197,7 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
       <div className="modal">
         <h2>{game ? 'Edit Item' : 'Add Item'}</h2>
         <div className="sub">
-          {isGame ? 'Fill in the details, or search RAWG to auto-fill cover art & info.' : 'Fill in the details.'}
+          {isGame ? 'Fill in the details, or search to auto-fill cover art & info.' : 'Fill in the details.'}
         </div>
 
         <div className="field">
@@ -220,26 +224,26 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
               style={{ flex: 1 }}
             />
             {isGame && (
-              <button type="button" className="btn-ghost" onClick={rawgSearch} disabled={searching}>
+              <button type="button" className="btn-ghost" onClick={gameSearch} disabled={searching}>
                 Search
               </button>
             )}
           </div>
-          {isGame && rawgHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{rawgHint}</div>}
-          {isGame && rawgResults.length > 0 && (
+          {isGame && searchHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>}
+          {isGame && searchResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
-              {rawgResults.map((r) => (
+              {searchResults.map((r) => (
                 <div
                   key={r.id}
-                  onClick={() => applyRawgResult(r)}
+                  onClick={() => applySearchResult(r)}
                   style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                 >
-                  {r.background_image && (
-                    <img src={r.background_image} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                  {r.thumb && (
+                    <img src={r.thumb} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
                   )}
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                    <div className="sub" style={{ margin: 0 }}>{r.released || '—'}</div>
+                    <div className="sub" style={{ margin: 0 }}>{r.year || '—'}</div>
                   </div>
                 </div>
               ))}

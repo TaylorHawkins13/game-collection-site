@@ -15,7 +15,11 @@ Next.js + Supabase app: accounts, cloud-synced collections (video games, comics,
 
 1. In this folder, copy `.env.local.example` to `.env.local`.
 2. Paste in your Project URL and key from step 1.
-3. (Optional) Add a free [RAWG API key](https://rawg.io/apidocs) as `NEXT_PUBLIC_RAWG_API_KEY` to enable the "Search RAWG" auto-fill button for games (comics don't use this).
+3. (Optional) Enable the "Search" auto-fill button for games (comics/cards/vinyl/media don't use this) by setting up a free IGDB app:
+   1. Go to [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps). If your Twitch account doesn't have two-factor authentication turned on yet, it'll ask you to set that up first (phone number + code) — that's a Twitch requirement for registering any app, not specific to this project.
+   2. Click **Register Your Application**. Name it anything (e.g. "Shelf Life"), set **OAuth Redirect URLs** to `https://localhost` (required by the form, not actually used since this app never does a browser-based Twitch login), and pick **Category: Application Integration**.
+   3. Open the app you just created and copy the **Client ID**. Click **New Secret** to generate a **Client Secret** — copy that too (it's only shown once).
+   4. Paste both into `.env.local` as `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET`. Unlike the Supabase keys, these are **not** prefixed with `NEXT_PUBLIC_` — they're used only by a server-side route (`app/api/igdb-search/route.js`) and are never sent to the browser, since exposing the client secret would let anyone use your Twitch app's quota.
 
 ## 3. Run it locally
 
@@ -38,7 +42,7 @@ That's it — from then on, every `git push` redeploys automatically.
 ## What's included
 
 - **Accounts**: email/password signup & login (Supabase Auth), auto-creates a public profile with a chosen username.
-- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across seven collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author/publisher/format/edition for books (director/studio for DVDs, artist/label for CDs) — plus shared tags, barcodes, and RAWG auto-fill for games.
+- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across seven collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author/publisher/format/edition for books (director/studio for DVDs, artist/label for CDs) — plus shared tags, barcodes, and IGDB auto-fill for games.
 - **Public profiles** (`/u/username`): view a collector's shelf, follow them, leave comments. Users can toggle their profile private in Profile Settings.
 - **Profile settings**: display name, bio, public/private toggle, preferred currency (for price display only — no live conversion), and avatar image upload (stored in Supabase Storage).
 - **Leaderboard** (`/leaderboard`): most-owned items, biggest public collections, trending titles (last 14 days) — computed from public collections only.
