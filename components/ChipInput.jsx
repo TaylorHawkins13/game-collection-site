@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
-export default function ChipInput({ value, onChange, placeholder }) {
+export default function ChipInput({ value, onChange, placeholder, suggestions }) {
   const [input, setInput] = useState('');
+  const listId = useId();
+  // Don't suggest chips that are already added.
+  const options = (suggestions || []).filter((s) => !value.some((v) => v.toLowerCase() === s.toLowerCase()));
 
   function add(val) {
     val = (val || '').trim();
@@ -48,7 +51,15 @@ export default function ChipInput({ value, onChange, placeholder }) {
           if (input.trim()) add(input);
         }}
         placeholder={placeholder}
+        list={options.length ? listId : undefined}
       />
+      {options.length > 0 && (
+        <datalist id={listId}>
+          {options.map((o) => (
+            <option value={o} key={o} />
+          ))}
+        </datalist>
+      )}
     </div>
   );
 }

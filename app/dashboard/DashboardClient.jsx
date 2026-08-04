@@ -60,6 +60,29 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     [games]
   );
 
+  // Autocomplete suggestions pulled from your own past entries — as you
+  // add more items, fields like Publisher or Artist start suggesting
+  // things you've already typed before, so recurring values (a publisher
+  // you buy from a lot, a platform you collect for) don't need retyping
+  // from scratch every time.
+  const suggestions = useMemo(() => {
+    const uniq = (key) => [...new Set(games.map((g) => g[key]).filter(Boolean))].sort();
+    const uniqList = (key) => [...new Set(games.flatMap((g) => g[key] || []))].sort();
+    return {
+      publisher: uniq('publisher'),
+      genre: uniq('genre'),
+      artist: uniq('artist'),
+      writer: uniq('writer'),
+      card_set: uniq('card_set'),
+      player_name: uniq('player_name'),
+      format: uniq('format'),
+      edition: uniq('edition'),
+      series: uniq('series'),
+      platforms: uniqList('platforms'),
+      tags: uniqList('tags'),
+    };
+  }, [games]);
+
   const stats = useMemo(() => {
     const owned = games.filter((g) => g.ownership === 'owned');
     const wishlist = games.filter((g) => g.ownership === 'wishlist');
@@ -425,6 +448,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           game={modalGame}
           duplicateOf={duplicateOf}
           currency={currency}
+          suggestions={suggestions}
           onClose={() => {
             setModalGame(undefined);
             setDuplicateOf(undefined);

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
-import CardScanner from './CardScanner';
 import { currencySymbol } from '@/lib/currency';
 
 const EMPTY = {
@@ -36,7 +35,8 @@ const EMPTY = {
   player_name: '',
 };
 
-export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate }) {
+export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
+  const sg = suggestions || {};
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -44,7 +44,6 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [cardScanning, setCardScanning] = useState(false);
   const [barcodeHint, setBarcodeHint] = useState('');
   const [coverBroken, setCoverBroken] = useState(false);
 
@@ -95,7 +94,6 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setSearchHint('');
     setSaveError('');
     setBarcodeHint('');
-    setCardScanning(false);
   }, [game, duplicateOf]);
 
   function set(field, val) {
@@ -234,17 +232,6 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setSearchResults([]);
   }
 
-  function handleCardCaptured(guess) {
-    setCardScanning(false);
-    if (guess) {
-      set('title', guess);
-      setSearchResults([]);
-      setSearchHint(`Read "${guess}" off the card — tap Search to look it up, or fix the title first if that's wrong.`);
-    } else {
-      setSearchHint("Couldn't read any text off that photo — try again with better light, or type the title in.");
-    }
-  }
-
   async function handleBarcodeDetected(code) {
     set('barcode', code);
     setScanning(false);
@@ -358,14 +345,9 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </button>
             )}
             {isCard && (
-              <>
-                <button type="button" className="btn-ghost" onClick={cardSearch} disabled={searching}>
-                  Search
-                </button>
-                <button type="button" className="btn-ghost" onClick={() => setCardScanning(true)}>
-                  Scan Card
-                </button>
-              </>
+              <button type="button" className="btn-ghost" onClick={cardSearch} disabled={searching}>
+                Search
+              </button>
             )}
           </div>
           {(isGame || isCard) && searchHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>}
@@ -390,14 +372,10 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           )}
         </div>
 
-        {cardScanning && (
-          <CardScanner onCaptured={handleCardCaptured} onClose={() => setCardScanning(false)} />
-        )}
-
         {isGame && (
           <div className="field">
             <label>Platforms</label>
-            <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" />
+            <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" suggestions={sg.platforms} />
           </div>
         )}
 
@@ -406,7 +384,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>Series</label>
-                <input type="text" value={form.series} onChange={(e) => set('series', e.target.value)} placeholder="e.g. Amazing Spider-Man" />
+                <input type="text" value={form.series} onChange={(e) => set('series', e.target.value)} placeholder="e.g. Amazing Spider-Man" list="dl-series" />
               </div>
               <div className="field">
                 <label>Issue number</label>
@@ -416,7 +394,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>Publisher</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Marvel" />
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Marvel" list="dl-publisher" />
               </div>
               <div className="field">
                 <label>Grade</label>
@@ -426,11 +404,11 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>Writer</label>
-                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} />
+                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} list="dl-writer" />
               </div>
               <div className="field">
                 <label>Artist</label>
-                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} />
+                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} list="dl-artist" />
               </div>
             </div>
             <div className="field">
@@ -463,7 +441,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>Set / expansion</label>
-                <input type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. 2023 Topps Chrome" />
+                <input type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. 2023 Topps Chrome" list="dl-card_set" />
               </div>
               <div className="field">
                 <label>Card number</label>
@@ -473,11 +451,11 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>Player / character</label>
-                <input type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} />
+                <input type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} list="dl-player_name" />
               </div>
               <div className="field">
                 <label>Manufacturer / brand</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Topps, Panini, Pokémon" />
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Topps, Panini, Pokémon" list="dl-publisher" />
               </div>
             </div>
             <div className="field">
@@ -514,21 +492,21 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>Artist</label>
-                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} />
+                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} list="dl-artist" />
               </div>
               <div className="field">
                 <label>Label</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Sub Pop" />
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Sub Pop" list="dl-publisher" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
                 <label>Format</label>
-                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder='e.g. LP, 7", box set' />
+                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder='e.g. LP, 7", box set' list="dl-format" />
               </div>
               <div className="field">
                 <label>Edition / pressing</label>
-                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. 1st pressing, 180g reissue" />
+                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. 1st pressing, 180g reissue" list="dl-edition" />
               </div>
             </div>
           </>
@@ -539,21 +517,21 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <div className="row2">
               <div className="field">
                 <label>{mediaCreatorLabel}</label>
-                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} />
+                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} list="dl-writer" />
               </div>
               <div className="field">
                 <label>{mediaPublisherLabel}</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} />
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} list="dl-publisher" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
                 <label>Format</label>
-                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder={mediaFormatPlaceholder} />
+                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder={mediaFormatPlaceholder} list="dl-format" />
               </div>
               <div className="field">
                 <label>Edition</label>
-                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder={mediaEditionPlaceholder} />
+                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder={mediaEditionPlaceholder} list="dl-edition" />
               </div>
             </div>
           </>
@@ -562,7 +540,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         <div className="row2">
           <div className="field">
             <label>Genre</label>
-            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={genrePlaceholder} />
+            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={genrePlaceholder} list="dl-genre" />
           </div>
           <div className="field">
             <label>Barcode / UPC</label>
@@ -590,7 +568,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
 
         <div className="field">
           <label>Tags</label>
-          <ChipInput value={form.tags} onChange={(v) => set('tags', v)} placeholder="Type a tag, press Enter" />
+          <ChipInput value={form.tags} onChange={(v) => set('tags', v)} placeholder="Type a tag, press Enter" suggestions={sg.tags} />
         </div>
 
         <div className="field">
@@ -682,6 +660,19 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           <label>Notes</label>
           <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Anything worth remembering…" />
         </div>
+
+        {/* Autocomplete lists for the fields above, built from your own
+            past entries — as your collection grows, recurring values
+            (a publisher, an artist, a set) start suggesting themselves. */}
+        <datalist id="dl-series">{(sg.series || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-publisher">{(sg.publisher || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-writer">{(sg.writer || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-artist">{(sg.artist || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-card_set">{(sg.card_set || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-player_name">{(sg.player_name || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-format">{(sg.format || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-edition">{(sg.edition || []).map((v) => <option value={v} key={v} />)}</datalist>
+        <datalist id="dl-genre">{(sg.genre || []).map((v) => <option value={v} key={v} />)}</datalist>
 
         {saveError && <div className="error-text">Couldn't save: {saveError}</div>}
 
