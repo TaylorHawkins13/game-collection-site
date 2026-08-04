@@ -35,6 +35,9 @@ Priority order — top is worth fixing soonest.
 3. **Region tags for games** — PAL / NTSC / NTSC-J as a field on games.
 4. **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
 5. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
+6. **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), and Box (box + game, no manual) as their own field, separate from general condition.
+7. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
+8. **Clickable followers/following lists** — tap the follower/following counts on a profile to see the actual list of who's in your (or someone else's) community, instead of just a number.
 
 ## Later (bigger, more design work)
 
