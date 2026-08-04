@@ -15,8 +15,10 @@ Nothing queued up right now — everything from the last round shipped. Pick som
 - **Even more collectible types** — board games, action figures/toys, coins, consoles, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
-- **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API for this, so PSN integrations rely on unofficial/reverse-engineered access that can break or fall foul of their terms of service.
+- **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority.
 - **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
+- **Global chat** — a site-wide chat/message board any user can post in, separate from the per-profile comment walls that exist today. Bigger than it sounds: needs real-time updates (not just page-refresh), and some kind of moderation/spam handling once it's not just friends talking.
+- **Game recommendations** — suggest titles someone might like based on what's already in their collection (shared genre/platform with other public collections, "collectors who own X also own Y," etc.). Needs some thought on what data actually makes a recommendation feel useful rather than random.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)
 
