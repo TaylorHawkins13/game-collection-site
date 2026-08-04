@@ -44,6 +44,11 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
   const [searching, setSearching] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [barcodeHint, setBarcodeHint] = useState('');
+  const [coverBroken, setCoverBroken] = useState(false);
+
+  useEffect(() => {
+    setCoverBroken(false);
+  }, [form.cover]);
 
   useEffect(() => {
     if (game) {
@@ -136,31 +141,44 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     ? 'e.g. Deluxe Edition, Remaster'
     : 'e.g. 2nd Edition, Anniversary Edition';
 
-  async function gameSearch() {
-    if (!form.title.trim()) return;
+  async function runGameSearch(query, { silent } = {}) {
+    const q = (query || '').trim();
+    if (!q) return;
     setSearching(true);
-    setSearchHint('Searching…');
+    if (!silent) setSearchHint('Searching…');
     try {
-      const res = await fetch(`/api/igdb-search?q=${encodeURIComponent(form.title.trim())}`);
+      const res = await fetch(`/api/igdb-search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (data.error === 'not_configured') {
-        setSearchHint('Auto-fill is not configured on this site (no IGDB credentials set).');
+        if (!silent) setSearchHint('Auto-fill is not configured on this site (no IGDB credentials set).');
         setSearchResults([]);
         return;
       }
       if (data.error) {
-        setSearchHint('Search failed — try again in a moment.');
+        if (!silent) setSearchHint('Search failed — try again in a moment.');
         setSearchResults([]);
         return;
       }
       const list = data.results || [];
+      if (silent && list.length === 1) {
+        // Barcode auto-fill chaining into IGDB: if there's exactly one
+        // match, just apply it rather than making the user click it.
+        applySearchResult(list[0]);
+        return;
+      }
       setSearchResults(list);
-      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No results found.');
+      if (!silent || list.length) {
+        setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No results found.');
+      }
     } catch {
-      setSearchHint('Search failed — check your connection.');
+      if (!silent) setSearchHint('Search failed — check your connection.');
     } finally {
       setSearching(false);
     }
+  }
+
+  function gameSearch() {
+    runGameSearch(form.title);
   }
 
   function applySearchResult(item) {
@@ -182,11 +200,16 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
       const res = await fetch(`/api/barcode-lookup?code=${encodeURIComponent(code)}&type=${form.item_type}`);
       const data = await res.json();
       if (!data.found) {
-        setBarcodeHint("Code filled in, but couldn't find product details for it — fill the rest in manually.");
+        setBarcodeHint(
+          isGame
+            ? "Code filled in, but couldn't find product details for it — type the title in above and hit Search to try IGDB instead."
+            : "Code filled in, but couldn't find product details for it — fill the rest in manually."
+        );
         return;
       }
       if (data.title) set('title', data.title);
       if (data.cover) set('cover', data.cover);
+      if (data.genre) set('genre', data.genre);
       if (isBook || isDvd || isCd) {
         if (data.creator) set('writer', data.creator);
         if (data.publisher) set('publisher', data.publisher);
@@ -195,6 +218,14 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
         if (data.publisher) set('publisher', data.publisher);
       }
       setBarcodeHint(`Filled from ${data.source === 'openlibrary' ? 'Open Library' : 'a UPC database'}${data.title ? `: ${data.title}` : ''}`);
+
+      // The UPC database doesn't reliably know platforms for games — chain
+      // into an IGDB search on the title we just found so those can fill
+      // in too. Runs quietly; only surfaces results if there's more than
+      // one match to choose from.
+      if (isGame && data.title) {
+        runGameSearch(data.title, { silent: true });
+      }
     } catch {
       setBarcodeHint("Code filled in, but the lookup failed — fill the rest in manually.");
     }
@@ -493,7 +524,24 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
 
         <div className="field">
           <label>Cover image URL</label>
-          <input type="url" value={form.cover} onChange={(e) => set('cover', e.target.value)} placeholder="https://…" />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <input
+              type="url"
+              value={form.cover}
+              onChange={(e) => set('cover', e.target.value)}
+              placeholder="https://…"
+              style={{ flex: 1 }}
+            />
+            {form.cover && (
+              <div className="cover-preview">
+                {coverBroken ? (
+                  <span>Can't load</span>
+                ) : (
+                  <img src={form.cover} alt="" onError={() => setCoverBroken(true)} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="row2">

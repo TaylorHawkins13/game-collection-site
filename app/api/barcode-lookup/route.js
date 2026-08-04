@@ -32,7 +32,18 @@ async function lookupOpenLibrary(code) {
     cover: entry.cover?.large || entry.cover?.medium || '',
     creator: (entry.authors || []).map((a) => a.name).join(', '),
     publisher: (entry.publishers || []).map((p) => p.name).join(', '),
+    genre: (entry.subjects || []).slice(0, 2).map((s) => s.name).join(', '),
   };
+}
+
+// UPCitemdb's "category" is a taxonomy path like "Media > Books & Magazines
+// > Books" or "Toys & Games > Games > Video Games". There's no dedicated
+// genre field, so the last, most specific segment of that path is the
+// closest available stand-in — better than leaving genre blank.
+function genreFromCategory(category) {
+  if (!category) return '';
+  const parts = category.split('>').map((p) => p.trim()).filter(Boolean);
+  return parts[parts.length - 1] || '';
 }
 
 async function lookupUpcItemDb(code) {
@@ -50,6 +61,7 @@ async function lookupUpcItemDb(code) {
     cover: (item.images || [])[0] || '',
     creator: '',
     publisher: item.brand || '',
+    genre: genreFromCategory(item.category),
   };
 }
 
