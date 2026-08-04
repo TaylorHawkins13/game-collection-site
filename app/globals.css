@@ -203,6 +203,62 @@ button:disabled {
   margin-top: 2px;
 }
 
+.system-tiles-wrap {
+  margin-bottom: 20px;
+}
+.system-tiles-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.system-tiles-heading h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+.system-tiles-heading button {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.system-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.system-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.system-tile:hover {
+  border-color: var(--accent);
+}
+.system-tile.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+.system-tile .sys-name {
+  font-size: 14px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+.system-tile .sys-count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -60,6 +60,25 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     [games]
   );
 
+  // Counts behind the "Browse by system" tiles — biggest systems first,
+  // so the platforms you actually collect for surface without scrolling.
+  const platformCounts = useMemo(() => {
+    const counts = new Map();
+    for (const g of games) {
+      for (const p of g.platforms || []) {
+        counts.set(p, (counts.get(p) || 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .map(([platform, count]) => ({ platform, count }))
+      .sort((a, b) => b.count - a.count || a.platform.localeCompare(b.platform));
+  }, [games]);
+
+  function jumpToSystem(platform) {
+    setFPlat((current) => (current === platform ? '' : platform));
+    document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   // Autocomplete suggestions pulled from your own past entries — as you
   // add more items, fields like Publisher or Artist start suggesting
   // things you've already typed before, so recurring values (a publisher
@@ -381,6 +400,28 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           </div>
         ))}
       </div>
+
+      {platformCounts.length > 0 && (
+        <div className="system-tiles-wrap">
+          <div className="system-tiles-heading">
+            <h3>Browse by system</h3>
+            {fPlat && <button type="button" onClick={() => setFPlat('')}>Clear</button>}
+          </div>
+          <div className="system-tiles">
+            {platformCounts.map(({ platform, count }) => (
+              <button
+                key={platform}
+                type="button"
+                className={`system-tile${fPlat === platform ? ' active' : ''}`}
+                onClick={() => jumpToSystem(platform)}
+              >
+                <span className="sys-name">{platform}</span>
+                <span className="sys-count">{count} item{count === 1 ? '' : 's'}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="toolbar">
         <input
