@@ -18,11 +18,11 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **More collectible types** — Trading Cards, Vinyl Records, Books, DVDs, and CDs added alongside Games and Comics (seven types total), each fully separate with their own tailored fields.
 - **Home page redesign** — split hero with a card showcase, alternating value-prop rows built from the app's real trophy/leaderboard styling instead of generic template blocks.
 - **Switched game auto-fill from RAWG to IGDB** — RAWG had become unreliable (widely reported as unmaintained, frequent downtime). Auto-fill now runs through IGDB via a server-side route that keeps the Twitch client secret private.
+- **Barcode scanning via phone camera** — a "Scan" button next to the Barcode/UPC field opens the camera and auto-fills the code once it reads a barcode. Works on Safari/iOS as well as Android/desktop.
 
 ## Next (small, self-contained additions)
 
 - **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
-- **Barcode scanning via phone camera** — use the device camera to scan a UPC and auto-fill instead of typing it, especially handy for comics and physical game cases.
 - **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
 
 ## Later (bigger, more design work)

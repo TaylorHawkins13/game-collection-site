@@ -53,7 +53,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link href="/" className="brand">
+      <Link href={profile ? '/dashboard' : '/'} className="brand">
         <span className="logo">S</span>
         Shelf Life
       </Link>
