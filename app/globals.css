@@ -540,6 +540,51 @@ button:disabled {
   margin-bottom: 10px;
 }
 
+.welcome-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin: 20px 0 40px;
+}
+.welcome-panel h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+.welcome-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.welcome-step {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.welcome-step-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.welcome-step .sub {
+  flex: 1;
+  margin: 0;
+}
+.welcome-step button {
+  align-self: flex-start;
+}
+@media (max-width: 800px) {
+  .welcome-panel {
+    padding: 22px;
+  }
+  .welcome-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Forms ---------- */
 .form-card {
   background: var(--bg-alt);

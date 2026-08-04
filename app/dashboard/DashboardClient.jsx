@@ -8,6 +8,7 @@ import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import ImportCsvModal from '@/components/ImportCsvModal';
 import ValueChart from '@/components/ValueChart';
+import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { getPlatformColor } from '@/lib/platformColors';
@@ -513,138 +514,142 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         </div>
       )}
 
-      <div className="stats-bar">
-        {stats.map((s) => (
-          <div className="stat" key={s.label}>
-            <div className="num">{s.num}</div>
-            <div className="label">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {games.length > 0 && (
-        <div className="form-card" style={{ margin: '0 0 20px', maxWidth: 'none' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-            <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
-            <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
-              {snapshotSaving ? 'Recording…' : 'Record snapshot'}
-            </button>
-          </div>
-          {snapshots.length >= 2 ? (
-            <>
-              <div style={{ marginTop: 12 }}>
-                <ValueChart snapshots={snapshots} currency={currency} />
+      {games.length === 0 ? (
+        <WelcomePanel
+          displayName={profile?.display_name}
+          onAddItem={() => setModalGame(null)}
+          onImportCsv={() => setShowImport(true)}
+        />
+      ) : (
+        <>
+          <div className="stats-bar">
+            {stats.map((s) => (
+              <div className="stat" key={s.label}>
+                <div className="num">{s.num}</div>
+                <div className="label">{s.label}</div>
               </div>
-              <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
-                Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
-                {snapshots[snapshots.length - 1].item_count} owned item
-                {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
-                {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
-                {currency !== 'USD' && ' eBay prices are always in USD, so totals mix currencies and are approximate.'}
-              </div>
-            </>
-          ) : (
-            <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
-              Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
-              or click "Record snapshot" above to log the current estimated value (eBay price where checked,
-              purchase price otherwise) right now.
-            </div>
-          )}
-        </div>
-      )}
-
-      {platformCounts.length > 0 && (
-        <div className="system-tiles-wrap">
-          <div className="system-tiles-heading">
-            <h3>Browse by system</h3>
-            {fPlat && <button type="button" onClick={() => setFPlat('')}>Clear</button>}
-          </div>
-          <div className="system-tiles">
-            {platformCounts.map(({ platform, count }) => (
-              <button
-                key={platform}
-                type="button"
-                className={`system-tile${fPlat === platform ? ' active' : ''}`}
-                style={{ '--tile-color': getPlatformColor(platform) }}
-                onClick={() => jumpToSystem(platform)}
-              >
-                <span className="sys-name">{platform}</span>
-                <span className="sys-count">{count} item{count === 1 ? '' : 's'}</span>
-              </button>
             ))}
           </div>
-        </div>
-      )}
 
-      <div className="toolbar">
-        <input
-          type="text"
-          placeholder="Search title, series, set, artist, publisher…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select value={fType} onChange={(e) => setFType(e.target.value)}>
-          <option value="">All types</option>
-          <option value="game">Video Games</option>
-          <option value="comic">Comics</option>
-          <option value="trading_card">Trading Cards</option>
-          <option value="vinyl">Vinyl Records</option>
-          <option value="book">Books</option>
-          <option value="dvd">DVDs / Blu-rays</option>
-          <option value="cd">CDs</option>
-        </select>
-        <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="owned">Owned</option>
-          <option value="wishlist">Wishlist</option>
-          <option value="sold">Sold</option>
-        </select>
-        <select value={fCopy} onChange={(e) => setFCopy(e.target.value)}>
-          <option value="">Physical + digital</option>
-          <option value="physical">Physical only</option>
-          <option value="digital">Digital only</option>
-        </select>
-        <select value={fComplete} onChange={(e) => setFComplete(e.target.value)}>
-          <option value="">All completeness</option>
-          <option value="complete">100% complete only</option>
-          <option value="incomplete">Not yet 100%</option>
-        </select>
-        <select value={fPlat} onChange={(e) => setFPlat(e.target.value)}>
-          <option value="">All platforms</option>
-          {platformOptions.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
-        <select value={fPlay} onChange={(e) => setFPlay(e.target.value)}>
-          <option value="">All play status</option>
-          <option value="backlog">Backlog</option>
-          <option value="playing">Playing</option>
-          <option value="completed">Completed</option>
-          <option value="abandoned">Abandoned</option>
-        </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="titleAsc">Title A–Z</option>
-          <option value="titleDesc">Title Z–A</option>
-          <option value="recent">Recently Added</option>
-          <option value="ratingDesc">Highest Rated</option>
-          <option value="valueDesc">Highest Value</option>
-        </select>
-      </div>
+          <div className="form-card" style={{ margin: '0 0 20px', maxWidth: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
+              <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
+                {snapshotSaving ? 'Recording…' : 'Record snapshot'}
+              </button>
+            </div>
+            {snapshots.length >= 2 ? (
+              <>
+                <div style={{ marginTop: 12 }}>
+                  <ValueChart snapshots={snapshots} currency={currency} />
+                </div>
+                <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
+                  Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
+                  {snapshots[snapshots.length - 1].item_count} owned item
+                  {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
+                  {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
+                  {currency !== 'USD' && ' eBay prices are always in USD, so totals mix currencies and are approximate.'}
+                </div>
+              </>
+            ) : (
+              <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
+                Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
+                or click "Record snapshot" above to log the current estimated value (eBay price where checked,
+                purchase price otherwise) right now.
+              </div>
+            )}
+          </div>
 
-      {games.length === 0 ? (
-        <div className="empty-state">
-          <div>No items yet. Click <strong>+ Add Item</strong> to start your collection.</div>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <div>No items match your filters.</div>
-        </div>
-      ) : (
-        <div className="grid">
-          {filtered.map((g) => (
-            <GameCard key={g.id} game={g} onClick={() => setModalGame(g)} />
-          ))}
-        </div>
+          {platformCounts.length > 0 && (
+            <div className="system-tiles-wrap">
+              <div className="system-tiles-heading">
+                <h3>Browse by system</h3>
+                {fPlat && <button type="button" onClick={() => setFPlat('')}>Clear</button>}
+              </div>
+              <div className="system-tiles">
+                {platformCounts.map(({ platform, count }) => (
+                  <button
+                    key={platform}
+                    type="button"
+                    className={`system-tile${fPlat === platform ? ' active' : ''}`}
+                    style={{ '--tile-color': getPlatformColor(platform) }}
+                    onClick={() => jumpToSystem(platform)}
+                  >
+                    <span className="sys-name">{platform}</span>
+                    <span className="sys-count">{count} item{count === 1 ? '' : 's'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="toolbar">
+            <input
+              type="text"
+              placeholder="Search title, series, set, artist, publisher…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select value={fType} onChange={(e) => setFType(e.target.value)}>
+              <option value="">All types</option>
+              <option value="game">Video Games</option>
+              <option value="comic">Comics</option>
+              <option value="trading_card">Trading Cards</option>
+              <option value="vinyl">Vinyl Records</option>
+              <option value="book">Books</option>
+              <option value="dvd">DVDs / Blu-rays</option>
+              <option value="cd">CDs</option>
+            </select>
+            <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
+              <option value="">All statuses</option>
+              <option value="owned">Owned</option>
+              <option value="wishlist">Wishlist</option>
+              <option value="sold">Sold</option>
+            </select>
+            <select value={fCopy} onChange={(e) => setFCopy(e.target.value)}>
+              <option value="">Physical + digital</option>
+              <option value="physical">Physical only</option>
+              <option value="digital">Digital only</option>
+            </select>
+            <select value={fComplete} onChange={(e) => setFComplete(e.target.value)}>
+              <option value="">All completeness</option>
+              <option value="complete">100% complete only</option>
+              <option value="incomplete">Not yet 100%</option>
+            </select>
+            <select value={fPlat} onChange={(e) => setFPlat(e.target.value)}>
+              <option value="">All platforms</option>
+              {platformOptions.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <select value={fPlay} onChange={(e) => setFPlay(e.target.value)}>
+              <option value="">All play status</option>
+              <option value="backlog">Backlog</option>
+              <option value="playing">Playing</option>
+              <option value="completed">Completed</option>
+              <option value="abandoned">Abandoned</option>
+            </select>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="titleAsc">Title A–Z</option>
+              <option value="titleDesc">Title Z–A</option>
+              <option value="recent">Recently Added</option>
+              <option value="ratingDesc">Highest Rated</option>
+              <option value="valueDesc">Highest Value</option>
+            </select>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <div>No items match your filters.</div>
+            </div>
+          ) : (
+            <div className="grid">
+              {filtered.map((g) => (
+                <GameCard key={g.id} game={g} onClick={() => setModalGame(g)} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {modalGame !== undefined && (
