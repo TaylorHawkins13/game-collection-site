@@ -293,6 +293,8 @@ button:disabled {
   padding: 14px 12px 14px 14px;
   text-align: left;
   cursor: pointer;
+  color: var(--text); /* buttons don't inherit text color by default — without this the platform name renders in the browser's default (black) button color, invisible on a dark card */
+  font-family: inherit;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
 .system-tile:hover {
