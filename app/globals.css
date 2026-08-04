@@ -701,6 +701,92 @@ button:disabled {
   line-height: 1.5;
 }
 
+/* ---------- Landing page extras ---------- */
+.category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 28px;
+}
+.category-pill {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.section-block {
+  margin: 64px 0;
+}
+.section-heading {
+  font-size: 22px;
+  text-align: center;
+  margin: 0 0 8px;
+}
+.section-sub {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 28px;
+}
+.step {
+  text-align: center;
+  padding: 0 12px;
+}
+.step-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+.step-title {
+  font-weight: 700;
+  font-size: 14.5px;
+  margin-bottom: 6px;
+}
+.step-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.cta-band {
+  text-align: center;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #6c5ce714, #00d2a814);
+  border-radius: 20px;
+  padding: 48px 24px;
+  margin: 64px 0 40px;
+}
+.cta-band-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.cta-band-text {
+  color: var(--text-dim);
+  font-size: 14px;
+  max-width: 420px;
+  margin: 0 auto 20px;
+}
+
 /* ---------- Profile tabs ---------- */
 .profile-tabs {
   display: flex;
@@ -937,5 +1023,19 @@ button:disabled {
 
   .profile-name {
     font-size: 19px;
+  }
+
+  .section-block {
+    margin: 44px 0;
+  }
+  .section-heading {
+    font-size: 19px;
+  }
+  .cta-band {
+    padding: 32px 18px;
+    margin: 44px 0 24px;
+  }
+  .cta-band-title {
+    font-size: 18px;
   }
 }
