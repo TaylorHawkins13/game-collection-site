@@ -24,7 +24,6 @@ This is about *your real in-game trophies/achievements on Xbox and PlayStation* 
 
 ## Later (bigger, more design work)
 
-- **Recommend games you don't own yet** — the bigger version of the "Play next" idea above: instead of only pulling from your own backlog, suggest titles you don't have at all, based on what similar-taste collectors (people who rated the same games highly) own and rated well. Needs enough site-wide rating data to be meaningful, and care to avoid suggesting things already on someone's shelf or wishlist.
 - **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
 - **Collector level / trophy points** — combine Shelf Life's bronze/silver/gold/platinum badges into one overall score or level shown on your profile, the way PSN trophy levels roll everything into a single number people compare.
 - **More Shelf Life milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.

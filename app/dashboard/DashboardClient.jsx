@@ -9,6 +9,7 @@ import GameModal from '@/components/GameModal';
 import ImportCsvModal from '@/components/ImportCsvModal';
 import SteamImportModal from '@/components/SteamImportModal';
 import ValueChart from '@/components/ValueChart';
+import RecommendationCard from '@/components/RecommendationCard';
 import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
@@ -90,6 +91,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [showImport, setShowImport] = useState(false);
   const [snapshots, setSnapshots] = useState([]);
   const [snapshotSaving, setSnapshotSaving] = useState(false);
+  const [recommendations, setRecommendations] = useState(null); // null = still loading
+  const [recsError, setRecsError] = useState(false);
 
   // Load the collection's value history for the "value over time" chart.
   // Owner-only data (RLS-scoped), never shown on the public profile.
@@ -102,6 +105,20 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       .then(({ data }) => {
         if (data) setSnapshots(data);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // "Recommended for you" — safe to call even if the migration hasn't been
+  // run yet (recommend_games won't exist), just falls back to the error
+  // state rather than showing anything broken.
+  useEffect(() => {
+    supabase.rpc('recommend_games', { p_user_id: userId, p_limit: 8 }).then(({ data, error }) => {
+      if (error) {
+        setRecsError(true);
+        return;
+      }
+      setRecommendations(data || []);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -324,6 +341,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       market_price_checked_at: null,
       showcase_order: null, // don't silently double up a showcase slot
       steam_appid: null, // a duplicate is a manual copy, not another Steam import
+    });
+    setModalGame(null);
+  }
+
+  // Clicking a "Recommended for you" card opens Add Item pre-filled with
+  // just the title/type/cover — same idea as handleDuplicate, but the
+  // source here is an aggregate across other collectors' rows, not one of
+  // your own items, so there's no full item to strip fields from.
+  function handleAddFromRecommendation(rec) {
+    setDuplicateOf({
+      title: rec.title,
+      item_type: rec.item_type,
+      cover: rec.cover || '',
     });
     setModalGame(null);
   }
@@ -639,6 +669,35 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               </div>
             ))}
           </div>
+
+          {!recsError && recommendations && recommendations.length > 0 && (
+            <div className="recommend-panel">
+              <h3 className="recommend-heading">Recommended for you</h3>
+              <p className="sub" style={{ margin: '0 0 12px' }}>
+                Based on titles you've rated 4-5 stars and what similar-taste collectors rated highly. Click one to
+                add it.
+              </p>
+              <div className="recommend-grid">
+                {recommendations.map((rec) => (
+                  <RecommendationCard
+                    key={rec.title}
+                    rec={rec}
+                    onClick={() => handleAddFromRecommendation(rec)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!recsError && recommendations && recommendations.length === 0 && (
+            <div className="recommend-panel">
+              <h3 className="recommend-heading">Recommended for you</h3>
+              <p className="sub" style={{ margin: 0 }}>
+                Rate a few things you own 4-5 stars, and once other public collectors have rated some of the same
+                titles highly, recommendations based on shared taste will show up here.
+              </p>
+            </div>
+          )}
 
           <div className="form-card" style={{ margin: '0 0 20px', maxWidth: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
