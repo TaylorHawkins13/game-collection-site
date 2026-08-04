@@ -155,7 +155,12 @@ export default async function ProfilePage({ params }) {
           {profile.bio && <div className="profile-bio">{profile.bio}</div>}
         </div>
         {viewer && !isOwner && (
-          <FollowButton profileId={profile.id} initialFollowing={alreadyFollowing} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <FollowButton profileId={profile.id} initialFollowing={alreadyFollowing} />
+            <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Compare collections
+            </Link>
+          </div>
         )}
         {isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

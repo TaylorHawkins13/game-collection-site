@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
 import StarRating from './StarRating';
 import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
+import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 
 const EMPTY = {
   item_type: 'game',
@@ -46,7 +47,7 @@ const EMPTY = {
   trophy_completion: null,
 };
 
-export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions }) {
+export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
   const sg = suggestions || {};
   const supabase = createClient();
   const [form, setForm] = useState(EMPTY);
@@ -209,6 +210,13 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const isDvd = form.item_type === 'dvd';
   const isCd = form.item_type === 'cd';
   const isMediaLike = isBook || isDvd || isCd;
+
+  // Soft heads-up, not a blocker — a second platform's copy or replacing
+  // a lost one are both legitimate reasons to "duplicate" a title.
+  const possibleDuplicates = useMemo(
+    () => findPossibleDuplicates(form.title, form.item_type, existingItems, game?.id),
+    [form.title, form.item_type, existingItems, game?.id]
+  );
 
   const genrePlaceholder = isComic
     ? 'e.g. Superhero'
@@ -519,6 +527,19 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             </div>
           )}
           {communityHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{communityHint}</div>}
+          {possibleDuplicates.length > 0 && (
+            <div className="duplicate-warning">
+              You might already have this:{' '}
+              {possibleDuplicates.slice(0, 3).map((d, i) => (
+                <span key={d.id}>
+                  {i > 0 ? ', ' : ''}
+                  <strong>{d.title}</strong>
+                  {d.platforms && d.platforms.length ? ` (${d.platforms.join('/')})` : ''}
+                </span>
+              ))}
+              . Still fine to add if that's intentional — a different platform, a replacement copy, etc.
+            </div>
+          )}
         </div>
 
         {isGame && (

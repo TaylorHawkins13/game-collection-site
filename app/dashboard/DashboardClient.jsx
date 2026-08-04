@@ -109,6 +109,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
+  const [syncingAchievements, setSyncingAchievements] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({ done: 0, total: 0 });
+  const syncStopRef = useRef(false);
   const [showImport, setShowImport] = useState(false);
   const [snapshots, setSnapshots] = useState([]);
   const [snapshotSaving, setSnapshotSaving] = useState(false);
@@ -437,6 +440,49 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     recordSnapshot(currentGames);
   }
 
+  // Same loop shape as handleRefreshAllPrices, but for Steam achievement %
+  // instead of eBay prices — walks every Steam-imported item, asks Steam
+  // for that game's achievement completion, and stores it as
+  // trophy_completion (with trophy_platinum set once it hits 100%). Only
+  // relevant for games that came from a Steam import (steam_appid set).
+  async function handleSyncAchievements() {
+    const targets = games.filter((g) => g.steam_appid != null);
+    if (targets.length === 0) return;
+    syncStopRef.current = false;
+    setSyncingAchievements(true);
+    setSyncProgress({ done: 0, total: targets.length });
+
+    let currentGames = games;
+
+    for (let i = 0; i < targets.length; i++) {
+      if (syncStopRef.current) break;
+      const item = targets[i];
+      try {
+        const res = await fetch(`/api/steam-achievements?appid=${encodeURIComponent(item.steam_appid)}`);
+        const data = await res.json();
+        if (!data.error) {
+          const { data: updated } = await supabase
+            .from('games')
+            .update({ trophy_completion: data.percent, trophy_platinum: data.platinum })
+            .eq('id', item.id)
+            .select()
+            .single();
+          if (updated) {
+            currentGames = currentGames.map((g) => (g.id === updated.id ? updated : g));
+            setGames(currentGames);
+          }
+        }
+      } catch {
+        // skip this item on failure and keep going with the rest
+      }
+      setSyncProgress({ done: i + 1, total: targets.length });
+      if (i < targets.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+    }
+    setSyncingAchievements(false);
+  }
+
   // Called by ImportCsvModal once its batch insert finishes — the modal
   // stays open afterward so the success message and any warnings are
   // still visible; it only closes when the user clicks Close.
@@ -574,6 +620,27 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
               Import from Steam
             </button>
+          )}
+          {steamId && (
+            syncingAchievements ? (
+              <>
+                <span className="sub" style={{ margin: 0 }}>
+                  Syncing achievements… {syncProgress.done}/{syncProgress.total}
+                </span>
+                <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
+                  Stop
+                </button>
+              </>
+            ) : (
+              <button
+                className="btn-ghost"
+                onClick={handleSyncAchievements}
+                type="button"
+                disabled={!games.some((g) => g.steam_appid != null)}
+              >
+                Sync achievements from Steam
+              </button>
+            )
           )}
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
             Profile settings
@@ -920,6 +987,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           duplicateOf={duplicateOf}
           currency={currency}
           suggestions={suggestions}
+          existingItems={games}
           onClose={() => {
             setModalGame(undefined);
             setDuplicateOf(undefined);

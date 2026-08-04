@@ -31,6 +31,7 @@ Next.js + Supabase app: accounts, cloud-synced collections (video games, comics,
    2. Paste it into `.env.local` (and your Vercel project's env vars) as `STEAM_API_KEY`. Server-only, never sent to the browser (`app/api/steam-games/route.js`).
    3. Important: Steam's login only works on your **real deployed URL**, not localhost — it's hardcoded to the domain in `lib/siteUrl.js` (`SITE_URL`), since Steam's login flow requires a fixed callback address. If you ever change domains, update that file.
    4. Also worth telling people (or just knowing yourself): Steam's game-list API only works if the account's **Game details** privacy setting is set to Public (Steam app/site → your profile → Edit Profile → Privacy Settings). Logging in with Steam proves who you are but doesn't bypass that setting — Steam doesn't have a way to grant per-app access to a private game list. The import screen explains this if someone's list comes back empty.
+   5. The same `STEAM_API_KEY` also powers "Sync achievements from Steam" on the dashboard (pulls per-game achievement completion % for Steam-imported games) — nothing extra to set up once the key above is in place.
 
 ## 3. Run it locally
 

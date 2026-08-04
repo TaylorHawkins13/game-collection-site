@@ -10,7 +10,6 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 This is about *your real in-game trophies/achievements on Xbox and PlayStation* — separate from Shelf Life's own collection-milestone badges (the bronze/silver/gold/platinum system already built, which is about collecting, not playing).
 
-- **Automatic achievement % for Steam-imported games** — the one exception: Steam *does* have a public API for a player's per-game achievement progress. Since Steam-imported games already store their `steam_appid`, their completion percentage could be pulled in automatically instead of typed by hand — worth building once manual tracking proves people actually want this.
 - **Platinum count / average completion on your profile** — a stat real trophy hunters care about — "14 platinums, 78% average completion across your library" — shown clearly as its own thing, not mixed in with Shelf Life's own trophy case.
 - **Filter/sort your collection by completion %** — find what's closest to platinum in your backlog, or sort your whole library by how close to 100% each game is.
 
@@ -19,12 +18,10 @@ This is about *your real in-game trophies/achievements on Xbox and PlayStation* 
 - **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
 - **Collector level / trophy points** — combine Shelf Life's bronze/silver/gold/platinum badges into one overall score or level shown on your profile, the way PSN trophy levels roll everything into a single number people compare.
 - **More Shelf Life milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.
-- **Collection comparison** — put your shelf (and trophy case) side-by-side with another collector's — what you both own, what's different, who's closer to platinum on a shared milestone.
 - **Even more collectible types** — board games, action figures/toys, coins, consoles, and others follow the same pattern now established by cards/vinyl/media, whenever there's demand for them.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.
 - **Wantlist matching / trading** — surface when someone on your follow list has something on your wishlist, or has a duplicate they might trade.
 - **Custom lists within your shelf** — curated sub-lists beyond the 5-item showcase (e.g. "Favorites," "For sale," "Currently replaying") for organizing a big collection into more than one flat grid.
-- **Duplicate/near-duplicate warning** — a heads-up when adding something that looks like an item already in your collection, so accidental double-entries (or forgotten "didn't I already buy this?" moments) get caught at add-time.
 - **In-app notifications** — a small bell/inbox for follows, comments, and trophies you can check later, instead of only ever catching them as an in-the-moment toast.
 - **Notification digest emails** — an opt-in weekly summary of your stats or your followed collectors' activity, building on the activity feed.
 - **Live currency conversion** — currency is display-only right now (no conversion between them); real conversion needs a rates API and a decision on what the "true" underlying value is when items were priced in different currencies.
