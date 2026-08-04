@@ -48,7 +48,7 @@ That's it — from then on, every `git push` redeploys automatically.
 ## What's included
 
 - **Accounts**: email/password signup & login (Supabase Auth), auto-creates a public profile with a chosen username.
-- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across seven collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author/publisher/format/edition for books (director/studio for DVDs, artist/label for CDs) — plus shared tags, barcodes, and IGDB auto-fill for games.
+- **Collection dashboard** (`/dashboard`): add/edit/delete/filter/search across seven collectible types in one shelf, each with tailored fields — platforms for games, series/issue/publisher/writer/artist/grade/variant for comics, set/card number/player/grade for trading cards, artist/label/format/edition for vinyl, and author/publisher/format/edition for books (director/studio for DVDs, artist/label for CDs) — plus shared tags, barcodes, and IGDB auto-fill for games. An "Import CSV" button bulk-adds items from a spreadsheet at once, using a downloadable template with the right columns.
 - **Public profiles** (`/u/username`): view a collector's shelf, follow them, leave comments. Users can toggle their profile private in Profile Settings.
 - **Profile settings**: display name, bio, public/private toggle, preferred currency (for price display only — no live conversion), and avatar image upload (stored in Supabase Storage).
 - **Leaderboard** (`/leaderboard`): most-owned items, biggest public collections, trending titles (last 14 days) — computed from public collections only.

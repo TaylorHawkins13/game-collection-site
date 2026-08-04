@@ -29,6 +29,7 @@ A living list of where this could go next. Nothing here is committed or schedule
 - **Physical/Digital tag** — a "Copy" field (Physical or Digital) works on any item type, shows as a badge on the card, and has its own dashboard filter. Requires `copytype-migration.sql` on existing projects.
 - **Check eBay price** — a button in the item form looks up current eBay (US) listings for that item and shows the low/average/high asking price, which then shows on the card too. This is *current active listings*, not confirmed sale prices — eBay doesn't offer free public access to sold-listing data anymore, so this is "what it's going for right now" rather than a guaranteed resale value. On-demand only (you click Check, it doesn't run automatically), free with an eBay developer account. A "Refresh all prices" button on the dashboard runs the same check across your whole collection in one go (skipping sold items), with a progress readout and a Stop button since a big collection takes a bit. Requires `ebayprice-migration.sql` on existing projects, plus `EBAY_CLIENT_ID`/`EBAY_CLIENT_SECRET` in `.env.local` (see README).
 - **Completeness field for games** — Loose (cart/disc only), CIB (complete in box), or Box only (no manual), as its own field separate from general condition. Feeds directly into the eBay price check too — completeness swings a game's real resale value a lot (a loose cart vs. a CIB copy of the same game can be several times apart in price), so the price lookup now searches with the right term included instead of averaging loose and CIB listings together. Requires `completeness-migration.sql` on existing projects.
+- **CSV/spreadsheet import** — an "Import CSV" button on the dashboard bulk-adds items from a spreadsheet instead of one at a time. Includes a downloadable template with the right columns and an example row for every item type. Shows a preview of what's about to be added plus any warnings (unrecognized item type, bad date, etc. — those rows still import with sensible defaults rather than failing outright), then imports in batches with a progress readout.
 
 ## Bugs (reported, not yet fixed)
 
@@ -40,9 +41,8 @@ A living list of where this could go next. Nothing here is committed or schedule
 
 ## Next (small, self-contained additions) — in priority order
 
-1. **CSV/spreadsheet import** — bulk-add an existing collection from a spreadsheet instead of one-by-one.
-2. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
-3. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
+1. **Sort/filter by value** — you can already sort by value; adding a "collection value over time" mini-chart would make the price tracking more useful.
+2. **"100% complete" tag** — a way to flag an item (or a whole collection) as fully completed, beyond the existing play-status/condition fields.
 
 ## Later (bigger, more design work)
 

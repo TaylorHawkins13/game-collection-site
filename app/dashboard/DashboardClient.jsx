@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
+import ImportCsvModal from '@/components/ImportCsvModal';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { getPlatformColor } from '@/lib/platformColors';
@@ -60,6 +61,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
+  const [showImport, setShowImport] = useState(false);
 
   const platformOptions = useMemo(
     () => [...new Set(games.flatMap((g) => g.platforms || []))].sort(),
@@ -273,6 +275,16 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setRefreshingAll(false);
   }
 
+  // Called by ImportCsvModal once its batch insert finishes — the modal
+  // stays open afterward so the success message and any warnings are
+  // still visible; it only closes when the user clicks Close.
+  function handleImported(newRows) {
+    setGames((gs) => [...gs, ...newRows]);
+    supabase.rpc('check_and_award_achievements', { p_user_id: userId }).then(({ data: newTrophies }) => {
+      announceTrophies(newTrophies);
+    });
+  }
+
   async function handleAvatarFile(e) {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file later
@@ -357,6 +369,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Refresh all prices
             </button>
           )}
+          <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
+            Import CSV
+          </button>
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
             Profile settings
           </button>
@@ -567,6 +582,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           onSave={handleSave}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
+        />
+      )}
+
+      {showImport && (
+        <ImportCsvModal
+          userId={userId}
+          onClose={() => setShowImport(false)}
+          onImported={handleImported}
         />
       )}
     </main>
