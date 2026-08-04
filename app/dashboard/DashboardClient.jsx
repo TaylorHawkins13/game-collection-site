@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
@@ -9,6 +9,7 @@ import GameModal from '@/components/GameModal';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { getPlatformColor } from '@/lib/platformColors';
+import { buildPriceQuery } from '@/lib/marketPrice';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -56,6 +57,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [settingsMsg, setSettingsMsg] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+  const [refreshingAll, setRefreshingAll] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
+  const refreshStopRef = useRef(false);
 
   const platformOptions = useMemo(
     () => [...new Set(games.flatMap((g) => g.platforms || []))].sort(),
@@ -229,6 +233,46 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setModalGame(null);
   }
 
+  // Loops through the whole collection (skipping sold items — you no
+  // longer own those) and checks eBay's current price for each, one at a
+  // time with a short pause between requests so this doesn't hammer the
+  // shared free API quota. Can be stopped mid-run since a big collection
+  // might take a while.
+  async function handleRefreshAllPrices() {
+    const targets = games.filter((g) => g.ownership !== 'sold' && buildPriceQuery(g));
+    if (targets.length === 0) return;
+    refreshStopRef.current = false;
+    setRefreshingAll(true);
+    setRefreshProgress({ done: 0, total: targets.length });
+
+    for (let i = 0; i < targets.length; i++) {
+      if (refreshStopRef.current) break;
+      const item = targets[i];
+      try {
+        const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}`);
+        const data = await res.json();
+        if (!data.error && data.count) {
+          const { data: updated } = await supabase
+            .from('games')
+            .update({ market_price: data.avg, market_price_checked_at: new Date().toISOString() })
+            .eq('id', item.id)
+            .select()
+            .single();
+          if (updated) {
+            setGames((gs) => gs.map((g) => (g.id === updated.id ? updated : g)));
+          }
+        }
+      } catch {
+        // skip this item on failure and keep going with the rest
+      }
+      setRefreshProgress({ done: i + 1, total: targets.length });
+      if (i < targets.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+    }
+    setRefreshingAll(false);
+  }
+
   async function handleAvatarFile(e) {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file later
@@ -298,7 +342,21 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {refreshingAll ? (
+            <>
+              <span className="sub" style={{ margin: 0 }}>
+                Checking eBay prices… {refreshProgress.done}/{refreshProgress.total}
+              </span>
+              <button className="btn-ghost" onClick={() => { refreshStopRef.current = true; }} type="button">
+                Stop
+              </button>
+            </>
+          ) : (
+            <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0}>
+              Refresh all prices
+            </button>
+          )}
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
             Profile settings
           </button>

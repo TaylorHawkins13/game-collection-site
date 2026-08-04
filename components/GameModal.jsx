@@ -5,6 +5,7 @@ import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
 import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
+import { buildPriceQuery } from '@/lib/marketPrice';
 
 const EMPTY = {
   item_type: 'game',
@@ -349,20 +350,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     }
   }
 
-  // Builds a search string tailored to the item type — a bare title finds
-  // a lot of unrelated junk on eBay, so tack on whatever extra detail
-  // narrows it down best for that type.
-  function buildPriceQuery() {
-    const parts = [form.title.trim()];
-    if (isGame && form.platforms[0]) parts.push(form.platforms[0]);
-    if (isCard && form.card_set) parts.push(form.card_set);
-    if (isVinyl && form.format) parts.push(form.format);
-    if (isComic && form.issue_number) parts.push(form.issue_number);
-    return parts.filter(Boolean).join(' ');
-  }
-
   async function checkEbayPrice() {
-    const q = buildPriceQuery();
+    const q = buildPriceQuery(form);
     if (!q) return;
     setPriceChecking(true);
     setPriceHint('Checking eBay…');
