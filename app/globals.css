@@ -1110,7 +1110,7 @@ button:disabled {
   margin: 0 0 14px;
 }
 .showcase-grid {
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .showcase-selected {
@@ -1515,6 +1515,12 @@ button:disabled {
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 14px;
+  }
+  /* The showcase's fixed 5-column row is a desktop layout — on a phone
+     that's 5 unreadably-thin slivers, so fall back to the same
+     auto-fill sizing as the regular grid. */
+  .showcase-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
   .card-title {
     font-size: 12.5px;

@@ -3,9 +3,9 @@
 import { useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 
-const MAX_SHOWCASE = 6;
+const MAX_SHOWCASE = 5;
 
-// Lets someone pick up to 6 favorite items to pin at the top of their
+// Lets someone pick up to 5 favorite items to pin at the top of their
 // public profile, in whatever order they like. Kept as its own small
 // modal (rather than a checkbox buried in the item edit form) since
 // curating a showcase is its own little task — pick a few, put them in
