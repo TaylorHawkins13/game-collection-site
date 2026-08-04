@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import CollapseToggle from './CollapseToggle';
 
 // Weighted-random pick — higher weight means more likely, not guaranteed,
 // so hitting "Try another" doesn't just cycle the same top pick over and
@@ -20,7 +21,7 @@ function weightedPick(candidates, weights) {
 // wishlist if the backlog's empty), weighted toward the genres/platforms
 // of games you've already rated highly. Purely client-side — everything
 // it needs is already in the `games` prop, no extra fetch.
-export default function PlayNextWidget({ games, onOpen }) {
+export default function PlayNextWidget({ games, onOpen, collapsed, onToggleCollapse }) {
   const { pool, genreScore, platformScore, hasRatings } = useMemo(() => {
     const rated = games.filter((g) => g.item_type === 'game' && g.rating >= 4);
     const genreScore = {};
@@ -59,10 +60,15 @@ export default function PlayNextWidget({ games, onOpen }) {
   if (pool.length === 0) {
     return (
       <div className="playnext-panel">
-        <h3 className="playnext-heading">What should I play next?</h3>
-        <p className="sub" style={{ margin: 0 }}>
-          Nothing in your backlog or wishlist yet — add a game and mark it Backlog to get a suggestion here.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <h3 className="playnext-heading" style={{ margin: 0 }}>What should I play next?</h3>
+          <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
+        </div>
+        {!collapsed && (
+          <p className="sub" style={{ margin: '10px 0 0' }}>
+            Nothing in your backlog or wishlist yet — add a game and mark it Backlog to get a suggestion here.
+          </p>
+        )}
       </div>
     );
   }
@@ -71,11 +77,16 @@ export default function PlayNextWidget({ games, onOpen }) {
     <div className="playnext-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <h3 className="playnext-heading" style={{ margin: 0 }}>What should I play next?</h3>
-        <button className="btn-ghost" type="button" onClick={suggest}>
-          {suggestion ? 'Try another' : 'Suggest something'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {!collapsed && (
+            <button className="btn-ghost" type="button" onClick={suggest}>
+              {suggestion ? 'Try another' : 'Suggest something'}
+            </button>
+          )}
+          <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
+        </div>
       </div>
-      {suggestion && (
+      {!collapsed && suggestion && (
         <>
           <button type="button" className="playnext-suggestion" onClick={() => onOpen(suggestion)}>
             {suggestion.cover ? (

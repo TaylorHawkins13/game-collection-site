@@ -12,6 +12,7 @@ import SteamImportModal from '@/components/SteamImportModal';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
+import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
@@ -40,6 +41,26 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [sortBy, setSortBy] = useState('titleAsc');
   const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [collapsedPanels, setCollapsedPanels] = useState({ playnext: false, recommend: false, value: false });
+
+  // Remember which of the Play next / Recommended / Value chart panels
+  // someone's minimized, so it stays minimized on their next visit.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('gct_dashboard_collapsed') || '{}');
+      setCollapsedPanels((prev) => ({ ...prev, ...saved }));
+    } catch {
+      // ignore malformed/missing localStorage value
+    }
+  }, []);
+
+  function togglePanel(key) {
+    setCollapsedPanels((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('gct_dashboard_collapsed', JSON.stringify(next));
+      return next;
+    });
+  }
 
   // Arriving from the profile page's "Edit profile" link (?settings=1) opens
   // the settings panel automatically instead of making people find the button.
@@ -694,63 +715,87 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             ))}
           </div>
 
-          <PlayNextWidget games={games} onOpen={(g) => setModalGame(g)} />
+          <PlayNextWidget
+            games={games}
+            onOpen={(g) => setModalGame(g)}
+            collapsed={collapsedPanels.playnext}
+            onToggleCollapse={() => togglePanel('playnext')}
+          />
 
           {!recsError && recommendations && recommendations.length > 0 && (
             <div className="recommend-panel">
-              <h3 className="recommend-heading">Recommended for you</h3>
-              <p className="sub" style={{ margin: '0 0 12px' }}>
-                Based on titles you've rated 4-5 stars and what similar-taste collectors rated highly. Click one to
-                add it.
-              </p>
-              <div className="recommend-grid">
-                {recommendations.map((rec) => (
-                  <RecommendationCard
-                    key={rec.title}
-                    rec={rec}
-                    onClick={() => handleAddFromRecommendation(rec)}
-                  />
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <h3 className="recommend-heading" style={{ margin: 0 }}>Recommended for you</h3>
+                <CollapseToggle collapsed={collapsedPanels.recommend} onToggle={() => togglePanel('recommend')} />
               </div>
+              {!collapsedPanels.recommend && (
+                <>
+                  <p className="sub" style={{ margin: '6px 0 12px' }}>
+                    Based on titles you've rated 4-5 stars and what similar-taste collectors rated highly. Click one to
+                    add it.
+                  </p>
+                  <div className="recommend-grid">
+                    {recommendations.map((rec) => (
+                      <RecommendationCard
+                        key={rec.title}
+                        rec={rec}
+                        onClick={() => handleAddFromRecommendation(rec)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
           {!recsError && recommendations && recommendations.length === 0 && (
             <div className="recommend-panel">
-              <h3 className="recommend-heading">Recommended for you</h3>
-              <p className="sub" style={{ margin: 0 }}>
-                Rate a few things you own 4-5 stars, and once other public collectors have rated some of the same
-                titles highly, recommendations based on shared taste will show up here.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <h3 className="recommend-heading" style={{ margin: 0 }}>Recommended for you</h3>
+                <CollapseToggle collapsed={collapsedPanels.recommend} onToggle={() => togglePanel('recommend')} />
+              </div>
+              {!collapsedPanels.recommend && (
+                <p className="sub" style={{ margin: '6px 0 0' }}>
+                  Rate a few things you own 4-5 stars, and once other public collectors have rated some of the same
+                  titles highly, recommendations based on shared taste will show up here.
+                </p>
+              )}
             </div>
           )}
 
           <div className="form-card" style={{ margin: '0 0 20px', maxWidth: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
-              <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
-                {snapshotSaving ? 'Recording…' : 'Record snapshot'}
-              </button>
-            </div>
-            {snapshots.length >= 2 ? (
-              <>
-                <div style={{ marginTop: 12 }}>
-                  <ValueChart snapshots={snapshots} currency={currency} />
-                </div>
-                <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
-                  Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
-                  {snapshots[snapshots.length - 1].item_count} owned item
-                  {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
-                  {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
-                  {currency !== 'USD' && ' eBay prices are always in USD, so totals mix currencies and are approximate.'}
-                </div>
-              </>
-            ) : (
-              <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
-                Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
-                or click "Record snapshot" above to log the current estimated value (eBay price where checked,
-                purchase price otherwise) right now.
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {!collapsedPanels.value && (
+                  <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
+                    {snapshotSaving ? 'Recording…' : 'Record snapshot'}
+                  </button>
+                )}
+                <CollapseToggle collapsed={collapsedPanels.value} onToggle={() => togglePanel('value')} />
               </div>
+            </div>
+            {!collapsedPanels.value && (
+              snapshots.length >= 2 ? (
+                <>
+                  <div style={{ marginTop: 12 }}>
+                    <ValueChart snapshots={snapshots} currency={currency} />
+                  </div>
+                  <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
+                    Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
+                    {snapshots[snapshots.length - 1].item_count} owned item
+                    {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
+                    {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
+                    {currency !== 'USD' && ' eBay prices are always in USD, so totals mix currencies and are approximate.'}
+                  </div>
+                </>
+              ) : (
+                <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
+                  Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
+                  or click "Record snapshot" above to log the current estimated value (eBay price where checked,
+                  purchase price otherwise) right now.
+                </div>
+              )
             )}
           </div>
 
