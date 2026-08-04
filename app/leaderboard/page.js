@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
+import { CoverThumb, PersonAvatar } from '@/components/LeaderboardThumb';
 
 export const metadata = {
   title: 'Leaderboard',
@@ -11,35 +12,6 @@ function rankClass(i) {
   if (i === 1) return ' medal-2';
   if (i === 2) return ' medal-3';
   return '';
-}
-
-function CoverThumb({ cover, title }) {
-  return cover ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className="leaderboard-thumb"
-      src={cover}
-      alt={title}
-      onError={(e) => {
-        e.currentTarget.outerHTML = '<div class="leaderboard-thumb placeholder">No Cover</div>';
-      }}
-    />
-  ) : (
-    <div className="leaderboard-thumb placeholder">No Cover</div>
-  );
-}
-
-function PersonAvatar({ avatarUrl, name }) {
-  return (
-    <div className="avatar leaderboard-avatar">
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatarUrl} alt={name} />
-      ) : (
-        (name || '?').slice(0, 1).toUpperCase()
-      )}
-    </div>
-  );
 }
 
 export default async function LeaderboardPage() {
