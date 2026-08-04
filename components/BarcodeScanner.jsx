@@ -32,6 +32,34 @@ export default function BarcodeScanner({ onDetected, onClose }) {
   const controlsRef = useRef(null);
   const [error, setError] = useState('');
 
+  // Belt-and-braces camera release: controls.stop() should stop the
+  // underlying MediaStream, but on some mobile browsers it's left
+  // running (which can leave the page in a stuck/laggy state — the
+  // camera hardware and its video frames keep getting processed even
+  // though the modal is gone). Explicitly stopping every track on the
+  // video element's stream guarantees the camera actually turns off.
+  function hardStopCamera() {
+    controlsRef.current?.stop();
+    const stream = videoRef.current?.srcObject;
+    if (stream && typeof stream.getTracks === 'function') {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }
+
+  // Lock background scroll while the camera is open — on mobile Safari
+  // in particular, an active camera view can otherwise leave the page
+  // behind it scrollable/interactive, making things feel "frozen".
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -55,7 +83,7 @@ export default function BarcodeScanner({ onDetected, onClose }) {
         controlsRef.current = controls;
         if (cancelled) return;
         if (result) {
-          controls.stop();
+          hardStopCamera();
           onDetected(result.getText());
         }
       })
@@ -72,13 +100,13 @@ export default function BarcodeScanner({ onDetected, onClose }) {
 
     return () => {
       cancelled = true;
-      controlsRef.current?.stop();
+      hardStopCamera();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleClose() {
-    controlsRef.current?.stop();
+    hardStopCamera();
     onClose();
   }
 

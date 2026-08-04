@@ -43,6 +43,7 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
   const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [barcodeHint, setBarcodeHint] = useState('');
 
   useEffect(() => {
     if (game) {
@@ -81,11 +82,23 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     setSearchResults([]);
     setSearchHint('');
     setSaveError('');
+    setBarcodeHint('');
   }, [game]);
 
   function set(field, val) {
     setForm((f) => ({ ...f, [field]: val }));
   }
+
+  // Lock background scroll while this modal (and anything it opens, like
+  // the barcode scanner) is up, so the dashboard grid behind it can't
+  // scroll independently.
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   const isGame = form.item_type === 'game';
   const isComic = form.item_type === 'comic';
@@ -159,6 +172,32 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
     }
     setSearchResults([]);
     setSearchHint(`Filled from IGDB: ${item.name}`);
+  }
+
+  async function handleBarcodeDetected(code) {
+    set('barcode', code);
+    setScanning(false);
+    setBarcodeHint('Looking up that barcode…');
+    try {
+      const res = await fetch(`/api/barcode-lookup?code=${encodeURIComponent(code)}&type=${form.item_type}`);
+      const data = await res.json();
+      if (!data.found) {
+        setBarcodeHint("Code filled in, but couldn't find product details for it — fill the rest in manually.");
+        return;
+      }
+      if (data.title) set('title', data.title);
+      if (data.cover) set('cover', data.cover);
+      if (isBook || isDvd || isCd) {
+        if (data.creator) set('writer', data.creator);
+        if (data.publisher) set('publisher', data.publisher);
+      } else if (isVinyl) {
+        if (data.creator) set('artist', data.creator);
+        if (data.publisher) set('publisher', data.publisher);
+      }
+      setBarcodeHint(`Filled from ${data.source === 'openlibrary' ? 'Open Library' : 'a UPC database'}${data.title ? `: ${data.title}` : ''}`);
+    } catch {
+      setBarcodeHint("Code filled in, but the lookup failed — fill the rest in manually.");
+    }
   }
 
   async function handleSave() {
@@ -432,19 +471,17 @@ export default function GameModal({ game, currency, onClose, onSave, onDelete })
                 onChange={(e) => set('barcode', e.target.value)}
                 style={{ flex: 1 }}
               />
-              <button type="button" className="btn-ghost" onClick={() => setScanning(true)}>
+              <button type="button" className="btn-ghost" onClick={() => { setScanning(true); setBarcodeHint(''); }}>
                 Scan
               </button>
             </div>
+            {barcodeHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{barcodeHint}</div>}
           </div>
         </div>
 
         {scanning && (
           <BarcodeScanner
-            onDetected={(code) => {
-              set('barcode', code);
-              setScanning(false);
-            }}
+            onDetected={handleBarcodeDetected}
             onClose={() => setScanning(false)}
           />
         )}
