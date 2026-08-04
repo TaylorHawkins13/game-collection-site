@@ -2,6 +2,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TrophyToastListener from '@/components/TrophyToastListener';
+import ToastListener from '@/components/ToastListener';
 import AdsGate from '@/components/AdsGate';
 import { SITE_URL } from '@/lib/siteUrl';
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
         {children}
         <Footer />
         <TrophyToastListener />
+        <ToastListener />
         <AdsGate />
       </body>
     </html>

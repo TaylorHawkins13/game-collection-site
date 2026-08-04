@@ -14,6 +14,7 @@ import { announceTrophies } from '@/lib/trophyToast';
 import { getPlatformColor } from '@/lib/platformColors';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
+import { announceToast } from '@/lib/toast';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -253,6 +254,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     if (!error) {
       setGames((gs) => gs.filter((g) => g.id !== id));
       setModalGame(undefined);
+    } else {
+      announceToast("Couldn't delete that item — try again in a moment.");
     }
   }
 

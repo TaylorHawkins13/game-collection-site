@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
 import { announceTrophies } from '@/lib/trophyToast';
+import { announceToast } from '@/lib/toast';
 
 export default function CommentSection({ profileId, initialComments, canComment }) {
   const [comments, setComments] = useState(initialComments);
@@ -32,6 +33,8 @@ export default function CommentSection({ profileId, initialComments, canComment 
       supabase.rpc('check_and_award_achievements', { p_user_id: user.id }).then(({ data: newTrophies }) => {
         announceTrophies(newTrophies);
       });
+    } else {
+      announceToast("Couldn't post that comment — try again in a moment.");
     }
   }
 
