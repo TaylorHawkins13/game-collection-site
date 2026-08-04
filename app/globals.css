@@ -1134,6 +1134,37 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  /* On phones, a wrapping grid of system tiles ate several rows of
+     vertical space before you even reached the collection. A single
+     horizontally-scrolling row keeps it to one tile's height while
+     staying fully usable — swipe sideways instead of scrolling down
+     past a wall of tiles. */
+  .system-tiles {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .system-tiles::-webkit-scrollbar {
+    display: none;
+  }
+  .system-tile {
+    flex: 0 0 auto;
+    min-width: 108px;
+    padding: 10px 12px 10px 12px;
+  }
+  .system-tile .sys-name {
+    font-size: 13px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+  }
+  .system-tile .sys-count {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
   /* The item grid was collapsing to one giant card per row on narrow
      phones (nothing else fit next to a 180px-minimum tile), which made
      cover art huge while the stat text inside stayed the same small
