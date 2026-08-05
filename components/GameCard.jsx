@@ -53,6 +53,7 @@ export default function GameCard({ game, onClick, featured = false }) {
   const isDvd = game.item_type === 'dvd';
   const isCd = game.item_type === 'cd';
   const isConsole = game.item_type === 'console';
+  const isFunko = game.item_type === 'funko_pop';
   const isMediaLike = isBook || isDvd || isCd;
 
   const statRows = [];
@@ -92,6 +93,13 @@ export default function GameCard({ game, onClick, featured = false }) {
       const compLabel = { loose: 'Loose', cib: 'CIB', box: 'Box only' }[game.completeness] || game.completeness;
       statRows.push({ label: 'Completeness', value: compLabel });
     }
+    statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
+  } else if (isFunko) {
+    statRows.push({ label: 'Series / line', value: game.card_set || '—' });
+    statRows.push({ label: 'Pop! #', value: game.card_number || '—' });
+    statRows.push({ label: 'Character', value: game.player_name || '—' });
+    if (game.publisher) statRows.push({ label: 'Exclusive to', value: game.publisher });
+    if (game.condition) statRows.push({ label: 'Box condition', value: game.condition });
     statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
   } else {
     statRows.push({
@@ -162,10 +170,10 @@ export default function GameCard({ game, onClick, featured = false }) {
             ))}
           </div>
         </div>
-        {(((isComic || isCard) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
+        {(((isComic || isCard || isFunko) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
           <div className="badge-row">
-            {(isComic || isCard) && game.is_variant && (
-              <span className="badge tag">{isCard ? 'Parallel' : 'Variant'}</span>
+            {(isComic || isCard || isFunko) && game.is_variant && (
+              <span className="badge tag">{isFunko ? 'Chase' : isCard ? 'Parallel' : 'Variant'}</span>
             )}
             {game.copy_type && (
               <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>

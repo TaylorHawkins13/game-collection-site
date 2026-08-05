@@ -213,6 +213,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const isDvd = form.item_type === 'dvd';
   const isCd = form.item_type === 'cd';
   const isConsole = form.item_type === 'console';
+  const isFunko = form.item_type === 'funko_pop';
   const isMediaLike = isBook || isDvd || isCd;
 
   // Soft heads-up, not a blocker — a second platform's copy or replacing
@@ -236,6 +237,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     ? 'e.g. Fiction, Sci-Fi'
     : isConsole
     ? 'e.g. Home console, Handheld'
+    : isFunko
+    ? 'e.g. Pop!, Pop! Rides, Pop! Deluxe, Pin'
     : 'e.g. RPG';
 
   const mediaCreatorLabel = isDvd ? 'Director' : isCd ? 'Artist' : 'Author';
@@ -432,31 +435,31 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       condition: isComic ? '' : form.condition,
       series: isComic ? form.series : '',
       issue_number: isComic ? form.issue_number : '',
-      publisher: isComic || isCard || isVinyl || isMediaLike || isConsole ? form.publisher : '',
+      publisher: isComic || isCard || isVinyl || isMediaLike || isConsole || isFunko ? form.publisher : '',
       writer: isComic || isMediaLike ? form.writer : '',
       artist: isComic || isVinyl ? form.artist : '',
-      grade: isComic || isCard || isConsole ? form.grade : '',
-      is_variant: isComic || isCard ? form.is_variant : false,
-      variant_notes: isComic || isCard ? form.variant_notes : '',
+      grade: isComic || isCard || isConsole || isFunko ? form.grade : '',
+      is_variant: isComic || isCard || isFunko ? form.is_variant : false,
+      variant_notes: isComic || isCard || isFunko ? form.variant_notes : '',
       format: isVinyl || isMediaLike || isConsole ? form.format : '',
       edition: isVinyl || isMediaLike || isConsole ? form.edition : '',
-      card_set: isCard ? form.card_set : '',
-      card_number: isCard ? form.card_number : '',
-      player_name: isCard ? form.player_name : '',
+      card_set: isCard || isFunko ? form.card_set : '',
+      card_number: isCard || isFunko ? form.card_number : '',
+      player_name: isCard || isFunko ? form.player_name : '',
       region: isGame || isConsole ? form.region : '',
       completeness: isGame || isConsole ? form.completeness : '',
-      // A console is always a physical object you own — "digital" here
-      // means something different for games (no physical copy exists at
-      // all), which doesn't apply to hardware, so it's never set for this
-      // type regardless of what the (hidden, for consoles) selector says.
-      copy_type: isConsole ? 'physical' : form.copy_type,
+      // A console or a Funko Pop is always a physical object you own —
+      // "digital" here means something different for games (no physical
+      // copy exists at all), which doesn't apply, so it's never set for
+      // these types regardless of what the (hidden, for both) selector says.
+      copy_type: isConsole || isFunko ? 'physical' : form.copy_type,
       // Switching Copy to Digital hides the price-check UI, but a value
       // set earlier (while it was still Physical, or before this field was
       // touched at all) would otherwise sit there stale — there's no eBay
       // resale market for a digital copy, so it shouldn't show a value.
-      market_price: form.copy_type === 'digital' && !isConsole ? null : form.market_price,
-      market_price_checked_at: form.copy_type === 'digital' && !isConsole ? null : form.market_price_checked_at,
-      market_price_currency: form.copy_type === 'digital' && !isConsole ? null : form.market_price_currency,
+      market_price: form.copy_type === 'digital' && !isConsole && !isFunko ? null : form.market_price,
+      market_price_checked_at: form.copy_type === 'digital' && !isConsole && !isFunko ? null : form.market_price_checked_at,
+      market_price_currency: form.copy_type === 'digital' && !isConsole && !isFunko ? null : form.market_price_currency,
       trophy_platinum: isGame ? form.trophy_platinum : false,
       trophy_completion: isGame
         ? form.trophy_completion === '' || form.trophy_completion == null
@@ -493,6 +496,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <option value="dvd">DVD / Blu-ray</option>
             <option value="cd">CD</option>
             <option value="console">Console</option>
+            <option value="funko_pop">Funko Pop</option>
           </select>
         </div>
 
@@ -787,6 +791,57 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           </>
         )}
 
+        {isFunko && (
+          <>
+            <div className="row2">
+              <div className="field">
+                <label>Series / line</label>
+                <input type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. Marvel, Star Wars, Animation, Retro Toys" list="dl-card_set" />
+              </div>
+              <div className="field">
+                <label>Pop! #</label>
+                <input type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #1141" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Character</label>
+                <input type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} list="dl-player_name" />
+              </div>
+              <div className="field">
+                <label>Exclusive to</label>
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Hot Topic, SDCC, GameStop, Funko Shop" list="dl-publisher" />
+              </div>
+            </div>
+            <div className="field">
+              <label>Grade</label>
+              <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. PPJoe 9.5, GalaxyPop 10, Raw" />
+            </div>
+            <div className="field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.is_variant}
+                  onChange={(e) => set('is_variant', e.target.checked)}
+                  style={{ width: 'auto', marginRight: 8 }}
+                />
+                This is a Chase / special variant
+              </label>
+            </div>
+            {form.is_variant && (
+              <div className="field">
+                <label>Details</label>
+                <input
+                  type="text"
+                  value={form.variant_notes}
+                  onChange={(e) => set('variant_notes', e.target.value)}
+                  placeholder="e.g. Chase, glow-in-the-dark, flocked, metallic, diamond glitter"
+                />
+              </div>
+            )}
+          </>
+        )}
+
         <div className="row2">
           <div className="field">
             <label>Genre</label>
@@ -865,7 +920,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </select>
             </div>
           )}
-          {!isConsole && (
+          {!isConsole && !isFunko && (
             <div className="field">
               <label>Copy</label>
               <select value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
@@ -899,7 +954,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           </div>
         </div>
 
-        {form.copy_type === 'digital' && !isConsole ? (
+        {form.copy_type === 'digital' && !isConsole && !isFunko ? (
           <div className="field">
             <label>Current market value</label>
             <div className="sub" style={{ margin: 0 }}>

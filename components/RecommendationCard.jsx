@@ -11,6 +11,7 @@ const TYPE_LABELS = {
   dvd: 'DVD / Blu-ray',
   cd: 'CD',
   console: 'Console',
+  funko_pop: 'Funko Pop',
 };
 
 // Lighter-weight than GameCard — a recommendation isn't one of your own
