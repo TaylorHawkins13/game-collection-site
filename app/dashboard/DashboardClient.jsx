@@ -459,6 +459,24 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // time with a short pause between requests so this doesn't hammer the
   // shared free API quota. Can be stopped mid-run since a big collection
   // might take a while.
+  // One eBay lookup, with one retry after a short pause if it fails
+  // outright (a bad response, a dropped connection) — cheap insurance
+  // against a single transient blip taking out an item for the whole run,
+  // since a lone manual re-check of that same item afterward would very
+  // likely just succeed anyway.
+  async function fetchPriceWithRetry(item, marketplace) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&marketplace=${marketplace}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        if (attempt === 1) throw err;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
   async function handleRefreshAllPrices() {
     const targets = games.filter((g) => g.ownership !== 'sold' && buildPriceQuery(g));
     if (targets.length === 0) return;
@@ -470,14 +488,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // state updates from setGames() inside this loop won't be reflected
     // in a closed-over `games` reference until after this function returns.
     let currentGames = games;
+    let updatedCount = 0;
+    const skipped = [];
 
     for (let i = 0; i < targets.length; i++) {
       if (refreshStopRef.current) break;
       const item = targets[i];
       try {
         const marketplace = marketplaceForCurrency(currency);
-        const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&marketplace=${marketplace}`);
-        const data = await res.json();
+        const data = await fetchPriceWithRetry(item, marketplace);
         if (!data.error && data.count) {
           const { data: updated } = await supabase
             .from('games')
@@ -492,10 +511,22 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           if (updated) {
             currentGames = currentGames.map((g) => (g.id === updated.id ? updated : g));
             setGames(currentGames);
+            updatedCount += 1;
+          } else {
+            skipped.push(item.title);
           }
+        } else {
+          // Genuinely no matching listings, or an eBay/API-level error
+          // (bad credentials, rate limit, etc.) — either way, logged so
+          // it's checkable in the browser console, and counted below so
+          // you're actually told this happened instead of it just
+          // looking like nothing ran.
+          if (data.error) console.error('Refresh all prices: skipped', item.title, data.error);
+          skipped.push(item.title);
         }
-      } catch {
-        // skip this item on failure and keep going with the rest
+      } catch (err) {
+        console.error('Refresh all prices: request failed for', item.title, err);
+        skipped.push(item.title);
       }
       setRefreshProgress({ done: i + 1, total: targets.length });
       if (i < targets.length - 1) {
@@ -504,6 +535,21 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     }
     setRefreshingAll(false);
     recordSnapshot(currentGames);
+
+    if (skipped.length === 0) {
+      announceToast(`Refreshed prices for all ${updatedCount} item${updatedCount === 1 ? '' : 's'}.`, 'success');
+    } else if (updatedCount === 0) {
+      announceToast(
+        `Couldn't refresh any prices — no matching eBay listings or a search error for all ${skipped.length} item${skipped.length === 1 ? '' : 's'}. Try one individually to see the specific reason.`,
+        'error'
+      );
+    } else {
+      const preview = skipped.slice(0, 3).join(', ') + (skipped.length > 3 ? ', …' : '');
+      announceToast(
+        `Refreshed ${updatedCount} item${updatedCount === 1 ? '' : 's'} — skipped ${skipped.length} (no matching listings or a search error): ${preview}. Try those individually.`,
+        'error'
+      );
+    }
   }
 
   // Same loop shape as handleRefreshAllPrices, but for Steam achievement %
