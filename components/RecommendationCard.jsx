@@ -10,6 +10,7 @@ const TYPE_LABELS = {
   book: 'Book',
   dvd: 'DVD / Blu-ray',
   cd: 'CD',
+  console: 'Console',
 };
 
 // Lighter-weight than GameCard — a recommendation isn't one of your own

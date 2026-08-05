@@ -1050,6 +1050,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <option value="book">Books</option>
                   <option value="dvd">DVDs / Blu-rays</option>
                   <option value="cd">CDs</option>
+                  <option value="console">Consoles</option>
                 </select>
                 <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
                   <option value="">All statuses</option>

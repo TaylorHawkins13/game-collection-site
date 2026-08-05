@@ -52,6 +52,7 @@ export default function GameCard({ game, onClick, featured = false }) {
   const isBook = game.item_type === 'book';
   const isDvd = game.item_type === 'dvd';
   const isCd = game.item_type === 'cd';
+  const isConsole = game.item_type === 'console';
   const isMediaLike = isBook || isDvd || isCd;
 
   const statRows = [];
@@ -81,6 +82,17 @@ export default function GameCard({ game, onClick, featured = false }) {
     statRows.push({ label: publisherLabel, value: game.publisher || '—' });
     statRows.push({ label: 'Format', value: game.format || '—' });
     if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
+  } else if (isConsole) {
+    statRows.push({ label: 'Manufacturer', value: game.publisher || '—' });
+    statRows.push({ label: 'Storage / variant', value: game.format || '—' });
+    if (game.edition) statRows.push({ label: 'Special edition', value: game.edition });
+    if (game.region) statRows.push({ label: 'Region', value: game.region });
+    if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
+    if (game.completeness) {
+      const compLabel = { loose: 'Loose', cib: 'CIB', box: 'Box only' }[game.completeness] || game.completeness;
+      statRows.push({ label: 'Completeness', value: compLabel });
+    }
+    statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
   } else {
     statRows.push({
       label: 'Platform',

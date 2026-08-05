@@ -212,6 +212,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
   const isBook = form.item_type === 'book';
   const isDvd = form.item_type === 'dvd';
   const isCd = form.item_type === 'cd';
+  const isConsole = form.item_type === 'console';
   const isMediaLike = isBook || isDvd || isCd;
 
   // Soft heads-up, not a blocker — a second platform's copy or replacing
@@ -233,6 +234,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     ? 'e.g. Rock, Hip-Hop'
     : isBook
     ? 'e.g. Fiction, Sci-Fi'
+    : isConsole
+    ? 'e.g. Home console, Handheld'
     : 'e.g. RPG';
 
   const mediaCreatorLabel = isDvd ? 'Director' : isCd ? 'Artist' : 'Author';
@@ -357,6 +360,11 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       } else if (isVinyl) {
         if (data.creator) set('artist', data.creator);
         if (data.publisher) set('publisher', data.publisher);
+      } else if (isConsole) {
+        // UPC databases file console listings under "publisher" more often
+        // than "creator/brand", but check both since it varies by source.
+        if (data.publisher) set('publisher', data.publisher);
+        else if (data.creator) set('publisher', data.creator);
       }
       setBarcodeHint(`Filled from ${data.source === 'openlibrary' ? 'Open Library' : 'a UPC database'}${data.title ? `: ${data.title}` : ''}`);
 
@@ -424,26 +432,31 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       condition: isComic ? '' : form.condition,
       series: isComic ? form.series : '',
       issue_number: isComic ? form.issue_number : '',
-      publisher: isComic || isCard || isVinyl || isMediaLike ? form.publisher : '',
+      publisher: isComic || isCard || isVinyl || isMediaLike || isConsole ? form.publisher : '',
       writer: isComic || isMediaLike ? form.writer : '',
       artist: isComic || isVinyl ? form.artist : '',
-      grade: isComic || isCard ? form.grade : '',
+      grade: isComic || isCard || isConsole ? form.grade : '',
       is_variant: isComic || isCard ? form.is_variant : false,
       variant_notes: isComic || isCard ? form.variant_notes : '',
-      format: isVinyl || isMediaLike ? form.format : '',
-      edition: isVinyl || isMediaLike ? form.edition : '',
+      format: isVinyl || isMediaLike || isConsole ? form.format : '',
+      edition: isVinyl || isMediaLike || isConsole ? form.edition : '',
       card_set: isCard ? form.card_set : '',
       card_number: isCard ? form.card_number : '',
       player_name: isCard ? form.player_name : '',
-      region: isGame ? form.region : '',
-      completeness: isGame ? form.completeness : '',
+      region: isGame || isConsole ? form.region : '',
+      completeness: isGame || isConsole ? form.completeness : '',
+      // A console is always a physical object you own — "digital" here
+      // means something different for games (no physical copy exists at
+      // all), which doesn't apply to hardware, so it's never set for this
+      // type regardless of what the (hidden, for consoles) selector says.
+      copy_type: isConsole ? 'physical' : form.copy_type,
       // Switching Copy to Digital hides the price-check UI, but a value
       // set earlier (while it was still Physical, or before this field was
       // touched at all) would otherwise sit there stale — there's no eBay
       // resale market for a digital copy, so it shouldn't show a value.
-      market_price: form.copy_type === 'digital' ? null : form.market_price,
-      market_price_checked_at: form.copy_type === 'digital' ? null : form.market_price_checked_at,
-      market_price_currency: form.copy_type === 'digital' ? null : form.market_price_currency,
+      market_price: form.copy_type === 'digital' && !isConsole ? null : form.market_price,
+      market_price_checked_at: form.copy_type === 'digital' && !isConsole ? null : form.market_price_checked_at,
+      market_price_currency: form.copy_type === 'digital' && !isConsole ? null : form.market_price_currency,
       trophy_platinum: isGame ? form.trophy_platinum : false,
       trophy_completion: isGame
         ? form.trophy_completion === '' || form.trophy_completion == null
@@ -479,6 +492,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <option value="book">Book</option>
             <option value="dvd">DVD / Blu-ray</option>
             <option value="cd">CD</option>
+            <option value="console">Console</option>
           </select>
         </div>
 
@@ -738,6 +752,41 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           </>
         )}
 
+        {isConsole && (
+          <>
+            <div className="row2">
+              <div className="field">
+                <label>Manufacturer</label>
+                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Nintendo, Sony, Microsoft, Sega" list="dl-publisher" />
+              </div>
+              <div className="field">
+                <label>Storage / variant</label>
+                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder="e.g. 512GB, OLED, Digital Edition" list="dl-format" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label>Special edition</label>
+                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. Pokémon Scarlet & Violet Edition, Steelbook" list="dl-edition" />
+              </div>
+              <div className="field">
+                <label>Region</label>
+                <select value={form.region} onChange={(e) => set('region', e.target.value)}>
+                  <option value="">—</option>
+                  <option value="NTSC-U/C">NTSC-U/C (North America)</option>
+                  <option value="NTSC-J">NTSC-J (Japan)</option>
+                  <option value="PAL">PAL (Europe/Australia)</option>
+                  <option value="Region-Free">Region-Free</option>
+                </select>
+              </div>
+            </div>
+            <div className="field">
+              <label>Grade</label>
+              <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. WATA 9.6 A++, VGA 85, Raw" />
+            </div>
+          </>
+        )}
+
         <div className="row2">
           <div className="field">
             <label>Genre</label>
@@ -816,20 +865,22 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </select>
             </div>
           )}
-          <div className="field">
-            <label>Copy</label>
-            <select value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
-              <option value="">—</option>
-              <option value="physical">Physical</option>
-              <option value="digital">Digital</option>
-            </select>
-          </div>
-          {isGame && (
+          {!isConsole && (
+            <div className="field">
+              <label>Copy</label>
+              <select value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
+                <option value="">—</option>
+                <option value="physical">Physical</option>
+                <option value="digital">Digital</option>
+              </select>
+            </div>
+          )}
+          {(isGame || isConsole) && (
             <div className="field">
               <label>Completeness</label>
               <select value={form.completeness} onChange={(e) => set('completeness', e.target.value)}>
                 <option value="">—</option>
-                <option value="loose">Loose (cart/disc only)</option>
+                <option value="loose">{isConsole ? 'Loose (unit only)' : 'Loose (cart/disc only)'}</option>
                 <option value="cib">CIB (complete in box)</option>
                 <option value="box">Box only (no manual)</option>
               </select>
@@ -848,7 +899,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           </div>
         </div>
 
-        {form.copy_type === 'digital' ? (
+        {form.copy_type === 'digital' && !isConsole ? (
           <div className="field">
             <label>Current market value</label>
             <div className="sub" style={{ margin: 0 }}>
@@ -878,7 +929,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
                 {form.market_price_currency} instead, the only currency it's currently listed in.
               </div>
             )}
-            {!priceHint && !form.completeness && form.item_type === 'game' && (
+            {!priceHint && !form.completeness && (isGame || isConsole) && (
               <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
                 Tip: filling in Completeness above makes this search more accurate — a loose cart and a
                 complete-in-box copy can be several times apart in price.
