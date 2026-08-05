@@ -48,6 +48,8 @@ const EMPTY = {
   market_price_currency: null,
   trophy_platinum: false,
   trophy_completion: null,
+  loaned_to: '',
+  loaned_at: '',
 };
 
 export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
@@ -118,6 +120,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         market_price_currency: duplicateOf ? null : source.market_price_currency || null,
         trophy_platinum: duplicateOf ? false : source.trophy_platinum || false,
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
+        loaned_to: duplicateOf ? '' : source.loaned_to || '',
+        loaned_at: duplicateOf ? '' : source.loaned_at || '',
       });
     } else {
       setForm(EMPTY);
@@ -517,6 +521,12 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           ? null
           : Math.max(0, Math.min(100, parseFloat(form.trophy_completion)))
         : null,
+      // Loaning something out only makes sense for an item you actually
+      // own right now — switching ownership away from Owned (or clearing
+      // who it's loaned to) clears the loan date too, so a stray date
+      // never sits there with no name attached.
+      loaned_to: form.ownership === 'owned' ? form.loaned_to.trim() : '',
+      loaned_at: form.ownership === 'owned' && form.loaned_to.trim() ? form.loaned_at || null : null,
     });
     setSaving(false);
     if (result?.error) {
@@ -1016,6 +1026,26 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
             <input type="date" value={form.purchase_date || ''} onChange={(e) => set('purchase_date', e.target.value)} />
           </div>
         </div>
+
+        {form.ownership === 'owned' && (
+          <div className="row2">
+            <div className="field">
+              <label>Loaned to</label>
+              <input
+                type="text"
+                value={form.loaned_to}
+                onChange={(e) => set('loaned_to', e.target.value)}
+                placeholder="e.g. Sam — leave blank if it's not out on loan"
+              />
+            </div>
+            {form.loaned_to.trim() && (
+              <div className="field">
+                <label>Loan date</label>
+                <input type="date" value={form.loaned_at || ''} onChange={(e) => set('loaned_at', e.target.value)} />
+              </div>
+            )}
+          </div>
+        )}
 
         {form.copy_type === 'digital' && !isConsole && !isFunko ? (
           <div className="field">
