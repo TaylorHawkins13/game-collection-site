@@ -39,6 +39,12 @@ async function getAccessToken() {
     body: params.toString(),
   });
   if (!res.ok) {
+    // Logged server-side (visible in Vercel's function logs) since the
+    // client only ever sees a generic "couldn't reach eBay" message —
+    // the actual reason (bad credentials, disabled keyset, etc.) is in
+    // eBay's response body here.
+    const body = await res.text().catch(() => '');
+    console.error('eBay OAuth token request failed', res.status, body);
     throw new Error('EBAY_AUTH_FAILED');
   }
   const data = await res.json();

@@ -382,6 +382,10 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         setPriceHint("eBay price lookup isn't configured on this site (no eBay API credentials set).");
         return;
       }
+      if (data.error === 'search_failed') {
+        setPriceHint("Couldn't reach eBay — double-check your EBAY_CLIENT_ID/EBAY_CLIENT_SECRET are correct and the keyset is active, or try again in a moment.");
+        return;
+      }
       if (data.error || !data.count) {
         setPriceHint('No current eBay listings found for that search.');
         return;
