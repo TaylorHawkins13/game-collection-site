@@ -781,8 +781,36 @@ group by p.id, p.username, p.display_name, p.avatar_url
 order by trophy_count desc, platinum_count desc
 limit 50;
 
+-- Ranks public collectors by estimated collection value: same "market
+-- price if we have one, else the entered purchase price" rule used by
+-- lib/valueSnapshot.js's estimateCollectionValue(), owned + non-digital
+-- items only. Values are NOT currency-converted — each collector's total
+-- is in their own profile currency (carried along as `currency` so the
+-- UI can format it correctly), so this ranks raw numbers across
+-- currencies, same display-only-currency limitation as the rest of the
+-- site today.
+create or replace view leaderboard_most_valuable as
+select
+  p.id as user_id,
+  p.username,
+  p.display_name,
+  p.avatar_url,
+  p.currency,
+  round(sum(coalesce(g.market_price, g.price))::numeric, 2) as total_value,
+  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count
+from profiles p
+join games g on g.user_id = p.id
+where p.is_public = true
+  and g.ownership = 'owned'
+  and g.copy_type is distinct from 'digital'
+group by p.id, p.username, p.display_name, p.avatar_url, p.currency
+having sum(coalesce(g.market_price, g.price)) is not null
+order by total_value desc
+limit 50;
+
 -- Make sure the API roles can read the leaderboard views
 grant select on leaderboard_most_owned to anon, authenticated;
 grant select on leaderboard_biggest_collections to anon, authenticated;
 grant select on leaderboard_trending to anon, authenticated;
 grant select on leaderboard_trophies to anon, authenticated;
+grant select on leaderboard_most_valuable to anon, authenticated;

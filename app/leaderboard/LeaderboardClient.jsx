@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { CoverThumb, PersonAvatar } from '@/components/LeaderboardThumb';
+import { formatMoney } from '@/lib/currency';
 
 const TABS = [
   {
@@ -11,6 +12,13 @@ const TABS = [
     type: 'person',
     sub: 'Public collectors ranked by Shelf Life trophies earned.',
     empty: 'No trophies earned on any public profile yet — trophies show up here as people earn them.',
+  },
+  {
+    key: 'mostValuable',
+    label: 'Most valuable',
+    type: 'person',
+    sub: "Public collectors ranked by estimated collection value. Shown in each collector's own currency — totals aren't converted, so this only ranks fairly within the same currency.",
+    empty: 'No priced public collections yet — check a price on an item to start showing up here.',
   },
   {
     key: 'biggest',
@@ -44,6 +52,7 @@ function statFor(tabKey, row) {
   if (tabKey === 'biggest') return `${row.game_count} item${row.game_count === 1 ? '' : 's'}`;
   if (tabKey === 'mostOwned') return `${row.owner_count} owner${row.owner_count === 1 ? '' : 's'}`;
   if (tabKey === 'trending') return `+${row.recent_adds} added`;
+  if (tabKey === 'mostValuable') return formatMoney(row.total_value, row.currency);
   return '';
 }
 
@@ -87,10 +96,10 @@ function PodiumPlace({ place, type, row, tabKey }) {
   );
 }
 
-export default function LeaderboardClient({ mostOwned, biggest, trending, trophies }) {
+export default function LeaderboardClient({ mostOwned, biggest, trending, trophies, mostValuable }) {
   const [tab, setTab] = useState('trophies');
 
-  const dataByTab = { trophies, biggest, mostOwned, trending };
+  const dataByTab = { trophies, biggest, mostOwned, trending, mostValuable };
   const active = TABS.find((t) => t.key === tab);
   const podiumRows = (dataByTab[tab] || []).slice(0, 3);
 
