@@ -89,40 +89,62 @@ function median(sortedNums) {
   return n % 2 !== 0 ? sortedNums[mid] : (sortedNums[mid - 1] + sortedNums[mid]) / 2;
 }
 
+async function fetchEbayItems(queryStr, marketplace, token) {
+  const params = new URLSearchParams({ q: queryStr, limit: '50' });
+  const res = await fetch(
+    `https://api.ebay.com/buy/browse/v1/item_summary/search?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-EBAY-C-MARKETPLACE-ID': marketplace,
+        Accept: 'application/json',
+      },
+    }
+  );
+  if (!res.ok) return { ok: false, items: [] };
+  const data = await res.json();
+  return { ok: true, items: data.itemSummaries || [] };
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') || '').trim();
   if (!q) {
     return NextResponse.json({ error: 'empty_query' }, { status: 400 });
   }
+  // The bare title alone, with none of the platform/completeness terms
+  // tacked on — a fallback for when the full query is too narrow. eBay's
+  // search wants every word to match, so stacking title + platform +
+  // completeness can quietly return nothing even when the title alone has
+  // plenty of listings (confirmed happening for a real item: "Pokemon
+  // Pokopia Switch 2 CIB" found zero raw results, even though a plain
+  // "Pokopia" search on eBay turns up plenty).
+  const titleOnly = (searchParams.get('title') || '').trim();
   const marketplaceParam = searchParams.get('marketplace');
   const marketplace = VALID_MARKETPLACES.has(marketplaceParam) ? marketplaceParam : 'EBAY_US';
 
   try {
     const token = await getAccessToken();
-    const params = new URLSearchParams({ q, limit: '50' });
 
-    const res = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'X-EBAY-C-MARKETPLACE-ID': marketplace,
-          Accept: 'application/json',
-        },
-      }
-    );
-
-    if (!res.ok) {
+    let usedQuery = q;
+    let { ok, items } = await fetchEbayItems(q, marketplace, token);
+    if (!ok) {
       return NextResponse.json({ error: 'search_failed' }, { status: 502 });
     }
-
-    const data = await res.json();
-    const items = data.itemSummaries || [];
-    // Temporary diagnostic logging (visible in Vercel's Logs tab) — helps
-    // tell apart "eBay genuinely returned nothing for this exact query"
-    // from "eBay returned plenty, but our filtering threw it all away."
     console.log('eBay price search:', { q, marketplace, rawResultCount: items.length });
+
+    if (items.length === 0 && titleOnly && titleOnly !== q) {
+      const fallback = await fetchEbayItems(titleOnly, marketplace, token);
+      if (fallback.ok) {
+        items = fallback.items;
+        usedQuery = titleOnly;
+        console.log('eBay price search: fell back to bare title', {
+          titleOnly,
+          marketplace,
+          rawResultCount: items.length,
+        });
+      }
+    }
 
     // Prefer fixed "Buy It Now" prices over live auction bids — a bid
     // mid-auction isn't a reliable stand-in for value, but if there
@@ -176,7 +198,7 @@ export async function GET(request) {
 
     if (prices.length === 0) {
       console.log('eBay price search: 0 usable prices after filtering', {
-        q,
+        usedQuery,
         rawResultCount: items.length,
         afterFixedPriceFilter: pool.length,
       });
@@ -193,7 +215,7 @@ export async function GET(request) {
     const typical = median(prices);
 
     console.log('eBay price search result:', {
-      q,
+      usedQuery,
       currency,
       count: prices.length,
       low,

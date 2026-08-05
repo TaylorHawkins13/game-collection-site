@@ -380,7 +380,10 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setPriceCheck(null);
     try {
       const marketplace = marketplaceForCurrency(currency);
-      const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(q)}&marketplace=${marketplace}`);
+      const title = (form.title || '').trim();
+      const res = await fetch(
+        `/api/ebay-price?q=${encodeURIComponent(q)}&title=${encodeURIComponent(title)}&marketplace=${marketplace}`
+      );
       const data = await res.json();
       if (data.error === 'not_configured') {
         setPriceHint("eBay price lookup isn't configured on this site (no eBay API credentials set).");

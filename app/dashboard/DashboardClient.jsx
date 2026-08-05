@@ -465,9 +465,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // since a lone manual re-check of that same item afterward would very
   // likely just succeed anyway.
   async function fetchPriceWithRetry(item, marketplace) {
+    const title = (item.title || '').trim();
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&marketplace=${marketplace}`);
+        const res = await fetch(
+          `/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&title=${encodeURIComponent(title)}&marketplace=${marketplace}`
+        );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
       } catch (err) {
