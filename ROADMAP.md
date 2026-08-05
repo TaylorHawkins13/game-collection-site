@@ -10,6 +10,10 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 1. **What's New panel doesn't load on mobile** — reported by Taylor; needs investigation into why it fails specifically on mobile.
 
+## Requested by Taylor (not yet built)
+
+- **Auto-search for the remaining types** — Games, Trading cards, Books, and Consoles all have a "Search" auto-fill button now. Still missing: Comics, Vinyl, DVDs/Blu-rays, CDs, and Funko Pops. Each needs a different data source: Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); Vinyl/CDs could use MusicBrainz (free, no signup); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
+
 ## Ideas from Claude (new, not yet reviewed)
 
 A batch of ideas I came up with on my own — nothing here has your buy-in yet, just things I noticed would fit well given what's already built. Go through these whenever you're ready; keep what's useful (I'll fold it into the sections below, or just tell me to build straight from here) and toss the rest.

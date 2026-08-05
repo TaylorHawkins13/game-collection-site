@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
+import { searchConsoles } from '@/lib/consoleList';
 
 const EMPTY = {
   item_type: 'game',
@@ -320,6 +321,48 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     runCardSearch(form.title);
   }
 
+  async function runBookSearch(query) {
+    const q = (query || '').trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchHint('Searching…');
+    try {
+      const res = await fetch(`/api/book-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const list = data.results || [];
+      setSearchResults(list);
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No matches found on Open Library.');
+    } catch {
+      setSearchHint('Search failed — check your connection.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function bookSearch() {
+    runBookSearch(form.title);
+  }
+
+  // Consoles have no live database to search — this is a lookup against
+  // a hardcoded common-consoles list (lib/consoleList.js), entirely
+  // client-side, so it's instant and needs no network call.
+  function consoleSearch() {
+    const q = (form.title || '').trim();
+    if (!q) return;
+    const list = searchConsoles(q).map((c) => ({
+      kind: 'console',
+      id: c.name,
+      name: c.name,
+      manufacturer: c.manufacturer,
+      genre: c.genre,
+      subtitle: c.manufacturer,
+    }));
+    setSearchResults(list);
+    setSearchHint(
+      list.length ? `${list.length} result(s) — click one to auto-fill` : "Not in the common-consoles list — type it in manually."
+    );
+  }
+
   function applySearchResult(item) {
     set('title', item.name || form.title);
     set('cover', item.cover || form.cover);
@@ -329,6 +372,14 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       if (item.publisher) set('publisher', item.publisher);
       if (item.player_name) set('player_name', item.player_name);
       setSearchHint(`Filled from ${item.publisher || 'card database'}: ${item.name}`);
+    } else if (item.kind === 'book') {
+      if (item.creator) set('writer', item.creator);
+      if (item.publisher) set('publisher', item.publisher);
+      setSearchHint(`Filled from Open Library: ${item.name}`);
+    } else if (item.kind === 'console') {
+      if (item.manufacturer) set('publisher', item.manufacturer);
+      if (item.genre) set('genre', item.genre);
+      setSearchHint(`Filled: ${item.name}`);
     } else {
       set('genre', (item.genres || []).join(', '));
       if (form.platforms.length === 0) {
@@ -520,9 +571,21 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
                 Search
               </button>
             )}
+            {isBook && (
+              <button type="button" className="btn-ghost" onClick={bookSearch} disabled={searching}>
+                Search
+              </button>
+            )}
+            {isConsole && (
+              <button type="button" className="btn-ghost" onClick={consoleSearch} disabled={searching}>
+                Search
+              </button>
+            )}
           </div>
-          {(isGame || isCard) && searchHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>}
-          {(isGame || isCard) && searchResults.length > 0 && (
+          {(isGame || isCard || isBook || isConsole) && searchHint && (
+            <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
+          )}
+          {(isGame || isCard || isBook || isConsole) && searchResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {searchResults.map((r) => (
                 <div
