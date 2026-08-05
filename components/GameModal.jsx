@@ -861,7 +861,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </button>
               {form.market_price != null && (
                 <span className="sub" style={{ margin: 0 }}>
-                  {currencySymbol(form.market_price_currency || currency)}{form.market_price} avg
+                  {currencySymbol(form.market_price_currency || currency)}{form.market_price} typical
                   {priceCheck
                     ? ` (range ${currencySymbol(priceCheck.currency)}${priceCheck.low}–${currencySymbol(priceCheck.currency)}${priceCheck.high}, ${priceCheck.count} listings)`
                     : ''}
