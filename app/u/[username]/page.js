@@ -240,7 +240,7 @@ export default async function ProfilePage({ params }) {
               <h3 className="profile-showcase-heading">Showcase</h3>
               <div className="grid showcase-grid">
                 {showcaseGames.map((g) => (
-                  <GameCard key={g.id} game={g} featured />
+                  <GameCard key={g.id} game={g} featured currency={profile.currency} />
                 ))}
               </div>
             </div>
@@ -251,7 +251,7 @@ export default async function ProfilePage({ params }) {
               <h3 className="profile-list-heading">{list.name}</h3>
               <div className="grid">
                 {list.items.map((g) => (
-                  <GameCard key={g.id} game={g} />
+                  <GameCard key={g.id} game={g} currency={profile.currency} />
                 ))}
               </div>
             </div>
@@ -284,6 +284,7 @@ export default async function ProfilePage({ params }) {
             comments={comments || []}
             canComment={!!viewer}
             profileId={profile.id}
+            currency={profile.currency}
           />
         </>
       )}

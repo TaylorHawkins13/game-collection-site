@@ -1165,7 +1165,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           ) : (
             <div className="grid">
               {filtered.map((g) => (
-                <GameCard key={g.id} game={g} onClick={() => setModalGame(g)} />
+                <GameCard key={g.id} game={g} onClick={() => setModalGame(g)} currency={currency} />
               ))}
             </div>
           )}

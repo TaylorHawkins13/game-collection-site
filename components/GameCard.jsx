@@ -10,7 +10,7 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default function GameCard({ game, onClick, featured = false }) {
+export default function GameCard({ game, onClick, featured = false, currency }) {
   // Supabase can hand numeric columns back as strings — coerce before
   // any arithmetic/comparison.
   const rating = Number(game.rating) || 0;
@@ -125,9 +125,20 @@ export default function GameCard({ game, onClick, featured = false }) {
     // Older rows checked before regional pricing shipped never got a
     // currency stored — those were always USD back then, so that's a safe
     // fallback rather than just guessing the viewer's own currency.
+    const priceCurrency = game.market_price_currency || 'USD';
+    // Market value is a frozen snapshot from whenever it was last
+    // checked — there's no live conversion, so it stays in whatever
+    // currency it was checked in even after you change your profile
+    // currency in Settings. That's expected (see ROADMAP.md "Live
+    // currency conversion"), but silently showing a different symbol
+    // than your own reads as a bug rather than a stale snapshot — so
+    // flag it explicitly whenever the two don't match.
+    const mismatched = currency && priceCurrency !== currency;
     statRows.push({
       label: 'Market value',
-      value: `${currencySymbol(game.market_price_currency || 'USD')}${game.market_price}`,
+      value: mismatched
+        ? `${currencySymbol(priceCurrency)}${game.market_price} (${priceCurrency})`
+        : `${currencySymbol(priceCurrency)}${game.market_price}`,
     });
   }
   statRows.push({
