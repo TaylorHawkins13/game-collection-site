@@ -868,15 +868,6 @@ button:disabled {
   .welcome-steps {
     grid-template-columns: 1fr;
   }
-  /* The What's New sidebar next to a 300px-wide column only works with
-     real room to spare — stack it below the feed instead of squeezing
-     both into a narrow viewport. */
-  .feed-layout {
-    grid-template-columns: 1fr;
-  }
-  .feed-sidebar {
-    position: static;
-  }
 }
 
 /* ---------- Forms ---------- */
@@ -1388,6 +1379,22 @@ button:disabled {
   padding: 18px;
   position: sticky;
   top: 20px;
+}
+/* The What's New sidebar next to a 300px-wide column only works with
+   real room to spare — stack it below the feed instead of squeezing
+   both into a narrow viewport. This has to come AFTER the base
+   .feed-layout/.feed-sidebar rules above (equal specificity, so
+   source order decides) — a previous copy of this same override lived
+   earlier in the file, before those base rules, which meant the base
+   rules always won and the sidebar quietly overflowed off-screen on
+   mobile instead of stacking. */
+@media (max-width: 800px) {
+  .feed-layout {
+    grid-template-columns: 1fr;
+  }
+  .feed-sidebar {
+    position: static;
+  }
 }
 .feed-sidebar-heading {
   font-size: 13px;

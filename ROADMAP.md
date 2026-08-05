@@ -6,10 +6,6 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 - **Apple Developer Program** — Taylor applied, waiting on Apple's approval. Unblocks a native App Store app (see "Mobile app / installable PWA" below). Not needed for the site itself or for an installable PWA — those work regardless.
 
-## Bugs (reported, not yet fixed)
-
-1. **What's New panel doesn't load on mobile** — reported by Taylor; needs investigation into why it fails specifically on mobile.
-
 ## Requested by Taylor (not yet built)
 
 - **Auto-search for the remaining types** — Games, Trading cards, Books, and Consoles all have a "Search" auto-fill button now. Still missing: Comics, Vinyl, DVDs/Blu-rays, CDs, and Funko Pops. Each needs a different data source: Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); Vinyl/CDs could use MusicBrainz (free, no signup); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
