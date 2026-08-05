@@ -875,9 +875,9 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
                 {form.market_price_currency} instead, the only currency it's currently listed in.
               </div>
             )}
-            {!priceHint && (!form.completeness || !form.condition) && form.item_type === 'game' && (
+            {!priceHint && !form.completeness && form.item_type === 'game' && (
               <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
-                Tip: filling in Completeness and Condition above makes this search more accurate — a loose cart and a
+                Tip: filling in Completeness above makes this search more accurate — a loose cart and a
                 complete-in-box copy can be several times apart in price.
               </div>
             )}
