@@ -391,7 +391,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         return;
       }
       if (data.error || !data.count) {
-        setPriceHint('No current eBay listings found for that search.');
+        setPriceHint('No current eBay listings found in your currency for that search — it may only be listed abroad right now.');
         return;
       }
       setPriceCheck(data);

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { currencyForMarketplace } from '@/lib/ebayMarketplace';
 
 // eBay's Browse API needs an OAuth client-credentials token, same shape as
 // the IGDB integration — the client secret stays server-side and the
@@ -133,25 +134,26 @@ export async function GET(request) {
 
     // Even within one marketplace, eBay mixes in cross-border listings
     // priced in a different currency (e.g. a US seller's listing showing
-    // up on a EBAY_GB search, priced in USD, not GBP). Averaging those raw
-    // numbers together with everyone else's — regardless of currency —
-    // produces a meaningless value labeled with whatever currency the
-    // first listing happened to be in. Keep only whichever currency is
-    // most common in this result set, so every number going into the math
-    // actually means the same thing.
-    const currencyCounts = {};
-    for (const it of pool) {
-      const c = it.price?.currency;
-      if (c) currencyCounts[c] = (currencyCounts[c] || 0) + 1;
-    }
-    const majorityCurrency = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'USD';
-    const currencyPool = pool.filter((it) => it.price?.currency === majorityCurrency);
+    // up on a EBAY_GB search, priced in USD, not GBP) — for a niche item
+    // with little local inventory, those cross-border listings can even
+    // outnumber the local ones. Averaging raw numbers together regardless
+    // of currency produces a meaningless value, so only listings actually
+    // priced in the currency this marketplace is supposed to represent
+    // are used — not just whichever currency happens to be most common in
+    // the results, since for a low-inventory item "most common" could
+    // still be the wrong currency entirely.
+    const expectedCurrency = currencyForMarketplace(marketplace);
+    const currencyPool = pool.filter((it) => it.price?.currency === expectedCurrency);
 
     const prices = currencyPool
       .map((it) => parseFloat(it.price?.value))
       .filter((v) => !Number.isNaN(v) && v > 0);
 
     if (prices.length === 0) {
+      // There may well be listings for this item — just none priced in
+      // the marketplace's own currency. Reporting "no listings" here is
+      // more honest than falling back to a different currency's price
+      // and mislabeling it.
       return NextResponse.json({ count: 0 });
     }
 
@@ -163,7 +165,7 @@ export async function GET(request) {
     // pool here is small (up to 50 raw results) and still not perfectly
     // clean even after the mismatch filtering above.
     const typical = median(prices);
-    const currency = majorityCurrency;
+    const currency = expectedCurrency;
 
     return NextResponse.json({
       count: prices.length,
