@@ -19,6 +19,7 @@ import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
 import { getPlatformColor } from '@/lib/platformColors';
 import { buildPriceQuery } from '@/lib/marketPrice';
+import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
 import { announceToast } from '@/lib/toast';
 import { buildActivityEvents } from '@/lib/activityEvents';
@@ -44,6 +45,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [collapsedPanels, setCollapsedPanels] = useState({ playnext: false, recommend: false, value: false });
+  const [hideDigital, setHideDigital] = useState(false);
 
   // Remember which of the Play next / Recommended / Value chart panels
   // someone's minimized, so it stays minimized on their next visit.
@@ -55,6 +57,26 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       // ignore malformed/missing localStorage value
     }
   }, []);
+
+  // "Hide digital items" is a standing preference (persisted per-device),
+  // unlike the Physical/Digital dropdown in Filters which resets every
+  // visit — for someone who never wants to see their digital library
+  // cluttering the grid, re-picking that dropdown every time is annoying.
+  useEffect(() => {
+    try {
+      setHideDigital(localStorage.getItem('gct_hide_digital') === 'true');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function toggleHideDigital() {
+    setHideDigital((prev) => {
+      const next = !prev;
+      localStorage.setItem('gct_hide_digital', String(next));
+      return next;
+    });
+  }
 
   function togglePanel(key) {
     setCollapsedPanels((prev) => {
@@ -244,7 +266,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const owned = games.filter((g) => g.ownership === 'owned');
     const wishlist = games.filter((g) => g.ownership === 'wishlist');
     const completed = games.filter((g) => g.play_status === 'completed').length;
-    const totalValue = owned.reduce((sum, g) => sum + (parseFloat(g.price) || 0), 0);
+    // Same blend as the value-over-time chart: last checked eBay price
+    // where you've got one, purchase price otherwise — so checking a
+    // price actually moves this number instead of only the chart below.
+    const { total: totalValue } = estimateCollectionValue(games);
     return [
       { num: games.length, label: 'Total items' },
       { num: owned.length, label: 'Owned' },
@@ -281,6 +306,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           .toLowerCase();
         if (!hay.includes(q)) return false;
       }
+      if (hideDigital && g.copy_type === 'digital') return false;
       if (fOwn && g.ownership !== fOwn) return false;
       if (fPlat && !(g.platforms || []).includes(fPlat)) return false;
       if (fPlay && g.play_status !== fPlay) return false;
@@ -325,7 +351,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy]);
+  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy, hideDigital]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -449,7 +475,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (refreshStopRef.current) break;
       const item = targets[i];
       try {
-        const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}`);
+        const marketplace = marketplaceForCurrency(currency);
+        const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&marketplace=${marketplace}`);
         const data = await res.json();
         if (!data.error && data.count) {
           const { data: updated } = await supabase
@@ -1009,6 +1036,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <option value="untracked">Not tracked yet</option>
                 </select>
               </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 14 }}>
+                <input
+                  type="checkbox"
+                  checked={hideDigital}
+                  onChange={toggleHideDigital}
+                  style={{ width: 'auto' }}
+                />
+                Hide digital items
+                <span className="sub" style={{ margin: 0 }}>
+                  (remembered on this device — different from the Physical/Digital dropdown above, which resets)
+                </span>
+              </label>
               {activeFilterCount > 0 && (
                 <button className="btn-ghost" type="button" onClick={clearFilters} style={{ marginTop: 12 }}>
                   Clear all filters

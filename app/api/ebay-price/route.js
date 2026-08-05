@@ -54,12 +54,23 @@ async function getAccessToken() {
   return cachedToken;
 }
 
+// Whitelisted so an arbitrary query param can't smuggle something odd into
+// the header — only ever one of eBay's real marketplace IDs, or the US
+// default.
+const VALID_MARKETPLACES = new Set([
+  'EBAY_US', 'EBAY_GB', 'EBAY_DE', 'EBAY_CA', 'EBAY_AU', 'EBAY_CH',
+  'EBAY_AT', 'EBAY_BE', 'EBAY_ES', 'EBAY_FR', 'EBAY_HK', 'EBAY_IE',
+  'EBAY_IT', 'EBAY_NL', 'EBAY_PL', 'EBAY_SG',
+]);
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') || '').trim();
   if (!q) {
     return NextResponse.json({ error: 'empty_query' }, { status: 400 });
   }
+  const marketplaceParam = searchParams.get('marketplace');
+  const marketplace = VALID_MARKETPLACES.has(marketplaceParam) ? marketplaceParam : 'EBAY_US';
 
   try {
     const token = await getAccessToken();
@@ -70,7 +81,7 @@ export async function GET(request) {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
+          'X-EBAY-C-MARKETPLACE-ID': marketplace,
           Accept: 'application/json',
         },
       }

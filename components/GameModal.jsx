@@ -7,6 +7,7 @@ import StarRating from './StarRating';
 import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
+import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 
 const EMPTY = {
@@ -376,7 +377,8 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
     setPriceHint('Checking eBay…');
     setPriceCheck(null);
     try {
-      const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(q)}`);
+      const marketplace = marketplaceForCurrency(currency);
+      const res = await fetch(`/api/ebay-price?q=${encodeURIComponent(q)}&marketplace=${marketplace}`);
       const data = await res.json();
       if (data.error === 'not_configured') {
         setPriceHint("eBay price lookup isn't configured on this site (no eBay API credentials set).");
@@ -833,26 +835,43 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
           </div>
         </div>
 
-        <div className="field">
-          <label>Current market value</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="btn-ghost" onClick={checkEbayPrice} disabled={priceChecking || !form.title.trim()}>
-              {priceChecking ? 'Checking…' : 'Check eBay price'}
-            </button>
-            {form.market_price != null && (
-              <span className="sub" style={{ margin: 0 }}>
-                ${form.market_price} avg
-                {priceCheck ? ` (range $${priceCheck.low}–$${priceCheck.high}, ${priceCheck.count} listings)` : ''}
-              </span>
+        {form.copy_type === 'digital' ? (
+          <div className="field">
+            <label>Current market value</label>
+            <div className="sub" style={{ margin: 0 }}>
+              Not tracked for digital copies — there's no eBay resale market for a digital code/download.
+            </div>
+          </div>
+        ) : (
+          <div className="field">
+            <label>Current market value</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button type="button" className="btn-ghost" onClick={checkEbayPrice} disabled={priceChecking || !form.title.trim()}>
+                {priceChecking ? 'Checking…' : 'Check eBay price'}
+              </button>
+              {form.market_price != null && (
+                <span className="sub" style={{ margin: 0 }}>
+                  {currencySymbol(priceCheck?.currency || currency)}{form.market_price} avg
+                  {priceCheck
+                    ? ` (range ${currencySymbol(priceCheck.currency)}${priceCheck.low}–${currencySymbol(priceCheck.currency)}${priceCheck.high}, ${priceCheck.count} listings)`
+                    : ''}
+                </span>
+              )}
+            </div>
+            {priceHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{priceHint}</div>}
+            {!priceHint && (!form.completeness || !form.condition) && form.item_type === 'game' && (
+              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
+                Tip: filling in Completeness and Condition above makes this search more accurate — a loose cart and a
+                complete-in-box copy can be several times apart in price.
+              </div>
+            )}
+            {form.market_price_checked_at && (
+              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
+                Last checked {new Date(form.market_price_checked_at).toLocaleDateString()} · current active eBay listings for your region, not a guaranteed sale price
+              </div>
             )}
           </div>
-          {priceHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{priceHint}</div>}
-          {form.market_price_checked_at && (
-            <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
-              Last checked {new Date(form.market_price_checked_at).toLocaleDateString()} · current active eBay (US) listings, not a guaranteed sale price
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="row2">
           {isGame && (
