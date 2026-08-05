@@ -74,3 +74,4 @@ Everything that's shipped, roughly in the order it was built. See `ROADMAP.md` f
 **Closed bugs:**
 - *Email verification link went to localhost* — fixed via Supabase Auth → URL Configuration (Site URL/Redirect URLs updated to the real site).
 - *Cover images: .png didn't load, .jpg did* — no repro ever turned up (no broken URL or screenshot), most likely a one-off hotlink block on a specific image host rather than a site-wide bug. Reopen if it happens again with a URL to check.
+- *Game search/auto-fill not working* — not actually a bug: needed a Twitch developer app for IGDB credentials, which was blocked on Twitch's 2FA requirement. Resolved once Taylor set up the Twitch dev account and `IGDB_CLIENT_ID`/`IGDB_CLIENT_SECRET` were added to Vercel.

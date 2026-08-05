@@ -4,8 +4,7 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 ## Bugs (reported, not yet fixed)
 
-1. **Game search/auto-fill doesn't work** — expected right now, not a bug: IGDB auto-fill needs Twitch API credentials that are still blocked on your end by Twitch's 2FA account bug. Manual entry (or the barcode scanner) works in the meantime.
-2. **What's New panel doesn't load on mobile** — reported by Taylor; needs investigation into why it fails specifically on mobile.
+1. **What's New panel doesn't load on mobile** — reported by Taylor; needs investigation into why it fails specifically on mobile.
 
 ## Ideas from Claude (new, not yet reviewed)
 
