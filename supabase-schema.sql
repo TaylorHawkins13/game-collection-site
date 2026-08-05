@@ -105,9 +105,13 @@ create table if not exists games (
   completeness text default '',
   -- applies to any item type: 'physical' or 'digital'
   copy_type text default '',
-  -- last "Check eBay price" result: average of current active US listings
+  -- last "Check eBay price" result: average of current active listings on
+  -- whichever eBay site matches the buyer's currency (see
+  -- lib/ebayMarketplace.js) — market_price_currency records which one, so
+  -- the stored number can still be displayed correctly later.
   market_price numeric,
   market_price_checked_at timestamptz,
+  market_price_currency text,
   -- applies to any item type: fully completed (all extras/achievements
   -- done, full series/set collected, etc.) beyond play_status/condition
   fully_completed boolean not null default false,

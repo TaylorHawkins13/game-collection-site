@@ -44,6 +44,7 @@ const EMPTY = {
   fully_completed: false,
   market_price: null,
   market_price_checked_at: null,
+  market_price_currency: null,
   trophy_platinum: false,
   trophy_completion: null,
 };
@@ -113,6 +114,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         fully_completed: source.fully_completed || false,
         market_price: duplicateOf ? null : source.market_price ?? null,
         market_price_checked_at: duplicateOf ? null : source.market_price_checked_at || null,
+        market_price_currency: duplicateOf ? null : source.market_price_currency || null,
         trophy_platinum: duplicateOf ? false : source.trophy_platinum || false,
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
       });
@@ -395,6 +397,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       setPriceCheck(data);
       set('market_price', data.avg);
       set('market_price_checked_at', new Date().toISOString());
+      set('market_price_currency', data.currency || 'USD');
       setPriceHint('');
     } catch {
       setPriceHint('Lookup failed — check your connection.');
@@ -431,6 +434,13 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
       player_name: isCard ? form.player_name : '',
       region: isGame ? form.region : '',
       completeness: isGame ? form.completeness : '',
+      // Switching Copy to Digital hides the price-check UI, but a value
+      // set earlier (while it was still Physical, or before this field was
+      // touched at all) would otherwise sit there stale — there's no eBay
+      // resale market for a digital copy, so it shouldn't show a value.
+      market_price: form.copy_type === 'digital' ? null : form.market_price,
+      market_price_checked_at: form.copy_type === 'digital' ? null : form.market_price_checked_at,
+      market_price_currency: form.copy_type === 'digital' ? null : form.market_price_currency,
       trophy_platinum: isGame ? form.trophy_platinum : false,
       trophy_completion: isGame
         ? form.trophy_completion === '' || form.trophy_completion == null
@@ -851,7 +861,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </button>
               {form.market_price != null && (
                 <span className="sub" style={{ margin: 0 }}>
-                  {currencySymbol(priceCheck?.currency || currency)}{form.market_price} avg
+                  {currencySymbol(form.market_price_currency || currency)}{form.market_price} avg
                   {priceCheck
                     ? ` (range ${currencySymbol(priceCheck.currency)}${priceCheck.low}–${currencySymbol(priceCheck.currency)}${priceCheck.high}, ${priceCheck.count} listings)`
                     : ''}

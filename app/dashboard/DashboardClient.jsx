@@ -481,7 +481,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         if (!data.error && data.count) {
           const { data: updated } = await supabase
             .from('games')
-            .update({ market_price: data.avg, market_price_checked_at: new Date().toISOString() })
+            .update({
+              market_price: data.avg,
+              market_price_checked_at: new Date().toISOString(),
+              market_price_currency: data.currency || 'USD',
+            })
             .eq('id', item.id)
             .select()
             .single();
@@ -925,7 +929,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     {snapshots[snapshots.length - 1].item_count} owned item
                     {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
                     {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
-                    {currency !== 'USD' && ' eBay prices are always in USD, so totals mix currencies and are approximate.'}
+                    {' '}There's no live currency conversion — purchase prices and eBay prices (checked from whichever region matches your currency at the time) are just summed as-is, so a total mixing currencies is approximate.
                   </div>
                 </>
               ) : (

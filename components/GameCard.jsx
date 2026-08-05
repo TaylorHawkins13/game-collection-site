@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getCoverColor, colorToCss, shadeColor, readableTextColor } from '@/lib/coverColor';
+import { currencySymbol } from '@/lib/currency';
 import StarRating from './StarRating';
 
 function cap(s) {
@@ -101,7 +102,13 @@ export default function GameCard({ game, onClick, featured = false }) {
     }
   }
   if (game.market_price != null) {
-    statRows.push({ label: 'Market value', value: `$${game.market_price}` });
+    // Older rows checked before regional pricing shipped never got a
+    // currency stored — those were always USD back then, so that's a safe
+    // fallback rather than just guessing the viewer's own currency.
+    statRows.push({
+      label: 'Market value',
+      value: `${currencySymbol(game.market_price_currency || 'USD')}${game.market_price}`,
+    });
   }
   statRows.push({
     label: 'Rating',
