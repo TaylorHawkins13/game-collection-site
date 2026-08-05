@@ -266,6 +266,62 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFTrophyPct('');
   }
 
+  // Saved filter views — a named shortcut for a filter+sort combo,
+  // stored per-device (localStorage), so re-visiting "PS5 backlog" or
+  // "Comics worth price-checking" doesn't mean re-picking the same
+  // dropdowns every time.
+  const [savedViews, setSavedViews] = useState([]);
+  const [showViews, setShowViews] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('gct_saved_views') || '[]');
+      if (Array.isArray(saved)) setSavedViews(saved);
+    } catch {
+      // ignore malformed/missing localStorage value
+    }
+  }, []);
+
+  function persistViews(next) {
+    setSavedViews(next);
+    try {
+      localStorage.setItem('gct_saved_views', JSON.stringify(next));
+    } catch {
+      // e.g. storage full/disabled — the view just won't survive a reload
+    }
+  }
+
+  function saveCurrentView() {
+    const name = newViewName.trim();
+    if (!name) return;
+    const view = {
+      id: Date.now(),
+      name,
+      filters: { search, fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct, sortBy },
+    };
+    persistViews([...savedViews, view]);
+    setNewViewName('');
+  }
+
+  function applyView(view) {
+    const f = view.filters || {};
+    setSearch(f.search || '');
+    setFType(f.fType || '');
+    setFOwn(f.fOwn || '');
+    setFCopy(f.fCopy || '');
+    setFComplete(f.fComplete || '');
+    setFPlat(f.fPlat || '');
+    setFPlay(f.fPlay || '');
+    setFTrophyPct(f.fTrophyPct || '');
+    setSortBy(f.sortBy || 'titleAsc');
+    setShowViews(false);
+  }
+
+  function deleteView(id) {
+    persistViews(savedViews.filter((v) => v.id !== id));
+  }
+
   // Real Xbox/PlayStation completion %, not Shelf Life's own "100% complete"
   // tag — platinum counts as 100 regardless of what trophy_completion says,
   // since not everyone bothers typing 100 once they've hit platinum.
@@ -1113,6 +1169,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             >
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
+            <button
+              className={`btn-ghost${showViews ? ' active' : ''}`}
+              type="button"
+              onClick={() => setShowViews((v) => !v)}
+            >
+              Views{savedViews.length > 0 ? ` (${savedViews.length})` : ''}
+            </button>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="titleAsc">Title A–Z</option>
               <option value="titleDesc">Title Z–A</option>
@@ -1122,6 +1185,52 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <option value="completionDesc">Highest Trophy Completion %</option>
             </select>
           </div>
+
+          {showViews && (
+            <div className="filters-panel">
+              {savedViews.length === 0 ? (
+                <div className="sub" style={{ margin: '0 0 12px' }}>
+                  No saved views yet — set the search/filters/sort the way you want below, then save it here as a
+                  one-click shortcut for next time.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                  {savedViews.map((v) => (
+                    <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        style={{ flex: 1, textAlign: 'left' }}
+                        onClick={() => applyView(v)}
+                      >
+                        {v.name}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        onClick={() => deleteView(v.id)}
+                        aria-label={`Delete saved view "${v.name}"`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder='Name this view, e.g. "PS5 backlog"'
+                  value={newViewName}
+                  onChange={(e) => setNewViewName(e.target.value)}
+                  style={{ flex: 1, minWidth: 180 }}
+                />
+                <button type="button" className="btn-ghost" onClick={saveCurrentView} disabled={!newViewName.trim()}>
+                  Save current search/filters/sort
+                </button>
+              </div>
+            </div>
+          )}
 
           {showFilters && (
             <div className="filters-panel">

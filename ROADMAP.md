@@ -15,7 +15,6 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 A batch of ideas I came up with on my own — nothing here has your buy-in yet, just things I noticed would fit well given what's already built. Go through these whenever you're ready; keep what's useful (I'll fold it into the sections below, or just tell me to build straight from here) and toss the rest.
 
 - **Bulk edit / multi-select on the dashboard** — a checkbox on each card to select several items at once, then bulk-change platform, tags, or ownership status, or delete them together, instead of opening each item individually. Gets more valuable as a collection grows past a hundred-plus items.
-- **Saved filter views** — save a filter/sort combo as a named shortcut ("PS5 backlog," "Comics worth price-checking") for one-click reuse instead of re-picking the same dropdowns every visit.
 - **Collection insights page** — a dedicated stats page beyond the value chart: genre/platform/decade breakdowns as charts, spending by month, busiest month for adding items. Purely derived from data you already have, no new inputs needed.
 - **Price-drop alerts** — piggybacking on the new notification bell: get notified when a wishlist item's eBay price drops below a threshold you set.
 - **Loan tracker** — mark an item as "loaned to ___" with a date, so lent-out books/games/discs don't quietly disappear from memory.

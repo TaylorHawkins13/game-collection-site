@@ -588,6 +588,14 @@ button:disabled {
   margin-top: -10px;
   margin-bottom: 20px;
 }
+.filters-panel input[type='text'] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
 .filters-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
