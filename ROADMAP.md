@@ -5,6 +5,7 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 ## Bugs (reported, not yet fixed)
 
 1. **Game search/auto-fill doesn't work** — expected right now, not a bug: IGDB auto-fill needs Twitch API credentials that are still blocked on your end by Twitch's 2FA account bug. Manual entry (or the barcode scanner) works in the meantime.
+2. **What's New panel doesn't load on mobile** — reported by Taylor; needs investigation into why it fails specifically on mobile.
 
 ## Ideas from Claude (new, not yet reviewed)
 
@@ -26,6 +27,7 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 
 ## Later (bigger, more design work)
 
+- **Reactions/likes on the feed** — let people react to or like activity feed entries, not just comment. Requested by Taylor.
 - **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
 - **Collector level / trophy points** — combine Shelf Life's bronze/silver/gold/platinum badges into one overall score or level shown on your profile, the way PSN trophy levels roll everything into a single number people compare.
 - **More Shelf Life milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.
