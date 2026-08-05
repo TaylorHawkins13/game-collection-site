@@ -1917,6 +1917,27 @@ button:disabled {
   color: var(--owned);
 }
 
+/* ---------- Undo-delete bar ---------- */
+/* Deliberately separate from the generic .toast-stack (bottom-left) so
+   an Undo action never gets buried under or confused with an unrelated
+   error/success toast — bottom-right, its own z-index, stays up until
+   Undo is clicked or the delete finalizes. */
+.undo-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px 10px 16px;
+  box-shadow: var(--shadow);
+  font-size: 13.5px;
+}
+
 .trophy-toast-stack {
   position: fixed;
   right: 20px;

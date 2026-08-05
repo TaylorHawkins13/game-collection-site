@@ -32,6 +32,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const searchParams = useSearchParams();
   const [games, setGames] = useState(initialGames);
   const [modalGame, setModalGame] = useState(undefined); // undefined = closed, null = add, object = edit
+  // Deleting an item removes it from view immediately but doesn't touch
+  // the database until this timer fires — gives a few seconds to hit
+  // Undo before it's actually gone. Only one pending delete at a time;
+  // starting a new one finalizes whatever was already pending.
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const pendingDeleteTimer = useRef(null);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   const [duplicateOf, setDuplicateOf] = useState(undefined); // prefill data when adding a copy of an existing item
   const [search, setSearch] = useState('');
   const [fOwn, setFOwn] = useState('');
@@ -438,15 +451,40 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     });
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this item from your collection?')) return;
+  async function commitDelete(id) {
     const { error } = await supabase.from('games').delete().eq('id', id);
-    if (!error) {
-      setGames((gs) => gs.filter((g) => g.id !== id));
-      setModalGame(undefined);
-    } else {
-      announceToast("Couldn't delete that item — try again in a moment.");
+    if (error && isMountedRef.current) {
+      // The item's already hidden from the grid at this point — surface
+      // the failure rather than leaving it silently mismatched between
+      // what's shown and what's actually still in the database.
+      announceToast("Couldn't finish deleting that item — try refreshing and deleting it again.");
     }
+  }
+
+  function handleDelete(id) {
+    const item = games.find((g) => g.id === id);
+    if (!item) return;
+    // Only one pending delete at a time — starting a new one finalizes
+    // (actually deletes) whatever was already waiting on an Undo, rather
+    // than juggling multiple timers.
+    if (pendingDelete) {
+      clearTimeout(pendingDeleteTimer.current);
+      commitDelete(pendingDelete.item.id);
+    }
+    setGames((gs) => gs.filter((g) => g.id !== id));
+    setModalGame(undefined);
+    setPendingDelete({ item });
+    pendingDeleteTimer.current = setTimeout(() => {
+      commitDelete(item.id);
+      if (isMountedRef.current) setPendingDelete(null);
+    }, 6000);
+  }
+
+  function handleUndoDelete() {
+    if (!pendingDelete) return;
+    clearTimeout(pendingDeleteTimer.current);
+    setGames((gs) => [...gs, pendingDelete.item]);
+    setPendingDelete(null);
   }
 
   // Opens a fresh Add Item form pre-filled from an existing item, so
@@ -1170,6 +1208,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </div>
           )}
         </>
+      )}
+
+      {pendingDelete && (
+        <div className="undo-toast">
+          <span>Deleted &ldquo;{pendingDelete.item.title}&rdquo;.</span>
+          <button type="button" className="btn-ghost" onClick={handleUndoDelete}>
+            Undo
+          </button>
+        </div>
       )}
 
       {modalGame !== undefined && (

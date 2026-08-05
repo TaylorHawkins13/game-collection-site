@@ -18,7 +18,6 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 - **Saved filter views** — save a filter/sort combo as a named shortcut ("PS5 backlog," "Comics worth price-checking") for one-click reuse instead of re-picking the same dropdowns every visit.
 - **Collection insights page** — a dedicated stats page beyond the value chart: genre/platform/decade breakdowns as charts, spending by month, busiest month for adding items. Purely derived from data you already have, no new inputs needed.
 - **Price-drop alerts** — piggybacking on the new notification bell: get notified when a wishlist item's eBay price drops below a threshold you set.
-- **Undo on delete** — deleting an item today is a plain "are you sure?" with no way back; a brief "Undo" toast (or a short-lived recently-deleted view) would prevent an accidental permanent loss.
 - **Loan tracker** — mark an item as "loaned to ___" with a date, so lent-out books/games/discs don't quietly disappear from memory.
 - **Bulk barcode scanning session** — scan several items back-to-back without closing and reopening the Add form each time, for digitizing a big physical pile in one sitting.
 - **Import from Goodreads / Discogs** — same idea as the Steam import, for Books and Vinyl/CDs respectively — both offer exportable data (Goodreads CSV export, Discogs collection API) that could seed a bulk import.
