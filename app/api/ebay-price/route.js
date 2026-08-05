@@ -137,23 +137,40 @@ export async function GET(request) {
     // up on a EBAY_GB search, priced in USD, not GBP) — for a niche item
     // with little local inventory, those cross-border listings can even
     // outnumber the local ones. Averaging raw numbers together regardless
-    // of currency produces a meaningless value, so only listings actually
-    // priced in the currency this marketplace is supposed to represent
-    // are used — not just whichever currency happens to be most common in
-    // the results, since for a low-inventory item "most common" could
-    // still be the wrong currency entirely.
+    // of currency produces a meaningless value, so the math only ever
+    // runs over listings that share one currency.
+    //
+    // Prefer the currency this marketplace is supposed to represent. But
+    // if there's genuinely no local-currency inventory for this item —
+    // real for anything niche/rare — showing nothing at all is worse than
+    // showing an honestly-labeled price in whatever currency the actual
+    // listings are in (the app already stores/displays market_price
+    // alongside the currency it was checked in, precisely for this case).
+    // So: fall back to whichever currency is most common among what's
+    // left, and label the result with that currency rather than
+    // pretending it's the marketplace's own.
     const expectedCurrency = currencyForMarketplace(marketplace);
-    const currencyPool = pool.filter((it) => it.price?.currency === expectedCurrency);
+    let currencyPool = pool.filter((it) => it.price?.currency === expectedCurrency);
+    let currency = expectedCurrency;
+
+    if (currencyPool.length === 0) {
+      const currencyCounts = {};
+      for (const it of pool) {
+        const c = it.price?.currency;
+        if (c) currencyCounts[c] = (currencyCounts[c] || 0) + 1;
+      }
+      const fallbackCurrency = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (fallbackCurrency) {
+        currencyPool = pool.filter((it) => it.price?.currency === fallbackCurrency);
+        currency = fallbackCurrency;
+      }
+    }
 
     const prices = currencyPool
       .map((it) => parseFloat(it.price?.value))
       .filter((v) => !Number.isNaN(v) && v > 0);
 
     if (prices.length === 0) {
-      // There may well be listings for this item — just none priced in
-      // the marketplace's own currency. Reporting "no listings" here is
-      // more honest than falling back to a different currency's price
-      // and mislabeling it.
       return NextResponse.json({ count: 0 });
     }
 
@@ -165,7 +182,6 @@ export async function GET(request) {
     // pool here is small (up to 50 raw results) and still not perfectly
     // clean even after the mismatch filtering above.
     const typical = median(prices);
-    const currency = expectedCurrency;
 
     return NextResponse.json({
       count: prices.length,

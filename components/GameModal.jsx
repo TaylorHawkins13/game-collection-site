@@ -391,7 +391,7 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         return;
       }
       if (data.error || !data.count) {
-        setPriceHint('No current eBay listings found in your currency for that search — it may only be listed abroad right now.');
+        setPriceHint('No current eBay listings found for that search.');
         return;
       }
       setPriceCheck(data);
@@ -869,6 +869,12 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               )}
             </div>
             {priceHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{priceHint}</div>}
+            {!priceHint && form.market_price != null && form.market_price_currency && form.market_price_currency !== currency && (
+              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
+                No {currencySymbol(currency)} listings found for this one — showing the price in{' '}
+                {form.market_price_currency} instead, the only currency it's currently listed in.
+              </div>
+            )}
             {!priceHint && (!form.completeness || !form.condition) && form.item_type === 'game' && (
               <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
                 Tip: filling in Completeness and Condition above makes this search more accurate — a loose cart and a
