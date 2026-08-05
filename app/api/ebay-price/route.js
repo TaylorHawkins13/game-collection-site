@@ -131,7 +131,23 @@ export async function GET(request) {
     const filtered = pool.filter((it) => !isLikelyMismatch(it.title));
     if (filtered.length >= 3) pool = filtered;
 
-    const prices = pool
+    // Even within one marketplace, eBay mixes in cross-border listings
+    // priced in a different currency (e.g. a US seller's listing showing
+    // up on a EBAY_GB search, priced in USD, not GBP). Averaging those raw
+    // numbers together with everyone else's — regardless of currency —
+    // produces a meaningless value labeled with whatever currency the
+    // first listing happened to be in. Keep only whichever currency is
+    // most common in this result set, so every number going into the math
+    // actually means the same thing.
+    const currencyCounts = {};
+    for (const it of pool) {
+      const c = it.price?.currency;
+      if (c) currencyCounts[c] = (currencyCounts[c] || 0) + 1;
+    }
+    const majorityCurrency = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'USD';
+    const currencyPool = pool.filter((it) => it.price?.currency === majorityCurrency);
+
+    const prices = currencyPool
       .map((it) => parseFloat(it.price?.value))
       .filter((v) => !Number.isNaN(v) && v > 0);
 
@@ -147,7 +163,7 @@ export async function GET(request) {
     // pool here is small (up to 50 raw results) and still not perfectly
     // clean even after the mismatch filtering above.
     const typical = median(prices);
-    const currency = pool.find((it) => it.price?.currency)?.price?.currency || 'USD';
+    const currency = majorityCurrency;
 
     return NextResponse.json({
       count: prices.length,
