@@ -7,6 +7,8 @@ import ShareProfileButton from '@/components/ShareProfileButton';
 import ShowcaseButton from '@/components/ShowcaseButton';
 import CustomListsButton from '@/components/CustomListsButton';
 import GameCard from '@/components/GameCard';
+import { estimateCollectionValue } from '@/lib/valueSnapshot';
+import { formatMoney } from '@/lib/currency';
 
 export async function generateMetadata({ params }) {
   const { username } = params;
@@ -136,6 +138,11 @@ export default async function ProfilePage({ params }) {
 
   const owned = (games || []).filter((g) => g.ownership === 'owned').length;
   const completed = (games || []).filter((g) => g.play_status === 'completed').length;
+  // Same blend DashboardClient's own "Collection value" stat uses: the
+  // last eBay check where there is one, purchase price otherwise, digital
+  // items excluded. Shown in the collector's own currency, not the
+  // viewer's — it's their collection, their prices.
+  const { total: collectionValue } = estimateCollectionValue(games || []);
   const showcaseGames = (games || [])
     .filter((g) => g.showcase_order != null)
     .sort((a, b) => a.showcase_order - b.showcase_order);
@@ -219,6 +226,10 @@ export default async function ProfilePage({ params }) {
             <div className="stat">
               <div className="num">{completed}</div>
               <div className="label">Completed</div>
+            </div>
+            <div className="stat">
+              <div className="num">{formatMoney(collectionValue, profile.currency)}</div>
+              <div className="label">Collection value</div>
             </div>
           </div>
 
