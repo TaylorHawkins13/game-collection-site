@@ -73,7 +73,7 @@ function friendsEmptyText(metric, viewerLoggedIn) {
 
 function statFor(metricKey, row) {
   if (metricKey === 'trophies') {
-    return `${row.trophy_count} trophy${row.trophy_count === 1 ? '' : 's'}${
+    return `${row.trophy_count} ${row.trophy_count === 1 ? 'trophy' : 'trophies'}${
       row.platinum_count > 0 ? ` · ${row.platinum_count} platinum` : ''
     }`;
   }
