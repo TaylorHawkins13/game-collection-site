@@ -14,16 +14,21 @@ export default async function LeaderboardPage() {
   } = await supabase.auth.getUser();
 
   // Only the top 3 (a podium) ever show on this page now.
-  // leaderboard_friends is scoped to auth.uid() inside the view itself
-  // (join follows on follower_id = auth.uid()) — fetching it for a
-  // signed-out visitor just comes back empty, no separate branch needed.
+  // The leaderboard_friends* views are scoped to auth.uid() inside the
+  // view itself (join follows on follower_id = auth.uid()) — fetching
+  // them for a signed-out visitor just comes back empty, no separate
+  // branch needed.
   const [
     { data: mostOwned },
     { data: biggest },
     { data: trending },
     { data: trophies },
     { data: mostValuable },
-    { data: friends },
+    { data: friendsTrophies },
+    { data: friendsBiggest },
+    { data: friendsMostValuable },
+    { data: friendsMostOwned },
+    { data: friendsTrending },
   ] = await Promise.all([
     supabase.from('leaderboard_most_owned').select('*').limit(3),
     supabase.from('leaderboard_biggest_collections').select('*').limit(3),
@@ -31,6 +36,10 @@ export default async function LeaderboardPage() {
     supabase.from('leaderboard_trophies').select('*').limit(3),
     supabase.from('leaderboard_most_valuable').select('*').limit(3),
     supabase.from('leaderboard_friends').select('*').limit(3),
+    supabase.from('leaderboard_friends_biggest').select('*').limit(3),
+    supabase.from('leaderboard_friends_most_valuable').select('*').limit(3),
+    supabase.from('leaderboard_friends_most_owned').select('*').limit(3),
+    supabase.from('leaderboard_friends_trending').select('*').limit(3),
   ]);
 
   return (
@@ -45,7 +54,11 @@ export default async function LeaderboardPage() {
         trending={trending || []}
         trophies={trophies || []}
         mostValuable={mostValuable || []}
-        friends={friends || []}
+        friendsTrophies={friendsTrophies || []}
+        friendsBiggest={friendsBiggest || []}
+        friendsMostValuable={friendsMostValuable || []}
+        friendsMostOwned={friendsMostOwned || []}
+        friendsTrending={friendsTrending || []}
         viewerLoggedIn={!!viewer}
       />
     </main>

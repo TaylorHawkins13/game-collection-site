@@ -44,22 +44,43 @@ const TABS = [
   {
     key: 'friends',
     label: 'Friends',
-    type: 'person',
-    sub: "A smaller, more personal ranking — just the public collectors you follow, by Shelf Life trophies.",
-    empty: 'loggedOut',
+    sub: "A smaller, more personal ranking — just the public collectors you follow. Pick a category below.",
   },
 ];
 
-function statFor(tabKey, row) {
-  if (tabKey === 'trophies' || tabKey === 'friends') {
+// The same 5 categories as the main tabs, scoped down to just the people
+// you follow. Rendered as a second row of pills only when the Friends tab
+// is active.
+const FRIENDS_SUBTABS = [
+  { key: 'trophies', label: 'Trophies', type: 'person' },
+  { key: 'mostValuable', label: 'Most valuable', type: 'person' },
+  { key: 'biggest', label: 'Biggest', type: 'person' },
+  { key: 'mostOwned', label: 'Most-owned', type: 'item' },
+  { key: 'trending', label: 'Trending', type: 'item' },
+];
+
+function friendsEmptyText(metric, viewerLoggedIn) {
+  if (!viewerLoggedIn) return 'Log in and follow some public collectors to see them ranked here.';
+  const text = {
+    trophies: 'None of the public collectors you follow have earned a trophy yet.',
+    mostValuable: "None of the public collectors you follow have a priced item yet.",
+    biggest: "None of the public collectors you follow have added anything yet.",
+    mostOwned: "Nothing your friends own overlaps yet.",
+    trending: "Nothing added by your friends in the last 14 days.",
+  };
+  return text[metric] || 'Nothing here yet.';
+}
+
+function statFor(metricKey, row) {
+  if (metricKey === 'trophies') {
     return `${row.trophy_count} trophy${row.trophy_count === 1 ? '' : 's'}${
       row.platinum_count > 0 ? ` · ${row.platinum_count} platinum` : ''
     }`;
   }
-  if (tabKey === 'biggest') return `${row.game_count} item${row.game_count === 1 ? '' : 's'}`;
-  if (tabKey === 'mostOwned') return `${row.owner_count} owner${row.owner_count === 1 ? '' : 's'}`;
-  if (tabKey === 'trending') return `+${row.recent_adds} added`;
-  if (tabKey === 'mostValuable') return formatMoney(row.total_value, row.currency);
+  if (metricKey === 'biggest') return `${row.game_count} item${row.game_count === 1 ? '' : 's'}`;
+  if (metricKey === 'mostOwned') return `${row.owner_count} owner${row.owner_count === 1 ? '' : 's'}`;
+  if (metricKey === 'trending') return `+${row.recent_adds} added`;
+  if (metricKey === 'mostValuable') return formatMoney(row.total_value, row.currency);
   return '';
 }
 
@@ -67,7 +88,7 @@ function rowKey(type, row) {
   return type === 'person' ? row.user_id : row.title_key;
 }
 
-function PodiumPlace({ place, type, row, tabKey }) {
+function PodiumPlace({ place, type, row, metricKey }) {
   const name = type === 'person' ? row.display_name || row.username : row.title;
   const content =
     type === 'person' ? (
@@ -85,7 +106,7 @@ function PodiumPlace({ place, type, row, tabKey }) {
       <div className="podium-medal">{place === 1 ? '1st' : place === 2 ? '2nd' : '3rd'}</div>
       {content}
       <div className="podium-name">{name}</div>
-      <div className="podium-stat">{statFor(tabKey, row)}</div>
+      <div className="podium-stat">{statFor(metricKey, row)}</div>
       <div className="podium-step" aria-hidden="true" />
     </>
   );
@@ -109,20 +130,32 @@ export default function LeaderboardClient({
   trending,
   trophies,
   mostValuable,
-  friends,
+  friendsTrophies,
+  friendsBiggest,
+  friendsMostValuable,
+  friendsMostOwned,
+  friendsTrending,
   viewerLoggedIn,
 }) {
   const [tab, setTab] = useState('trophies');
+  const [friendsMetric, setFriendsMetric] = useState('trophies');
 
-  const dataByTab = { trophies, biggest, mostOwned, trending, mostValuable, friends };
+  const dataByTab = { trophies, biggest, mostOwned, trending, mostValuable };
+  const friendsByMetric = {
+    trophies: friendsTrophies,
+    mostValuable: friendsMostValuable,
+    biggest: friendsBiggest,
+    mostOwned: friendsMostOwned,
+    trending: friendsTrending,
+  };
+
   const active = TABS.find((t) => t.key === tab);
-  const podiumRows = (dataByTab[tab] || []).slice(0, 3);
-  const emptyText =
-    active.empty === 'loggedOut'
-      ? viewerLoggedIn
-        ? "None of the public collectors you follow have earned a trophy yet."
-        : 'Log in and follow some public collectors to see them ranked here.'
-      : active.empty;
+  const isFriends = tab === 'friends';
+  const activeType = isFriends
+    ? FRIENDS_SUBTABS.find((s) => s.key === friendsMetric).type
+    : active.type;
+  const podiumRows = (isFriends ? friendsByMetric[friendsMetric] : dataByTab[tab] || []).slice(0, 3);
+  const emptyText = isFriends ? friendsEmptyText(friendsMetric, viewerLoggedIn) : active.empty;
 
   return (
     <div>
@@ -139,6 +172,22 @@ export default function LeaderboardClient({
         ))}
       </div>
 
+      {isFriends && (
+        <div className="profile-tabs" style={{ marginTop: 10 }}>
+          {FRIENDS_SUBTABS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              className={`profile-tab${friendsMetric === s.key ? ' active' : ''}`}
+              onClick={() => setFriendsMetric(s.key)}
+              style={{ fontSize: '0.85em', padding: '6px 12px' }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <p className="sub" style={{ margin: '2px 0 20px' }}>
         {active.sub}
       </p>
@@ -150,7 +199,13 @@ export default function LeaderboardClient({
       ) : (
         <div className="leaderboard-podium">
           {podiumRows.map((row, i) => (
-            <PodiumPlace key={rowKey(active.type, row)} place={i + 1} type={active.type} row={row} tabKey={tab} />
+            <PodiumPlace
+              key={rowKey(activeType, row)}
+              place={i + 1}
+              type={activeType}
+              row={row}
+              metricKey={isFriends ? friendsMetric : tab}
+            />
           ))}
         </div>
       )}
