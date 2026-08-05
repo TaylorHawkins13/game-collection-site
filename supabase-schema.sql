@@ -167,6 +167,57 @@ create trigger games_set_updated_at
   before update on games
   for each row execute function set_updated_at();
 
+-- Lets a signed-in visitor refresh eBay prices on someone ELSE's public
+-- collection, not just their own — "Owners can update their own games"
+-- above only allows the row's own user_id to update it, which is right
+-- for everything except this one case (checking a current market price
+-- doesn't touch anything the owner actually curated). SECURITY DEFINER
+-- bypasses that RLS policy, so the authorization check has to happen
+-- inside the function itself: allowed if the caller owns the item, or if
+-- the item's owner has a public profile. Only ever touches the three
+-- market-price columns — title, price, ownership, etc. stay untouchable
+-- by anyone but the real owner.
+create or replace function refresh_item_market_price(
+  p_game_id uuid,
+  p_market_price numeric,
+  p_currency text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner_id uuid;
+  v_is_public boolean;
+begin
+  if auth.uid() is null then
+    raise exception 'must be signed in';
+  end if;
+
+  select g.user_id, p.is_public into v_owner_id, v_is_public
+  from games g
+  join profiles p on p.id = g.user_id
+  where g.id = p_game_id;
+
+  if v_owner_id is null then
+    raise exception 'item not found';
+  end if;
+
+  if auth.uid() <> v_owner_id and not coalesce(v_is_public, false) then
+    raise exception 'not allowed';
+  end if;
+
+  update games
+  set market_price = p_market_price,
+      market_price_checked_at = now(),
+      market_price_currency = p_currency
+  where id = p_game_id;
+end;
+$$;
+
+grant execute on function refresh_item_market_price(uuid, numeric, text) to authenticated;
+
 -- ------------------------------------------------------------
 -- follows: social graph
 -- ------------------------------------------------------------

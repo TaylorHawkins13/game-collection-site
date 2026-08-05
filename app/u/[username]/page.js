@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
+import RefreshPricesButton from './RefreshPricesButton';
 import ProfileTabs from './ProfileTabs';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import ShowcaseButton from '@/components/ShowcaseButton';
@@ -194,6 +195,7 @@ export default async function ProfilePage({ params }) {
             <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
               Compare collections
             </Link>
+            {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
           </div>
         )}
         {isOwner && (
