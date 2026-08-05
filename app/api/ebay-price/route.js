@@ -119,6 +119,10 @@ export async function GET(request) {
 
     const data = await res.json();
     const items = data.itemSummaries || [];
+    // Temporary diagnostic logging (visible in Vercel's Logs tab) — helps
+    // tell apart "eBay genuinely returned nothing for this exact query"
+    // from "eBay returned plenty, but our filtering threw it all away."
+    console.log('eBay price search:', { q, marketplace, rawResultCount: items.length });
 
     // Prefer fixed "Buy It Now" prices over live auction bids — a bid
     // mid-auction isn't a reliable stand-in for value, but if there
@@ -171,6 +175,11 @@ export async function GET(request) {
       .filter((v) => !Number.isNaN(v) && v > 0);
 
     if (prices.length === 0) {
+      console.log('eBay price search: 0 usable prices after filtering', {
+        q,
+        rawResultCount: items.length,
+        afterFixedPriceFilter: pool.length,
+      });
       return NextResponse.json({ count: 0 });
     }
 
@@ -182,6 +191,15 @@ export async function GET(request) {
     // pool here is small (up to 50 raw results) and still not perfectly
     // clean even after the mismatch filtering above.
     const typical = median(prices);
+
+    console.log('eBay price search result:', {
+      q,
+      currency,
+      count: prices.length,
+      low,
+      high,
+      typical,
+    });
 
     return NextResponse.json({
       count: prices.length,
