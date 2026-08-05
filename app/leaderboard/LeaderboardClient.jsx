@@ -41,10 +41,17 @@ const TABS = [
     sub: 'Most added across public collections in the last 14 days.',
     empty: 'Nothing trending in the last 14 days yet.',
   },
+  {
+    key: 'friends',
+    label: 'Friends',
+    type: 'person',
+    sub: "A smaller, more personal ranking — just the public collectors you follow, by Shelf Life trophies.",
+    empty: 'loggedOut',
+  },
 ];
 
 function statFor(tabKey, row) {
-  if (tabKey === 'trophies') {
+  if (tabKey === 'trophies' || tabKey === 'friends') {
     return `${row.trophy_count} trophy${row.trophy_count === 1 ? '' : 's'}${
       row.platinum_count > 0 ? ` · ${row.platinum_count} platinum` : ''
     }`;
@@ -96,12 +103,26 @@ function PodiumPlace({ place, type, row, tabKey }) {
   );
 }
 
-export default function LeaderboardClient({ mostOwned, biggest, trending, trophies, mostValuable }) {
+export default function LeaderboardClient({
+  mostOwned,
+  biggest,
+  trending,
+  trophies,
+  mostValuable,
+  friends,
+  viewerLoggedIn,
+}) {
   const [tab, setTab] = useState('trophies');
 
-  const dataByTab = { trophies, biggest, mostOwned, trending, mostValuable };
+  const dataByTab = { trophies, biggest, mostOwned, trending, mostValuable, friends };
   const active = TABS.find((t) => t.key === tab);
   const podiumRows = (dataByTab[tab] || []).slice(0, 3);
+  const emptyText =
+    active.empty === 'loggedOut'
+      ? viewerLoggedIn
+        ? "None of the public collectors you follow have earned a trophy yet."
+        : 'Log in and follow some public collectors to see them ranked here.'
+      : active.empty;
 
   return (
     <div>
@@ -124,7 +145,7 @@ export default function LeaderboardClient({ mostOwned, biggest, trending, trophi
 
       {podiumRows.length === 0 ? (
         <div className="empty-state">
-          <div>{active.empty}</div>
+          <div>{emptyText}</div>
         </div>
       ) : (
         <div className="leaderboard-podium">

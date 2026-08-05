@@ -20,7 +20,6 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 - **Bulk barcode scanning session** — scan several items back-to-back without closing and reopening the Add form each time, for digitizing a big physical pile in one sitting.
 - **Import from Goodreads / Discogs** — same idea as the Steam import, for Books and Vinyl/CDs respectively — both offer exportable data (Goodreads CSV export, Discogs collection API) that could seed a bulk import.
 - **Shareable yearly recap** — a "Your Year in Shelf Life" summary (items added, completed, trophies earned) generated each January, shareable as an image — same spirit as Spotify Wrapped or GitHub's contribution graph.
-- **Friends-only leaderboard** — a version of the leaderboard scoped to just the people you follow, for a smaller, more personal "who's ahead" than the site-wide rankings.
 - **Auto-generated stats card image** — an OG-image-style PNG of your collection stats (item count, top platform, trophy count) for posting outside the site — distinct from just sharing the profile link.
 - **Photo attachments for condition proof** — attach a couple of real photos to a physical item (separate from cover art), useful for high-value collectibles where the actual condition or grading matters.
 - **Accessibility pass** — screen-reader labels and full keyboard navigation for modals/dropdowns haven't been audited yet; worth a dedicated pass once the feature set slows down.
