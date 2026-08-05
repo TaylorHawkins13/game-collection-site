@@ -13,6 +13,31 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
 
+  // On phones this menu is a slide-in side drawer rather than the
+  // dropdown desktop gets — while it's open, close it on Escape, close
+  // it if the window is resized/rotated past the mobile breakpoint (so
+  // it can't get stuck open with no visible toggle to close it), and
+  // stop the page underneath from scrolling while it's open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    const mql = window.matchMedia('(max-width: 640px)');
+    function onBreakpointChange() {
+      if (!mql.matches) setMenuOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    mql.addEventListener('change', onBreakpointChange);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      mql.removeEventListener('change', onBreakpointChange);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [menuOpen]);
+
   useEffect(() => {
     let active = true;
 
@@ -71,6 +96,7 @@ export default function Navbar() {
       >
         {menuOpen ? '✕' : '☰'}
       </button>
+      <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
       <div className={`nav-links${menuOpen ? ' open' : ''}`}>
         <Link href="/players" className="nav-link" onClick={() => setMenuOpen(false)}>Find Collectors</Link>
         <Link href="/leaderboard" className="nav-link" onClick={() => setMenuOpen(false)}>Leaderboard</Link>

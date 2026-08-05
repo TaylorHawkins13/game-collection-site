@@ -46,6 +46,31 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [showSettings, setShowSettings] = useState(false);
   const [collapsedPanels, setCollapsedPanels] = useState({ playnext: false, recommend: false, value: false });
   const [hideDigital, setHideDigital] = useState(false);
+  // On phones, Play Next / Recommended / Value chart live in a slide-in
+  // "Tools" drawer instead of stacking inline above the collection — on
+  // desktop this state is unused since the drawer CSS is scoped to the
+  // mobile breakpoint (the panels just render inline as always).
+  const [toolsOpen, setToolsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!toolsOpen) return;
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setToolsOpen(false);
+    }
+    const mql = window.matchMedia('(max-width: 640px)');
+    function onBreakpointChange() {
+      if (!mql.matches) setToolsOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    mql.addEventListener('change', onBreakpointChange);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      mql.removeEventListener('change', onBreakpointChange);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [toolsOpen]);
 
   // Remember which of the Play next / Recommended / Value chart panels
   // someone's minimized, so it stays minimized on their next visit.
@@ -907,6 +932,27 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             ))}
           </div>
 
+          {/* On phones, a "Tools" button opens these three as a slide-in
+              drawer instead of stacking them above the collection grid —
+              desktop is untouched (the trigger/overlay/header below are
+              display:none outside the mobile breakpoint, so this wrapper
+              has zero visual effect there). */}
+          <button type="button" className="dash-tools-trigger btn-ghost" onClick={() => setToolsOpen(true)}>
+            🧰 Tools &amp; insights
+          </button>
+          <div
+            className={`dash-tools-overlay${toolsOpen ? ' open' : ''}`}
+            onClick={() => setToolsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className={`dash-tools${toolsOpen ? ' open' : ''}`}>
+            <div className="dash-tools-header">
+              <h3>Tools &amp; insights</h3>
+              <button type="button" className="btn-icon" onClick={() => setToolsOpen(false)} aria-label="Close">
+                ✕
+              </button>
+            </div>
+
           <PlayNextWidget
             games={games}
             onOpen={(g) => setModalGame(g)}
@@ -989,6 +1035,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 </div>
               )
             )}
+          </div>
           </div>
 
           {platformCounts.length > 0 && (
