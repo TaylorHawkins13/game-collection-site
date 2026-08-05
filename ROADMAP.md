@@ -2,6 +2,10 @@
 
 A living to-do list of where this could go next. Nothing here is committed or scheduled — just organized by how much work each would take, so you can pick what's worth building next. Shipped features live in `CHANGELOG.md`.
 
+## Waiting on external approvals
+
+- **Apple Developer Program** — Taylor applied, waiting on Apple's approval. Unblocks a native App Store app (see "Mobile app / installable PWA" below). Not needed for the site itself or for an installable PWA — those work regardless.
+
 ## Bugs (reported, not yet fixed)
 
 1. **What's New panel doesn't load on mobile** — reported by Taylor; needs investigation into why it fails specifically on mobile.
@@ -37,7 +41,7 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 - **New-feature newsletter** — an email to collectors whenever something new ships, built from the existing What's New entries. Needs a transactional email provider first (nothing currently sends real email besides Supabase's built-in signup confirmation) — Resend is the natural pick, free up to 3,000 emails/month, similar setup to the eBay/Steam API keys. Scoped already, ready to build whenever: opt-in required (a checkbox in Profile settings, off by default) rather than opt-out, and sent via a manual "Send" button on a private page you review before it goes out — not fully automatic — so nothing emails everyone off a typo'd commit.
 - **Live currency conversion** — currency is display-only right now (no conversion between them); real conversion needs a rates API and a decision on what the "true" underlying value is when items were priced in different currencies.
 - **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority. (This is about connecting the account itself — see the section above for trophy/achievement-completion tracking specifically.)
-- **Mobile app / installable PWA** — make the site installable on a phone home screen with offline support for browsing your own collection.
+- **Mobile app / installable PWA** — two different things worth separating: (1) an installable PWA (add-to-home-screen, offline support for browsing your own collection) needs no app store and no Apple approval at all — buildable any time. (2) An actual native app in Apple's App Store needs an approved Apple Developer Program membership first — Taylor has applied, **pending Apple's approval**. Worth starting with the PWA regardless, since it's most of the value with none of the wait; the native app becomes possible once the developer account clears.
 - **Global chat** — a site-wide chat/message board any user can post in, separate from the per-profile comment walls that exist today. Bigger than it sounds: needs real-time updates (not just page-refresh), and some kind of moderation/spam handling once it's not just friends talking.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)
