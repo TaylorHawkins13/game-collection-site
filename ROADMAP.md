@@ -2,18 +2,18 @@
 
 A living to-do list of where this could go next. Nothing here is committed or scheduled — just organized by how much work each would take, so you can pick what's worth building next. Shipped features live in `CHANGELOG.md`.
 
-## Waiting on external approvals
+## In progress: App Store submission
 
-- **Apple Developer Program** — Taylor applied, waiting on Apple's approval. Unblocks a native App Store app (see "Mobile app / installable PWA" below). Not needed for the site itself or for an installable PWA — those work regardless.
+Apple Developer Program is approved — actively being worked on now, tracked in `app-store-checklist.md` rather than here since it's a single big multi-step effort, not a list of independent ideas. Short version: wrap the existing PWA with PWABuilder, add a couple of genuinely-native touches first to reduce the odds of an Apple Guideline 4.2 ("repackaged website") rejection, then build/sign/submit through Xcode on a Mac. Done so far: App Store-ready 1024×1024 icon, safe-area/overscroll polish so the wrapped app doesn't feel like a browser tab, full asset/listing checklist. Still open: Face ID/Touch ID passkey sign-in (a real native touch, but a substantial and security-sensitive feature — schema, API routes, and a Supabase session-minting flow — worth its own focused pass with real device testing rather than rushing it), then the actual Xcode/App Store Connect walkthrough once on a Mac.
 
 ## Requested by Taylor (not yet built)
 
 - **Auto-search for the remaining types** — Games, Trading cards, Books, Consoles, Vinyl/CD (MusicBrainz), and now DVD/Blu-ray + VHS (iTunes Search API, see `CHANGELOG.md`) all have a "Search" auto-fill button. Still missing: Comics and Funko Pops. Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
-- **Remove emojis** — audit the site and strip out emoji usage across the UI (nav, buttons, empty states, toasts, etc.) in favor of plain text/icons.
+- ~~**Remove emojis**~~ — done, see `CHANGELOG.md`.
 - **Mobile layout feels disorganized in places** — no single reported page, just a general sense that some mobile screens need tidying; worth a fresh pass now that a lot of features have shipped since the last mobile audit (#180–184).
 - **Home page example cards don't fit on screen on mobile (logged out)** — the sample collection cards shown to signed-out visitors on the home page overflow/don't fit properly on small screens.
-- **Mosaic export doesn't work on mobile** — downloading/sharing the shelf mosaic image fails on mobile; works on desktop. Needs investigation into whether it's the PNG generation route, a mobile download/share-sheet issue, or both.
-- **Inconsistent button shapes (squared vs. rounded)** — buttons across the site mix squared and rounded corners with no clear pattern; worth a pass to pick one style and apply it consistently everywhere.
+- ~~**Mosaic export doesn't work on mobile**~~ — done, see `CHANGELOG.md`.
+- **Inconsistent button shapes (squared vs. rounded)** — buttons across the site mix squared and rounded corners with no clear pattern; worth a pass to pick one style and apply it consistently everywhere. (In progress — paused mid-audit for the App Store push, no changes made yet.)
 
 ## From outside feedback (reviewed)
 
@@ -50,7 +50,7 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 - ~~**New-feature newsletter**~~ — done, see `CHANGELOG.md`. Built exactly as scoped: opt-in checkbox in Profile Settings, manual "Send" on a private `/admin/newsletter` page, Resend as the email provider.
 - **Live currency conversion** — currency is display-only right now (no conversion between them); real conversion needs a rates API and a decision on what the "true" underlying value is when items were priced in different currencies.
 - **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority. (This is about connecting the account itself — see the section above for trophy/achievement-completion tracking specifically.)
-- ~~**Installable PWA**~~ — done, see `CHANGELOG.md`. A native App Store app is a separate, bigger step that needs an approved Apple Developer Program membership first — Taylor has applied, **pending Apple's approval**.
+- ~~**Installable PWA**~~ — done, see `CHANGELOG.md`. The native App Store app is the next step — Apple Developer Program is now approved, see the "In progress: App Store submission" section above.
 - **Global chat** — a site-wide chat/message board any user can post in, separate from the per-profile comment walls that exist today. Bigger than it sounds: needs real-time updates (not just page-refresh), and some kind of moderation/spam handling once it's not just friends talking.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)

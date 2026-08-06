@@ -12,6 +12,13 @@ const DESCRIPTION = 'Track your games, comics, cards, vinyl, and more — share 
 
 export const viewport = {
   themeColor: '#0f1220',
+  // Lets the page draw under the notch/status bar and home indicator
+  // instead of Safari/WKWebView leaving a hard black bar there — paired
+  // with the env(safe-area-inset-*) padding added throughout globals.css
+  // so real content still clears those areas. Mostly invisible on a
+  // normal browser tab; matters once this is wrapped as a standalone
+  // app (installed PWA or the native iOS shell) on a notched iPhone.
+  viewportFit: 'cover',
 };
 
 export const metadata = {
@@ -32,6 +39,11 @@ export const metadata = {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Shelf Life',
   },
 };
 

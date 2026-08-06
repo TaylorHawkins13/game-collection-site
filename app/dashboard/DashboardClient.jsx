@@ -1202,7 +1202,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               display:none outside the mobile breakpoint, so this wrapper
               has zero visual effect there). */}
           <button type="button" className="dash-tools-trigger btn-ghost" onClick={() => setToolsOpen(true)}>
-            🧰 Tools &amp; insights
+            Tools &amp; insights
           </button>
           <div
             className={`dash-tools-overlay${toolsOpen ? ' open' : ''}`}

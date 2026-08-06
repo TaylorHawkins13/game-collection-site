@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { shapeMosaic, modeLabel, titleColor, availableYears, availableTypes, TYPE_LABELS } from '@/lib/mosaicData';
 import { currencySymbol, formatMoney } from '@/lib/currency';
 import ShareProfileButton from '@/components/ShareProfileButton';
+import { announceToast } from '@/lib/toast';
 
 const MODE_TABS = [
   { key: 'all', label: 'Whole Shelf' },
@@ -52,6 +53,7 @@ export default function MosaicClient({ username, displayName, currency, items })
   const [year, setYear] = useState('');
   const [failedCovers, setFailedCovers] = useState(() => new Set());
   const [hovered, setHovered] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
   const types = useMemo(() => availableTypes(items), [items]);
   const years = useMemo(() => availableYears(items), [items]);
@@ -77,6 +79,52 @@ export default function MosaicClient({ username, displayName, currency, items })
   if (mode === 'type' && effectiveType) params.set('type', effectiveType);
   if (mode === 'year' && effectiveYear) params.set('year', effectiveYear);
   const imageUrl = `/u/${username}/mosaic-image?${params.toString()}`;
+  const fileName = `shelf-life-${username}-mosaic.png`;
+
+  // A plain `<a href download>` pointing at a route (rather than a blob:
+  // URL) is what this used to be, and it's unreliable on mobile — iOS
+  // Safari in particular mostly ignores the `download` attribute for a
+  // real navigation and just opens the PNG full-screen instead of saving
+  // it, which reads as "nothing happened." Fetching the image ourselves
+  // and handing it off as a blob fixes both mobile cases properly:
+  // the native Share sheet (with a real "Save Image" option) where the
+  // Web Share API supports files, and a same-origin blob: URL — which
+  // *does* reliably trigger a save, unlike a cross-navigation one —
+  // everywhere else, including desktop.
+  async function handleDownload() {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(imageUrl);
+      if (!res.ok) throw new Error('fetch_failed');
+      const blob = await res.blob();
+
+      const file = typeof File !== 'undefined' ? new File([blob], fileName, { type: 'image/png' }) : null;
+      if (file && typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Shelf Life mosaic' });
+          return;
+        } catch (err) {
+          // AbortError just means the user closed the share sheet.
+          if (err?.name === 'AbortError') return;
+          // Otherwise fall through to the blob-link download below.
+        }
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch {
+      announceToast("Couldn't download the mosaic — try again in a moment.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="mosaic-wrap">
@@ -114,9 +162,15 @@ export default function MosaicClient({ username, displayName, currency, items })
         )}
 
         <div style={{ flex: 1 }} />
-        <a href={imageUrl} download className="btn-ghost" style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          Download PNG
-        </a>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={handleDownload}
+          disabled={downloading}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          {downloading ? 'Preparing…' : 'Download PNG'}
+        </button>
         <ShareProfileButton
           username={username}
           path={`/u/${username}/mosaic`}
