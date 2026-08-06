@@ -42,6 +42,39 @@ A fresh batch — nothing here has your buy-in yet, just things that seem worth 
 - **AI shelf-photo bulk import** — take one photo of a physical shelf, and have it detect and suggest multiple items at once instead of scanning barcodes one at a time. Ambitious and the most speculative idea on this list — accuracy on a photo full of spines would need real testing before promising it works well, but worth exploring if bulk-adding a big existing collection keeps coming up as friction.
 - **Import from Goodreads / Discogs** — same idea as the Steam import, for Books and Vinyl/CDs respectively — both offer exportable data (Goodreads CSV export, Discogs collection API) that could seed a bulk import.
 
+## Accessibility (next round)
+
+The modal/dropdown pass (keyboard operability, focus trapping, `role="dialog"`) covered the parts of the site that were flatly unusable without a mouse. This is the fuller list beyond that — organized by what it actually takes to build, since some of these are small CSS/markup fixes and others are a real project.
+
+**Screen readers (VoiceOver / TalkBack)**
+- **Site-wide audit for accessible names** — every icon-only button (✕, ↑, ↓, ⋯, ✎, the star rating, etc.) needs a real `aria-label`; the modal pass added this to a handful, but plenty of other icon buttons across `GameCard`, `TrophyCase`, the leaderboard, and the profile action rows haven't been checked yet.
+- **`aria-live` regions for dynamic content** — toasts, import/sync progress ("47/213 imported"), search results appearing, and the trophy-earned popup all update the screen silently right now; none of it gets announced to a screen reader unless wrapped in a live region.
+- **Real `<label for="">`/`id` pairing on every form field** — GameModal's fields visually wrap `<label>` around each input, which works for sighted mouse users but isn't guaranteed to programmatically associate the two for a screen reader; worth confirming (and fixing) every field, not just assuming the visual wrapping is enough.
+- **Meaningful alt text on every image** — cover art, avatars, and trophy icons need real descriptive `alt` text (or explicit `alt=""` + `aria-hidden` if truly decorative) rather than defaults; worth an actual pass rather than assuming it's already right.
+- **A text-based alternative for the shelf mosaic** — the mosaic is a rich visual composition a screen reader genuinely can't parse; a simple "view as a list" toggle (same underlying data, just as text) would make that feature actually accessible instead of just decorative for screen reader users.
+- **Landmark regions and heading structure** — proper `<nav>`/`<main>`/`<aside>` landmarks and a clean, non-skipping heading hierarchy (h1 → h2 → h3) so screen reader users can jump around a page instead of reading it linearly top to bottom.
+
+**Keyboard-only navigation**
+- **Skip-to-content link** — a hidden-until-focused link at the very top of the page that jumps past the navbar straight to the main content, standard practice and currently missing.
+- **Star rating component** — currently mouse-click-driven (click the left/right half of a star); needs real keyboard support (arrow keys to adjust, Enter/Space to confirm).
+- **Visible focus indicator everywhere** — need to confirm nothing on the site suppresses the browser's default focus outline without providing a replacement; a keyboard user needs to always be able to see where they are.
+- **Full grid/card navigation check** — confirm the dashboard grid, leaderboard, and search results are all reachable and usable in a sensible tab order, not just the modals.
+
+**Low vision / visual**
+- **Contrast audit (WCAG AA)** — check the muted secondary text color (`.sub`, used everywhere for hints and metadata), badge/pill text-on-background combos, and both the light and dark themes against the standard 4.5:1 text contrast ratio, fixing whatever doesn't pass.
+- **Differentiate without color alone** — several things currently lean on color to convey meaning (ownership/condition badges, the podium's gold/silver/bronze, trophy tiers, the loan-tracker highlighted row); each of these should also carry a text label or icon, not just a color.
+- **Confirm pinch-to-zoom isn't disabled** — some "make it feel more like an app" mobile patterns disable pinch-zoom via the viewport meta tag, which is actively bad for low-vision users; worth double-checking Shelf Life never does this.
+- **A manual text-size control** — iOS's system-wide "Larger Text" setting doesn't reach into web content inside the wrapped app the way it does native text, so an in-app font-size toggle (in Settings) would be the practical substitute — needs the CSS to already be using relative units throughout for it to actually work cleanly, which is also worth confirming.
+
+**Motion**
+- **Respect `prefers-reduced-motion`** — wrap the various transitions/animations (modal fades, toast slide-ins, hover effects, the trophy-earned popup) in a media query that minimizes or disables them for anyone who's turned that setting on.
+
+**Other**
+- **Longer or extendable undo window** — the "Deleted 'X' — Undo" toast currently gives 6 seconds before finalizing; that may be too tight for someone using assistive tech to react to in time. Worth either lengthening it or adding a way to pause/extend it.
+- **A public `/accessibility` page** — a short statement of what's currently supported and how to report a gap, matching the existing `/privacy` and `/feedback` pattern. Good practice on its own, and also the kind of thing that helps if any of the Accessibility Nutrition Label answers from the App Store submission ever need revisiting with real, tested claims instead of the conservative "not verified yet" answers given this time.
+
+None of this is a single project — treat it the same as the rest of this list, pick off whichever items matter most whenever you're ready.
+
 ## Later (bigger, more design work)
 
 - **More Shelf Life milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.
