@@ -9,11 +9,11 @@ Shorter version with screenshots, per your feedback. How to send:
    into Body, tick **"This body is HTML"** (a live preview appears once you do), tick
    **"Send to everyone, not just opted-in"**, then Review & send.
 
-Six screenshots pulled from what's already on your Desktop (`Shelf Life/App Screenshots`) —
-dashboard, add-item search, the card grid, activity feed, leaderboard, and the shelf
-mosaic. Let me know if you'd rather swap any of these for something else, or if you want
-one added for the new series-completion feature once you've tried it live (no screenshot
-of that one exists yet since it's not deployed).
+Screenshots: dashboard, add-item search, the card grid, activity feed, the series
+completion view (the one you sent over), and the shelf mosaic. The old leaderboard
+screenshot got swapped out — it was sitting under the "See full series" paragraph, which
+didn't match what it showed. Let me know if you'd rather swap any of these for something
+else.
 
 ---
 
@@ -54,7 +54,7 @@ Everything that's shipped on Shelf Life (and what's next)
     comment. Trophies, levels, and a leaderboard reward real milestones.
   </p>
 
-  <img src="https://shelflife.site/newsletter/leaderboard.jpg" alt="Leaderboard podium" style="width:100%;border-radius:8px;border:1px solid #e2e2e2;display:block;">
+  <img src="https://shelflife.site/newsletter/series.jpg" alt="Series completion view" style="width:100%;border-radius:8px;border:1px solid #e2e2e2;display:block;">
   <p style="margin:10px 0 24px;font-size:14px;">
     <strong>NEW:</strong> tap any game, comic, trading card, or Funko Pop and hit
     "See full series" to see the whole set, with what you're missing greyed out.
