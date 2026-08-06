@@ -1177,6 +1177,68 @@ button:disabled {
   margin-top: 20px;
   gap: 10px;
 }
+/* ---------- Series completion (GameModal) ---------- */
+.franchise-panel {
+  margin-top: 8px;
+}
+.franchise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.franchise-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  /* Not-owned is the resting state — greyscale + faded, exactly the
+     "greyed out" look Taylor asked for, so an owned entry pops by
+     comparison rather than needing its own extra decoration. */
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+.franchise-item.owned {
+  filter: none;
+  opacity: 1;
+}
+.franchise-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.franchise-item-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.franchise-item-name {
+  font-size: 9.5px;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--text-dim);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.franchise-item.owned .franchise-item-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .cover-preview {
   flex-shrink: 0;
   width: 54px;

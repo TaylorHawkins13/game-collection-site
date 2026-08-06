@@ -9,7 +9,7 @@ import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
-import { findPossibleDuplicates } from '@/lib/duplicateCheck';
+import { findPossibleDuplicates, normalizeTitle } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
 import useModalA11y from '@/lib/useModalA11y';
 
@@ -73,6 +73,9 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
   const [priceChecking, setPriceChecking] = useState(false);
   const [priceCheck, setPriceCheck] = useState(null);
   const [priceHint, setPriceHint] = useState('');
+  const [franchise, setFranchise] = useState(null);
+  const [franchiseLoading, setFranchiseLoading] = useState(false);
+  const [franchiseError, setFranchiseError] = useState('');
 
   useEffect(() => {
     setCoverBroken(false);
@@ -143,6 +146,8 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     setCommunityHint('');
     setPriceCheck(null);
     setPriceHint('');
+    setFranchise(null);
+    setFranchiseError('');
   }, [game, duplicateOf]);
 
   function set(field, val) {
@@ -301,6 +306,16 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     [form.title, form.item_type, existingItems, game?.id]
   );
 
+  // Normalized titles of every game already owned/wishlisted/sold in the
+  // collection — used to mark which franchise entries from IGDB are
+  // already in the collection vs. not. Title-matched (same approach as
+  // duplicate detection) rather than an id lookup, since existing rows
+  // were never saved with an IGDB id to match on directly.
+  const ownedGameTitles = useMemo(
+    () => new Set((existingItems || []).filter((i) => i.item_type === 'game').map((i) => normalizeTitle(i.title))),
+    [existingItems]
+  );
+
   const genrePlaceholder = isComic
     ? 'e.g. Superhero'
     : isCard
@@ -372,6 +387,30 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
 
   function gameSearch() {
     runGameSearch(form.title);
+  }
+
+  async function loadFranchise() {
+    const title = (form.title || '').trim();
+    if (!title) return;
+    setFranchiseLoading(true);
+    setFranchiseError('');
+    try {
+      const res = await fetch(`/api/igdb-franchise?title=${encodeURIComponent(title)}`);
+      const data = await res.json();
+      if (data.error === 'not_configured') {
+        setFranchiseError('Not available (no IGDB credentials set on this site).');
+      } else if (data.error === 'no_franchise') {
+        setFranchiseError("IGDB doesn't have this tagged as part of a series.");
+      } else if (data.error) {
+        setFranchiseError('Could not load the series — try again in a bit.');
+      } else {
+        setFranchise(data);
+      }
+    } catch {
+      setFranchiseError('Could not load the series — check your connection.');
+    } finally {
+      setFranchiseLoading(false);
+    }
   }
 
   async function runCardSearch(query) {
@@ -805,6 +844,56 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
             </div>
           )}
         </div>
+
+        {/* Editing an existing game only — a blank Add form or a
+            duplicateOf pre-fill both have no id yet, and franchise
+            membership is looked up by title, so there's nothing useful
+            to show until the item's actually saved with a real title. */}
+        {isGame && game?.id && (
+          <div className="field">
+            <label>Series</label>
+            {!franchise && !franchiseLoading && (
+              <button type="button" className="btn-ghost" onClick={loadFranchise}>
+                See full series
+              </button>
+            )}
+            {franchiseLoading && (
+              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>Looking up the series…</div>
+            )}
+            {franchiseError && (
+              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{franchiseError}</div>
+            )}
+            {franchise && (
+              <div className="franchise-panel">
+                <div className="sub" style={{ marginBottom: 8 }}>
+                  {franchise.franchiseName} —{' '}
+                  {franchise.games.filter((g) => ownedGameTitles.has(normalizeTitle(g.name))).length} of{' '}
+                  {franchise.games.length} in your collection
+                </div>
+                <div className="franchise-grid">
+                  {franchise.games.map((g) => {
+                    const owned = ownedGameTitles.has(normalizeTitle(g.name));
+                    return (
+                      <div
+                        key={g.id}
+                        className={`franchise-item${owned ? ' owned' : ''}`}
+                        title={g.year ? `${g.name} (${g.year})` : g.name}
+                      >
+                        {g.cover ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={g.cover} alt={g.name} />
+                        ) : (
+                          <div className="franchise-item-placeholder">{g.name.slice(0, 1)}</div>
+                        )}
+                        <div className="franchise-item-name">{g.name}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {isGame && (
           <div className="row2">
