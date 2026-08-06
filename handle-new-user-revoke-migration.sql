@@ -1,0 +1,17 @@
+-- Fixes the last "Public/Signed-In Users Can Execute SECURITY DEFINER
+-- Function" warning on public.handle_new_user() — the one function this
+-- didn't get applied to yet (see revoke-internal-function-access-
+-- migration.sql for the other four).
+--
+-- handle_new_user() can only actually run as a trigger — Postgres
+-- refuses to call a RETURNS TRIGGER function any other way ("trigger
+-- functions can only be called as triggers") — but Supabase's advisor
+-- still flags the exposed EXECUTE grant itself as unnecessary API
+-- surface, so revoke it. This does not affect the on_auth_user_created
+-- trigger that creates your profile row on signup: trigger firing
+-- doesn't depend on the inserting role having its own EXECUTE grant on
+-- the trigger function, and account creation goes through Supabase
+-- Auth's own service role anyway, not the anon/authenticated roles this
+-- revoke targets. Worth a quick "sign up a throwaway test account"
+-- check after running this, just to be sure.
+revoke execute on function handle_new_user() from public;

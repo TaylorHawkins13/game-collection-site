@@ -52,6 +52,15 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public;
 
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which
+-- silently includes anon and authenticated. This function can only
+-- actually run as a trigger (calling it directly errors out — Postgres
+-- blocks calling a RETURNS TRIGGER function any other way), but
+-- Supabase's Security Advisor still flags the exposed grant itself as
+-- unnecessary API surface, so revoke it — nothing needs to call this
+-- directly, only the trigger below does.
+revoke execute on function handle_new_user() from public;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
