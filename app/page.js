@@ -6,11 +6,12 @@ import { CoverThumb } from '@/components/LeaderboardThumb';
 
 const CATEGORIES = ['Video Games', 'Comics', 'Trading Cards', 'Vinyl Records', 'Books', 'DVDs', 'CDs'];
 
-// Real GameCard component fed sample data, rather than a hand-drawn
-// mockup — what's shown here is pixel-for-pixel what an actual card
-// looks like on your dashboard, not an approximation of it.
-const SHOWCASE_ITEMS = [
-  {
+// Curated fallback for each showcase slot, used until a real public item
+// of that type exists to show instead (see FALLBACK_ITEMS below). These
+// use the generated illustrative art in public/demo/ rather than a real
+// person's photo/cover.
+const FALLBACK_ITEMS = {
+  trading_card: {
     id: 'demo-card-0000-0000-0000-000000000001',
     item_type: 'trading_card',
     title: 'Charizard VMAX',
@@ -23,7 +24,7 @@ const SHOWCASE_ITEMS = [
     grade: 'PSA 10',
     rating: 5,
   },
-  {
+  comic: {
     id: 'demo-comic-000-0000-0000-000000000002',
     item_type: 'comic',
     title: 'Amazing Spider-Man #300',
@@ -37,7 +38,7 @@ const SHOWCASE_ITEMS = [
     grade: '9.8',
     rating: 4.5,
   },
-  {
+  vinyl: {
     id: 'demo-vinyl-000-0000-0000-000000000003',
     item_type: 'vinyl',
     title: 'Rumours',
@@ -49,7 +50,8 @@ const SHOWCASE_ITEMS = [
     edition: '180g reissue',
     rating: 4.5,
   },
-];
+};
+const SHOWCASE_TYPES = ['trading_card', 'comic', 'vinyl'];
 
 // Same two trophies used in the real achievements-migration.sql seed
 // data (first-item / items-100), shown earned — the actual Trophy Case
@@ -69,13 +71,28 @@ export default async function HomePage() {
   // If either count is too small to say anything meaningful yet, the
   // stat strip just doesn't render rather than showing an unimpressive
   // number.
-  const [{ count: itemCount }, { count: collectorCount }, { data: topOwned }] = await Promise.all([
+  const [{ count: itemCount }, { count: collectorCount }, { data: topOwned }, { data: showcaseCandidates }] = await Promise.all([
     supabase.from('games').select('id', { count: 'exact', head: true }),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_public', true),
     supabase.from('leaderboard_most_owned').select('*').limit(3),
+    // Same RLS as above — only ever sees items belonging to public
+    // profiles. Most-recently-added real item per type, so the hero
+    // shows an actual attached cover URL instead of illustrative art
+    // once there's a real one to show; falls back per-slot otherwise.
+    supabase
+      .from('games')
+      .select('*')
+      .in('item_type', SHOWCASE_TYPES)
+      .not('cover', 'is', null)
+      .neq('cover', '')
+      .order('created_at', { ascending: false })
+      .limit(30),
   ]);
   const showItemStat = (itemCount || 0) >= 20;
   const showCollectorStat = (collectorCount || 0) >= 3;
+  const showcaseItems = SHOWCASE_TYPES.map(
+    (type) => (showcaseCandidates || []).find((g) => g.item_type === type) || FALLBACK_ITEMS[type]
+  );
   // Only swap in the real top-3 once there's enough real data for it to
   // read as a genuine leaderboard rather than a couple of lonely rows —
   // falls back to a representative example in the meantime.
@@ -133,7 +150,7 @@ export default async function HomePage() {
         </div>
 
         <div className="hero-showcase">
-          {SHOWCASE_ITEMS.map((item) => (
+          {showcaseItems.map((item) => (
             <div className="hero-showcase-item" key={item.id}>
               <GameCard game={item} />
             </div>
