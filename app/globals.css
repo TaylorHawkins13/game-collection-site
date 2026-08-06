@@ -1208,6 +1208,32 @@ button:disabled {
 .scanner-modal {
   max-width: 420px;
 }
+.bulk-scan-log {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 70;
+  max-width: 280px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+}
+.bulk-scan-log-row {
+  font-size: 12px;
+  padding: 3px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.bulk-scan-log-added {
+  color: var(--text);
+}
+.bulk-scan-log-error {
+  color: #e5484d;
+}
 .scanner-frame {
   position: relative;
   width: 100%;
@@ -1494,8 +1520,31 @@ button:disabled {
 }
 .feed-item-body {
   min-width: 0;
+  flex: 1;
   font-size: 14px;
   line-height: 1.5;
+}
+.reaction-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.reaction-btn:hover {
+  border-color: var(--accent);
+}
+.reaction-btn-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--text);
 }
 .feed-item-name {
   font-weight: 600;
@@ -2100,6 +2149,28 @@ button:disabled {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
   margin-bottom: 40px;
+}
+.collector-level-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.collector-level-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: white;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.trophy-rarity {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 .trophy {
   display: flex;

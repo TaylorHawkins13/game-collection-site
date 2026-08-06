@@ -8,7 +8,7 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 ## Requested by Taylor (not yet built)
 
-- **Auto-search for the remaining types** — Games, Trading cards, Books, and Consoles all have a "Search" auto-fill button now. Still missing: Comics, Vinyl, DVDs/Blu-rays, CDs, and Funko Pops. Each needs a different data source: Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); Vinyl/CDs could use MusicBrainz (free, no signup); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
+- **Auto-search for the remaining types** — Games, Trading cards, Books, Consoles, and now Vinyl/CD (MusicBrainz, see `CHANGELOG.md`) all have a "Search" auto-fill button. Still missing: Comics, DVDs/Blu-rays, and Funko Pops. Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
 
 ## From outside feedback (reviewed)
 
@@ -25,8 +25,8 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 
 - ~~**Bulk edit / multi-select on the dashboard**~~ — done, see `CHANGELOG.md`.
 - ~~**Collection insights page**~~ — done, see `CHANGELOG.md`.
-- **Price-drop alerts** — piggybacking on the new notification bell: get notified when a wishlist item's eBay price drops below a threshold you set.
-- **Bulk barcode scanning session** — scan several items back-to-back without closing and reopening the Add form each time, for digitizing a big physical pile in one sitting.
+- ~~**Price-drop alerts**~~ — done, see `CHANGELOG.md`.
+- ~~**Bulk barcode scanning session**~~ — done, see `CHANGELOG.md`.
 - **Import from Goodreads / Discogs** — same idea as the Steam import, for Books and Vinyl/CDs respectively — both offer exportable data (Goodreads CSV export, Discogs collection API) that could seed a bulk import.
 - ~~**Shareable yearly recap** / **Auto-generated stats card image**~~ — both folded into and shipped as the shelf mosaic feature instead of being built separately, see `CHANGELOG.md`. The mosaic's "By Year" mode covers the yearly-recap idea, and the "Most Valuable" mode plus its accent badges cover the stats-card idea.
 - ~~**Photo attachments for condition proof**~~ — done, see `CHANGELOG.md`.
@@ -34,9 +34,9 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 
 ## Later (bigger, more design work)
 
-- **Reactions/likes on the feed** — let people react to or like activity feed entries, not just comment. Requested by Taylor.
-- **Trophy rarity percentages** — PSN-style "12% of collectors have this" stats shown next to each Shelf Life trophy, computed from real site-wide data once there's enough of it to be meaningful.
-- **Collector level / trophy points** — combine Shelf Life's bronze/silver/gold/platinum badges into one overall score or level shown on your profile, the way PSN trophy levels roll everything into a single number people compare.
+- ~~**Reactions/likes on the feed**~~ — done, see `CHANGELOG.md`.
+- ~~**Trophy rarity percentages**~~ — done, see `CHANGELOG.md`.
+- ~~**Collector level / trophy points**~~ — done, see `CHANGELOG.md`.
 - **More Shelf Life milestone variety** — beyond the current count-based trophies: platform-completionist badges (own everything you've logged for a system), genre-spanning or decade-spanning collection badges, and space for oddball/community-suggested ones instead of only "own N items" style milestones.
 - **Even more collectible types** — board games, action figures/toys, coins, and others follow the same pattern now established by cards/vinyl/media/consoles, whenever there's demand for them.
 - **Per-item reviews (separate from personal rating)** — right now "rating" is your own private opinion; a review system would let other users see and read what people think of a specific game/comic, aggregated across the whole site.

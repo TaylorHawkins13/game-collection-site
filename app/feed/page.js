@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import { WHATS_NEW } from '@/lib/whatsNew';
 import StarRating from '@/components/StarRating';
+import ReactionButton from '@/components/ReactionButton';
 
 export const metadata = {
   title: 'Feed',
@@ -33,12 +34,29 @@ export default async function FeedPage() {
     const { data } = await supabase
       .from('activity_events')
       .select(
-        'id, event_type, created_at, actor:profiles!activity_events_user_id_fkey(username, display_name, avatar_url), game:games(title, cover, item_type, rating), trophy:achievement_defs(name, tier)'
+        'id, user_id, event_type, created_at, actor:profiles!activity_events_user_id_fkey(username, display_name, avatar_url), game:games(title, cover, item_type, rating), trophy:achievement_defs(name, tier)'
       )
       .in('user_id', followingIds)
       .order('created_at', { ascending: false })
       .limit(50);
     events = (data || []).filter((e) => e.actor && (e.game || (e.event_type === 'trophy' && e.trophy)));
+  }
+
+  // Reaction counts + whether the viewer reacted, per event — fetched as
+  // one extra query and reduced client-side rather than a per-item
+  // query, since a feed page is at most 50 events.
+  let reactionsByEvent = {};
+  if (events.length > 0) {
+    const { data: reactions } = await supabase
+      .from('activity_reactions')
+      .select('event_id, user_id')
+      .in('event_id', events.map((e) => e.id));
+    reactionsByEvent = (reactions || []).reduce((acc, r) => {
+      const entry = (acc[r.event_id] ||= { count: 0, reacted: false });
+      entry.count += 1;
+      if (r.user_id === user.id) entry.reacted = true;
+      return acc;
+    }, {});
   }
 
   return (
@@ -97,6 +115,13 @@ export default async function FeedPage() {
                   </div>
                   <div className="sub feed-item-time">{new Date(e.created_at).toLocaleDateString()}</div>
                 </div>
+                <ReactionButton
+                  eventId={e.id}
+                  eventOwnerId={e.user_id}
+                  viewerId={user.id}
+                  initialCount={reactionsByEvent[e.id]?.count || 0}
+                  initialReacted={reactionsByEvent[e.id]?.reacted || false}
+                />
               </div>
             ))
           )}

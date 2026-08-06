@@ -5,7 +5,7 @@ import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import CommentSection from './CommentSection';
 
-export default function ProfileTabs({ games, achievementDefs, earnedKeys, comments, canComment, profileId, currency }) {
+export default function ProfileTabs({ games, achievementDefs, earnedKeys, rarity, comments, canComment, profileId, currency }) {
   const hasTrophies = achievementDefs && achievementDefs.length > 0;
   const [tab, setTab] = useState('collection');
 
@@ -51,7 +51,7 @@ export default function ProfileTabs({ games, achievementDefs, earnedKeys, commen
         ))}
 
       {tab === 'trophies' && hasTrophies && (
-        <TrophyCase defs={achievementDefs} earnedKeys={earnedKeys} />
+        <TrophyCase defs={achievementDefs} earnedKeys={earnedKeys} rarity={rarity} />
       )}
 
       {tab === 'comments' && (

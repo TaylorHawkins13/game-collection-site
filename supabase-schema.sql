@@ -138,6 +138,10 @@ create table if not exists games (
   -- since when — null loaned_to means it's not out on loan right now
   loaned_to text,
   loaned_at date,
+  -- optional wishlist-only price-drop alert threshold, and whether the
+  -- item is currently below it (see app/api/cron/price-drop-check)
+  price_alert_threshold numeric,
+  price_alert_active boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -299,6 +303,35 @@ create policy "Authors or profile owners can delete comments"
   on comments for delete
   using (author_id = auth.uid() or profile_id = auth.uid());
 
+-- Server-enforced rate limit — max 5 comments per author per 5 minutes,
+-- regardless of how the insert is made.
+create or replace function enforce_comment_rate_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_recent_count int;
+begin
+  select count(*) into v_recent_count
+  from comments
+  where author_id = new.author_id
+    and created_at > now() - interval '5 minutes';
+
+  if v_recent_count >= 5 then
+    raise exception 'rate_limited: too many comments — slow down and try again in a few minutes';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists comments_rate_limit on comments;
+create trigger comments_rate_limit
+  before insert on comments
+  for each row execute function enforce_comment_rate_limit();
+
 -- ------------------------------------------------------------
 -- achievement_defs / user_achievements: Shelf Life's own PlayStation
 -- Trophies-style badges for collection milestones (first item, 10/100
@@ -371,6 +404,29 @@ grant select on user_achievements to anon, authenticated;
 -- Deliberately no insert/update/delete policy for regular users here.
 -- Trophies are only ever awarded by the trusted functions below, so
 -- nobody can grant themselves a trophy by calling the API directly.
+
+-- "X% of collectors have this" per trophy — profile rows and achievement
+-- definitions are both publicly readable already, so this doesn't need
+-- security definer.
+create or replace function trophy_rarity()
+returns table(key text, pct numeric)
+language sql
+stable
+set search_path = public
+as $$
+  select
+    ad.key,
+    round(
+      coalesce(count(ua.user_id), 0)::numeric
+      / nullif((select count(*) from profiles), 0) * 100,
+      1
+    ) as pct
+  from achievement_defs ad
+  left join user_achievements ua on ua.key = ad.key
+  group by ad.key;
+$$;
+
+grant execute on function trophy_rarity() to anon, authenticated;
 
 -- The real logic: recomputes stats from games/comments/follows and
 -- awards anything newly earned, returning just the newly-unlocked
@@ -670,9 +726,12 @@ create table if not exists notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
   actor_id uuid references profiles(id) on delete cascade,
-  type text not null check (type in ('follow', 'comment', 'trophy')),
+  type text not null check (type in ('follow', 'comment', 'trophy', 'reaction', 'price_drop')),
   comment_id uuid references comments(id) on delete cascade,
   trophy_key text references achievement_defs(key) on delete cascade,
+  -- set for type = 'price_drop', so the notification can link to which
+  -- wishlist item dropped in price
+  game_id uuid references games(id) on delete cascade,
   read boolean not null default false,
   created_at timestamptz not null default now()
 );
@@ -699,6 +758,39 @@ create policy "Recipients can mark their own notifications read"
 
 create policy "Recipients can delete their own notifications"
   on notifications for delete
+  using (user_id = auth.uid());
+
+-- ------------------------------------------------------------
+-- activity_reactions: a plain "like" on a /feed activity_events entry.
+-- ------------------------------------------------------------
+create table if not exists activity_reactions (
+  event_id uuid not null references activity_events(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (event_id, user_id)
+);
+
+create index if not exists activity_reactions_event_id_idx on activity_reactions (event_id);
+
+alter table activity_reactions enable row level security;
+
+create policy "Reactions readable if the underlying event is readable"
+  on activity_reactions for select
+  using (
+    exists (
+      select 1 from activity_events ae
+      join profiles p on p.id = ae.user_id
+      where ae.id = activity_reactions.event_id
+        and (p.is_public = true or ae.user_id = auth.uid())
+    )
+  );
+
+create policy "Signed-in users can react as themselves"
+  on activity_reactions for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can remove their own reaction"
+  on activity_reactions for delete
   using (user_id = auth.uid());
 
 -- ------------------------------------------------------------

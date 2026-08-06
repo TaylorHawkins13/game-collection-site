@@ -21,6 +21,13 @@ function describe(n, ownUsername) {
     const name = n.achievement?.name || 'a trophy';
     return { text: `You earned "${name}".`, href: ownUsername ? `/u/${ownUsername}` : null };
   }
+  if (n.type === 'reaction') {
+    return { text: `${actorName} reacted to your activity.`, href: '/feed' };
+  }
+  if (n.type === 'price_drop') {
+    const title = n.game?.title || 'A wishlist item';
+    return { text: `${title} dropped in price.`, href: '/dashboard' };
+  }
   return { text: 'Something happened.', href: null };
 }
 
@@ -74,7 +81,9 @@ export default function NotificationBell({ userId }) {
     setLoaded(false);
     const { data } = await supabase
       .from('notifications')
-      .select('*, actor:profiles!notifications_actor_id_fkey(username, display_name), achievement:achievement_defs!notifications_trophy_key_fkey(name, tier)')
+      .select(
+        '*, actor:profiles!notifications_actor_id_fkey(username, display_name), achievement:achievement_defs!notifications_trophy_key_fkey(name, tier), game:games(title)'
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(30);

@@ -52,6 +52,7 @@ const EMPTY = {
   trophy_completion: null,
   loaned_to: '',
   loaned_at: '',
+  price_alert_threshold: '',
 };
 
 export default function GameModal({ game, duplicateOf, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
@@ -128,6 +129,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
         loaned_to: duplicateOf ? '' : source.loaned_to || '',
         loaned_at: duplicateOf ? '' : source.loaned_at || '',
+        price_alert_threshold: duplicateOf ? '' : source.price_alert_threshold ?? '',
       });
     } else {
       setForm(EMPTY);
@@ -414,6 +416,28 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
   // Consoles have no live database to search — this is a lookup against
   // a hardcoded common-consoles list (lib/consoleList.js), entirely
   // client-side, so it's instant and needs no network call.
+  async function runMusicSearch(query) {
+    const q = (query || '').trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchHint('Searching…');
+    try {
+      const res = await fetch(`/api/music-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const list = data.results || [];
+      setSearchResults(list);
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No matches found on MusicBrainz.');
+    } catch {
+      setSearchHint('Search failed — check your connection.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function musicSearch() {
+    runMusicSearch(form.title);
+  }
+
   function consoleSearch() {
     const q = (form.title || '').trim();
     if (!q) return;
@@ -448,6 +472,17 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
       if (item.manufacturer) set('publisher', item.manufacturer);
       if (item.genre) set('genre', item.genre);
       setSearchHint(`Filled: ${item.name}`);
+    } else if (item.kind === 'music') {
+      // Vinyl's "Artist" field is the real artist column; CD reuses the
+      // shared media "writer" field (labeled Artist for CD), same as
+      // handleBarcodeDetected's isVinyl/isMediaLike split below.
+      if (item.artist) {
+        if (isVinyl) set('artist', item.artist);
+        else set('writer', item.artist);
+      }
+      if (item.label) set('publisher', item.label);
+      if (item.format) set('format', item.format);
+      setSearchHint(`Filled from MusicBrainz: ${item.name}`);
     } else {
       set('genre', (item.genres || []).join(', '));
       if (form.platforms.length === 0) {
@@ -591,6 +626,12 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
       // never sits there with no name attached.
       loaned_to: form.ownership === 'owned' ? form.loaned_to.trim() : '',
       loaned_at: form.ownership === 'owned' && form.loaned_to.trim() ? form.loaned_at || null : null,
+      // Only meaningful for a wishlist item — cleared if ownership changes
+      // away from Wishlist, same reasoning as loaned_to/loaned_at above.
+      price_alert_threshold:
+        form.ownership === 'wishlist' && form.price_alert_threshold !== ''
+          ? parseFloat(form.price_alert_threshold)
+          : null,
     });
     setSaving(false);
     if (result?.error) {
@@ -655,11 +696,16 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
                 Search
               </button>
             )}
+            {(isVinyl || isCd) && (
+              <button type="button" className="btn-ghost" onClick={musicSearch} disabled={searching}>
+                Search
+              </button>
+            )}
           </div>
-          {(isGame || isCard || isBook || isConsole) && searchHint && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd) && searchHint && (
             <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
           )}
-          {(isGame || isCard || isBook || isConsole) && searchResults.length > 0 && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd) && searchResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {searchResults.map((r) => (
                 <div
@@ -1130,6 +1176,25 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
             <input type="date" value={form.purchase_date || ''} onChange={(e) => set('purchase_date', e.target.value)} />
           </div>
         </div>
+
+        {form.ownership === 'wishlist' && (
+          <div className="row2">
+            <div className="field">
+              <label>Notify me if price drops below ({currencySymbol(currency)})</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.price_alert_threshold}
+                onChange={(e) => set('price_alert_threshold', e.target.value)}
+                placeholder="e.g. 25 — leave blank for no alert"
+              />
+              <p className="sub" style={{ margin: '4px 0 0' }}>
+                Checked once a day against current eBay listings for this title.
+              </p>
+            </div>
+          </div>
+        )}
 
         {form.ownership === 'owned' && (
           <div className="row2">

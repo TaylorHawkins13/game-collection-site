@@ -86,6 +86,14 @@ None of this is required for the site to work — without it, the Feedback page 
 6. To actually send the newsletter, one more key is needed: go to your Supabase project's **Settings → API Keys**, copy the **service_role** key (⚠️ this bypasses every RLS rule — never put it in `NEXT_PUBLIC_`-prefixed anything, never commit it, and only ever use it server-side, which is exactly how `lib/supabaseAdmin.js` uses it here), and add it as `SUPABASE_SERVICE_ROLE_KEY`. It's needed because looking up opted-in collectors' actual email addresses means reading `auth.users`, which the normal app-wide Supabase client intentionally can't see.
 7. Once all of the above are set (and redeployed), sign in as the admin account and visit `/admin/newsletter` to write and send an update to everyone who's checked "Email me when something new ships" in their Profile Settings. It's a manual send, not automatic — nothing goes out until you write it and hit Send.
 
+## 8. Price-drop alerts (optional)
+
+Lets you set "notify me if this drops below $X" on a wishlist item; a Vercel Cron job checks once a day and sends an in-app notification the first time it dips below that price. Without this set up, the field in the Add/Edit form still saves, it just never gets checked.
+
+1. Generate a random secret — `openssl rand -hex 32` on the command line, or any long random string — and add it as `CRON_SECRET` in both `.env.local` and your Vercel project's env vars.
+2. Make sure `SUPABASE_SERVICE_ROLE_KEY` is also set (see step 6 under Feedback emails above) — the daily check has no signed-in user to run as, so it needs the same service-role client the newsletter uses.
+3. `vercel.json` already schedules the job (`/api/cron/price-drop-check`, once daily) — Vercel picks this up automatically on deploy, nothing to configure in the dashboard. Needs `price-drop-alerts-migration.sql` on existing projects.
+
 ## What's included
 
 - **Accounts**: email/password signup & login (Supabase Auth), auto-creates a public profile with a chosen username.
@@ -105,6 +113,14 @@ None of this is required for the site to work — without it, the Feedback page 
 - **Condition photos**: attach up to 4 real photos to a physical item (separate from cover art) for high-value collectibles where actual condition or grading matters. Needs `condition-photos-migration.sql` and `item-photos-storage-migration.sql` on existing projects.
 - **Feedback** (`/feedback`, linked from the footer): a bug/issue/feature-suggestion form anyone can use, no account required. Every submission saves to the `feedback` table; see step 7 below to also get an email notification. Needs `feedback-migration.sql` on existing projects.
 - **New-feature newsletter**: an opt-in checkbox in Profile Settings ("Email me when something new ships") plus a private admin page (`/admin/newsletter`) to manually write and send an update to everyone opted in. See step 7 below for setup — needs `newsletter-optin-migration.sql` on existing projects.
+- **Vinyl/CD auto-search**: a "Search" button next to Title for Vinyl and CD, same pattern as games/cards/books — backed by MusicBrainz (free, no signup) and fills in artist, label, and format. Doesn't fill in cover art (MusicBrainz's Cover Art Archive only has it for a fraction of releases), so cover stays a manual paste for these two types, same as consoles.
+- **Scan multiple** (dashboard "More actions"): pick an item type, then scan barcodes back-to-back — each one looks up and adds a new Owned item straight to your collection without closing and reopening the Add form in between. A running log in the corner shows what's been added this session.
+- **Reactions on the feed**: a 👍 button on each `/feed` entry, one per person per event. Reacting to someone else's activity notifies them (via the bell). Needs `activity-reactions-migration.sql` on existing projects.
+- **Trophy rarity**: each trophy in your Trophy Case now shows "X% of collectors have this," computed live from real site-wide data. Needs `trophy-rarity-migration.sql` on existing projects.
+- **Collector level**: trophies are also worth points (10/25/50/200 for bronze/silver/gold/platinum) that roll up into an overall "Level" badge shown above your Trophy Case — PSN-style, purely derived from trophies you already have, no new data to enter.
+- **Comment rate limiting**: a server-side cap (5 comments per 5 minutes per person) on profile comments, enforced by a database trigger so it can't be bypassed by calling the API directly. Needs `comment-rate-limit-migration.sql` on existing projects.
+- **Installable app**: Shelf Life can be added to your phone or desktop's home screen/app list like a native app (`app/manifest.js`), with a minimal offline fallback page if you open it with no connection. Deliberately doesn't cache your actual collection data for offline browsing — that's still fetched fresh from Supabase every time, so you're never looking at stale prices or a friend's already-changed collection.
+- **Price-drop alerts**: set a target price on a wishlist item and get notified (via the bell) the first time eBay's current listings dip at or below it — checked once a day by a Vercel Cron job. See step 8 below for setup — needs `price-drop-alerts-migration.sql` on existing projects.
 
 ## Notes
 

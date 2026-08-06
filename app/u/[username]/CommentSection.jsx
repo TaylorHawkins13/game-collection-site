@@ -28,6 +28,10 @@ export default function CommentSection({ profileId, initialComments, canComment 
       .select('id, body, created_at, author:profiles!comments_author_id_fkey(username, display_name, avatar_url)')
       .single();
     setPosting(false);
+    if (error?.message?.includes('rate_limited')) {
+      announceToast("You're posting too fast — wait a few minutes and try again.");
+      return;
+    }
     if (!error && data) {
       setComments((c) => [data, ...c]);
       setBody('');

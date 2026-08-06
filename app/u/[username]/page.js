@@ -84,6 +84,7 @@ export default async function ProfilePage({ params }) {
     { data: achievementDefs },
     { data: earnedAchievements },
     { data: customLists },
+    { data: rarityRows },
   ] = await Promise.all([
     canView
       ? supabase.from('games').select('*').eq('user_id', profile.id).order('title', { ascending: true })
@@ -103,7 +104,13 @@ export default async function ProfilePage({ params }) {
     canView
       ? supabase.from('custom_lists').select('*').eq('user_id', profile.id).order('sort_order', { ascending: true })
       : Promise.resolve({ data: [] }),
+    supabase.rpc('trophy_rarity'),
   ]);
+
+  const rarity = (rarityRows || []).reduce((acc, r) => {
+    acc[r.key] = Number(r.pct);
+    return acc;
+  }, {});
 
   // Items per list — looked up from `games` (already fetched above) rather
   // than a second join query, since the whole collection's already in memory.
@@ -296,6 +303,7 @@ export default async function ProfilePage({ params }) {
             games={games || []}
             achievementDefs={achievementDefs || []}
             earnedKeys={(earnedAchievements || []).map((r) => r.key)}
+            rarity={rarity}
             comments={comments || []}
             canComment={!!viewer}
             profileId={profile.id}

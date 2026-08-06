@@ -9,6 +9,7 @@ import GameCard from '@/components/GameCard';
 import GameModal from '@/components/GameModal';
 import ImportCsvModal from '@/components/ImportCsvModal';
 import SteamImportModal from '@/components/SteamImportModal';
+import BulkScanSession from '@/components/BulkScanSession';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
@@ -71,6 +72,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [bulkTag, setBulkTag] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showBulkScan, setShowBulkScan] = useState(false);
   const [collapsedPanels, setCollapsedPanels] = useState({ playnext: false, recommend: false, value: false });
   const [hideDigital, setHideDigital] = useState(false);
   // On phones, Play Next / Recommended / Value chart live in a slide-in
@@ -974,6 +976,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <Link href="/dashboard/insights" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Collection insights
             </Link>
+            <button className="btn-ghost" onClick={() => setShowBulkScan(true)} type="button">
+              Scan multiple
+            </button>
             <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
               Refresh all prices
             </button>
@@ -983,6 +988,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           </ActionMenu>
         </div>
       </div>
+
+      {showBulkScan && (
+        <BulkScanSession
+          userId={userId}
+          onClose={() => setShowBulkScan(false)}
+          onItemAdded={(item) => setGames((gs) => [item, ...gs])}
+        />
+      )}
 
       {showSettings && (
         <div className="form-card" style={{ margin: '0 0 24px', maxWidth: 'none' }}>
