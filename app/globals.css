@@ -2776,6 +2776,15 @@ button:disabled {
     top: 5px;
     right: 5px;
   }
+  /* Missed in the first pass. Tried shrinking it to match the ownership
+     flag first, but "FEATURED" + "OWNED" as two text pills both fighting
+     for space on an ~80px-wide card collide no matter how small the font
+     goes. The card already gets a gold ring via .card.featured — that's
+     signal enough at this size, so the redundant corner label is hidden
+     here instead rather than fought with. */
+  .card-featured-flag {
+    display: none;
+  }
   /* The slab flourish (holo strip + cert header) plus a full 4-5 row
      stat block was a lot to pack into a ~150px-wide phone tile. Trim
      the decoration and cap the visible stats so the card breathes. */
