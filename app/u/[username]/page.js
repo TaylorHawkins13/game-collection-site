@@ -7,6 +7,7 @@ import ProfileTabs from './ProfileTabs';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import ShowcaseButton from '@/components/ShowcaseButton';
 import CustomListsButton from '@/components/CustomListsButton';
+import ActionMenu from '@/components/ActionMenu';
 import GameCard from '@/components/GameCard';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
 import { formatMoney } from '@/lib/currency';
@@ -190,32 +191,36 @@ export default async function ProfilePage({ params }) {
           {profile.bio && <div className="profile-bio">{profile.bio}</div>}
         </div>
         {viewer && !isOwner && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <FollowButton profileId={profile.id} initialFollowing={alreadyFollowing} />
-            <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Compare collections
-            </Link>
-            {canView && owned > 0 && (
-              <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                Shelf mosaic
+            <ActionMenu label="More actions">
+              <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Compare collections
               </Link>
-            )}
-            {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
+              {canView && owned > 0 && (
+                <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                  Shelf mosaic
+                </Link>
+              )}
+              {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
+            </ActionMenu>
           </div>
         )}
         {isOwner && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <ShareProfileButton username={profile.username} itemCount={owned} />
-            {owned > 0 && (
-              <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                Shelf mosaic
-              </Link>
-            )}
-            <ShowcaseButton userId={profile.id} />
-            <CustomListsButton userId={profile.id} />
             <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Edit profile
             </Link>
+            <ActionMenu label="More actions">
+              {owned > 0 && (
+                <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                  Shelf mosaic
+                </Link>
+              )}
+              <ShowcaseButton userId={profile.id} />
+              <CustomListsButton userId={profile.id} />
+            </ActionMenu>
           </div>
         )}
       </div>

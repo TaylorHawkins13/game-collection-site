@@ -14,6 +14,7 @@ import RecommendationCard from '@/components/RecommendationCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
+import ActionMenu from '@/components/ActionMenu';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
@@ -837,7 +838,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           )}
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          {refreshingAll ? (
+          {refreshingAll && (
             <>
               <span className="sub" style={{ margin: 0 }}>
                 Checking eBay prices… {refreshProgress.done}/{refreshProgress.total}
@@ -846,17 +847,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 Stop
               </button>
             </>
-          ) : (
-            <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0}>
-              Refresh all prices
-            </button>
           )}
-          <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
-            Profile settings
-          </button>
           <button className="btn-primary" onClick={() => setModalGame(null)} type="button">
             + Add Item
           </button>
+          <ActionMenu label="More actions">
+            <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
+              Refresh all prices
+            </button>
+            <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
+              Profile settings
+            </button>
+          </ActionMenu>
         </div>
       </div>
 

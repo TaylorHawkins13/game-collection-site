@@ -247,6 +247,69 @@ textarea {
   background: var(--card-hover);
 }
 
+/* ---------- Action menu (⋯ "more" dropdown) ----------
+   Consolidates secondary buttons that used to sit in a row (dashboard
+   header, profile action row, GameModal footer) behind one icon button.
+   Same positioning pattern as .notif-dropdown above. The buttons/links
+   passed in as children keep their own component logic untouched — only
+   restyled here from standalone pills into a stacked list. */
+.action-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.action-menu-trigger {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 9px 12px;
+  line-height: 1;
+}
+.action-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.action-menu-dropdown .btn-primary,
+.action-menu-dropdown .btn-ghost,
+.action-menu-dropdown .btn-danger {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  text-align: left;
+  justify-content: flex-start;
+  padding: 9px 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.action-menu-dropdown .btn-primary:hover,
+.action-menu-dropdown .btn-ghost:hover,
+.action-menu-dropdown .btn-danger:hover {
+  background: var(--card-hover);
+  transform: none;
+}
+.action-menu-dropdown .btn-danger {
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .action-menu-dropdown {
+    right: auto;
+    left: 0;
+  }
+}
+
 /* ---------- Buttons ---------- */
 button {
   cursor: pointer;

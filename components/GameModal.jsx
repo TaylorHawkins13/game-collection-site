@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ChipInput from './ChipInput';
 import BarcodeScanner from './BarcodeScanner';
 import StarRating from './StarRating';
+import ActionMenu from './ActionMenu';
 import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
@@ -1183,14 +1184,14 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
 
         <div className="modal-actions">
           {game ? (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-danger" type="button" onClick={() => onDelete(game.id)}>
-                Delete
-              </button>
+            <ActionMenu label="More actions">
               <button className="btn-ghost" type="button" onClick={() => onDuplicate(form)}>
                 Duplicate
               </button>
-            </div>
+              <button className="btn-danger" type="button" onClick={() => onDelete(game.id)}>
+                Delete
+              </button>
+            </ActionMenu>
           ) : (
             <div />
           )}
