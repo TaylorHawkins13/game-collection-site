@@ -15,7 +15,7 @@ const FALLBACK_ITEMS = {
     id: 'demo-card-0000-0000-0000-000000000001',
     item_type: 'trading_card',
     title: 'Charizard VMAX',
-    cover: '/demo/card-demo.png',
+    cover: '/demo/card-demo-v2.png',
     ownership: 'owned',
     card_set: "Champion's Path",
     card_number: '074/073',
@@ -28,7 +28,7 @@ const FALLBACK_ITEMS = {
     id: 'demo-comic-000-0000-0000-000000000002',
     item_type: 'comic',
     title: 'Amazing Spider-Man #300',
-    cover: '/demo/comic-demo.png',
+    cover: '/demo/comic-demo-v2.png',
     ownership: 'owned',
     series: 'Amazing Spider-Man',
     issue_number: '300',
@@ -42,7 +42,7 @@ const FALLBACK_ITEMS = {
     id: 'demo-vinyl-000-0000-0000-000000000003',
     item_type: 'vinyl',
     title: 'Rumours',
-    cover: '/demo/vinyl-demo.png',
+    cover: '/demo/vinyl-demo-v2.png',
     ownership: 'owned',
     artist: 'Fleetwood Mac',
     publisher: 'Warner Bros.',
@@ -107,7 +107,7 @@ export default async function HomePage() {
     : [
         { rank: 1, title: 'Elden Ring', cover: '/demo/elden-demo.png', sub: '412 owners' },
         { rank: 2, title: 'The Last of Us', cover: '/demo/tlou-demo.png', sub: '388 owners' },
-        { rank: 3, title: 'Amazing Spider-Man #300', cover: '/demo/comic-demo.png', sub: '301 owners' },
+        { rank: 3, title: 'Amazing Spider-Man #300', cover: '/demo/comic-demo-v2.png', sub: '301 owners' },
       ];
 
   return (
