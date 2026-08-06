@@ -13,6 +13,7 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 - **Mobile layout feels disorganized in places** — no single reported page, just a general sense that some mobile screens need tidying; worth a fresh pass now that a lot of features have shipped since the last mobile audit (#180–184).
 - **Home page example cards don't fit on screen on mobile (logged out)** — the sample collection cards shown to signed-out visitors on the home page overflow/don't fit properly on small screens.
 - **Mosaic export doesn't work on mobile** — downloading/sharing the shelf mosaic image fails on mobile; works on desktop. Needs investigation into whether it's the PNG generation route, a mobile download/share-sheet issue, or both.
+- **Inconsistent button shapes (squared vs. rounded)** — buttons across the site mix squared and rounded corners with no clear pattern; worth a pass to pick one style and apply it consistently everywhere.
 
 ## From outside feedback (reviewed)
 
@@ -49,7 +50,7 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 - ~~**New-feature newsletter**~~ — done, see `CHANGELOG.md`. Built exactly as scoped: opt-in checkbox in Profile Settings, manual "Send" on a private `/admin/newsletter` page, Resend as the email provider.
 - **Live currency conversion** — currency is display-only right now (no conversion between them); real conversion needs a rates API and a decision on what the "true" underlying value is when items were priced in different currencies.
 - **Xbox / PlayStation account integration** — Steam is done (see CHANGELOG.md). Xbox is doable but gated (Microsoft's Xbox Live API needs app registration and isn't fully open); PlayStation is the hard one — Sony has no official public API at all, so it'd mean reverse-engineered access that's fragile, ToS-gray-area, and requires an awkward manual connection step from each user. Possible, just a rougher build than Steam or Xbox — worth a closer look if it ever becomes a priority. (This is about connecting the account itself — see the section above for trophy/achievement-completion tracking specifically.)
-- **Mobile app / installable PWA** — two different things worth separating: (1) an installable PWA (add-to-home-screen, offline support for browsing your own collection) needs no app store and no Apple approval at all — buildable any time. (2) An actual native app in Apple's App Store needs an approved Apple Developer Program membership first — Taylor has applied, **pending Apple's approval**. Worth starting with the PWA regardless, since it's most of the value with none of the wait; the native app becomes possible once the developer account clears.
+- ~~**Installable PWA**~~ — done, see `CHANGELOG.md`. A native App Store app is a separate, bigger step that needs an approved Apple Developer Program membership first — Taylor has applied, **pending Apple's approval**.
 - **Global chat** — a site-wide chat/message board any user can post in, separate from the per-profile comment walls that exist today. Bigger than it sounds: needs real-time updates (not just page-refresh), and some kind of moderation/spam handling once it's not just friends talking.
 
 ## Infrastructure / polish (not urgent, but worth knowing about)
