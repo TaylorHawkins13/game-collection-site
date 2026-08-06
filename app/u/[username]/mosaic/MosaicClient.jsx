@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { shapeMosaic, modeLabel, titleColor, availableYears, availableTypes, computeAccents, TYPE_LABELS } from '@/lib/mosaicData';
+import { shapeMosaic, modeLabel, titleColor, availableYears, availableTypes, TYPE_LABELS } from '@/lib/mosaicData';
 import { currencySymbol, formatMoney } from '@/lib/currency';
 import ShareProfileButton from '@/components/ShareProfileButton';
 
@@ -13,7 +13,7 @@ const MODE_TABS = [
   { key: 'top', label: 'Most Valuable' },
 ];
 
-function Tile({ item, isShowcase, isTopValue, currency, failed, onFail, onHover }) {
+function Tile({ item, isShowcase, currency, failed, onFail, onHover }) {
   const value = item.market_price || item.price || 0;
   const showPlaceholder = !item.cover || failed;
 
@@ -36,7 +36,7 @@ function Tile({ item, isShowcase, isTopValue, currency, failed, onFail, onHover 
       )}
       <div className="mosaic-tile-shade" />
       {isShowcase && <div className="mosaic-badge mosaic-badge-star" />}
-      {isTopValue && value > 0 && (
+      {value > 0 && (
         <div className="mosaic-badge mosaic-badge-price">
           {currencySymbol(currency)}
           {Math.round(value)}
@@ -63,8 +63,6 @@ export default function MosaicClient({ username, displayName, currency, items })
     () => shapeMosaic(items, { mode, type: effectiveType, year: effectiveYear, perRowCap: 10 }),
     [items, mode, effectiveType, effectiveYear]
   );
-
-  const topValueIds = useMemo(() => computeAccents(rows.flatMap((r) => r.items)).topValueIds, [rows]);
 
   function handleFail(url) {
     setFailedCovers((prev) => {
@@ -147,10 +145,10 @@ export default function MosaicClient({ username, displayName, currency, items })
         </div>
       ) : (
         <div className="mosaic-shelf-unit">
-          {rows.map((row) => (
-            <div className="mosaic-row" key={row.type}>
+          {rows.map((row, i) => (
+            <div className="mosaic-row" key={i}>
               <div className="mosaic-row-label">
-                {row.label} · {row.total}
+                {row.label} · {row.items.length}
               </div>
               <div className="mosaic-row-items">
                 {row.items.map((item) => (
@@ -162,7 +160,6 @@ export default function MosaicClient({ username, displayName, currency, items })
                     onFail={handleFail}
                     onHover={setHovered}
                     isShowcase={item.showcase_order != null}
-                    isTopValue={topValueIds.has(item.id)}
                   />
                 ))}
                 {row.overflow > 0 && <div className="mosaic-tile mosaic-tile-overflow">+{row.overflow}</div>}

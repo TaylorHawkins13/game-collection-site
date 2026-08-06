@@ -94,7 +94,7 @@ export async function GET(request, { params }) {
   });
 
   const flatItems = rows.flatMap((r) => r.items);
-  const { topValueIds, showcaseIds } = computeAccents(flatItems);
+  const { showcaseIds } = computeAccents(flatItems);
 
   const { element, height } = renderShelfMosaicElement({
     rows,
@@ -102,7 +102,6 @@ export async function GET(request, { params }) {
     totalItems,
     shownItems,
     modeLbl: modeLabel(mode, { type, year }),
-    topValueIds,
     showcaseIds,
     currency: profile.currency,
   });
