@@ -2437,6 +2437,35 @@ button:disabled {
     flex: 0 0 140px;
   }
 
+  /* The podium's 3 places are fixed at 140px each with a 20px gap
+     (460px total) — comfortably fits a desktop row, but wider than a
+     phone's content width, so the 3rd place silently wrapped onto its
+     own line below the other two instead of staying in one row. Shrink
+     everything just enough that all 3 fit side by side down to the
+     narrowest supported phone width instead. */
+  .leaderboard-podium {
+    gap: 8px;
+  }
+  .podium-place {
+    width: 108px;
+  }
+  .podium-name {
+    max-width: 104px;
+    font-size: 12px;
+  }
+  .podium-cover-wrap .leaderboard-thumb,
+  .podium-avatar-wrap .leaderboard-avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 20px;
+  }
+  .place-1 .podium-cover-wrap .leaderboard-thumb,
+  .place-1 .podium-avatar-wrap .leaderboard-avatar {
+    width: 84px;
+    height: 84px;
+    font-size: 26px;
+  }
+
   /* Five-plus nav links plus a theme toggle used to just wrap onto
      2-3 messy lines under the logo. Now a proper slide-in side drawer
      (like a native app's hamburger menu) instead of a dropdown that
