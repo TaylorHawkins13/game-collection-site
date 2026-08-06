@@ -26,13 +26,17 @@ export async function POST(request) {
   }
 
   const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
-  const text = typeof body.body === 'string' ? body.body.trim() : '';
+  const content = typeof body.body === 'string' ? body.body.trim() : '';
   // Deliberately every-user override — for a one-off "here's what's new
   // and when the app's landing" announcement, not a general escape hatch.
   // The normal, default path stays opted-in-only; this only fires when
   // the admin form's checkbox was explicitly ticked.
   const sendToAll = body.sendToAll === true;
-  if (!subject || !text) {
+  // Off by default (plain text). When on, `content` is treated as the
+  // email's HTML body instead — for a richer one-off send (images,
+  // formatting) rather than the usual quick plain-text update.
+  const isHtml = body.isHtml === true;
+  if (!subject || !content) {
     return NextResponse.json({ error: 'Subject and body are required.' }, { status: 400 });
   }
 
@@ -80,7 +84,11 @@ export async function POST(request) {
       to: process.env.RESEND_FROM_EMAIL,
       bcc: emails,
       subject,
-      text,
+      // Plain-text clients still need something readable even on an HTML
+      // send — Resend accepts both at once and picks whichever the
+      // recipient's client actually renders. Stripping tags for a rough
+      // fallback beats sending raw markup as the "plain text" version.
+      ...(isHtml ? { html: content, text: content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() } : { text: content }),
     });
   } catch (e) {
     console.error('Newsletter send failed', e);

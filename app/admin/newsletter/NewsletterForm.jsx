@@ -12,6 +12,10 @@ export default function NewsletterForm({ optedInCount, totalCount }) {
   // explicit, deliberate override for a one-off announcement (see the
   // route's comment), not something to leave ticked as a habit.
   const [sendToAll, setSendToAll] = useState(false);
+  // Off by default — plain text is the normal, simple path. Turn this on
+  // only when pasting a full HTML email (images, formatting) rather than
+  // a quick text update.
+  const [isHtml, setIsHtml] = useState(false);
 
   const recipientCount = sendToAll ? totalCount : optedInCount;
 
@@ -23,7 +27,7 @@ export default function NewsletterForm({ optedInCount, totalCount }) {
       const res = await fetch('/api/admin/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, body, sendToAll }),
+        body: JSON.stringify({ subject, body, sendToAll, isHtml }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Send failed.');
@@ -31,6 +35,7 @@ export default function NewsletterForm({ optedInCount, totalCount }) {
       setSubject('');
       setBody('');
       setSendToAll(false);
+      setIsHtml(false);
     } catch (err) {
       setResult({ ok: false, error: err.message });
     } finally {
@@ -66,9 +71,39 @@ export default function NewsletterForm({ optedInCount, totalCount }) {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={10}
-            placeholder="Plain text — one or two things that shipped, and why they matter."
+            placeholder={
+              isHtml
+                ? 'Paste the full HTML email here.'
+                : "Plain text — one or two things that shipped, and why they matter."
+            }
           />
         </div>
+
+        <div className="field">
+          <label>
+            <input
+              type="checkbox"
+              checked={isHtml}
+              onChange={(e) => setIsHtml(e.target.checked)}
+              style={{ width: 'auto', marginRight: 8 }}
+            />
+            This body is HTML (images/formatting)
+          </label>
+          <p className="sub" style={{ margin: '4px 0 0' }}>
+            Off sends the box above as plain text (the normal case). On treats it as a full HTML email
+            instead — for something with images or real formatting.
+          </p>
+        </div>
+
+        {isHtml && body.trim() && (
+          <div className="field">
+            <label>Preview</label>
+            <div
+              style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 16, background: '#fff', maxHeight: 420, overflowY: 'auto' }}
+              dangerouslySetInnerHTML={{ __html: body }}
+            />
+          </div>
+        )}
 
         <div className="field">
           <label>
