@@ -138,7 +138,11 @@ export default async function CollectiblePage({ searchParams }) {
                 Find a guide
               </a>
               {detail.uncollected && (
-                <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
+                <Link
+                  href={`/dashboard?add=1&title=${encodedTitle}&cover=${encodeURIComponent(detail.primary.cover || '')}`}
+                  className="btn-ghost"
+                  style={{ textDecoration: 'none' }}
+                >
                   Add to your shelf
                 </Link>
               )}

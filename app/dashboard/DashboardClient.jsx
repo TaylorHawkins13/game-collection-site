@@ -164,6 +164,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Arriving from the "Add to your shelf" link on a collectible detail page
+  // for a game nobody's logged yet (?add=1&title=...&cover=...) opens the
+  // Add form pre-filled with what was found via IGDB, instead of just
+  // dropping the person on a blank dashboard with no visible next step.
+  useEffect(() => {
+    if (searchParams.get('add') === '1') {
+      const title = searchParams.get('title') || '';
+      const cover = searchParams.get('cover') || '';
+      setModalGame({ item_type: 'game', title, cover });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Catch up on any trophies earned since the last visit.
   useEffect(() => {
     checkTrophies();
