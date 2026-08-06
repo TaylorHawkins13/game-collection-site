@@ -980,22 +980,21 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
                 Export CSV
               </button>
-              {steamId && (
-                <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
-                  Import from Steam
-                </button>
+              {steamId && syncingAchievements && (
+                <>
+                  <span className="sub" style={{ margin: 0 }}>
+                    Syncing achievements… {syncProgress.done}/{syncProgress.total}
+                  </span>
+                  <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
+                    Stop
+                  </button>
+                </>
               )}
-              {steamId && (
-                syncingAchievements ? (
-                  <>
-                    <span className="sub" style={{ margin: 0 }}>
-                      Syncing achievements… {syncProgress.done}/{syncProgress.total}
-                    </span>
-                    <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
-                      Stop
-                    </button>
-                  </>
-                ) : (
+              {steamId && !syncingAchievements && (
+                <ActionMenu label="More collection tools">
+                  <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
+                    Import from Steam
+                  </button>
                   <button
                     className="btn-ghost"
                     onClick={handleSyncAchievements}
@@ -1004,7 +1003,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   >
                     Sync achievements from Steam
                   </button>
-                )
+                </ActionMenu>
               )}
             </div>
           </div>
