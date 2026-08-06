@@ -60,7 +60,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fCopy, setFCopy] = useState('');
   const [fComplete, setFComplete] = useState('');
   const [fTrophyPct, setFTrophyPct] = useState('');
-  const [fLoan, setFLoan] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
   // Bulk edit — a checkbox-select mode for the grid so several items can
   // get the same ownership-status/platform change, the same new tag, or
@@ -288,7 +287,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct, fLoan].filter(Boolean).length;
+  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct].filter(Boolean).length;
 
   function clearFilters() {
     setFType('');
@@ -298,7 +297,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFPlat('');
     setFPlay('');
     setFTrophyPct('');
-    setFLoan('');
   }
 
   // Saved filter views — a named shortcut for a filter+sort combo,
@@ -333,7 +331,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const view = {
       id: Date.now(),
       name,
-      filters: { search, fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct, fLoan, sortBy },
+      filters: { search, fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct, sortBy },
     };
     persistViews([...savedViews, view]);
     setNewViewName('');
@@ -349,7 +347,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFPlat(f.fPlat || '');
     setFPlay(f.fPlay || '');
     setFTrophyPct(f.fTrophyPct || '');
-    setFLoan(f.fLoan || '');
     setSortBy(f.sortBy || 'titleAsc');
     setShowViews(false);
   }
@@ -444,8 +441,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (fCopy && g.copy_type !== fCopy) return false;
       if (fComplete === 'complete' && !g.fully_completed) return false;
       if (fComplete === 'incomplete' && g.fully_completed) return false;
-      if (fLoan === 'onLoan' && !g.loaned_to) return false;
-      if (fLoan === 'notOnLoan' && g.loaned_to) return false;
       if (fTrophyPct) {
         const pct = trophyPct(g);
         if (fTrophyPct === 'untracked' && pct !== null) return false;
@@ -483,7 +478,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, fTrophyPct, fLoan, sortBy, hideDigital]);
+  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy, hideDigital]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -699,8 +694,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       market_price_checked_at: null,
       showcase_order: null, // don't silently double up a showcase slot
       steam_appid: null, // a duplicate is a manual copy, not another Steam import
-      loaned_to: '', // a fresh copy isn't out on loan just because the original was
-      loaned_at: null,
     });
     setModalGame(null);
   }
@@ -1471,11 +1464,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <option value="50to74">50-74% complete</option>
                   <option value="under50">Under 50% complete</option>
                   <option value="untracked">Not tracked yet</option>
-                </select>
-                <select value={fLoan} onChange={(e) => setFLoan(e.target.value)}>
-                  <option value="">All loan status</option>
-                  <option value="onLoan">Currently on loan</option>
-                  <option value="notOnLoan">Not on loan</option>
                 </select>
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 14 }}>

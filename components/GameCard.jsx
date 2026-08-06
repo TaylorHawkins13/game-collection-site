@@ -66,16 +66,6 @@ export default function GameCard({
   const isMediaLike = isBook || isDvd || isVhs || isCd;
 
   const statRows = [];
-  // Shown first (and specially colored) regardless of item type, so a
-  // loaned-out item can't quietly blend in with everything else — the
-  // whole point is not forgetting who has it.
-  if (game.loaned_to) {
-    statRows.push({
-      label: 'Loaned to',
-      value: game.loaned_at ? `${game.loaned_to} (since ${new Date(`${game.loaned_at}T00:00:00`).toLocaleDateString()})` : game.loaned_to,
-      className: 'stat-row-loan',
-    });
-  }
   if (isComic) {
     statRows.push({ label: 'Series', value: game.series || game.title });
     statRows.push({ label: 'Issue', value: game.issue_number || '—' });

@@ -54,8 +54,6 @@ const EMPTY = {
   market_price_currency: null,
   trophy_platinum: false,
   trophy_completion: null,
-  loaned_to: '',
-  loaned_at: '',
   price_alert_threshold: '',
 };
 
@@ -132,8 +130,6 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
         market_price_currency: duplicateOf ? null : source.market_price_currency || null,
         trophy_platinum: duplicateOf ? false : source.trophy_platinum || false,
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
-        loaned_to: duplicateOf ? '' : source.loaned_to || '',
-        loaned_at: duplicateOf ? '' : source.loaned_at || '',
         price_alert_threshold: duplicateOf ? '' : source.price_alert_threshold ?? '',
       });
     } else {
@@ -672,14 +668,8 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
           ? null
           : Math.max(0, Math.min(100, parseFloat(form.trophy_completion)))
         : null,
-      // Loaning something out only makes sense for an item you actually
-      // own right now — switching ownership away from Owned (or clearing
-      // who it's loaned to) clears the loan date too, so a stray date
-      // never sits there with no name attached.
-      loaned_to: form.ownership === 'owned' ? form.loaned_to.trim() : '',
-      loaned_at: form.ownership === 'owned' && form.loaned_to.trim() ? form.loaned_at || null : null,
       // Only meaningful for a wishlist item — cleared if ownership changes
-      // away from Wishlist, same reasoning as loaned_to/loaned_at above.
+      // away from Wishlist.
       price_alert_threshold:
         form.ownership === 'wishlist' && form.price_alert_threshold !== ''
           ? parseFloat(form.price_alert_threshold)
@@ -1277,26 +1267,6 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
                 Checked once a day against current eBay listings for this title.
               </p>
             </div>
-          </div>
-        )}
-
-        {form.ownership === 'owned' && (
-          <div className="row2">
-            <div className="field">
-              <label>Loaned to</label>
-              <input
-                type="text"
-                value={form.loaned_to}
-                onChange={(e) => set('loaned_to', e.target.value)}
-                placeholder="e.g. Sam — leave blank if it's not out on loan"
-              />
-            </div>
-            {form.loaned_to.trim() && (
-              <div className="field">
-                <label>Loan date</label>
-                <input type="date" value={form.loaned_at || ''} onChange={(e) => set('loaned_at', e.target.value)} />
-              </div>
-            )}
           </div>
         )}
 

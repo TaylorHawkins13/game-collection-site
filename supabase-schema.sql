@@ -134,10 +134,6 @@ create table if not exists games (
   -- separate from Shelf Life's own collection-milestone trophies
   trophy_platinum boolean not null default false,
   trophy_completion numeric,
-  -- who currently has this item on loan (any owned item, any type) and
-  -- since when — null loaned_to means it's not out on loan right now
-  loaned_to text,
-  loaned_at date,
   -- optional wishlist-only price-drop alert threshold, and whether the
   -- item is currently below it (see app/api/cron/price-drop-check)
   price_alert_threshold numeric,

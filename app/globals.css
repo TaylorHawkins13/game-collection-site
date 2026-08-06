@@ -888,12 +888,6 @@ button:disabled {
 .stat-row:last-child {
   border-bottom: none;
 }
-.stat-row-loan {
-  background: #f5a52322 !important;
-}
-.stat-row-loan .stat-label {
-  color: #f5a523;
-}
 .stat-label {
   color: var(--text-dim);
   font-weight: 700;

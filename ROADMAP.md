@@ -63,7 +63,7 @@ The modal/dropdown pass (keyboard operability, focus trapping, `role="dialog"`) 
 
 **Low vision / visual**
 - **Contrast audit (WCAG AA)** — check the muted secondary text color (`.sub`, used everywhere for hints and metadata), badge/pill text-on-background combos, and both the light and dark themes against the standard 4.5:1 text contrast ratio, fixing whatever doesn't pass.
-- **Differentiate without color alone** — several things currently lean on color to convey meaning (ownership/condition badges, the podium's gold/silver/bronze, trophy tiers, the loan-tracker highlighted row); each of these should also carry a text label or icon, not just a color.
+- **Differentiate without color alone** — several things currently lean on color to convey meaning (ownership/condition badges, the podium's gold/silver/bronze, trophy tiers); each of these should also carry a text label or icon, not just a color.
 - **Confirm pinch-to-zoom isn't disabled** — some "make it feel more like an app" mobile patterns disable pinch-zoom via the viewport meta tag, which is actively bad for low-vision users; worth double-checking Shelf Life never does this.
 - **A manual text-size control** — iOS's system-wide "Larger Text" setting doesn't reach into web content inside the wrapped app the way it does native text, so an in-app font-size toggle (in Settings) would be the practical substitute — needs the CSS to already be using relative units throughout for it to actually work cleanly, which is also worth confirming.
 
