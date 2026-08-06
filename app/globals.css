@@ -1467,6 +1467,21 @@ button:disabled {
   gap: 12px;
   flex-wrap: wrap;
 }
+.hero-stats {
+  display: flex;
+  gap: 22px;
+  margin-top: 22px;
+}
+.hero-stat {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.hero-stat-num {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  margin-right: 4px;
+}
 .category-pills {
   display: flex;
   flex-wrap: wrap;
@@ -1483,71 +1498,30 @@ button:disabled {
   padding: 5px 12px;
 }
 
-/* A tilted little stack of sample cards standing in for a screenshot —
-   ties the marketing page to the app's actual visual language instead
-   of generic stock icons. */
+/* Real GameCard components, not a redrawn mockup — this is literally
+   what your own dashboard grid looks like. A light stagger/rotation on
+   the outer two keeps the "shelf" feel the old hand-drawn stack had. */
 .hero-showcase {
-  position: relative;
-  height: 320px;
-}
-.showcase-card {
-  position: absolute;
-  width: 200px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-.showcase-card:nth-child(1) {
-  top: 0;
-  left: 10%;
-  transform: rotate(-7deg);
-  z-index: 3;
-}
-.showcase-card:nth-child(2) {
-  top: 40px;
-  left: 38%;
-  transform: rotate(4deg);
-  z-index: 2;
-}
-.showcase-card:nth-child(3) {
-  top: 90px;
-  left: 0%;
-  transform: rotate(9deg);
-  z-index: 1;
-}
-.showcase-cover {
-  height: 70px;
-}
-.showcase-title {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #fff;
-  padding: 8px 10px;
-}
-.showcase-stats {
-  padding: 8px 10px 10px;
-}
-.showcase-stat {
   display: flex;
-  justify-content: space-between;
-  font-size: 10.5px;
-  padding: 3px 0;
-  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
 }
-.showcase-stat:first-child {
-  border-top: none;
+.hero-showcase-item {
+  width: 168px;
+  flex: 0 0 168px;
 }
-.showcase-stat span:first-child {
-  color: var(--text-dim);
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 9px;
-  letter-spacing: 0.3px;
+.hero-showcase-item:nth-child(1) {
+  transform: rotate(-4deg);
 }
-.showcase-stat span:last-child {
-  font-weight: 700;
+.hero-showcase-item:nth-child(2) {
+  position: relative;
+  z-index: 2;
+  transform: translateY(-14px);
+}
+.hero-showcase-item:nth-child(3) {
+  transform: rotate(4deg);
 }
 
 .value-rows {
@@ -2022,14 +1996,14 @@ button:disabled {
     max-width: none;
   }
   .hero-showcase {
-    height: 220px;
-    margin-top: 12px;
+    margin-top: 20px;
   }
-  .showcase-card {
-    width: 150px;
+  .hero-showcase-item {
+    width: 130px;
+    flex: 0 0 130px;
   }
-  .showcase-cover {
-    height: 50px;
+  .hero-showcase-item:nth-child(2) {
+    transform: translateY(-8px);
   }
   .value-row,
   .value-row.reverse {

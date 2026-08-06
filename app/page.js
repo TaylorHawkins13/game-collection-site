@@ -1,35 +1,96 @@
 import Link from 'next/link';
+import { createClient } from '@/lib/supabaseServer';
+import GameCard from '@/components/GameCard';
+import TrophyCase from '@/components/TrophyCase';
 
 const CATEGORIES = ['Video Games', 'Comics', 'Trading Cards', 'Vinyl Records', 'Books', 'DVDs', 'CDs'];
 
+// Real GameCard component fed sample data, rather than a hand-drawn
+// mockup — what's shown here is pixel-for-pixel what an actual card
+// looks like on your dashboard, not an approximation of it.
 const SHOWCASE_ITEMS = [
   {
+    id: 'demo-card-0000-0000-0000-000000000001',
+    item_type: 'trading_card',
     title: 'Charizard VMAX',
-    cover: 'linear-gradient(135deg, #f0a04b, #d6572c)',
-    stats: [
-      { label: 'Set', value: "Champion's Path" },
-      { label: 'Grade', value: 'PSA 10' },
-    ],
+    cover: '/demo/card-demo.png',
+    ownership: 'owned',
+    card_set: "Champion's Path",
+    card_number: '074/073',
+    player_name: 'Charizard',
+    publisher: 'Pokémon',
+    grade: 'PSA 10',
+    rating: 5,
   },
   {
+    id: 'demo-comic-000-0000-0000-000000000002',
+    item_type: 'comic',
     title: 'Amazing Spider-Man #300',
-    cover: 'linear-gradient(135deg, #6c5ce7, #4834d4)',
-    stats: [
-      { label: 'Publisher', value: 'Marvel' },
-      { label: 'Grade', value: '9.8' },
-    ],
+    cover: '/demo/comic-demo.png',
+    ownership: 'owned',
+    series: 'Amazing Spider-Man',
+    issue_number: '300',
+    publisher: 'Marvel',
+    writer: 'David Michelinie',
+    artist: 'Todd McFarlane',
+    grade: '9.8',
+    rating: 4.5,
   },
   {
+    id: 'demo-vinyl-000-0000-0000-000000000003',
+    item_type: 'vinyl',
     title: 'Rumours',
-    cover: 'linear-gradient(135deg, #00d2a8, #009e7f)',
-    stats: [
-      { label: 'Artist', value: 'Fleetwood Mac' },
-      { label: 'Format', value: 'LP' },
-    ],
+    cover: '/demo/vinyl-demo.png',
+    ownership: 'owned',
+    artist: 'Fleetwood Mac',
+    publisher: 'Warner Bros.',
+    format: 'LP',
+    edition: '180g reissue',
+    rating: 4.5,
   },
 ];
 
-export default function HomePage() {
+// Same two trophies used in the real achievements-migration.sql seed
+// data (first-item / items-100), shown earned — the actual Trophy Case
+// component, not a redrawn copy of it.
+const TROPHY_DEFS = [
+  { key: 'first-item', name: 'First Pickup', description: 'Add your first item to your collection.', tier: 'bronze', sort_order: 1 },
+  { key: 'items-100', name: 'Centurion', description: 'Own 100 items.', tier: 'gold', sort_order: 13 },
+];
+
+export default async function HomePage() {
+  const supabase = createClient();
+
+  // Real, live counts — not made-up marketing numbers. RLS means an
+  // anonymous visitor only ever sees items belonging to public profiles,
+  // so this naturally matches what "Based on public collections only"
+  // already means everywhere else on the site (leaderboard, search).
+  // If either count is too small to say anything meaningful yet, the
+  // stat strip just doesn't render rather than showing an unimpressive
+  // number.
+  const [{ count: itemCount }, { count: collectorCount }, { data: topOwned }] = await Promise.all([
+    supabase.from('games').select('id', { count: 'exact', head: true }),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_public', true),
+    supabase.from('leaderboard_most_owned').select('*').limit(3),
+  ]);
+  const showItemStat = (itemCount || 0) >= 20;
+  const showCollectorStat = (collectorCount || 0) >= 3;
+  // Only swap in the real top-3 once there's enough real data for it to
+  // read as a genuine leaderboard rather than a couple of lonely rows —
+  // falls back to a representative example in the meantime.
+  const realLeaderboard = topOwned && topOwned.length === 3 && topOwned[2].owner_count >= 2 ? topOwned : null;
+  const leaderboardRows = realLeaderboard
+    ? realLeaderboard.map((row, i) => ({
+        rank: i + 1,
+        title: row.title,
+        sub: `${row.owner_count} owner${row.owner_count === 1 ? '' : 's'}`,
+      }))
+    : [
+        { rank: 1, title: 'Elden Ring', sub: '412 owners' },
+        { rank: 2, title: 'The Last of Us', sub: '388 owners' },
+        { rank: 3, title: 'Amazing Spider-Man #300', sub: '301 owners' },
+      ];
+
   return (
     <main className="container">
       <div className="hero-split">
@@ -42,12 +103,26 @@ export default function HomePage() {
           </p>
           <div className="cta-row">
             <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 22px' }}>
-              Create your shelf
+              Start tracking free
             </Link>
             <Link href="/leaderboard" className="btn-ghost" style={{ textDecoration: 'none', padding: '12px 22px' }}>
               See the leaderboard
             </Link>
           </div>
+          {(showItemStat || showCollectorStat) && (
+            <div className="hero-stats">
+              {showItemStat && (
+                <div className="hero-stat">
+                  <span className="hero-stat-num">{itemCount.toLocaleString()}</span> items catalogued
+                </div>
+              )}
+              {showCollectorStat && (
+                <div className="hero-stat">
+                  <span className="hero-stat-num">{collectorCount.toLocaleString()}</span> public collectors
+                </div>
+              )}
+            </div>
+          )}
           <div className="category-pills">
             {CATEGORIES.map((c) => (
               <span className="category-pill" key={c}>{c}</span>
@@ -57,17 +132,8 @@ export default function HomePage() {
 
         <div className="hero-showcase">
           {SHOWCASE_ITEMS.map((item) => (
-            <div className="showcase-card" key={item.title}>
-              <div className="showcase-cover" style={{ background: item.cover }} />
-              <div className="showcase-title" style={{ background: item.cover }}>{item.title}</div>
-              <div className="showcase-stats">
-                {item.stats.map((s) => (
-                  <div className="showcase-stat" key={s.label}>
-                    <span>{s.label}</span>
-                    <span>{s.value}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="hero-showcase-item" key={item.id}>
+              <GameCard game={item} />
             </div>
           ))}
         </div>
@@ -82,6 +148,9 @@ export default function HomePage() {
               tailored fields (platforms, issue numbers, grades, pressings, and more) instead of
               a generic catch-all form.
             </div>
+            <Link href="/signup" className="btn-ghost" style={{ textDecoration: 'none', padding: '9px 18px', display: 'inline-block', marginTop: 6 }}>
+              Add your first item
+            </Link>
           </div>
           <div className="value-visual">
             <div className="category-pills" style={{ marginTop: 0 }}>
@@ -102,22 +171,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="value-visual">
-            <div className="trophy-grid" style={{ marginBottom: 0, gridTemplateColumns: '1fr' }}>
-              <div className="trophy trophy-earned trophy-bronze">
-                <div className="trophy-icon" aria-hidden="true" />
-                <div className="trophy-body">
-                  <div className="trophy-name">First Pickup</div>
-                  <div className="trophy-tier">Bronze</div>
-                </div>
-              </div>
-              <div className="trophy trophy-earned trophy-gold">
-                <div className="trophy-icon" aria-hidden="true" />
-                <div className="trophy-body">
-                  <div className="trophy-name">Centurion</div>
-                  <div className="trophy-tier">Gold</div>
-                </div>
-              </div>
-            </div>
+            <TrophyCase defs={TROPHY_DEFS} earnedKeys={['first-item', 'items-100']} />
           </div>
         </div>
 
@@ -129,23 +183,21 @@ export default function HomePage() {
               the biggest public collections, and what's trending — or keep everything private,
               it's your call.
             </div>
+            <Link href="/players" className="btn-ghost" style={{ textDecoration: 'none', padding: '9px 18px', display: 'inline-block', marginTop: 6 }}>
+              Browse collectors
+            </Link>
           </div>
           <div className="value-visual">
-            <div className="leaderboard-row">
-              <div className="leaderboard-rank">1</div>
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>Elden Ring</div>
-              <div className="sub" style={{ margin: 0 }}>412 owners</div>
-            </div>
-            <div className="leaderboard-row">
-              <div className="leaderboard-rank">2</div>
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>The Last of Us</div>
-              <div className="sub" style={{ margin: 0 }}>388 owners</div>
-            </div>
-            <div className="leaderboard-row" style={{ marginBottom: 0 }}>
-              <div className="leaderboard-rank">3</div>
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>Amazing Spider-Man #300</div>
-              <div className="sub" style={{ margin: 0 }}>301 owners</div>
-            </div>
+            {leaderboardRows.map((row, i) => (
+              <div className="leaderboard-row" style={i === leaderboardRows.length - 1 ? { marginBottom: 0 } : undefined} key={row.rank}>
+                <div className="leaderboard-rank">{row.rank}</div>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{row.title}</div>
+                <div className="sub" style={{ margin: 0 }}>{row.sub}</div>
+              </div>
+            ))}
+            {!realLeaderboard && (
+              <div className="sub" style={{ marginTop: 8, fontSize: 11 }}>Illustrative example — updates automatically as collectors join.</div>
+            )}
           </div>
         </div>
       </div>
@@ -154,7 +206,7 @@ export default function HomePage() {
         <div className="cta-band-title">Ready to catalog your collection?</div>
         <div className="cta-band-text">It's free, takes a minute to set up, and your shelf is yours to make public or keep private.</div>
         <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 22px', display: 'inline-block' }}>
-          Create your shelf
+          Start tracking free
         </Link>
       </div>
     </main>
