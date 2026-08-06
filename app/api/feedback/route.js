@@ -54,7 +54,7 @@ export async function POST(request) {
     const typeLabel = { bug: 'Bug report', issue: 'Issue', suggestion: 'Feature suggestion' }[type];
     const senderEmail = email || viewer?.email || null;
     await sendEmail({
-      to: process.env.FEEDBACK_NOTIFY_EMAIL || process.env.ADMIN_EMAIL,
+      to: process.env.FEEDBACK_NOTIFY_EMAIL || 'shelf.life@outlook.com',
       // So hitting "Reply" in your inbox goes straight back to whoever
       // submitted this, not to the site's own from-address. Omitted
       // entirely for anonymous submissions with no email left.
