@@ -10,10 +10,15 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
--- Anyone can view avatar images (they're profile pictures, not sensitive)
-create policy "Avatar images are publicly readable"
-on storage.objects for select
-using (bucket_id = 'avatars');
+-- No SELECT policy needed here on purpose: the bucket itself is public
+-- (public = true above), so avatar images are already servable by their
+-- direct URL (getPublicUrl(), used by the app) without RLS getting
+-- involved at all. A broad `using (bucket_id = 'avatars')` SELECT
+-- policy doesn't add anything for that — it only grants clients the
+-- ability to LIST/query every row in storage.objects for this bucket
+-- (filenames, upload times, sizes), which is more than the app needs
+-- and is exactly what Supabase's Security Advisor flags as "broad
+-- SELECT policy... allowing clients to list all files."
 
 -- Users can only upload into a folder named after their own user id
 create policy "Users can upload their own avatar"

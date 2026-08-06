@@ -1,0 +1,16 @@
+-- Fixes Supabase Security Advisor's warning on storage.avatars: "Public
+-- bucket `avatars` has 1 broad SELECT policy on `storage.objects`...
+-- allowing clients to list all files."
+--
+-- The avatars bucket is public (public = true in storage.buckets), so
+-- avatar images are already servable by their direct URL without RLS
+-- getting involved at all — that's what getPublicUrl() in the app
+-- relies on, and it needs no SELECT policy to work. The broad
+-- `using (bucket_id = 'avatars')` SELECT policy wasn't adding anything
+-- for that; it only let any client LIST/query every row in
+-- storage.objects for this bucket (every filename, upload time, size),
+-- which the app never does (checked: it only ever calls
+-- getPublicUrl(), never .list()) and is more than intended.
+--
+-- Safe to run: avatar images will keep displaying exactly as before.
+drop policy if exists "Avatar images are publicly readable" on storage.objects;
