@@ -30,7 +30,7 @@ const FALLBACK_ITEMS = {
     id: 'demo-comic-000-0000-0000-000000000002',
     item_type: 'comic',
     title: 'Amazing Spider-Man #300',
-    cover: '/demo/comic-demo-v2.png',
+    cover: '/demo/comic-demo-v3.png',
     ownership: 'owned',
     series: 'Amazing Spider-Man',
     issue_number: '300',
@@ -79,39 +79,30 @@ export default async function HomePage() {
   // If either count is too small to say anything meaningful yet, the
   // stat strip just doesn't render rather than showing an unimpressive
   // number.
-  const [{ count: itemCount }, { count: collectorCount }, { data: topOwned }, { data: showcaseCandidates }] = await Promise.all([
+  const [{ count: itemCount }, { count: collectorCount }, { data: topOwned }] = await Promise.all([
     supabase.from('games').select('id', { count: 'exact', head: true }),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_public', true),
     supabase.from('leaderboard_most_owned').select('*').limit(3),
-    // Same RLS as above — only ever sees items belonging to public
-    // profiles. Most-recently-added real item per type, so the hero
-    // shows an actual attached cover URL instead of illustrative art
-    // once there's a real one to show; falls back per-slot otherwise.
-    supabase
-      .from('games')
-      .select('*')
-      .in('item_type', SHOWCASE_TYPES)
-      .not('cover', 'is', null)
-      .neq('cover', '')
-      .order('created_at', { ascending: false })
-      .limit(30),
   ]);
   const showItemStat = (itemCount || 0) >= 20;
   const showCollectorStat = (collectorCount || 0) >= 3;
 
-  const showcaseByType = {};
-  for (const type of SHOWCASE_TYPES) {
-    showcaseByType[type] = (showcaseCandidates || []).find((g) => g.item_type === type) || null;
-  }
-  // Only reaches out to IGDB/Open Library for a slot that's still empty
-  // after checking real public items — not on every request.
-  await Promise.all(
-    SHOWCASE_TYPES.filter((type) => !showcaseByType[type] && FALLBACK_FETCHERS[type]).map(async (type) => {
-      const cover = await FALLBACK_FETCHERS[type]();
-      if (cover) showcaseByType[type] = { ...FALLBACK_ITEMS[type], cover };
+  // Hero cards always use curated field values (title, platform, genre,
+  // etc.) rather than pulling a real person's actual item — a real
+  // collection entry can have any number of optional fields filled in
+  // (region, condition, completeness, market value...), which made the
+  // 3 cards wildly different heights and truncated real long field
+  // values in the narrow hero layout. Curated fields keep the row count
+  // (and the layout) consistent and predictable. The photo itself is
+  // still genuinely real where possible: game and book fetch an actual
+  // live cover from IGDB / Open Library.
+  const showcaseItems = await Promise.all(
+    SHOWCASE_TYPES.map(async (type) => {
+      const fetcher = FALLBACK_FETCHERS[type];
+      const cover = fetcher ? await fetcher() : null;
+      return cover ? { ...FALLBACK_ITEMS[type], cover } : FALLBACK_ITEMS[type];
     })
   );
-  const showcaseItems = SHOWCASE_TYPES.map((type) => showcaseByType[type] || FALLBACK_ITEMS[type]);
   // Only swap in the real top-3 once there's enough real data for it to
   // read as a genuine leaderboard rather than a couple of lonely rows —
   // falls back to a representative example in the meantime.
@@ -126,7 +117,7 @@ export default async function HomePage() {
     : [
         { rank: 1, title: 'Elden Ring', cover: '/demo/elden-demo.png', sub: '412 owners' },
         { rank: 2, title: 'The Last of Us', cover: '/demo/tlou-demo.png', sub: '388 owners' },
-        { rank: 3, title: 'Amazing Spider-Man #300', cover: '/demo/comic-demo-v2.png', sub: '301 owners' },
+        { rank: 3, title: 'Amazing Spider-Man #300', cover: '/demo/comic-demo-v3.png', sub: '301 owners' },
       ];
 
   return (
