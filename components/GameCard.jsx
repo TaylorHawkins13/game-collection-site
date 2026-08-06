@@ -10,7 +10,15 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default function GameCard({ game, onClick, featured = false, currency }) {
+export default function GameCard({
+  game,
+  onClick,
+  featured = false,
+  currency,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+}) {
   // Supabase can hand numeric columns back as strings — coerce before
   // any arithmetic/comparison.
   const rating = Number(game.rating) || 0;
@@ -158,7 +166,15 @@ export default function GameCard({ game, onClick, featured = false, currency }) 
   });
 
   return (
-    <div className={`card${onClick ? ' clickable' : ''}${featured ? ' featured' : ''}`} onClick={onClick}>
+    <div
+      className={`card${onClick ? ' clickable' : ''}${featured ? ' featured' : ''}${selectMode ? ' select-mode' : ''}${selected ? ' selected' : ''}`}
+      onClick={selectMode ? () => onToggleSelect?.(game.id) : onClick}
+    >
+      {selectMode && (
+        <label className="card-select-check" onClick={(e) => e.stopPropagation()}>
+          <input type="checkbox" checked={selected} onChange={() => onToggleSelect?.(game.id)} />
+        </label>
+      )}
       {featured && <div className="card-featured-flag">Featured</div>}
       <div className={`card-ownership-flag ${game.ownership}`}>{game.ownership}</div>
       {game.cover ? (

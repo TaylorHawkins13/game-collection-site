@@ -43,3 +43,34 @@ using (
   bucket_id = 'avatars'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
+
+-- ============================================================
+-- Condition-photos bucket (folded in here so a fresh install gets
+-- both buckets from this one file — see item-photos-storage-migration.sql
+-- for the standalone version used when updating an existing project)
+-- ============================================================
+
+insert into storage.buckets (id, name, public)
+values ('item-photos', 'item-photos', true)
+on conflict (id) do nothing;
+
+create policy "Users can upload their own item photos"
+on storage.objects for insert
+with check (
+  bucket_id = 'item-photos'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "Users can update their own item photos"
+on storage.objects for update
+using (
+  bucket_id = 'item-photos'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "Users can delete their own item photos"
+on storage.objects for delete
+using (
+  bucket_id = 'item-photos'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);

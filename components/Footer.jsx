@@ -5,6 +5,7 @@ export default function Footer() {
     <footer className="site-footer">
       <span>© {new Date().getFullYear()} Shelf Life</span>
       <Link href="/privacy">Privacy Policy</Link>
+      <Link href="/feedback">Feedback</Link>
     </footer>
   );
 }

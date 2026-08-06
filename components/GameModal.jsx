@@ -20,6 +20,7 @@ const EMPTY = {
   barcode: '',
   tags: [],
   cover: '',
+  condition_photos: [],
   ownership: 'owned',
   condition: '',
   price: '',
@@ -53,7 +54,7 @@ const EMPTY = {
   loaned_at: '',
 };
 
-export default function GameModal({ game, duplicateOf, currency, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
+export default function GameModal({ game, duplicateOf, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
   const sg = suggestions || {};
   const supabase = createClient();
   const [form, setForm] = useState(EMPTY);
@@ -90,6 +91,10 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
         barcode: source.barcode || '',
         tags: source.tags || [],
         cover: source.cover || '',
+        // Photos are tied to the physical row (storage path includes the
+        // item's id), so a duplicated item starts with no photos of its
+        // own rather than pointing at another item's uploaded images.
+        condition_photos: duplicateOf ? [] : source.condition_photos || [],
         ownership: source.ownership || 'owned',
         condition: source.condition || '',
         price: source.price ?? '',
@@ -139,6 +144,64 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
 
   function set(field, val) {
     setForm((f) => ({ ...f, [field]: val }));
+  }
+
+  const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB
+  const MAX_PHOTOS = 4;
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+
+  // Condition photos upload straight to Storage and get saved to the row
+  // immediately (not just held in form state until "Save Item") — the
+  // point is proof of an item's actual condition, so a photo shouldn't be
+  // lost if someone closes the modal without hitting Save after adding
+  // one. form.condition_photos still gets updated too so the gallery
+  // below reflects it right away without waiting on a refetch.
+  async function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !game?.id) return;
+    setPhotoError('');
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Please choose an image file.');
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError('Image is too large (5MB max).');
+      return;
+    }
+    setPhotoUploading(true);
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${userId}/${game.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, file, { cacheControl: '3600' });
+    if (uploadError) {
+      setPhotoUploading(false);
+      setPhotoError("Couldn't upload that photo — try again.");
+      return;
+    }
+    const { data: pub } = supabase.storage.from('item-photos').getPublicUrl(path);
+    const nextPhotos = [...(form.condition_photos || []), pub.publicUrl];
+    set('condition_photos', nextPhotos);
+    const { error: dbError } = await supabase.from('games').update({ condition_photos: nextPhotos }).eq('id', game.id);
+    setPhotoUploading(false);
+    if (dbError) setPhotoError('Uploaded, but saving it to the item failed — hit Save Item below to retry.');
+  }
+
+  async function removePhoto(url) {
+    const nextPhotos = (form.condition_photos || []).filter((u) => u !== url);
+    set('condition_photos', nextPhotos);
+    if (game?.id) {
+      await supabase.from('games').update({ condition_photos: nextPhotos }).eq('id', game.id);
+    }
+    // Best-effort cleanup — an orphaned file left in Storage costs
+    // nothing functionally, so a failure here isn't worth surfacing.
+    try {
+      const marker = '/item-photos/';
+      const idx = url.indexOf(marker);
+      if (idx !== -1) await supabase.storage.from('item-photos').remove([url.slice(idx + marker.length)]);
+    } catch {
+      // ignore
+    }
   }
 
   // As you type a title, check whether anyone else (or you, previously)
@@ -970,6 +1033,46 @@ export default function GameModal({ game, duplicateOf, currency, onClose, onSave
               </div>
             )}
           </div>
+        </div>
+
+        <div className="field">
+          <label>
+            Condition photos{form.condition_photos?.length > 0 ? ` (${form.condition_photos.length}/${MAX_PHOTOS})` : ''}
+          </label>
+          {!game?.id ? (
+            <p className="sub" style={{ margin: '4px 0 0' }}>
+              Save the item first, then come back to add real photos of its actual condition (separate from the
+              cover art above) — useful for high-value pieces where grading or wear matters.
+            </p>
+          ) : (
+            <>
+              {form.condition_photos?.length > 0 && (
+                <div className="condition-photos-grid">
+                  {form.condition_photos.map((url, i) => (
+                    <div className="condition-photo" key={url}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Condition photo ${i + 1}`} />
+                      <button
+                        type="button"
+                        className="btn-icon condition-photo-remove"
+                        onClick={() => removePhoto(url)}
+                        aria-label="Remove photo"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(form.condition_photos?.length || 0) < MAX_PHOTOS && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: form.condition_photos?.length > 0 ? 8 : 0 }}>
+                  <input type="file" accept="image/*" onChange={handlePhotoFile} disabled={photoUploading} />
+                  {photoUploading && <span className="sub" style={{ margin: 0 }}>Uploading…</span>}
+                </div>
+              )}
+              {photoError && <div className="error-text">{photoError}</div>}
+            </>
+          )}
         </div>
 
         <div className="row2">

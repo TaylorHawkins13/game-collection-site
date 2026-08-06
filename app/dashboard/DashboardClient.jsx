@@ -57,6 +57,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fTrophyPct, setFTrophyPct] = useState('');
   const [fLoan, setFLoan] = useState('');
   const [sortBy, setSortBy] = useState('titleAsc');
+  // Bulk edit — a checkbox-select mode for the grid so several items can
+  // get the same ownership-status/platform change, the same new tag, or
+  // get deleted together instead of opening each one individually. Only
+  // meaningful once selectMode is on; selectedIds is cleared whenever it
+  // toggles off so a stale selection can't silently apply to a later
+  // session.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkOwnership, setBulkOwnership] = useState('owned');
+  const [bulkPlatform, setBulkPlatform] = useState('');
+  const [bulkTag, setBulkTag] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [collapsedPanels, setCollapsedPanels] = useState({ playnext: false, recommend: false, value: false });
@@ -162,6 +174,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     avatar_url: profile?.avatar_url || '',
     is_public: profile?.is_public ?? true,
     currency: profile?.currency || 'USD',
+    newsletter_opt_in: profile?.newsletter_opt_in ?? false,
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
@@ -549,6 +562,111 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setPendingDelete(null);
   }
 
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelectedIds(new Set(filtered.map((g) => g.id)));
+  }
+
+  async function handleBulkOwnership() {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    const ids = [...selectedIds];
+    setBulkBusy(true);
+    const { error } = await supabase.from('games').update({ ownership: bulkOwnership }).in('id', ids);
+    setBulkBusy(false);
+    if (error) {
+      announceToast("Couldn't update those items — try again.");
+      return;
+    }
+    setGames((gs) => gs.map((g) => (selectedIds.has(g.id) ? { ...g, ownership: bulkOwnership } : g)));
+    announceToast(`Marked ${ids.length} item${ids.length === 1 ? '' : 's'} as ${bulkOwnership}.`, 'success');
+  }
+
+  // Platform is a multi-value array field, and only games/consoles use it
+  // in practice — bulk-setting it replaces (not merges) each selected
+  // item's platform list with the single chosen one, and silently skips
+  // any selected item type that doesn't have a platforms field rather
+  // than erroring on comics/vinyl/etc. caught up in the same selection.
+  async function handleBulkPlatform() {
+    if (selectedIds.size === 0 || !bulkPlatform || bulkBusy) return;
+    const targetIds = games
+      .filter((g) => selectedIds.has(g.id) && (g.item_type === 'game' || g.item_type === 'console'))
+      .map((g) => g.id);
+    if (targetIds.length === 0) {
+      announceToast('None of the selected items have a platform field.');
+      return;
+    }
+    setBulkBusy(true);
+    const { error } = await supabase.from('games').update({ platforms: [bulkPlatform] }).in('id', targetIds);
+    setBulkBusy(false);
+    if (error) {
+      announceToast("Couldn't update platform — try again.");
+      return;
+    }
+    setGames((gs) => gs.map((g) => (targetIds.includes(g.id) ? { ...g, platforms: [bulkPlatform] } : g)));
+    announceToast(`Set platform to ${bulkPlatform} on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`, 'success');
+  }
+
+  // Tags differ per item, so this can't be one bulk update — each
+  // selected item keeps its own existing tags and just gets the new one
+  // appended (skipped if it's already there), one request per item.
+  async function handleBulkAddTag() {
+    const tag = bulkTag.trim();
+    if (selectedIds.size === 0 || !tag || bulkBusy) return;
+    setBulkBusy(true);
+    const targets = games.filter((g) => selectedIds.has(g.id));
+    const results = await Promise.all(
+      targets.map((g) => {
+        if ((g.tags || []).includes(tag)) return Promise.resolve({ id: g.id, error: null, tags: g.tags });
+        const nextTags = [...(g.tags || []), tag];
+        return supabase
+          .from('games')
+          .update({ tags: nextTags })
+          .eq('id', g.id)
+          .then(({ error }) => ({ id: g.id, error, tags: nextTags }));
+      })
+    );
+    setBulkBusy(false);
+    const failed = results.filter((r) => r.error).length;
+    setGames((gs) =>
+      gs.map((g) => {
+        const r = results.find((x) => x.id === g.id);
+        return r && !r.error ? { ...g, tags: r.tags } : g;
+      })
+    );
+    setBulkTag('');
+    if (failed > 0) announceToast(`Added the tag, but ${failed} item${failed === 1 ? '' : 's'} failed — try again for those.`);
+    else announceToast(`Added "${tag}" to ${results.length} item${results.length === 1 ? '' : 's'}.`, 'success');
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    const ids = [...selectedIds];
+    if (!confirm(`Delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from('games').delete().in('id', ids);
+    setBulkBusy(false);
+    if (error) {
+      announceToast("Couldn't delete those items — try again.");
+      return;
+    }
+    setGames((gs) => gs.filter((g) => !selectedIds.has(g.id)));
+    setSelectedIds(new Set());
+    announceToast(`Deleted ${ids.length} item${ids.length === 1 ? '' : 's'}.`, 'success');
+  }
+
   // Opens a fresh Add Item form pre-filled from an existing item, so
   // similar items (another card from the same set, another platform's
   // copy of a game, etc.) don't need every field typed out again.
@@ -817,6 +935,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         avatar_url: settingsForm.avatar_url.trim(),
         is_public: settingsForm.is_public,
         currency: settingsForm.currency,
+        newsletter_opt_in: settingsForm.newsletter_opt_in,
       })
       .eq('id', userId);
     setSettingsSaving(false);
@@ -852,6 +971,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             + Add Item
           </button>
           <ActionMenu label="More actions">
+            <Link href="/dashboard/insights" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Collection insights
+            </Link>
             <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
               Refresh all prices
             </button>
@@ -942,6 +1064,20 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               />
               Make my profile and collection public
             </label>
+          </div>
+          <div className="field">
+            <label>
+              <input
+                type="checkbox"
+                checked={settingsForm.newsletter_opt_in}
+                onChange={(e) => setSettingsForm((f) => ({ ...f, newsletter_opt_in: e.target.checked }))}
+                style={{ width: 'auto', marginRight: 8 }}
+              />
+              Email me when something new ships
+            </label>
+            <p className="sub" style={{ margin: '4px 0 0' }}>
+              Off by default. Occasional, manually sent — no automated marketing emails.
+            </p>
           </div>
 
           <div className="field">
@@ -1178,6 +1314,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
             <button
+              className={`btn-ghost${selectMode ? ' active' : ''}`}
+              type="button"
+              onClick={toggleSelectMode}
+            >
+              {selectMode ? 'Done selecting' : 'Select'}
+            </button>
+            <button
               className={`btn-ghost${showViews ? ' active' : ''}`}
               type="button"
               onClick={() => setShowViews((v) => !v)}
@@ -1318,6 +1461,51 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </div>
           )}
 
+          {selectMode && (
+            <div className="bulk-bar">
+              <span className="count">{selectedIds.size} selected</span>
+              <button type="button" className="btn-ghost" onClick={selectAllVisible} disabled={filtered.length === 0}>
+                Select all ({filtered.length})
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>
+                Clear
+              </button>
+              <div className="divider" />
+              <select value={bulkOwnership} onChange={(e) => setBulkOwnership(e.target.value)} disabled={selectedIds.size === 0}>
+                <option value="owned">Owned</option>
+                <option value="wishlist">Wishlist</option>
+                <option value="sold">Sold</option>
+              </select>
+              <button type="button" className="btn-ghost" onClick={handleBulkOwnership} disabled={selectedIds.size === 0 || bulkBusy}>
+                Set status
+              </button>
+              <select value={bulkPlatform} onChange={(e) => setBulkPlatform(e.target.value)} disabled={selectedIds.size === 0}>
+                <option value="">Platform…</option>
+                {platformOptions.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+              <button type="button" className="btn-ghost" onClick={handleBulkPlatform} disabled={selectedIds.size === 0 || !bulkPlatform || bulkBusy}>
+                Set platform
+              </button>
+              <input
+                type="text"
+                placeholder="Add tag…"
+                value={bulkTag}
+                onChange={(e) => setBulkTag(e.target.value)}
+                style={{ width: 120 }}
+                disabled={selectedIds.size === 0}
+              />
+              <button type="button" className="btn-ghost" onClick={handleBulkAddTag} disabled={selectedIds.size === 0 || !bulkTag.trim() || bulkBusy}>
+                Add tag
+              </button>
+              <div style={{ flex: 1 }} />
+              <button type="button" className="btn-danger" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkBusy}>
+                Delete selected
+              </button>
+            </div>
+          )}
+
           {filtered.length === 0 ? (
             <div className="empty-state">
               <div>No items match your filters.</div>
@@ -1325,7 +1513,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           ) : (
             <div className="grid">
               {filtered.map((g) => (
-                <GameCard key={g.id} game={g} onClick={() => setModalGame(g)} currency={currency} />
+                <GameCard
+                  key={g.id}
+                  game={g}
+                  onClick={() => setModalGame(g)}
+                  currency={currency}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(g.id)}
+                  onToggleSelect={toggleSelected}
+                />
               ))}
             </div>
           )}
@@ -1346,6 +1542,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           game={modalGame}
           duplicateOf={duplicateOf}
           currency={currency}
+          userId={userId}
           suggestions={suggestions}
           existingItems={games}
           onClose={() => {
