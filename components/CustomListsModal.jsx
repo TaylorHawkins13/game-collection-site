@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import useModalA11y from '@/lib/useModalA11y';
 
 // Lets someone create as many named sub-lists as they want (Favorites,
 // For sale, Currently replaying, etc.) and assign items to them — unlike
@@ -20,6 +21,7 @@ export default function CustomListsModal({ userId, games, lists, listItemsByList
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [busyGameId, setBusyGameId] = useState(null);
+  const modalRef = useModalA11y(onClose);
 
   const activeList = lists.find((l) => l.id === activeListId) || null;
   const activeItemIds = listItemsByList[activeListId] || new Set();
@@ -114,8 +116,8 @@ export default function CustomListsModal({ userId, games, lists, listItemsByList
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 640 }}>
-        <h2>Manage lists</h2>
+      <div className="modal" style={{ maxWidth: 640 }} ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="custom-lists-modal-title">
+        <h2 id="custom-lists-modal-title">Manage lists</h2>
         <div className="sub">
           Curated sub-lists beyond your 5-item showcase — Favorites, For sale, Currently replaying, whatever's useful.
           Shown on your public profile alongside your collection.

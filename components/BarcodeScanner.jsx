@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { DecodeHintType, BarcodeFormat } from '@zxing/library';
+import useModalA11y from '@/lib/useModalA11y';
 
 // Uses @zxing/browser instead of the native BarcodeDetector API because
 // BarcodeDetector isn't implemented in Safari or any browser on iOS —
@@ -110,10 +111,12 @@ export default function BarcodeScanner({ onDetected, onClose }) {
     onClose();
   }
 
+  const modalRef = useModalA11y(handleClose);
+
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="modal scanner-modal">
-        <h2>Scan Barcode</h2>
+      <div className="modal scanner-modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="barcode-scanner-title">
+        <h2 id="barcode-scanner-title">Scan Barcode</h2>
         <div className="sub">Point your camera at the barcode — it fills in automatically once found.</div>
 
         {error ? (

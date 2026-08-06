@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabaseClient';
 import { normalizeRow } from '@/lib/csvImport';
+import useModalA11y from '@/lib/useModalA11y';
 
 const BATCH_SIZE = 100;
 
@@ -18,6 +19,7 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const modalRef = useModalA11y(onClose);
 
   function handleFile(e) {
     const file = e.target.files?.[0];
@@ -84,8 +86,8 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <h2>Import from spreadsheet</h2>
+      <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="import-csv-modal-title">
+        <h2 id="import-csv-modal-title">Import from spreadsheet</h2>
         <div className="sub">
           Bulk-add items from a CSV file instead of one at a time. Not sure how to format it?{' '}
           <a href="/shelf-life-import-template.csv" download>Download a template</a> with the right columns and an

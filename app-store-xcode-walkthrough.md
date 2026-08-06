@@ -4,9 +4,9 @@ The actual step-by-step for turning the live site into a submitted iOS app. This
 
 ## 0. Before you start
 
-Two small decisions from `app-store-checklist.md` are easiest to make now rather than mid-walkthrough:
-- **Ads**: serve non-personalized ads (or none) in the wrapped app, not the personalized AdSense version — avoids needing to write native ATT permission code. If you want personalized ads in the iOS app specifically, flag it and that's a separate follow-up.
-- **App Review access**: decide now whether you're making a demo account (`demo@shelflife.site` or similar, pre-populated with a few items) or just noting in review that signup is free/instant. Demo account is safer — do it now while you're already in Supabase mode, so it's ready by the time you hit the App Store Connect listing step.
+Both small decisions from `app-store-checklist.md` are now locked in (see that file's "Locked in" section) so there's nothing to stop and think about mid-walkthrough:
+- **Ads**: non-personalized only (or off) in the wrapped app — no ATT permission code needed. If you'd rather have personalized ads in the iOS app specifically, that's a separate follow-up, just flag it.
+- **App Review access**: going with a plain note ("signup is free and instant") rather than a demo account — paste the exact wording from `app-store-checklist.md` into the App Review Information field at step 5.7 below. Swap in demo account credentials instead if you'd rather set one up (2-minute manual step).
 
 ## 1. Generate the iOS project with PWABuilder
 
@@ -57,7 +57,7 @@ Two small decisions from `app-store-checklist.md` are easiest to make now rather
 4. Upload the screenshots from step 4 to the 6.9" iPhone slot.
 5. Set the app icon — App Store Connect will actually pull this from what's embedded in the build you upload in step 6, not a separate upload here, so you can leave this until after your first build lands.
 6. Work through the **Age Rating** questionnaire and the **App Privacy** ("nutrition label") section using the tables already in `app-store-checklist.md` — answer honestly, it should land Shelf Life at the lowest tier.
-7. Under **App Review Information**, add your demo account credentials (or the "signup is free and instant" note) plus your contact email.
+7. Under **App Review Information**, paste the review note from `app-store-checklist.md` (or your demo account credentials if you set one up instead) plus your contact email.
 8. Leave **Pricing** at Free.
 
 ## 6. Archive and upload the build

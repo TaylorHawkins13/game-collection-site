@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import useModalA11y from '@/lib/useModalA11y';
 
 const BATCH_SIZE = 100;
 
@@ -22,6 +23,7 @@ export default function SteamImportModal({ userId, existingAppIds, onClose, onIm
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [importError, setImportError] = useState('');
   const [done, setDone] = useState(false);
+  const modalRef = useModalA11y(onClose);
 
   useEffect(() => {
     let active = true;
@@ -105,8 +107,8 @@ export default function SteamImportModal({ userId, existingAppIds, onClose, onIm
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <h2>Import from Steam</h2>
+      <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="steam-import-modal-title">
+        <h2 id="steam-import-modal-title">Import from Steam</h2>
 
         {loading && <div className="sub">Loading your Steam library…</div>}
 

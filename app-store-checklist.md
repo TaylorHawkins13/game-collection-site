@@ -55,18 +55,22 @@ Based on what's actually in the schema today. For each, Apple asks whether it's 
 | Contacts | No | — | Not collected |
 | Usage data | Minimal | — | Basic page views only if AdSense is active (see below) |
 
-**One real decision point**: Google AdSense (used on the web version) uses identifiers for ad personalization, which counts as "tracking" under Apple's rules and would require an **App Tracking Transparency (ATT)** permission prompt — that's native Swift code, added after the Xcode project exists, not something built in this repo. Simplest path for launch: **serve non-personalized ads only (or no ads at all) inside the wrapped iOS app**, which sidesteps the ATT requirement entirely. Worth deciding before the Xcode phase — flag it then and it's a small config change, not a big build.
+**Decided: non-personalized ads only (no ATT).** Google AdSense (used on the web version) uses identifiers for ad personalization, which counts as "tracking" under Apple's rules and would require a native App Tracking Transparency prompt — real Swift code that has to live in the Xcode project itself, not something buildable from this repo. Going with non-personalized ads (or no ads at all) inside the wrapped iOS app sidesteps ATT entirely, which is the lower-friction choice for a first submission. When you're in Xcode and get to the ad-related step in the walkthrough, that's the option to pick — nothing to configure here in the codebase.
 
 ## App Review notes (important — don't skip)
 
-Shelf Life requires an account to see anything beyond the public marketing pages. Apple's reviewers need a way in:
-- Either create a **demo account** ahead of submission (`demo@shelflife.site` or similar, pre-populated with a small sample collection so the reviewer sees a populated app, not an empty state) and hand the credentials to Apple in the "App Review Information" notes field, **or**
-- Note clearly in that same field that signup is free, instant, and needs no payment/verification, so the reviewer can just create their own account in under a minute.
-A demo account is the safer bet — it removes any chance of a reviewer bouncing off an empty dashboard.
+Shelf Life requires an account to see anything beyond the public marketing pages. Apple's reviewers need a way in.
 
-## Not yet decided / needs you
+**Decided: "just sign up" note, not a demo account.** Creating and populating a demo account isn't something doable from this sandbox (account creation needs a real signup + manual data entry), and a demo account can always be added later if a reviewer ever bounces off it. Paste this into the "App Review Information" notes field in App Store Connect:
 
-- Final app name / subtitle wording
-- App Store category pick
-- Demo account vs. "just sign up" for review notes
-- Ads: personalized (needs ATT) vs. non-personalized/off in the iOS app
+> Shelf Life doesn't require any special access — signup is free, instant, and needs no payment method or email verification. Create an account with any email address and you'll land straight in the dashboard, ready to add items.
+
+If you'd rather hand reviewers a pre-populated account instead, it's a 2-minute manual step (sign up normally at shelflife.site, add a few items) — swap the note above for the credentials if you go that route.
+
+## Locked in
+
+- **App name**: "Shelf Life: Collection Tracker" (confirmed available in App Store Connect)
+- **Subtitle**: "Track your whole collection"
+- **Category**: Lifestyle (primary)
+- **Ads**: non-personalized only, no ATT prompt
+- **App Review notes**: "just sign up" (see above)

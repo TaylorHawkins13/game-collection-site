@@ -11,6 +11,7 @@ import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
+import useModalA11y from '@/lib/useModalA11y';
 
 const EMPTY = {
   item_type: 'game',
@@ -275,6 +276,8 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
       document.body.style.overflow = prevOverflow;
     };
   }, []);
+
+  const modalRef = useModalA11y(onClose);
 
   const isGame = form.item_type === 'game';
   const isComic = form.item_type === 'comic';
@@ -676,8 +679,8 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <h2>{game ? 'Edit Item' : 'Add Item'}</h2>
+      <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
+        <h2 id="game-modal-title">{game ? 'Edit Item' : 'Add Item'}</h2>
         <div className="sub">
           {duplicateOf
             ? 'Pre-filled as a copy — adjust what\'s different, then save.'

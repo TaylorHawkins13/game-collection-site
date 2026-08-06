@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 export default function ActionMenu({ children, label = 'More actions' }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
+  const triggerRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -27,13 +28,30 @@ export default function ActionMenu({ children, label = 'More actions' }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Keyboard users get no other way to dismiss this than a mouse click
+  // outside it without this — Escape closes the dropdown and hands focus
+  // back to the ⋯ button that opened it, same as a native menu would.
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleKeyDown(e) {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      setOpen(false);
+      triggerRef.current?.focus();
+    }
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [open]);
+
   return (
     <div className="action-menu-wrap" ref={wrapRef}>
       <button
         type="button"
+        ref={triggerRef}
         className="btn-icon action-menu-trigger"
         onClick={() => setOpen((o) => !o)}
         aria-label={label}
+        aria-haspopup="true"
         aria-expanded={open}
       >
         ⋯

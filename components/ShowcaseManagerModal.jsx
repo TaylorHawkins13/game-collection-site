@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import useModalA11y from '@/lib/useModalA11y';
 
 const MAX_SHOWCASE = 5;
 
@@ -23,6 +24,7 @@ export default function ShowcaseManagerModal({ games, onClose, onSaved }) {
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const modalRef = useModalA11y(onClose);
 
   const selectedIds = useMemo(() => new Set(selected.map((g) => g.id)), [selected]);
 
@@ -84,8 +86,8 @@ export default function ShowcaseManagerModal({ games, onClose, onSaved }) {
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <h2>Manage showcase</h2>
+      <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="showcase-manager-modal-title">
+        <h2 id="showcase-manager-modal-title">Manage showcase</h2>
         <div className="sub">
           Pin up to {MAX_SHOWCASE} favorite items to the top of your public profile, in whatever order you like.
         </div>

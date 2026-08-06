@@ -35,7 +35,7 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 - **Import from Goodreads / Discogs** — same idea as the Steam import, for Books and Vinyl/CDs respectively — both offer exportable data (Goodreads CSV export, Discogs collection API) that could seed a bulk import.
 - ~~**Shareable yearly recap** / **Auto-generated stats card image**~~ — both folded into and shipped as the shelf mosaic feature instead of being built separately, see `CHANGELOG.md`. The mosaic's "By Year" mode covers the yearly-recap idea, and the "Most Valuable" mode plus its accent badges cover the stats-card idea.
 - ~~**Photo attachments for condition proof**~~ — done, see `CHANGELOG.md`.
-- **Accessibility pass** — screen-reader labels and full keyboard navigation for modals/dropdowns haven't been audited yet; worth a dedicated pass once the feature set slows down.
+- ~~**Accessibility pass**~~ — done, see `CHANGELOG.md`. Covered every modal and dropdown (Escape-to-close, focus trapping, `role="dialog"`/`aria-labelledby`); a fuller screen-reader pass over the rest of the site (form labels, live regions for toasts, etc.) would still be worth doing eventually, but the highest-impact gaps — the parts that were flatly unusable by keyboard — are fixed.
 
 ## Later (bigger, more design work)
 
