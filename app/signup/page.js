@@ -48,6 +48,15 @@ export default function SignupPage() {
       return;
     }
 
+    // Fire-and-forget — the account is already created in Supabase above,
+    // so a blocked/failed request here should never hold up the redirect
+    // or the "check your email" screen.
+    fetch('/api/notify-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: cleanUsername, email }),
+    }).catch(() => {});
+
     if (data.session) {
       router.push('/dashboard');
       router.refresh();
