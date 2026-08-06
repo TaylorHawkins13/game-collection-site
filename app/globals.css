@@ -1143,7 +1143,14 @@ button:disabled {
   justify-content: center;
   padding: 40px 16px;
   overflow-y: auto;
-  z-index: 50;
+  /* Above 160 — the mobile nav bar promotes itself to z-index: 160 (see
+     the media query below) so its slide-in drawer can sit above page
+     content. A modal always needs to win against that, or its heading
+     renders underneath/behind the sticky header instead of covering it
+     (visible as overlapping text on mobile — "Add Item" behind "Shelf
+     Life"). 200 clears every other z-index in this file with room to
+     spare. */
+  z-index: 200;
 }
 .modal {
   background: var(--bg-alt);
