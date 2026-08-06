@@ -3,17 +3,17 @@ import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import { CoverThumb } from '@/components/LeaderboardThumb';
-import { fetchIgdbCover, fetchOpenLibraryCover } from '@/lib/showcaseCovers';
+import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
 
 const CATEGORIES = ['Video Games', 'Comics', 'Trading Cards', 'Vinyl Records', 'Books', 'DVDs', 'CDs'];
 
-// Curated fallback for each showcase slot, used until a real public item
-// of that type exists to show instead (see FALLBACK_ITEMS below and
-// FALLBACK_FETCHERS further down). Game and book have a live, free,
-// keyed-or-keyless cover API already wired into the app (IGDB / Open
-// Library — the same ones the real "Search" buttons use), so those two
-// slots get an actual real photo even in the fallback case. Comic has
-// no such integration yet, so it keeps the generated illustrative art.
+// Curated fallback for each showcase slot. All 3 get a genuinely real
+// photo, fetched live from a free API the app already uses elsewhere —
+// game (IGDB), trading card (Pokémon TCG API, keyless — same source as
+// the real "Search" button), book (Open Library). Comic was the 4th
+// candidate but has no equivalent free cover API in the app yet, so it
+// sat out in favor of a type that can show a real photo instead of
+// generated art.
 const FALLBACK_ITEMS = {
   game: {
     id: 'demo-game-000-0000-0000-000000000004',
@@ -26,19 +26,16 @@ const FALLBACK_ITEMS = {
     play_status: 'completed',
     rating: 5,
   },
-  comic: {
-    id: 'demo-comic-000-0000-0000-000000000002',
-    item_type: 'comic',
-    title: 'Amazing Spider-Man #300',
-    cover: '/demo/comic-demo-v3.png',
+  trading_card: {
+    id: 'demo-card-000-0000-0000-000000000006',
+    item_type: 'trading_card',
+    title: 'Charizard VMAX',
+    cover: '',
     ownership: 'owned',
-    series: 'Amazing Spider-Man',
-    issue_number: '300',
-    publisher: 'Marvel',
-    writer: 'David Michelinie',
-    artist: 'Todd McFarlane',
-    grade: '9.8',
-    rating: 4.5,
+    card_set: "Champion's Path",
+    player_name: 'Charizard',
+    publisher: 'Pokémon',
+    rating: 5,
   },
   book: {
     id: 'demo-book-000-0000-0000-000000000005',
@@ -52,14 +49,15 @@ const FALLBACK_ITEMS = {
     rating: 5,
   },
 };
-// Live cover lookup for whichever fallback slots support it — only ever
-// called for a slot that doesn't already have a real public item to
-// show instead (see the showcaseItems logic below).
+// Live cover lookup for each fallback slot — always called, since every
+// showcase slot now has a real photo source (see the showcaseItems
+// logic below).
 const FALLBACK_FETCHERS = {
   game: () => fetchIgdbCover(FALLBACK_ITEMS.game.title),
+  trading_card: () => fetchPokemonCardCover(FALLBACK_ITEMS.trading_card.title),
   book: () => fetchOpenLibraryCover(FALLBACK_ITEMS.book.title),
 };
-const SHOWCASE_TYPES = ['game', 'comic', 'book'];
+const SHOWCASE_TYPES = ['game', 'trading_card', 'book'];
 
 // Same two trophies used in the real achievements-migration.sql seed
 // data (first-item / items-100), shown earned — the actual Trophy Case
@@ -94,8 +92,8 @@ export default async function HomePage() {
   // 3 cards wildly different heights and truncated real long field
   // values in the narrow hero layout. Curated fields keep the row count
   // (and the layout) consistent and predictable. The photo itself is
-  // still genuinely real where possible: game and book fetch an actual
-  // live cover from IGDB / Open Library.
+  // still genuinely real: all 3 slots fetch an actual live cover
+  // (IGDB / Pokémon TCG / Open Library).
   const showcaseItems = await Promise.all(
     SHOWCASE_TYPES.map(async (type) => {
       const fetcher = FALLBACK_FETCHERS[type];
