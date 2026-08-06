@@ -24,7 +24,7 @@ export async function POST(request) {
 
   try {
     await sendEmail({
-      to: process.env.SIGNUP_NOTIFY_EMAIL || 'shelf.life@outlook.com',
+      to: process.env.SIGNUP_NOTIFY_EMAIL || 'shelflife.site@outlook.com',
       subject: `New Shelf Life signup: ${username || email}`,
       text: [
         username ? `Username: ${username}` : null,

@@ -76,7 +76,6 @@ Everything that's shipped on Shelf Life (and what's next)
   <ul style="margin:0 0 20px;padding-left:20px;font-size:14px;">
     <li style="margin-bottom:6px;">Search auto-fill for Comics and Funko Pops — every other type already has it.</li>
     <li style="margin-bottom:6px;">A shareable wishlist link, separate from your full profile, for sending to family/friends around birthdays.</li>
-    <li style="margin-bottom:6px;">Loan reminders — a nudge if something you've marked as loaned out has been gone a while.</li>
     <li style="margin-bottom:6px;">A mobile layout tidy-up pass now that a lot has shipped since the last one.</li>
   </ul>
   <p style="margin:0 0 24px;font-size:13px;color:#5c6491;">
