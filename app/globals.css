@@ -2365,3 +2365,156 @@ button:disabled {
     font-size: 18px;
   }
 }
+
+/* ---------- Shelf mosaic ---------- */
+.mosaic-wrap {
+  margin: 20px 0 48px;
+}
+.mosaic-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.mosaic-tabs {
+  display: flex;
+  flex-wrap: wrap;
+}
+.mosaic-toolbar select {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.mosaic-sub {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 4px 0 18px;
+}
+.mosaic-hover-info {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  width: fit-content;
+}
+.mosaic-hover-info strong {
+  color: var(--text);
+}
+.mosaic-row {
+  margin-bottom: 30px;
+}
+.mosaic-row-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.mosaic-row-items {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.mosaic-plank {
+  height: 12px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #6b4a34 0%, #4a2f20 100%);
+  border: 1px solid #2e1c11;
+}
+.mosaic-tile {
+  position: relative;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 128px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  outline: none;
+}
+.mosaic-tile:focus-visible {
+  border-color: var(--accent);
+}
+.mosaic-tile-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mosaic-tile-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+}
+.mosaic-tile-shade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%);
+  pointer-events: none;
+}
+.mosaic-badge {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 5px;
+}
+.mosaic-badge-star {
+  top: 5px;
+  left: 5px;
+  background: var(--accent);
+  color: #fff;
+}
+.mosaic-badge-price {
+  bottom: 5px;
+  right: 5px;
+  background: var(--accent-2);
+  color: #0f1220;
+}
+.mosaic-tile-overflow {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 128px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+@media (max-width: 640px) {
+  .mosaic-tile,
+  .mosaic-tile-overflow {
+    width: 74px;
+    height: 99px;
+  }
+  .mosaic-tile-placeholder {
+    font-size: 22px;
+  }
+}

@@ -195,12 +195,22 @@ export default async function ProfilePage({ params }) {
             <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
               Compare collections
             </Link>
+            {canView && owned > 0 && (
+              <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Shelf mosaic
+              </Link>
+            )}
             {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
           </div>
         )}
         {isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <ShareProfileButton username={profile.username} itemCount={owned} />
+            {owned > 0 && (
+              <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Shelf mosaic
+              </Link>
+            )}
             <ShowcaseButton userId={profile.id} />
             <CustomListsButton userId={profile.id} />
             <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
