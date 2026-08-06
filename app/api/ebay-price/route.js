@@ -83,21 +83,45 @@ const VALID_MARKETPLACES = new Set([
 // Switch 2 console in this app. Fixed-price + mismatch filtering already
 // falls back to the unfiltered pool if too few real listings survive, so
 // this doesn't risk zeroing out results for a genuinely thin market.
+// Kept type-agnostic on purpose — this route has no idea what kind of
+// collectible it's pricing unless the caller says so (see itemType below),
+// so anything in this base list has to be safe to filter out no matter
+// what's being searched. "cover", "figure", "funko", etc. do NOT belong
+// here: a comic listing legitimately says "Cover A", a Funko Pop price
+// check would have every real result contain the word "Funko". Damaged/
+// parts listings are safe across every type, though — a legitimately
+// broken item sells for a fraction of a working one and isn't a fair
+// "what's this worth" signal for any collectible.
 const MISMATCH_TERMS = [
   'lot of', ' lot ', 'bundle', 'bonus disc', 'graded', 'wata', 'vga', 'cgc',
   'reproduction', 'repro ', 'replacement case', 'case only', 'manual only',
   'disc only', 'read description',
-  'case for', 'skin for', 'screen protector', 'tempered glass',
-  'charging dock', 'charging station', 'carrying case', 'travel case',
-  'joy-con grip', 'joycon grip', 'silicone cover', 'thumb grip',
-  'screen guard', 'sticker', 'decal', 'dust cover', 'protective cover',
-  'stand for', 'holder for', 'controller grip', 'cooling fan',
-  'accessory', 'accessories',
+  'for parts', 'not working', 'spares or repair', 'faulty', 'as is',
+  'parts only', 'for repair', 'cracked', 'damaged', 'defective',
+  'no power', "won't turn on", 'wont turn on',
 ];
 
-function isLikelyMismatch(title) {
+// Console-only: a search like "Nintendo Switch 2" pulls back a flood of
+// $8-15 cases/skins/docks/grips that sellers tag with the console's full
+// name for search visibility — real bug, confirmed dragging a console's
+// reported price down to ~$11. These terms are deliberately bare/broad
+// ('case' not just 'case for') since narrower phrase-matching still let
+// enough through to keep the bug alive. Scoped to consoles specifically
+// (not applied to other types) because several of these words are
+// perfectly normal in a real listing title for other collectibles — a
+// comic's "Cover A", a Funko Pop's own name containing "Funko", etc.
+const CONSOLE_ACCESSORY_TERMS = [
+  'case', 'skin', 'screen protector', 'tempered glass', 'dock', 'stand',
+  'grip', 'cover', 'bag', 'pouch', 'sleeve', 'holder', 'mount', 'charger',
+  'charging cable', 'carrying', 'joy-con', 'joycon', 'thumb grip',
+  'screen guard', 'sticker', 'decal', 'cooling fan', 'accessory',
+  'accessories', 'strap', 'stylus', 'keychain',
+];
+
+function isLikelyMismatch(title, itemType) {
   const t = ` ${(title || '').toLowerCase()} `;
-  return MISMATCH_TERMS.some((term) => t.includes(term));
+  const terms = itemType === 'console' ? [...MISMATCH_TERMS, ...CONSOLE_ACCESSORY_TERMS] : MISMATCH_TERMS;
+  return terms.some((term) => t.includes(term));
 }
 
 function median(sortedNums) {
@@ -146,6 +170,7 @@ export async function GET(request) {
   const titleOnly = (searchParams.get('title') || '').trim();
   const marketplaceParam = searchParams.get('marketplace');
   const marketplace = VALID_MARKETPLACES.has(marketplaceParam) ? marketplaceParam : 'EBAY_US';
+  const itemType = (searchParams.get('itemType') || '').trim();
 
   try {
     const token = await getAccessToken();
@@ -179,7 +204,7 @@ export async function GET(request) {
     // Drop obvious mismatches (lots, bundles, graded slabs, bonus-disc
     // bundles, etc.) — but only if enough real listings survive, same
     // fallback shape as the fixed-price filter above.
-    const filtered = pool.filter((it) => !isLikelyMismatch(it.title));
+    const filtered = pool.filter((it) => !isLikelyMismatch(it.title, itemType));
     if (filtered.length >= 3) pool = filtered;
 
     // Even within one marketplace, eBay mixes in cross-border listings
@@ -230,13 +255,31 @@ export async function GET(request) {
     }
 
     prices.sort((a, b) => a - b);
-    const low = prices[0];
-    const high = prices[prices.length - 1];
+
+    // Second, keyword-independent line of defense: title-matching can
+    // never cover every way a mismatched/accessory/parts listing gets
+    // worded, so also drop anything priced way below the pack. A listing
+    // at under 20% of the rough median almost never a fair-value match for
+    // the same item (it's an accessory, a broken unit, a part, a listing
+    // error, etc.) — confirmed needed even after the console accessory
+    // terms above, since no fixed word list catches every seller's
+    // phrasing. Only kicks in with enough of a sample to make "the pack"
+    // meaningful, and — same fallback shape as every filter above — only
+    // applied if enough listings survive it.
+    let priceFiltered = prices;
+    if (prices.length >= 5) {
+      const roughMedian = median(prices);
+      const survivors = prices.filter((p) => p >= roughMedian * 0.2);
+      if (survivors.length >= 3) priceFiltered = survivors;
+    }
+
+    const low = priceFiltered[0];
+    const high = priceFiltered[priceFiltered.length - 1];
     // A median resists being dragged around by a couple of outlier
     // listings far more than a plain average does — important since the
-    // pool here is small (up to 50 raw results) and still not perfectly
-    // clean even after the mismatch filtering above.
-    const typical = median(prices);
+    // pool here is small (up to 100 raw results) and still not perfectly
+    // clean even after the filtering above.
+    const typical = median(priceFiltered);
 
     console.log('eBay price search result:', {
       usedQuery,

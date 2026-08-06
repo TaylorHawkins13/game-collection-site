@@ -24,7 +24,7 @@ async function checkOne(supabase, item) {
   if (!query) return { skipped: true };
 
   const marketplace = marketplaceForCurrency(item.profiles?.currency || 'USD');
-  const url = `${SITE_URL}/api/ebay-price?q=${encodeURIComponent(query)}&title=${encodeURIComponent(item.title)}&marketplace=${marketplace}`;
+  const url = `${SITE_URL}/api/ebay-price?q=${encodeURIComponent(query)}&title=${encodeURIComponent(item.title)}&marketplace=${marketplace}&itemType=${encodeURIComponent(item.item_type || '')}`;
 
   let data;
   try {

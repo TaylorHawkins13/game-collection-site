@@ -599,7 +599,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
       const marketplace = marketplaceForCurrency(currency);
       const title = (form.title || '').trim();
       const res = await fetch(
-        `/api/ebay-price?q=${encodeURIComponent(q)}&title=${encodeURIComponent(title)}&marketplace=${marketplace}`
+        `/api/ebay-price?q=${encodeURIComponent(q)}&title=${encodeURIComponent(title)}&marketplace=${marketplace}&itemType=${encodeURIComponent(form.item_type || '')}`
       );
       const data = await res.json();
       if (data.error === 'not_configured') {

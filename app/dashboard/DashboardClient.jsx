@@ -733,7 +733,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const res = await fetch(
-          `/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&title=${encodeURIComponent(title)}&marketplace=${marketplace}`
+          `/api/ebay-price?q=${encodeURIComponent(buildPriceQuery(item))}&title=${encodeURIComponent(title)}&marketplace=${marketplace}&itemType=${encodeURIComponent(item.item_type || '')}`
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
