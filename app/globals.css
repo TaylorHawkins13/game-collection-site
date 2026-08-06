@@ -1441,8 +1441,8 @@ button:disabled {
 /* ---------- Landing page ---------- */
 .hero-split {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 48px;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
   align-items: center;
   padding: 64px 0 20px;
 }
@@ -1499,18 +1499,20 @@ button:disabled {
 }
 
 /* Real GameCard components, not a redrawn mockup — this is literally
-   what your own dashboard grid looks like. A light stagger/rotation on
-   the outer two keeps the "shelf" feel the old hand-drawn stack had. */
+   what your own dashboard grid looks like. Always exactly 3 in a row
+   (flex-wrap is intentionally NOT set): they shrink together to fit
+   whatever width the column has rather than ever dropping to a second
+   line. A light stagger/rotation on the outer two keeps the "shelf"
+   feel the old hand-drawn stack had. */
 .hero-showcase {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: center;
-  gap: 16px;
+  gap: 10px;
 }
 .hero-showcase-item {
-  width: 168px;
-  flex: 0 0 168px;
+  flex: 0 1 150px;
+  min-width: 0;
 }
 .hero-showcase-item:nth-child(1) {
   transform: rotate(-4deg);
@@ -1556,6 +1558,35 @@ button:disabled {
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
+}
+
+/* Home page's small leaderboard preview — these classes never actually
+   had CSS behind them before (the real /leaderboard page moved to a
+   podium layout a while back and these were left unstyled), so this
+   was rendering as bare, borderless text rows. */
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.leaderboard-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-dim);
+  flex-shrink: 0;
 }
 
 .cta-band {
@@ -1998,13 +2029,6 @@ button:disabled {
   .hero-showcase {
     margin-top: 20px;
   }
-  .hero-showcase-item {
-    width: 130px;
-    flex: 0 0 130px;
-  }
-  .hero-showcase-item:nth-child(2) {
-    transform: translateY(-8px);
-  }
   .value-row,
   .value-row.reverse {
     grid-template-columns: 1fr;
@@ -2025,6 +2049,20 @@ button:disabled {
   }
   .row2 {
     grid-template-columns: 1fr;
+  }
+
+  /* Below this width, shrinking all 3 cards to fit would squeeze them
+     smaller than GameCard is ever meant to render (the real dashboard
+     grid never goes under 180px). A short horizontal swipe reads
+     better than illegibly cramped cards. */
+  .hero-showcase {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 4px 4px 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-showcase-item {
+    flex: 0 0 140px;
   }
 
   /* Five-plus nav links plus a theme toggle used to just wrap onto

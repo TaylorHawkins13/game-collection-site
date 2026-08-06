@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
+import { CoverThumb } from '@/components/LeaderboardThumb';
 
 const CATEGORIES = ['Video Games', 'Comics', 'Trading Cards', 'Vinyl Records', 'Books', 'DVDs', 'CDs'];
 
@@ -83,12 +84,13 @@ export default async function HomePage() {
     ? realLeaderboard.map((row, i) => ({
         rank: i + 1,
         title: row.title,
+        cover: row.cover,
         sub: `${row.owner_count} owner${row.owner_count === 1 ? '' : 's'}`,
       }))
     : [
-        { rank: 1, title: 'Elden Ring', sub: '412 owners' },
-        { rank: 2, title: 'The Last of Us', sub: '388 owners' },
-        { rank: 3, title: 'Amazing Spider-Man #300', sub: '301 owners' },
+        { rank: 1, title: 'Elden Ring', cover: '/demo/elden-demo.png', sub: '412 owners' },
+        { rank: 2, title: 'The Last of Us', cover: '/demo/tlou-demo.png', sub: '388 owners' },
+        { rank: 3, title: 'Amazing Spider-Man #300', cover: '/demo/comic-demo.png', sub: '301 owners' },
       ];
 
   return (
@@ -177,7 +179,10 @@ export default async function HomePage() {
 
         <div className="value-row">
           <div className="value-text">
-            <div className="value-title">Public profiles &amp; leaderboards</div>
+            <div className="value-title">
+              Public profiles &amp; leaderboards
+              {!realLeaderboard && <span className="category-pill" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Example</span>}
+            </div>
             <div className="value-body">
               Share a link to your shelf, follow other collectors, and see the most-owned items,
               the biggest public collections, and what's trending — or keep everything private,
@@ -191,13 +196,11 @@ export default async function HomePage() {
             {leaderboardRows.map((row, i) => (
               <div className="leaderboard-row" style={i === leaderboardRows.length - 1 ? { marginBottom: 0 } : undefined} key={row.rank}>
                 <div className="leaderboard-rank">{row.rank}</div>
+                <CoverThumb cover={row.cover} title={row.title} />
                 <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{row.title}</div>
                 <div className="sub" style={{ margin: 0 }}>{row.sub}</div>
               </div>
             ))}
-            {!realLeaderboard && (
-              <div className="sub" style={{ marginTop: 8, fontSize: 11 }}>Illustrative example — updates automatically as collectors join.</div>
-            )}
           </div>
         </div>
       </div>
