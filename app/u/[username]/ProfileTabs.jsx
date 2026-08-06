@@ -3,11 +3,25 @@
 import { useState } from 'react';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
+import SeriesModal from '@/components/SeriesModal';
+import { seriesSupported } from '@/lib/seriesLookup';
 import CommentSection from './CommentSection';
 
-export default function ProfileTabs({ games, achievementDefs, earnedKeys, rarity, comments, canComment, profileId, currency }) {
+export default function ProfileTabs({
+  games,
+  achievementDefs,
+  earnedKeys,
+  rarity,
+  comments,
+  canComment,
+  profileId,
+  currency,
+  ownerName,
+  isOwnProfile,
+}) {
   const hasTrophies = achievementDefs && achievementDefs.length > 0;
   const [tab, setTab] = useState('collection');
+  const [seriesItem, setSeriesItem] = useState(null);
 
   return (
     <div>
@@ -45,10 +59,25 @@ export default function ProfileTabs({ games, achievementDefs, earnedKeys, rarity
         ) : (
           <div className="grid" style={{ marginBottom: 40 }}>
             {games.map((g) => (
-              <GameCard key={g.id} game={g} currency={currency} />
+              <GameCard
+                key={g.id}
+                game={g}
+                currency={currency}
+                onClick={seriesSupported(g.item_type) ? () => setSeriesItem(g) : undefined}
+              />
             ))}
           </div>
         ))}
+
+      {seriesItem && (
+        <SeriesModal
+          key={seriesItem.id}
+          item={seriesItem}
+          items={games}
+          ownerLabel={isOwnProfile ? null : ownerName}
+          onClose={() => setSeriesItem(null)}
+        />
+      )}
 
       {tab === 'trophies' && hasTrophies && (
         <TrophyCase defs={achievementDefs} earnedKeys={earnedKeys} rarity={rarity} />

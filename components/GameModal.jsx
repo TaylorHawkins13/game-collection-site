@@ -9,9 +9,12 @@ import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
-import { findPossibleDuplicates, normalizeTitle } from '@/lib/duplicateCheck';
+import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
 import useModalA11y from '@/lib/useModalA11y';
+import useSeriesLookup from '@/lib/useSeriesLookup';
+import { seriesSupported, seriesQueryValueFor, ownedKeysFor } from '@/lib/seriesLookup';
+import SeriesGrid from './SeriesGrid';
 
 const EMPTY = {
   item_type: 'game',
@@ -73,9 +76,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
   const [priceChecking, setPriceChecking] = useState(false);
   const [priceCheck, setPriceCheck] = useState(null);
   const [priceHint, setPriceHint] = useState('');
-  const [franchise, setFranchise] = useState(null);
-  const [franchiseLoading, setFranchiseLoading] = useState(false);
-  const [franchiseError, setFranchiseError] = useState('');
+  const series = useSeriesLookup();
 
   useEffect(() => {
     setCoverBroken(false);
@@ -146,8 +147,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     setCommunityHint('');
     setPriceCheck(null);
     setPriceHint('');
-    setFranchise(null);
-    setFranchiseError('');
+    series.reset();
   }, [game, duplicateOf]);
 
   function set(field, val) {
@@ -308,13 +308,12 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
 
   // Normalized titles of every game already owned/wishlisted/sold in the
   // collection — used to mark which franchise entries from IGDB are
-  // already in the collection vs. not. Title-matched (same approach as
-  // duplicate detection) rather than an id lookup, since existing rows
-  // were never saved with an IGDB id to match on directly.
-  const ownedGameTitles = useMemo(
-    () => new Set((existingItems || []).filter((i) => i.item_type === 'game').map((i) => normalizeTitle(i.title))),
-    [existingItems]
-  );
+  // already in the collection vs. not — see lib/seriesLookup.js for the
+  // matching rules (title for games, issue/card number for everything
+  // else, since within one series/set that's what actually distinguishes
+  // entries).
+  const seriesValue = useMemo(() => seriesQueryValueFor(form), [form]);
+  const ownedKeys = useMemo(() => ownedKeysFor(existingItems, form.item_type), [existingItems, form.item_type]);
 
   const genrePlaceholder = isComic
     ? 'e.g. Superhero'
@@ -387,30 +386,6 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
 
   function gameSearch() {
     runGameSearch(form.title);
-  }
-
-  async function loadFranchise() {
-    const title = (form.title || '').trim();
-    if (!title) return;
-    setFranchiseLoading(true);
-    setFranchiseError('');
-    try {
-      const res = await fetch(`/api/igdb-franchise?title=${encodeURIComponent(title)}`);
-      const data = await res.json();
-      if (data.error === 'not_configured') {
-        setFranchiseError('Not available (no IGDB credentials set on this site).');
-      } else if (data.error === 'no_franchise') {
-        setFranchiseError("IGDB doesn't have this tagged as part of a series.");
-      } else if (data.error) {
-        setFranchiseError('Could not load the series — try again in a bit.');
-      } else {
-        setFranchise(data);
-      }
-    } catch {
-      setFranchiseError('Could not load the series — check your connection.');
-    } finally {
-      setFranchiseLoading(false);
-    }
   }
 
   async function runCardSearch(query) {
@@ -719,7 +694,24 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
-        <h2 id="game-modal-title">{game ? 'Edit Item' : 'Add Item'}</h2>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+          <h2 id="game-modal-title" style={{ margin: 0 }}>{game ? 'Edit Item' : 'Add Item'}</h2>
+          {/* Editing an existing item only — a blank Add form or a
+              duplicateOf pre-fill both have no id yet, and series lookup
+              is by title/set, so there's nothing to search until the
+              item's actually saved. */}
+          {game?.id && seriesSupported(form.item_type) && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ flexShrink: 0, fontSize: 12, padding: '6px 10px', whiteSpace: 'nowrap' }}
+              onClick={() => (series.data ? series.reset() : series.load(form.item_type, seriesValue))}
+              disabled={series.loading}
+            >
+              {series.loading ? 'Loading…' : series.data ? 'Hide series' : 'See full series'}
+            </button>
+          )}
+        </div>
         <div className="sub">
           {duplicateOf
             ? 'Pre-filled as a copy — adjust what\'s different, then save.'
@@ -727,6 +719,14 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
             ? 'Fill in the details, or search to auto-fill cover art & info.'
             : 'Fill in the details.'}
         </div>
+
+        {game?.id && seriesSupported(form.item_type) && (series.loading || series.error || series.data) && (
+          <div className="field">
+            {series.loading && <div className="sub" style={{ marginTop: 0 }}>Looking up the series…</div>}
+            {series.error && <div className="sub" style={{ marginTop: 0 }}>{series.error}</div>}
+            {series.data && <SeriesGrid data={series.data} ownedKeys={ownedKeys} />}
+          </div>
+        )}
 
         <div className="field">
           <label>Type</label>
@@ -844,56 +844,6 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
             </div>
           )}
         </div>
-
-        {/* Editing an existing game only — a blank Add form or a
-            duplicateOf pre-fill both have no id yet, and franchise
-            membership is looked up by title, so there's nothing useful
-            to show until the item's actually saved with a real title. */}
-        {isGame && game?.id && (
-          <div className="field">
-            <label>Series</label>
-            {!franchise && !franchiseLoading && (
-              <button type="button" className="btn-ghost" onClick={loadFranchise}>
-                See full series
-              </button>
-            )}
-            {franchiseLoading && (
-              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>Looking up the series…</div>
-            )}
-            {franchiseError && (
-              <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{franchiseError}</div>
-            )}
-            {franchise && (
-              <div className="franchise-panel">
-                <div className="sub" style={{ marginBottom: 8 }}>
-                  {franchise.franchiseName} —{' '}
-                  {franchise.games.filter((g) => ownedGameTitles.has(normalizeTitle(g.name))).length} of{' '}
-                  {franchise.games.length} in your collection
-                </div>
-                <div className="franchise-grid">
-                  {franchise.games.map((g) => {
-                    const owned = ownedGameTitles.has(normalizeTitle(g.name));
-                    return (
-                      <div
-                        key={g.id}
-                        className={`franchise-item${owned ? ' owned' : ''}`}
-                        title={g.year ? `${g.name} (${g.year})` : g.name}
-                      >
-                        {g.cover ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={g.cover} alt={g.name} />
-                        ) : (
-                          <div className="franchise-item-placeholder">{g.name.slice(0, 1)}</div>
-                        )}
-                        <div className="franchise-item-name">{g.name}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {isGame && (
           <div className="row2">

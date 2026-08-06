@@ -308,6 +308,8 @@ export default async function ProfilePage({ params }) {
             canComment={!!viewer}
             profileId={profile.id}
             currency={profile.currency}
+            ownerName={profile.display_name || profile.username}
+            isOwnProfile={viewer?.id === profile.id}
           />
         </>
       )}
