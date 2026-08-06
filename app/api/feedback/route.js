@@ -52,12 +52,17 @@ export async function POST(request) {
   // whoever just submitted the form.
   try {
     const typeLabel = { bug: 'Bug report', issue: 'Issue', suggestion: 'Feature suggestion' }[type];
+    const senderEmail = email || viewer?.email || null;
     await sendEmail({
       to: process.env.FEEDBACK_NOTIFY_EMAIL || process.env.ADMIN_EMAIL,
+      // So hitting "Reply" in your inbox goes straight back to whoever
+      // submitted this, not to the site's own from-address. Omitted
+      // entirely for anonymous submissions with no email left.
+      ...(senderEmail ? { replyTo: senderEmail } : {}),
       subject: `Shelf Life feedback: ${typeLabel}`,
       text: [
         `Type: ${typeLabel}`,
-        `From: ${email || viewer?.email || 'anonymous'}`,
+        `From: ${senderEmail || 'anonymous'}`,
         pageUrl ? `Page: ${pageUrl}` : null,
         '',
         message,
