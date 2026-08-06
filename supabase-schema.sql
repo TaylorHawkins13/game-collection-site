@@ -1076,8 +1076,13 @@ grant select on leaderboard_friends_trending to anon, authenticated;
 -- when updating an existing project instead of starting fresh)
 -- ============================================================
 
+-- Opted in by default for new accounts, with an opt-out toggle in
+-- Profile Settings (existing accounts keep whatever they'd already
+-- chosen — this only changes what a brand-new signup starts with, it's
+-- never retroactively applied to anyone). See
+-- newsletter-optin-default-migration.sql.
 alter table public.profiles
-  add column if not exists newsletter_opt_in boolean not null default false;
+  add column if not exists newsletter_opt_in boolean not null default true;
 
 alter table public.games
   add column if not exists condition_photos text[] not null default '{}'::text[];

@@ -1103,7 +1103,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Email me when something new ships
             </label>
             <p className="sub" style={{ margin: '4px 0 0' }}>
-              Off by default. Occasional, manually sent — no automated marketing emails.
+              On by default for new accounts, off any time you want. Occasional, manually sent — no
+              automated marketing emails.
             </p>
           </div>
 

@@ -27,6 +27,11 @@ export async function POST(request) {
 
   const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
   const text = typeof body.body === 'string' ? body.body.trim() : '';
+  // Deliberately every-user override — for a one-off "here's what's new
+  // and when the app's landing" announcement, not a general escape hatch.
+  // The normal, default path stays opted-in-only; this only fires when
+  // the admin form's checkbox was explicitly ticked.
+  const sendToAll = body.sendToAll === true;
   if (!subject || !text) {
     return NextResponse.json({ error: 'Subject and body are required.' }, { status: 400 });
   }
@@ -38,17 +43,18 @@ export async function POST(request) {
     return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not set — add it in Vercel env vars.' }, { status: 500 });
   }
 
-  const { data: optedIn, error: profilesError } = await admin
-    .from('profiles')
-    .select('id')
-    .eq('newsletter_opt_in', true);
+  let recipientQuery = admin.from('profiles').select('id');
+  if (!sendToAll) {
+    recipientQuery = recipientQuery.eq('newsletter_opt_in', true);
+  }
+  const { data: recipients, error: profilesError } = await recipientQuery;
 
   if (profilesError) {
     console.error('Newsletter: profiles fetch failed', profilesError);
     return NextResponse.json({ error: "Couldn't load the recipient list." }, { status: 500 });
   }
-  if (!optedIn || optedIn.length === 0) {
-    return NextResponse.json({ error: 'No one is opted in.' }, { status: 400 });
+  if (!recipients || recipients.length === 0) {
+    return NextResponse.json({ error: sendToAll ? 'No accounts to send to.' : 'No one is opted in.' }, { status: 400 });
   }
 
   // profiles has no email column (auth emails live in auth.users only,
@@ -56,7 +62,7 @@ export async function POST(request) {
   // this site's scale; would need auth.admin.listUsers() pagination
   // instead if the opted-in list ever gets into the thousands.
   const emails = [];
-  for (const p of optedIn) {
+  for (const p of recipients) {
     try {
       const { data, error } = await admin.auth.admin.getUserById(p.id);
       if (!error && data?.user?.email) emails.push(data.user.email);
