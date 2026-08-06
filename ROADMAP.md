@@ -9,6 +9,10 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 ## Requested by Taylor (not yet built)
 
 - **Auto-search for the remaining types** — Games, Trading cards, Books, Consoles, and now Vinyl/CD (MusicBrainz, see `CHANGELOG.md`) all have a "Search" auto-fill button. Still missing: Comics, DVDs/Blu-rays, and Funko Pops. Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
+- **Remove emojis** — audit the site and strip out emoji usage across the UI (nav, buttons, empty states, toasts, etc.) in favor of plain text/icons.
+- **Mobile layout feels disorganized in places** — no single reported page, just a general sense that some mobile screens need tidying; worth a fresh pass now that a lot of features have shipped since the last mobile audit (#180–184).
+- **Home page example cards don't fit on screen on mobile (logged out)** — the sample collection cards shown to signed-out visitors on the home page overflow/don't fit properly on small screens.
+- **Mosaic export doesn't work on mobile** — downloading/sharing the shelf mosaic image fails on mobile; works on desktop. Needs investigation into whether it's the PNG generation route, a mobile download/share-sheet issue, or both.
 
 ## From outside feedback (reviewed)
 
@@ -51,7 +55,7 @@ A batch of ideas I came up with on my own — nothing here has your buy-in yet, 
 ## Infrastructure / polish (not urgent, but worth knowing about)
 
 - **Email confirmation back on** — currently off for easy testing; worth re-enabling before wide public use so signups are verified (the localhost link issue is fixed, but confirmation itself is still optional).
-- **Rate limiting on comments** — nothing currently stops spam comment posting; low risk while the user base is small, worth adding once there's real traffic.
+- ~~**Rate limiting on comments**~~ — done, see `CHANGELOG.md`.
 - **Image handling for cover art** — cover URLs are trusted as-is right now; downloading and re-hosting them (or at least validating them) would be more robust than relying on external links staying alive.
 - **Automated tests** — there currently aren't any automated tests; worth adding once the feature set stabilizes, so future changes don't need this much manual click-testing.
 
