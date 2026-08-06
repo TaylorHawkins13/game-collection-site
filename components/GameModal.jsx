@@ -1159,8 +1159,9 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
               <select value={form.completeness} onChange={(e) => set('completeness', e.target.value)}>
                 <option value="">—</option>
                 <option value="loose">{isConsole ? 'Loose (unit only)' : 'Loose (cart/disc only)'}</option>
+                <option value="no_manual">CIB minus manual (missing only the manual)</option>
                 <option value="cib">CIB (complete in box)</option>
-                <option value="box">Box only (no manual)</option>
+                <option value="box_only">Box only (just the box, no {isConsole ? 'unit' : 'game'}/manual)</option>
               </select>
             </div>
           )}

@@ -108,7 +108,7 @@ export default function GameCard({
     if (game.region) statRows.push({ label: 'Region', value: game.region });
     if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
     if (game.completeness) {
-      const compLabel = { loose: 'Loose', cib: 'CIB', box: 'Box only' }[game.completeness] || game.completeness;
+      const compLabel = { loose: 'Loose', no_manual: 'Missing manual', cib: 'CIB', box_only: 'Box only' }[game.completeness] || game.completeness;
       statRows.push({ label: 'Completeness', value: compLabel });
     }
     statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
@@ -129,7 +129,7 @@ export default function GameCard({
     statRows.push({ label: 'Progress', value: cap(game.play_status) || 'Backlog' });
     if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
     if (game.completeness) {
-      const compLabel = { loose: 'Loose', cib: 'CIB', box: 'Box only' }[game.completeness] || game.completeness;
+      const compLabel = { loose: 'Loose', no_manual: 'Missing manual', cib: 'CIB', box_only: 'Box only' }[game.completeness] || game.completeness;
       statRows.push({ label: 'Completeness', value: compLabel });
     }
     if (game.trophy_platinum || game.trophy_completion != null) {
