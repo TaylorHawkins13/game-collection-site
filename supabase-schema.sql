@@ -727,7 +727,22 @@ grant execute on function recommend_games(uuid, int) to authenticated;
 -- ------------------------------------------------------------
 -- Leaderboard views (only consider public profiles)
 -- ------------------------------------------------------------
-create or replace view leaderboard_most_owned as
+-- `with (security_invoker = true)` on every view below: Postgres views
+-- run with the view OWNER's permissions by default (effectively acting
+-- like SECURITY DEFINER, even without saying so), which is what
+-- Supabase's Security Advisor flags as "Security Definer View" on
+-- each of these. security_invoker makes a view run with the actual
+-- querying user's own permissions/RLS instead. Checked this is safe
+-- here: every underlying table these views touch (profiles, games,
+-- follows, achievement_defs, user_achievements) already has RLS
+-- policies that allow exactly the reads these views need (public
+-- profiles/follows/achievements are fully public-readable; games is
+-- readable whenever the owner's profile is public, which is exactly
+-- what these views already filter for) — so this only tightens
+-- permission *enforcement*, it doesn't change what the leaderboards
+-- actually show.
+create or replace view leaderboard_most_owned
+  with (security_invoker = true) as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at))[1] as title,
@@ -740,7 +755,8 @@ group by lower(g.title)
 order by owner_count desc
 limit 50;
 
-create or replace view leaderboard_biggest_collections as
+create or replace view leaderboard_biggest_collections
+  with (security_invoker = true) as
 select
   p.id as user_id,
   p.username,
@@ -754,7 +770,8 @@ group by p.id, p.username, p.display_name, p.avatar_url
 order by game_count desc
 limit 50;
 
-create or replace view leaderboard_trending as
+create or replace view leaderboard_trending
+  with (security_invoker = true) as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at desc))[1] as title,
@@ -769,7 +786,8 @@ limit 50;
 
 -- Ranks public collectors by Shelf Life trophies earned (bronze through
 -- platinum, from achievements-migration.sql), not by collection size.
-create or replace view leaderboard_trophies as
+create or replace view leaderboard_trophies
+  with (security_invoker = true) as
 select
   p.id as user_id,
   p.username,
@@ -793,7 +811,8 @@ limit 50;
 -- UI can format it correctly), so this ranks raw numbers across
 -- currencies, same display-only-currency limitation as the rest of the
 -- site today.
-create or replace view leaderboard_most_valuable as
+create or replace view leaderboard_most_valuable
+  with (security_invoker = true) as
 select
   p.id as user_id,
   p.username,
@@ -822,7 +841,8 @@ limit 50;
 -- left join (not join) on purpose: someone you follow with zero
 -- trophies should still show up at 0, not disappear — this is your
 -- actual follow list, not a sparse global ranking.
-create or replace view leaderboard_friends as
+create or replace view leaderboard_friends
+  with (security_invoker = true) as
 select
   p.id as user_id,
   p.username,
@@ -845,7 +865,8 @@ limit 50;
 -- added yet still shows at 0 for "biggest" — but most_valuable stays an
 -- inner join + having-not-null (like its global counterpart), since a $0
 -- "value" for someone with no priced items isn't a meaningful ranking.
-create or replace view leaderboard_friends_biggest as
+create or replace view leaderboard_friends_biggest
+  with (security_invoker = true) as
 select
   p.id as user_id,
   p.username,
@@ -860,7 +881,8 @@ group by p.id, p.username, p.display_name, p.avatar_url
 order by game_count desc
 limit 50;
 
-create or replace view leaderboard_friends_most_valuable as
+create or replace view leaderboard_friends_most_valuable
+  with (security_invoker = true) as
 select
   p.id as user_id,
   p.username,
@@ -880,7 +902,8 @@ having sum(coalesce(g.market_price, g.price)) is not null
 order by total_value desc
 limit 50;
 
-create or replace view leaderboard_friends_most_owned as
+create or replace view leaderboard_friends_most_owned
+  with (security_invoker = true) as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at))[1] as title,
@@ -894,7 +917,8 @@ group by lower(g.title)
 order by owner_count desc
 limit 50;
 
-create or replace view leaderboard_friends_trending as
+create or replace view leaderboard_friends_trending
+  with (security_invoker = true) as
 select
   lower(g.title) as title_key,
   (array_agg(g.title order by g.created_at desc))[1] as title,

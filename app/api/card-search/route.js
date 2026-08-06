@@ -12,14 +12,9 @@ import { NextResponse } from 'next/server';
 // There's no good free universal database for sports cards or other
 // TCGs (Yu-Gi-Oh, etc.) — those still need to be filled in manually.
 
-function pokemonQuery(q) {
-  const clean = q.replace(/"/g, '').trim();
-  return clean.includes(' ') ? `name:"${clean}"` : `name:${clean}*`;
-}
-
-async function searchPokemon(q) {
+async function fetchPokemonCards(query) {
   const res = await fetch(
-    `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(pokemonQuery(q))}&pageSize=5&orderBy=-set.releaseDate`,
+    `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}&pageSize=6&orderBy=-set.releaseDate`,
     { headers: { Accept: 'application/json' } }
   );
   if (!res.ok) return [];
@@ -35,6 +30,27 @@ async function searchPokemon(q) {
     player_name: card.name,
     subtitle: [card.set?.name, card.number].filter(Boolean).join(' · '),
   }));
+}
+
+// Multi-word card names (e.g. "Floette ex", "Mew VMAX") sometimes came
+// back empty with an exact quoted-phrase match even though the card
+// exists — the API's query parser is picky about phrase matching. This
+// tries an exact phrase first, then an unquoted version, then falls
+// back to a prefix match on just the first word (broadest, but better
+// than nothing) — stopping as soon as one attempt finds something.
+async function searchPokemon(q) {
+  const clean = q.replace(/"/g, '').trim();
+  if (!clean) return [];
+  const firstWord = clean.split(/\s+/)[0];
+  const attempts = clean.includes(' ')
+    ? [`name:"${clean}"`, `name:${clean}`, `name:${firstWord}*`]
+    : [`name:${clean}*`];
+
+  for (const query of attempts) {
+    const cards = await fetchPokemonCards(query);
+    if (cards.length) return cards;
+  }
+  return [];
 }
 
 async function searchScryfall(q) {
