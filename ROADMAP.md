@@ -2,9 +2,16 @@
 
 A living to-do list of where this could go next. Nothing here is committed or scheduled — just organized by how much work each would take, so you can pick what's worth building next. Shipped features live in `CHANGELOG.md`.
 
-## In progress: App Store submission
+## Submitted to the App Store — awaiting Apple's review
 
-Apple Developer Program is approved — actively being worked on now, tracked in `app-store-checklist.md` and `app-store-xcode-walkthrough.md` rather than here since it's a single big multi-step effort, not a list of independent ideas. Short version: wrap the existing PWA with PWABuilder, add a couple of genuinely-native touches first to reduce the odds of an Apple Guideline 4.2 ("repackaged website") rejection, then build/sign/submit through Xcode on a Mac. Done so far: App Store-ready 1024×1024 icon, safe-area/overscroll polish so the wrapped app doesn't feel like a browser tab, a full asset/listing checklist (`app-store-checklist.md`), a fresh mobile-layout audit and fixes (home page hero cards, leaderboard podium, button shapes), a literal step-by-step Xcode/App Store Connect walkthrough (`app-store-xcode-walkthrough.md`), and Face ID/Touch ID passkey sign-in (see `CHANGELOG.md` — confirmed working end-to-end on a real Mac with Touch ID). Currently in Xcode on your Mac working through the actual build. Still open: the two small pre-submission decisions flagged in the walkthrough (ads: personalized vs. not; demo account vs. "just sign up" for App Review).
+Built and signed through Xcode, full listing filled in (screenshots at both 6.9" iPhone and 13" iPad sizes, description, keywords, age rating, privacy nutrition label, content rights, encryption compliance), and **submitted for review**. Typical turnaround is roughly 24-48 hours, though it varies — you'll get an email the moment status changes (Waiting for Review → In Review → Ready for Sale, or a rejection with specifics). Nothing to do right now but wait.
+
+If it comes back rejected, check the "If it gets rejected" section of `app-store-xcode-walkthrough.md` first — most likely candidate is Apple's Guideline 4.2 ("repackaged website"), which the native touches already built (safe areas, passkey sign-in, offline handling) were specifically meant to head off. Bring me whatever the rejection message says and we'll work through it.
+
+Once it's live, worth circling back to a few things that were deliberately deferred rather than skipped:
+- **Real-device passkey test in the wrapped app** — Face ID sign-in is confirmed working in Safari on a Mac; hasn't been specifically confirmed inside the native app's embedded browser view on a real iPhone yet. Test it once you're on TestFlight/live and let me know how it goes — if it doesn't work cleanly, that's when the Apple Associated Domains entitlement (needs the real Team ID, which now exists) would be worth building.
+- **AdSense setup** — ads were left off for this submission (no `NEXT_PUBLIC_ADSENSE_CLIENT_ID` configured); if you want them live later, that's a signup + env var away, and non-personalized was the choice made to avoid needing native ATT code.
+- **iPad-specific polish** — the app went in as a Universal build (works on iPad, just running the phone layout scaled up) rather than iPhone-only. Fine as-is, but a real iPad layout pass would be a nice follow-up if iPad usage turns out to be meaningful.
 
 ## Requested by Taylor (not yet built)
 
