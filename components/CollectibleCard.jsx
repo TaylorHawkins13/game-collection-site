@@ -20,7 +20,8 @@ export default function CollectibleCard({ item }) {
           {item.title}
         </div>
         <div className="sub" style={{ margin: '2px 0 0' }}>
-          {TYPE_LABELS[item.item_type] || item.item_type} · {item.count} collector{item.count === 1 ? '' : 's'}
+          {TYPE_LABELS[item.item_type] || item.item_type}
+          {item.count > 0 ? ` · ${item.count} collector${item.count === 1 ? '' : 's'}` : ' · Not yet collected'}
         </div>
       </div>
     </Link>

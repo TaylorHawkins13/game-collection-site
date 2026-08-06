@@ -61,7 +61,7 @@ export default function PlayersClient() {
     }
     setLoading(true);
     setHasSearched(true);
-    const [{ data: profileRows }, { data: itemRows }] = await Promise.all([
+    const [{ data: profileRows }, { data: itemRows }, igdbRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url, bio')
@@ -78,9 +78,24 @@ export default function PlayersClient() {
         .select('title, item_type, cover')
         .ilike('title', `%${q}%`)
         .limit(150),
+      // Same IGDB auto-fill search GameModal's "Search" button uses when
+      // adding an item — reused here so a title nobody's logged yet still
+      // turns up as a result instead of only ever surfacing already-owned
+      // titles. Best-effort: if IGDB isn't configured on this deployment,
+      // this just quietly contributes nothing.
+      fetch(`/api/igdb-search?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .catch(() => ({ results: [] })),
     ]);
+
+    const localCollectibles = dedupeCollectibles(itemRows || []);
+    const knownKeys = new Set(localCollectibles.map((c) => `${c.item_type}::${c.title.toLowerCase()}`));
+    const uncollected = (igdbRes?.results || [])
+      .filter((g) => g.name && !knownKeys.has(`game::${g.name.trim().toLowerCase()}`))
+      .map((g) => ({ title: g.name.trim(), item_type: 'game', cover: g.thumb || g.cover || '', count: 0 }));
+
     setResults(profileRows || []);
-    setCollectibles(dedupeCollectibles(itemRows || []).slice(0, 40));
+    setCollectibles([...localCollectibles, ...uncollected].slice(0, 40));
     setLoading(false);
   }
 

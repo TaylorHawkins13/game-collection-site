@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
-import { buildCollectibleDetail } from '@/lib/collectibleDetail';
+import { buildCollectibleDetail, buildIgdbDetail } from '@/lib/collectibleDetail';
+import { searchIgdb } from '@/lib/igdbSearch';
 import { TYPE_LABELS } from '@/lib/mosaicData';
 
 export const dynamic = 'force-dynamic';
@@ -19,17 +20,31 @@ async function loadDetail(type, title) {
     .eq('item_type', type)
     .ilike('title', title);
 
-  if (!rows || rows.length === 0) return null;
+  if (rows && rows.length > 0) {
+    const detail = buildCollectibleDetail(rows, type);
+    const ownerIds = [...new Set(rows.map((r) => r.user_id))];
+    const { data: owners } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', ownerIds);
+    return { detail, owners: owners || [] };
+  }
 
-  const detail = buildCollectibleDetail(rows, type);
+  // Nobody's logged this one yet. For games, fall back to the same IGDB
+  // search GameModal's "Search" button uses when adding an item, so a
+  // title someone found through search (even one nobody owns) still has
+  // a real detail page instead of a dead end.
+  if (type === 'game') {
+    const igdb = await searchIgdb(title);
+    const match =
+      (igdb.results || []).find((g) => g.name?.trim().toLowerCase() === title.trim().toLowerCase()) ||
+      (igdb.results || [])[0] ||
+      null;
+    const detail = buildIgdbDetail(match);
+    if (detail) return { detail, owners: [] };
+  }
 
-  const ownerIds = [...new Set(rows.map((r) => r.user_id))];
-  const { data: owners } = await supabase
-    .from('profiles')
-    .select('id, username, display_name, avatar_url')
-    .in('id', ownerIds);
-
-  return { detail, owners: owners || [] };
+  return null;
 }
 
 export async function generateMetadata({ searchParams }) {
@@ -43,9 +58,9 @@ export default async function CollectiblePage({ searchParams }) {
 
   if (!type || !title) {
     return (
-      <main className="container">
+      <main className="container" style={{ maxWidth: 720 }}>
         <p className="sub" style={{ marginTop: 20 }}>Missing search parameters.</p>
-        <Link href="/players">Back to search</Link>
+        <Link href="/players">← Back to search</Link>
       </main>
     );
   }
@@ -54,9 +69,9 @@ export default async function CollectiblePage({ searchParams }) {
 
   if (!result) {
     return (
-      <main className="container">
+      <main className="container" style={{ maxWidth: 720 }}>
         <p className="sub" style={{ marginTop: 20 }}>Couldn't find "{title}".</p>
-        <Link href="/players">Back to search</Link>
+        <Link href="/players">← Back to search</Link>
       </main>
     );
   }
@@ -70,65 +85,86 @@ export default async function CollectiblePage({ searchParams }) {
         ← Back to search
       </Link>
 
-      <div style={{ display: 'flex', gap: 20, marginBottom: 24 }}>
+      <div className="collectible-header">
         {detail.primary.cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={detail.primary.cover}
-            alt={detail.title}
-            style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }}
-          />
+          <img className="collectible-cover" src={detail.primary.cover} alt={detail.title} />
         ) : (
-          <div className="cover placeholder" style={{ width: 140, height: 140, flexShrink: 0 }}>
-            No Cover
-          </div>
+          <div className="collectible-cover placeholder">No Cover</div>
         )}
-        <div>
-          <h1 style={{ margin: '0 0 6px' }}>{detail.title}</h1>
-          <div className="sub" style={{ marginBottom: 10 }}>{TYPE_LABELS[detail.itemType] || detail.itemType}</div>
-          <div className="sub">
-            {detail.count} collector{detail.count === 1 ? '' : 's'} · {detail.ownedCount} own it
-            {detail.avgRating ? ` · ${detail.avgRating.toFixed(1)}★ avg rating` : ''}
-          </div>
+        <div style={{ minWidth: 0 }}>
+          <h1 className="collectible-title">{detail.title}</h1>
+          <div className="collectible-type">{TYPE_LABELS[detail.itemType] || detail.itemType}</div>
+
+          {detail.uncollected ? (
+            <p className="sub" style={{ margin: '0 0 12px', maxWidth: 420 }}>
+              No one's added this to Shelf Life yet — be the first to add it to your shelf.
+            </p>
+          ) : (
+            <div className="stats-bar" style={{ margin: 0, gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+              <div className="stat">
+                <div className="num">{detail.count}</div>
+                <div className="label">Collector{detail.count === 1 ? '' : 's'}</div>
+              </div>
+              <div className="stat">
+                <div className="num">{detail.ownedCount}</div>
+                <div className="label">Own it</div>
+              </div>
+              {detail.avgRating != null && (
+                <div className="stat">
+                  <div className="num">{detail.avgRating.toFixed(1)}★</div>
+                  <div className="label">Avg rating</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {type === 'game' && (
+            <div className="toolbar" style={{ marginTop: 14, marginBottom: 0 }}>
+              <a
+                className="btn-ghost"
+                href={`https://howlongtobeat.com/?q=${encodedTitle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Check time to beat
+              </a>
+              <a
+                className="btn-ghost"
+                href={`https://gamefaqs.gamespot.com/search?game=${encodedTitle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Find a guide
+              </a>
+              {detail.uncollected && (
+                <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
+                  Add to your shelf
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {type === 'game' && (
-        <div className="toolbar" style={{ marginBottom: 24 }}>
-          <a
-            className="btn-ghost"
-            href={`https://howlongtobeat.com/?q=${encodedTitle}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Check time to beat
-          </a>
-          <a
-            className="btn-ghost"
-            href={`https://gamefaqs.gamespot.com/search?game=${encodedTitle}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Find a guide
-          </a>
-        </div>
-      )}
-
       {detail.fields.length > 0 && (
-        <div className="card" style={{ padding: 16, marginBottom: 24 }}>
-          {detail.fields.map((f) => (
-            <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border, #2a2a2a)' }}>
-              <span className="sub" style={{ margin: 0 }}>{f.label}</span>
-              <span style={{ fontWeight: 500 }}>{f.value}</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <h3 className="profile-list-heading">Details</h3>
+          <div className="detail-panel">
+            {detail.fields.map((f) => (
+              <div key={f.label} className="detail-field-row">
+                <span className="detail-field-label">{f.label}</span>
+                <span className="detail-field-value">{f.value}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {owners.length > 0 && (
         <>
-          <div className="sub" style={{ marginBottom: 12 }}>Owned by</div>
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+          <h3 className="profile-list-heading">Owned by</h3>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', marginBottom: 32 }}>
             {owners.map((o) => (
               <Link
                 key={o.id}
