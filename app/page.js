@@ -3,25 +3,27 @@ import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import { CoverThumb } from '@/components/LeaderboardThumb';
+import { fetchIgdbCover, fetchOpenLibraryCover } from '@/lib/showcaseCovers';
 
 const CATEGORIES = ['Video Games', 'Comics', 'Trading Cards', 'Vinyl Records', 'Books', 'DVDs', 'CDs'];
 
 // Curated fallback for each showcase slot, used until a real public item
-// of that type exists to show instead (see FALLBACK_ITEMS below). These
-// use the generated illustrative art in public/demo/ rather than a real
-// person's photo/cover.
+// of that type exists to show instead (see FALLBACK_ITEMS below and
+// FALLBACK_FETCHERS further down). Game and book have a live, free,
+// keyed-or-keyless cover API already wired into the app (IGDB / Open
+// Library — the same ones the real "Search" buttons use), so those two
+// slots get an actual real photo even in the fallback case. Comic has
+// no such integration yet, so it keeps the generated illustrative art.
 const FALLBACK_ITEMS = {
-  trading_card: {
-    id: 'demo-card-0000-0000-0000-000000000001',
-    item_type: 'trading_card',
-    title: 'Charizard VMAX',
-    cover: '/demo/card-demo-v2.png',
+  game: {
+    id: 'demo-game-000-0000-0000-000000000004',
+    item_type: 'game',
+    title: 'Hollow Knight',
+    cover: '',
     ownership: 'owned',
-    card_set: "Champion's Path",
-    card_number: '074/073',
-    player_name: 'Charizard',
-    publisher: 'Pokémon',
-    grade: 'PSA 10',
+    platforms: ['Nintendo Switch'],
+    genre: 'Metroidvania',
+    play_status: 'completed',
     rating: 5,
   },
   comic: {
@@ -38,20 +40,26 @@ const FALLBACK_ITEMS = {
     grade: '9.8',
     rating: 4.5,
   },
-  vinyl: {
-    id: 'demo-vinyl-000-0000-0000-000000000003',
-    item_type: 'vinyl',
-    title: 'Rumours',
-    cover: '/demo/vinyl-demo-v2.png',
+  book: {
+    id: 'demo-book-000-0000-0000-000000000005',
+    item_type: 'book',
+    title: 'The Hobbit',
+    cover: '',
     ownership: 'owned',
-    artist: 'Fleetwood Mac',
-    publisher: 'Warner Bros.',
-    format: 'LP',
-    edition: '180g reissue',
-    rating: 4.5,
+    writer: 'J.R.R. Tolkien',
+    publisher: 'Houghton Mifflin',
+    format: 'Paperback',
+    rating: 5,
   },
 };
-const SHOWCASE_TYPES = ['trading_card', 'comic', 'vinyl'];
+// Live cover lookup for whichever fallback slots support it — only ever
+// called for a slot that doesn't already have a real public item to
+// show instead (see the showcaseItems logic below).
+const FALLBACK_FETCHERS = {
+  game: () => fetchIgdbCover(FALLBACK_ITEMS.game.title),
+  book: () => fetchOpenLibraryCover(FALLBACK_ITEMS.book.title),
+};
+const SHOWCASE_TYPES = ['game', 'comic', 'book'];
 
 // Same two trophies used in the real achievements-migration.sql seed
 // data (first-item / items-100), shown earned — the actual Trophy Case
@@ -90,9 +98,20 @@ export default async function HomePage() {
   ]);
   const showItemStat = (itemCount || 0) >= 20;
   const showCollectorStat = (collectorCount || 0) >= 3;
-  const showcaseItems = SHOWCASE_TYPES.map(
-    (type) => (showcaseCandidates || []).find((g) => g.item_type === type) || FALLBACK_ITEMS[type]
+
+  const showcaseByType = {};
+  for (const type of SHOWCASE_TYPES) {
+    showcaseByType[type] = (showcaseCandidates || []).find((g) => g.item_type === type) || null;
+  }
+  // Only reaches out to IGDB/Open Library for a slot that's still empty
+  // after checking real public items — not on every request.
+  await Promise.all(
+    SHOWCASE_TYPES.filter((type) => !showcaseByType[type] && FALLBACK_FETCHERS[type]).map(async (type) => {
+      const cover = await FALLBACK_FETCHERS[type]();
+      if (cover) showcaseByType[type] = { ...FALLBACK_ITEMS[type], cover };
+    })
   );
+  const showcaseItems = SHOWCASE_TYPES.map((type) => showcaseByType[type] || FALLBACK_ITEMS[type]);
   // Only swap in the real top-3 once there's enough real data for it to
   // read as a genuine leaderboard rather than a couple of lonely rows —
   // falls back to a representative example in the meantime.
