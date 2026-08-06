@@ -9,6 +9,7 @@ const TYPE_LABELS = {
   vinyl: 'Vinyl Record',
   book: 'Book',
   dvd: 'DVD / Blu-ray',
+  vhs: 'VHS',
   cd: 'CD',
   console: 'Console',
   funko_pop: 'Funko Pop',

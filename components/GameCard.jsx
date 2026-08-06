@@ -59,10 +59,11 @@ export default function GameCard({
   const isVinyl = game.item_type === 'vinyl';
   const isBook = game.item_type === 'book';
   const isDvd = game.item_type === 'dvd';
+  const isVhs = game.item_type === 'vhs';
   const isCd = game.item_type === 'cd';
   const isConsole = game.item_type === 'console';
   const isFunko = game.item_type === 'funko_pop';
-  const isMediaLike = isBook || isDvd || isCd;
+  const isMediaLike = isBook || isDvd || isVhs || isCd;
 
   const statRows = [];
   // Shown first (and specially colored) regardless of item type, so a
@@ -95,8 +96,8 @@ export default function GameCard({
     statRows.push({ label: 'Format', value: game.format || '—' });
     if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
   } else if (isMediaLike) {
-    const creatorLabel = isDvd ? 'Director' : isCd ? 'Artist' : 'Author';
-    const publisherLabel = isDvd ? 'Studio' : isCd ? 'Label' : 'Publisher';
+    const creatorLabel = isDvd || isVhs ? 'Director' : isCd ? 'Artist' : 'Author';
+    const publisherLabel = isDvd || isVhs ? 'Studio' : isCd ? 'Label' : 'Publisher';
     statRows.push({ label: creatorLabel, value: game.writer || '—' });
     statRows.push({ label: publisherLabel, value: game.publisher || '—' });
     statRows.push({ label: 'Format', value: game.format || '—' });

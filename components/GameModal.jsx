@@ -282,10 +282,14 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
   const isVinyl = form.item_type === 'vinyl';
   const isBook = form.item_type === 'book';
   const isDvd = form.item_type === 'dvd';
+  const isVhs = form.item_type === 'vhs';
   const isCd = form.item_type === 'cd';
   const isConsole = form.item_type === 'console';
   const isFunko = form.item_type === 'funko_pop';
-  const isMediaLike = isBook || isDvd || isCd;
+  const isMediaLike = isBook || isDvd || isVhs || isCd;
+  // DVD and VHS are the same "movie" data underneath — same search
+  // source, same field labels — just a different physical format.
+  const isMovie = isDvd || isVhs;
 
   // Soft heads-up, not a blocker — a second platform's copy or replacing
   // a lost one are both legitimate reasons to "duplicate" a title.
@@ -300,7 +304,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     ? 'e.g. Sports, TCG'
     : isVinyl
     ? 'e.g. Rock, Jazz'
-    : isDvd
+    : isMovie
     ? 'e.g. Action, Drama'
     : isCd
     ? 'e.g. Rock, Hip-Hop'
@@ -312,14 +316,16 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     ? 'e.g. Pop!, Pop! Rides, Pop! Deluxe, Pin'
     : 'e.g. RPG';
 
-  const mediaCreatorLabel = isDvd ? 'Director' : isCd ? 'Artist' : 'Author';
-  const mediaPublisherLabel = isDvd ? 'Studio' : isCd ? 'Label' : 'Publisher';
+  const mediaCreatorLabel = isMovie ? 'Director' : isCd ? 'Artist' : 'Author';
+  const mediaPublisherLabel = isMovie ? 'Studio' : isCd ? 'Label' : 'Publisher';
   const mediaFormatPlaceholder = isDvd
     ? 'e.g. DVD, Blu-ray, 4K'
+    : isVhs
+    ? 'e.g. VHS, VHS-C'
     : isCd
     ? 'e.g. CD, Digipak, Box Set'
     : 'e.g. Hardcover, Paperback, eBook';
-  const mediaEditionPlaceholder = isDvd
+  const mediaEditionPlaceholder = isMovie
     ? "e.g. Director's Cut, Extended"
     : isCd
     ? 'e.g. Deluxe Edition, Remaster'
@@ -413,6 +419,30 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     runBookSearch(form.title);
   }
 
+  // Covers both DVD and VHS — same movie, different physical format, so
+  // one search against the iTunes catalog serves both.
+  async function runMovieSearch(query) {
+    const q = (query || '').trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchHint('Searching…');
+    try {
+      const res = await fetch(`/api/movie-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const list = data.results || [];
+      setSearchResults(list);
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No matches found.');
+    } catch {
+      setSearchHint('Search failed — check your connection.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function movieSearch() {
+    runMovieSearch(form.title);
+  }
+
   // Consoles have no live database to search — this is a lookup against
   // a hardcoded common-consoles list (lib/consoleList.js), entirely
   // client-side, so it's instant and needs no network call.
@@ -468,6 +498,11 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
       if (item.creator) set('writer', item.creator);
       if (item.publisher) set('publisher', item.publisher);
       setSearchHint(`Filled from Open Library: ${item.name}`);
+    } else if (item.kind === 'movie') {
+      if (item.creator) set('writer', item.creator);
+      if (item.publisher) set('publisher', item.publisher);
+      if (item.genre) set('genre', item.genre);
+      setSearchHint(`Filled: ${item.name}`);
     } else if (item.kind === 'console') {
       if (item.manufacturer) set('publisher', item.manufacturer);
       if (item.genre) set('genre', item.genre);
@@ -511,7 +546,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
       if (data.title) set('title', data.title);
       if (data.cover) set('cover', data.cover);
       if (data.genre) set('genre', data.genre);
-      if (isBook || isDvd || isCd) {
+      if (isMediaLike) {
         if (data.creator) set('writer', data.creator);
         if (data.publisher) set('publisher', data.publisher);
       } else if (isVinyl) {
@@ -660,6 +695,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
             <option value="vinyl">Vinyl Record</option>
             <option value="book">Book</option>
             <option value="dvd">DVD / Blu-ray</option>
+            <option value="vhs">VHS</option>
             <option value="cd">CD</option>
             <option value="console">Console</option>
             <option value="funko_pop">Funko Pop</option>
@@ -701,11 +737,16 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
                 Search
               </button>
             )}
+            {isMovie && (
+              <button type="button" className="btn-ghost" onClick={movieSearch} disabled={searching}>
+                Search
+              </button>
+            )}
           </div>
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd) && searchHint && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie) && searchHint && (
             <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
           )}
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd) && searchResults.length > 0 && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie) && searchResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {searchResults.map((r) => (
                 <div

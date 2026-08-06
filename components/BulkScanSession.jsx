@@ -17,6 +17,7 @@ const TYPE_OPTIONS = [
   { value: 'game', label: 'Games' },
   { value: 'book', label: 'Books' },
   { value: 'dvd', label: 'DVDs / Blu-rays' },
+  { value: 'vhs', label: 'VHS' },
   { value: 'cd', label: 'CDs' },
   { value: 'vinyl', label: 'Vinyl' },
   { value: 'trading_card', label: 'Trading cards' },
@@ -61,7 +62,7 @@ export default function BulkScanSession({ userId, onClose, onItemAdded }) {
       ownership: 'owned',
       genre: data.genre || '',
     };
-    if (itemType === 'book' || itemType === 'dvd' || itemType === 'cd') {
+    if (itemType === 'book' || itemType === 'dvd' || itemType === 'vhs' || itemType === 'cd') {
       row.writer = data.creator || '';
       row.publisher = data.publisher || '';
     } else if (itemType === 'vinyl') {

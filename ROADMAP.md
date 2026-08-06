@@ -8,7 +8,7 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 ## Requested by Taylor (not yet built)
 
-- **Auto-search for the remaining types** — Games, Trading cards, Books, Consoles, and now Vinyl/CD (MusicBrainz, see `CHANGELOG.md`) all have a "Search" auto-fill button. Still missing: Comics, DVDs/Blu-rays, and Funko Pops. Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
+- **Auto-search for the remaining types** — Games, Trading cards, Books, Consoles, Vinyl/CD (MusicBrainz), and now DVD/Blu-ray + VHS (iTunes Search API, see `CHANGELOG.md`) all have a "Search" auto-fill button. Still missing: Comics and Funko Pops. Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
 - **Remove emojis** — audit the site and strip out emoji usage across the UI (nav, buttons, empty states, toasts, etc.) in favor of plain text/icons.
 - **Mobile layout feels disorganized in places** — no single reported page, just a general sense that some mobile screens need tidying; worth a fresh pass now that a lot of features have shipped since the last mobile audit (#180–184).
 - **Home page example cards don't fit on screen on mobile (logged out)** — the sample collection cards shown to signed-out visitors on the home page overflow/don't fit properly on small screens.

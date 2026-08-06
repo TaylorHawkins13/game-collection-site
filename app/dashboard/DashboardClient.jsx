@@ -1420,6 +1420,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <option value="vinyl">Vinyl Records</option>
                   <option value="book">Books</option>
                   <option value="dvd">DVDs / Blu-rays</option>
+                  <option value="vhs">VHS</option>
                   <option value="cd">CDs</option>
                   <option value="console">Consoles</option>
                   <option value="funko_pop">Funko Pops</option>

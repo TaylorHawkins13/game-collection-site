@@ -74,7 +74,7 @@ create trigger on_auth_user_created
 create table if not exists games (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
-  item_type text not null default 'game' check (item_type in ('game', 'comic', 'trading_card', 'vinyl', 'book', 'dvd', 'cd', 'console', 'funko_pop')),
+  item_type text not null default 'game' check (item_type in ('game', 'comic', 'trading_card', 'vinyl', 'book', 'dvd', 'vhs', 'cd', 'console', 'funko_pop')),
   title text not null,
   platforms text[] not null default '{}',
   genre text default '',
