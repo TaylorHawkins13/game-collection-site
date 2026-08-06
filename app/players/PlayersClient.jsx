@@ -3,11 +3,33 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import ProfileCard from '@/components/ProfileCard';
+import CollectibleCard from '@/components/CollectibleCard';
+
+// Turns raw `games` rows (one per collector's own copy — see the RLS
+// policy on that table, which already scopes this to public collectors'
+// items plus the viewer's own) into one tile per distinct title+type,
+// with a count of how many rows matched. Case-insensitive dedupe key so
+// "Zelda" and "zelda" collapse into the same result.
+function dedupeCollectibles(rows) {
+  const byKey = new Map();
+  rows.forEach((r) => {
+    const key = `${r.item_type}::${r.title.trim().toLowerCase()}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.count += 1;
+      if (!existing.cover && r.cover) existing.cover = r.cover;
+    } else {
+      byKey.set(key, { title: r.title.trim(), item_type: r.item_type, cover: r.cover, count: 1 });
+    }
+  });
+  return [...byKey.values()].sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
+}
 
 export default function PlayersClient() {
   const supabase = createClient();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [collectibles, setCollectibles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -20,6 +42,7 @@ export default function PlayersClient() {
       .order('created_at', { ascending: false })
       .limit(24);
     setResults(data || []);
+    setCollectibles([]);
     setLoading(false);
   }
 
@@ -38,28 +61,42 @@ export default function PlayersClient() {
     }
     setLoading(true);
     setHasSearched(true);
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url, bio')
-      .eq('is_public', true)
-      .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
-      .order('username', { ascending: true })
-      .limit(40);
-    setResults(data || []);
+    const [{ data: profileRows }, { data: itemRows }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, bio')
+        .eq('is_public', true)
+        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
+        .order('username', { ascending: true })
+        .limit(40),
+      // No explicit public/owner filter needed — the games table's own
+      // RLS policy (readable if the profile is public, or it's yours)
+      // already scopes this the same way the community-suggestions
+      // search in GameModal.jsx relies on.
+      supabase
+        .from('games')
+        .select('title, item_type, cover')
+        .ilike('title', `%${q}%`)
+        .limit(150),
+    ]);
+    setResults(profileRows || []);
+    setCollectibles(dedupeCollectibles(itemRows || []).slice(0, 40));
     setLoading(false);
   }
 
+  const noResults = results.length === 0 && collectibles.length === 0;
+
   return (
     <main className="container">
-      <h1 style={{ marginTop: 20 }}>Find Collectors</h1>
+      <h1 style={{ marginTop: 20 }}>Search</h1>
       <p className="sub" style={{ marginBottom: 24 }}>
-        Search public profiles by username or display name.
+        Search public collectors by username or name, or a title anyone's logged in their collection.
       </p>
 
       <form onSubmit={runSearch} className="toolbar" style={{ marginBottom: 24 }}>
         <input
           type="text"
-          placeholder="Search by username or name…"
+          placeholder="Search collectors or titles…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -68,18 +105,38 @@ export default function PlayersClient() {
 
       {loading ? (
         <div className="sub">Loading…</div>
-      ) : results.length === 0 ? (
+      ) : hasSearched && noResults ? (
         <div className="empty-state">
-          <div>{hasSearched ? 'No collectors found.' : 'No public collectors yet.'}</div>
+          <div>No collectors or collectibles found.</div>
+        </div>
+      ) : !hasSearched && results.length === 0 ? (
+        <div className="empty-state">
+          <div>No public collectors yet.</div>
         </div>
       ) : (
         <>
+          {hasSearched && collectibles.length > 0 && (
+            <>
+              <div className="sub" style={{ marginBottom: 12 }}>Collectibles</div>
+              <div className="grid" style={{ marginBottom: 32 }}>
+                {collectibles.map((c) => (
+                  <CollectibleCard key={`${c.item_type}::${c.title}`} item={c} />
+                ))}
+              </div>
+            </>
+          )}
+
           {!hasSearched && <div className="sub" style={{ marginBottom: 12 }}>Recently joined:</div>}
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
-            {results.map((p) => (
-              <ProfileCard key={p.id} profile={p} />
-            ))}
-          </div>
+          {hasSearched && results.length > 0 && (
+            <div className="sub" style={{ marginBottom: 12 }}>Collectors</div>
+          )}
+          {results.length > 0 && (
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+              {results.map((p) => (
+                <ProfileCard key={p.id} profile={p} />
+              ))}
+            </div>
+          )}
         </>
       )}
     </main>

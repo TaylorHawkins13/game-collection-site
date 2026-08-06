@@ -98,7 +98,7 @@ export default function Navbar() {
       </button>
       <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
       <div className={`nav-links${menuOpen ? ' open' : ''}`}>
-        <Link href="/players" className="nav-link" onClick={() => setMenuOpen(false)}>Find Collectors</Link>
+        <Link href="/players" className="nav-link" onClick={() => setMenuOpen(false)}>Search</Link>
         <Link href="/leaderboard" className="nav-link" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
         {!loading && profile && (
           <>
