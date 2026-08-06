@@ -35,7 +35,7 @@ function Tile({ item, isShowcase, isTopValue, currency, failed, onFail, onHover 
         <img src={item.cover} alt={item.title} className="mosaic-tile-cover" onError={() => onFail(item.cover)} />
       )}
       <div className="mosaic-tile-shade" />
-      {isShowcase && <div className="mosaic-badge mosaic-badge-star">★</div>}
+      {isShowcase && <div className="mosaic-badge mosaic-badge-star" />}
       {isTopValue && value > 0 && (
         <div className="mosaic-badge mosaic-badge-price">
           {currencySymbol(currency)}
@@ -146,29 +146,31 @@ export default function MosaicClient({ username, displayName, currency, items })
           <div>Nothing to show for this view yet.</div>
         </div>
       ) : (
-        rows.map((row) => (
-          <div className="mosaic-row" key={row.type}>
-            <div className="mosaic-row-label">
-              {row.label} · {row.total}
+        <div className="mosaic-shelf-unit">
+          {rows.map((row) => (
+            <div className="mosaic-row" key={row.type}>
+              <div className="mosaic-row-label">
+                {row.label} · {row.total}
+              </div>
+              <div className="mosaic-row-items">
+                {row.items.map((item) => (
+                  <Tile
+                    key={item.id}
+                    item={item}
+                    currency={currency}
+                    failed={failedCovers.has(item.cover)}
+                    onFail={handleFail}
+                    onHover={setHovered}
+                    isShowcase={item.showcase_order != null}
+                    isTopValue={topValueIds.has(item.id)}
+                  />
+                ))}
+                {row.overflow > 0 && <div className="mosaic-tile mosaic-tile-overflow">+{row.overflow}</div>}
+              </div>
+              <div className="mosaic-plank" />
             </div>
-            <div className="mosaic-row-items">
-              {row.items.map((item) => (
-                <Tile
-                  key={item.id}
-                  item={item}
-                  currency={currency}
-                  failed={failedCovers.has(item.cover)}
-                  onFail={handleFail}
-                  onHover={setHovered}
-                  isShowcase={item.showcase_order != null}
-                  isTopValue={topValueIds.has(item.id)}
-                />
-              ))}
-              {row.overflow > 0 && <div className="mosaic-tile mosaic-tile-overflow">+{row.overflow}</div>}
-            </div>
-            <div className="mosaic-plank" />
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   );

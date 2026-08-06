@@ -2366,7 +2366,11 @@ button:disabled {
   }
 }
 
-/* ---------- Shelf mosaic ---------- */
+/* ---------- Shelf mosaic ----------
+   Deliberately its own palette (warm wood/brass, not the site's cool
+   navy/purple) so this reads as a standalone poster you're looking at
+   inside the site, not just another page of it — same reasoning as the
+   shareable PNG in lib/mosaicRender.js, which this is styled to match. */
 .mosaic-wrap {
   margin: 20px 0 48px;
 }
@@ -2413,42 +2417,96 @@ button:disabled {
 .mosaic-hover-info strong {
   color: var(--text);
 }
+
+/* the shelf unit itself — a wood-toned panel with side rails, holding
+   every row, instead of rows floating loose on the page background */
+.mosaic-shelf-unit {
+  background: linear-gradient(180deg, #1c130b 0%, #120c07 100%);
+  border-radius: 10px;
+  padding: 28px 26px;
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 75, 0.15);
+  position: relative;
+}
+.mosaic-shelf-unit::before,
+.mosaic-shelf-unit::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(90deg, #9a713f 0%, #6b4a2c 75%, #4a3018 100%);
+  border-radius: 10px 0 0 10px;
+}
+.mosaic-shelf-unit::before {
+  left: 0;
+}
+.mosaic-shelf-unit::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
 .mosaic-row {
-  margin-bottom: 30px;
+  margin-bottom: 26px;
+  position: relative;
 }
 .mosaic-row-label {
-  font-size: 14px;
+  display: inline-block;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--text-dim);
-  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #241a08;
+  background: #c9a24b;
+  padding: 3px 9px;
+  border-radius: 3px;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
 }
 .mosaic-row-items {
   display: flex;
   align-items: flex-end;
-  gap: 12px;
+  gap: 10px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding: 4px 4px 8px;
+  margin-bottom: -6px;
+  position: relative;
+  z-index: 1;
 }
 .mosaic-plank {
-  height: 12px;
-  margin-top: 8px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #6b4a34 0%, #4a2f20 100%);
-  border: 1px solid #2e1c11;
+  height: 22px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #8a6640 0%, #6b4a2c 40%, #4a3018 100%);
+  border: 1px solid #2c1c0d;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.45);
+  margin-bottom: 8px;
 }
 .mosaic-tile {
   position: relative;
   flex: 0 0 auto;
-  width: 96px;
-  height: 128px;
-  border-radius: 6px;
+  width: 100px;
+  height: 134px;
+  border-radius: 5px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0, 0, 0, 0.4);
   cursor: pointer;
   outline: none;
+  box-shadow: 0 10px 14px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease;
 }
+/* deterministic-feeling per-tile tilt via position in the row — same
+   spirit as the PNG's hash-based tilt, approximated with nth-child since
+   CSS can't hash a title. Hovering straightens the tile back to upright,
+   a small "picked it up to look closer" touch the static PNG can't do. */
+.mosaic-tile:nth-child(5n + 1) { transform: rotate(-2.4deg); }
+.mosaic-tile:nth-child(5n + 2) { transform: rotate(1.6deg); }
+.mosaic-tile:nth-child(5n + 3) { transform: rotate(-1deg); }
+.mosaic-tile:nth-child(5n + 4) { transform: rotate(2.6deg); }
+.mosaic-tile:nth-child(5n + 5) { transform: rotate(0deg); }
+.mosaic-tile:hover,
 .mosaic-tile:focus-visible {
-  border-color: var(--accent);
+  transform: rotate(0deg) translateY(-3px);
+  border-color: #c9a24b;
 }
 .mosaic-tile-cover {
   width: 100%;
@@ -2471,8 +2529,8 @@ button:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 22px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%);
+  height: 26px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
   pointer-events: none;
 }
 .mosaic-badge {
@@ -2483,38 +2541,49 @@ button:disabled {
   padding: 2px 5px;
 }
 .mosaic-badge-star {
-  top: 5px;
-  left: 5px;
-  background: var(--accent);
-  color: #fff;
+  top: 6px;
+  left: 6px;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border-radius: 0;
+  background: #c9a24b;
+  border: 1px solid #241a08;
+  transform: rotate(45deg);
 }
 .mosaic-badge-price {
   bottom: 5px;
   right: 5px;
-  background: var(--accent-2);
-  color: #0f1220;
+  background: #e8e2d4;
+  color: #241a08;
 }
 .mosaic-tile-overflow {
   flex: 0 0 auto;
-  width: 96px;
-  height: 128px;
-  border-radius: 6px;
-  border: 1px dashed var(--border);
+  width: 100px;
+  height: 134px;
+  border-radius: 5px;
+  border: 1px dashed rgba(232, 226, 212, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: rgba(232, 226, 212, 0.6);
 }
 
 @media (max-width: 640px) {
+  .mosaic-shelf-unit {
+    padding: 20px 14px;
+  }
   .mosaic-tile,
   .mosaic-tile-overflow {
-    width: 74px;
-    height: 99px;
+    width: 76px;
+    height: 102px;
   }
   .mosaic-tile-placeholder {
     font-size: 22px;
+  }
+  .mosaic-plank {
+    height: 16px;
   }
 }
