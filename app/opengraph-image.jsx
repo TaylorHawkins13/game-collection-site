@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og';
+import fs from 'fs';
+import path from 'path';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -7,8 +9,13 @@ export const contentType = 'image/png';
 // when a link to the site gets shared on Discord, Reddit, iMessage, etc.
 // Generated from JSX/CSS at request time rather than a static file, using
 // Next's built-in ImageResponse so there's no separate image asset to keep
-// in sync with the brand colors.
+// in sync with the brand colors. The icon is read from app/icon.png (the
+// same file used for the favicon) and inlined as a data URI, since
+// ImageResponse can't reference a public/ path directly.
 export default function OpengraphImage() {
+  const iconPath = path.join(process.cwd(), 'app', 'icon.png');
+  const iconSrc = `data:image/png;base64,${fs.readFileSync(iconPath).toString('base64')}`;
+
   return new ImageResponse(
     (
       <div
@@ -27,25 +34,11 @@ export default function OpengraphImage() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 18,
+            gap: 22,
           }}
         >
-          <div
-            style={{
-              width: 84,
-              height: 84,
-              borderRadius: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 44,
-              fontWeight: 800,
-              color: '#fff',
-              background: 'linear-gradient(135deg, #6c5ce7, #00d2a8)',
-            }}
-          >
-            SL
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={iconSrc} width={92} height={92} style={{ borderRadius: 20 }} />
           <div style={{ fontSize: 72, fontWeight: 800, color: '#e8eaf5', display: 'flex' }}>Shelf Life</div>
         </div>
         <div style={{ fontSize: 30, color: '#9aa1c4', marginTop: 26, display: 'flex' }}>
