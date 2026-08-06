@@ -50,7 +50,7 @@ begin
   );
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -164,7 +164,7 @@ begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql set search_path = public;
 
 drop trigger if exists games_set_updated_at on games;
 create trigger games_set_updated_at
@@ -689,6 +689,7 @@ returns table (
 )
 language sql
 stable
+set search_path = public
 as $$
   with my_liked as (
     select distinct lower(title) as title_key

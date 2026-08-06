@@ -18,6 +18,7 @@ returns table (
 )
 language sql
 stable
+set search_path = public
 as $$
   with my_liked as (
     select distinct lower(title) as title_key
