@@ -203,18 +203,18 @@ begin
 end;
 $$;
 
--- Postgres grants EXECUTE on new functions to PUBLIC by default, which
--- silently includes anon — revoke that first so only the explicit grant
--- below actually applies (the drop-and-recreate above would otherwise
--- reset any earlier revoke back to the default). award_achievements_for
--- and backfill_all_achievements are deliberately not granted to anyone —
--- they have no auth.uid() check of their own, so they must only ever be
--- reachable from the trusted SQL editor (the backfill below) or the
--- wrapper above (which runs as this function's owner when it calls
--- them, so it doesn't need its own grant).
-revoke execute on function check_and_award_achievements(uuid) from public;
+-- Supabase grants EXECUTE on every new public-schema function to
+-- anon/authenticated directly by default — revoke that first so only
+-- the explicit grant below actually applies (the drop-and-recreate
+-- above would otherwise reset any earlier revoke back to the default).
+-- award_achievements_for and backfill_all_achievements are deliberately
+-- not granted to anyone — they have no auth.uid() check of their own,
+-- so they must only ever be reachable from the trusted SQL editor (the
+-- backfill below) or the wrapper above (which runs as this function's
+-- owner when it calls them, so it doesn't need its own grant).
+revoke execute on function check_and_award_achievements(uuid) from public, anon, authenticated;
 grant execute on function check_and_award_achievements(uuid) to authenticated;
-revoke execute on function award_achievements_for(uuid) from public;
+revoke execute on function award_achievements_for(uuid) from public, anon, authenticated;
 
 -- ------------------------------------------------------------
 -- backfill_all_achievements: retroactively awards trophies to every
@@ -236,7 +236,7 @@ begin
 end;
 $$;
 
-revoke execute on function backfill_all_achievements() from public;
+revoke execute on function backfill_all_achievements() from public, anon, authenticated;
 
 -- Run the backfill right now. Safe to re-run this whole file any time —
 -- everything here is idempotent, and this will simply top up anyone

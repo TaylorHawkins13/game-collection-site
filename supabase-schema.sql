@@ -52,14 +52,16 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public;
 
--- Postgres grants EXECUTE on new functions to PUBLIC by default, which
--- silently includes anon and authenticated. This function can only
--- actually run as a trigger (calling it directly errors out — Postgres
--- blocks calling a RETURNS TRIGGER function any other way), but
--- Supabase's Security Advisor still flags the exposed grant itself as
--- unnecessary API surface, so revoke it — nothing needs to call this
--- directly, only the trigger below does.
-revoke execute on function handle_new_user() from public;
+-- Supabase grants EXECUTE on every new public-schema function to
+-- anon/authenticated directly (via its own default-privilege setup,
+-- separate from plain Postgres's PUBLIC default — revoking from just
+-- `public` doesn't touch this). This function can only actually run as
+-- a trigger (calling it directly errors out — Postgres blocks calling a
+-- RETURNS TRIGGER function any other way), but Supabase's Security
+-- Advisor still flags the exposed grant itself as unnecessary API
+-- surface, so revoke it explicitly from every role — nothing needs to
+-- call this directly, only the trigger below does.
+revoke execute on function handle_new_user() from public, anon, authenticated;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -229,13 +231,13 @@ begin
 end;
 $$;
 
--- Postgres grants EXECUTE on new functions to PUBLIC by default, which
--- silently includes anon — revoke that first so only the explicit grant
--- below actually applies. (The function's own auth.uid() is null check
--- already blocked signed-out callers either way, but the grant existing
--- at all is what Supabase's Security Advisor flags on a SECURITY
--- DEFINER function.)
-revoke execute on function refresh_item_market_price(uuid, numeric, text) from public;
+-- Supabase grants EXECUTE on every new public-schema function to
+-- anon/authenticated directly by default — revoke that first so only
+-- the explicit grant below actually applies. (The function's own
+-- auth.uid() is null check already blocked signed-out callers either
+-- way, but the grant existing at all is what Supabase's Security
+-- Advisor flags on a SECURITY DEFINER function.)
+revoke execute on function refresh_item_market_price(uuid, numeric, text) from public, anon, authenticated;
 grant execute on function refresh_item_market_price(uuid, numeric, text) to authenticated;
 
 -- ------------------------------------------------------------
@@ -508,16 +510,17 @@ begin
 end;
 $$;
 
--- Postgres grants EXECUTE on new functions to PUBLIC by default, which
--- silently includes anon — revoke that first so only the explicit grant
--- below actually applies. Same for award_achievements_for just below:
--- it's deliberately not granted to anyone, since it has no auth.uid()
--- check of its own and must only ever be reachable from the trusted SQL
--- editor or the wrapper above (which itself runs as this function's
--- owner when it calls it, so it doesn't need its own grant).
-revoke execute on function check_and_award_achievements(uuid) from public;
+-- Supabase grants EXECUTE on every new public-schema function to
+-- anon/authenticated directly by default — revoke that first so only
+-- the explicit grant below actually applies. Same for
+-- award_achievements_for just below: it's deliberately not granted to
+-- anyone, since it has no auth.uid() check of its own and must only
+-- ever be reachable from the trusted SQL editor or the wrapper above
+-- (which itself runs as this function's owner when it calls it, so it
+-- doesn't need its own grant).
+revoke execute on function check_and_award_achievements(uuid) from public, anon, authenticated;
 grant execute on function check_and_award_achievements(uuid) to authenticated;
-revoke execute on function award_achievements_for(uuid) from public;
+revoke execute on function award_achievements_for(uuid) from public, anon, authenticated;
 
 -- ------------------------------------------------------------
 -- value_snapshots: periodic "collection value over time" data points,
