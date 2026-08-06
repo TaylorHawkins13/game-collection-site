@@ -5,7 +5,18 @@ import TrophyCase from '@/components/TrophyCase';
 import { CoverThumb } from '@/components/LeaderboardThumb';
 import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
 
-const CATEGORIES = ['Video Games', 'Comics', 'Trading Cards', 'Vinyl Records', 'Books', 'DVDs', 'CDs'];
+const CATEGORIES = [
+  'Video Games',
+  'Comics',
+  'Trading Cards',
+  'Vinyl Records',
+  'Books',
+  'DVDs',
+  'VHS',
+  'CDs',
+  'Consoles',
+  'Funko Pops',
+];
 
 // Curated fallback for each showcase slot. All 3 get a genuinely real
 // photo, fetched live from a free API the app already uses elsewhere —
@@ -125,8 +136,8 @@ export default async function HomePage() {
           <h1>Track your collection. Show it off.</h1>
           <p>
             Shelf Life is a free way to catalog everything you collect — games, comics, trading
-            cards, vinyl, books, DVDs and CDs — then share your shelf with other collectors,
-            earn trophies, and see how it stacks up.
+            cards, vinyl, books, DVDs, VHS, CDs, consoles and Funko Pops — then share your shelf
+            with other collectors, earn trophies, and see how it stacks up.
           </p>
           <div className="cta-row">
             <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 22px' }}>
@@ -180,9 +191,9 @@ export default async function HomePage() {
           <div className="value-text">
             <div className="value-title">Every kind of collection, one shelf</div>
             <div className="value-body">
-              Video games, comics, trading cards, vinyl, books, DVDs and CDs — each with its own
-              tailored fields (platforms, issue numbers, grades, pressings, and more) instead of
-              a generic catch-all form.
+              Video games, comics, trading cards, vinyl, books, DVDs, VHS, CDs, consoles and
+              Funko Pops — each with its own tailored fields (platforms, issue numbers, grades,
+              pressings, and more) instead of a generic catch-all form.
             </div>
             <Link href="/signup" className="btn-ghost" style={{ textDecoration: 'none', padding: '9px 18px', display: 'inline-block', marginTop: 6 }}>
               Add your first item
