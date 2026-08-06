@@ -11,7 +11,7 @@ Apple Developer Program is approved — actively being worked on now, tracked in
 - **Auto-search for the remaining types** — Games, Trading cards, Books, Consoles, Vinyl/CD (MusicBrainz), and now DVD/Blu-ray + VHS (iTunes Search API, see `CHANGELOG.md`) all have a "Search" auto-fill button. Still missing: Comics and Funko Pops. Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
 - ~~**Remove emojis**~~ — done, see `CHANGELOG.md`.
 - **Mobile layout feels disorganized in places** — no single reported page, just a general sense that some mobile screens need tidying; worth a fresh pass now that a lot of features have shipped since the last mobile audit (#180–184).
-- **Home page example cards don't fit on screen on mobile (logged out)** — the sample collection cards shown to signed-out visitors on the home page overflow/don't fit properly on small screens.
+- ~~**Home page example cards don't fit on screen on mobile (logged out)**~~ — done, see `CHANGELOG.md`.
 - ~~**Mosaic export doesn't work on mobile**~~ — done, see `CHANGELOG.md`.
 - **Inconsistent button shapes (squared vs. rounded)** — buttons across the site mix squared and rounded corners with no clear pattern; worth a pass to pick one style and apply it consistently everywhere. (In progress — paused mid-audit for the App Store push, no changes made yet.)
 

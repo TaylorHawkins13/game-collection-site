@@ -49,6 +49,15 @@ body {
      that you're looking at a website and not an app once this is
      wrapped as a standalone/installed PWA or the native iOS shell. */
   overscroll-behavior-y: none;
+  /* Safety net for "stuff doesn't fit on mobile and the whole page
+     scrolls sideways" — every place on the site that's *meant* to
+     scroll horizontally (the home page's hero card row, Recommended
+     for you, etc.) already does its scrolling on its own inner
+     container via `overflow-x: auto`, so it keeps working exactly the
+     same. This just stops any element that overflows its container
+     (a flex/grid child that won't shrink below its content's natural
+     width is the classic cause) from ever widening the page itself. */
+  overflow-x: hidden;
 }
 
 body {
@@ -1541,7 +1550,13 @@ button:disabled {
   align-items: center;
   gap: 5px;
   padding: 5px 9px;
-  border-radius: 999px;
+  /* Matches every other real action button's radius (the base `button`
+     rule, 8px) instead of the full pill shape it used before — this was
+     the one genuinely inconsistent case: a clickable action button that
+     looked like a tag/badge instead of a button. Static labels (.badge,
+     .chip, .category-pill) keep their pill shape on purpose — they're a
+     different kind of element, not buttons. */
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-dim);
@@ -1709,11 +1724,25 @@ button:disabled {
    whatever width the column has rather than ever dropping to a second
    line. A light stagger/rotation on the outer two keeps the "shelf"
    feel the old hand-drawn stack had. */
+.hero-showcase-wrap {
+  position: relative;
+  min-width: 0;
+}
 .hero-showcase {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  /* .hero-showcase-wrap is itself a grid item of .hero-split — grid
+     items default to min-width: auto, which ignores the flex children's
+     own min-width: 0 below and can force the whole row (and the page)
+     wider than the viewport instead of letting the cards actually
+     shrink. This is what let the row overflow off the edge on mobile —
+     min-width: 0 is set on the wrap above, and mirrored here too. */
+  min-width: 0;
+}
+.hero-showcase-fade {
+  display: none;
 }
 .hero-showcase-item {
   flex: 0 1 170px;

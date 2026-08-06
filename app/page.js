@@ -157,12 +157,21 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="hero-showcase">
-          {showcaseItems.map((item) => (
-            <div className="hero-showcase-item" key={item.id}>
-              <GameCard game={item} />
-            </div>
-          ))}
+        <div className="hero-showcase-wrap">
+          <div className="hero-showcase">
+            {showcaseItems.map((item) => (
+              <div className="hero-showcase-item" key={item.id}>
+                <GameCard game={item} />
+              </div>
+            ))}
+          </div>
+          {/* Below 640px the 3 cards become a swipeable row (see globals.css)
+              rather than shrinking past a readable size — this fade is the
+              "there's more, swipe me" hint. Without it, a card getting cut
+              off mid-frame with no visual cue just reads as broken/cramped
+              rather than an intentional scrollable row. Hidden entirely
+              above 640px, where all 3 already fit with no scrolling. */}
+          <div className="hero-showcase-fade" aria-hidden="true" />
         </div>
       </div>
 
