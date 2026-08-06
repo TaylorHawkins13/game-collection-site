@@ -220,6 +220,13 @@ begin
 end;
 $$;
 
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which
+-- silently includes anon — revoke that first so only the explicit grant
+-- below actually applies. (The function's own auth.uid() is null check
+-- already blocked signed-out callers either way, but the grant existing
+-- at all is what Supabase's Security Advisor flags on a SECURITY
+-- DEFINER function.)
+revoke execute on function refresh_item_market_price(uuid, numeric, text) from public;
 grant execute on function refresh_item_market_price(uuid, numeric, text) to authenticated;
 
 -- ------------------------------------------------------------
@@ -479,17 +486,29 @@ security definer
 set search_path = public
 as $$
 begin
-  if p_user_id is null or p_user_id <> auth.uid() then
+  -- `is distinct from` (not `<>`) on purpose: `<>` against a null
+  -- auth.uid() (a signed-out/anon caller) evaluates to NULL rather than
+  -- true, and plpgsql's `if` treats NULL as "don't enter the branch" —
+  -- so the old `p_user_id <> auth.uid()` check silently let an anon
+  -- caller through instead of rejecting them. `is distinct from` treats
+  -- null sanely and is always true/false, never null.
+  if p_user_id is null or p_user_id is distinct from auth.uid() then
     return;
   end if;
   return query select * from award_achievements_for(p_user_id);
 end;
 $$;
 
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which
+-- silently includes anon — revoke that first so only the explicit grant
+-- below actually applies. Same for award_achievements_for just below:
+-- it's deliberately not granted to anyone, since it has no auth.uid()
+-- check of its own and must only ever be reachable from the trusted SQL
+-- editor or the wrapper above (which itself runs as this function's
+-- owner when it calls it, so it doesn't need its own grant).
+revoke execute on function check_and_award_achievements(uuid) from public;
 grant execute on function check_and_award_achievements(uuid) to authenticated;
--- award_achievements_for is deliberately NOT granted to anon/authenticated —
--- it has no auth.uid() check, so it must only ever be reachable from the
--- trusted SQL editor or the wrapper above.
+revoke execute on function award_achievements_for(uuid) from public;
 
 -- ------------------------------------------------------------
 -- value_snapshots: periodic "collection value over time" data points,

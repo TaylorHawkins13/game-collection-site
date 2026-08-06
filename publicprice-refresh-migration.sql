@@ -44,4 +44,11 @@ begin
 end;
 $$;
 
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which
+-- silently includes anon — revoke that first so only the explicit grant
+-- below actually applies. (The function's own auth.uid() is null check
+-- already blocked signed-out callers either way, but the grant existing
+-- at all is what Supabase's Security Advisor flags on a SECURITY
+-- DEFINER function.)
+revoke execute on function refresh_item_market_price(uuid, numeric, text) from public;
 grant execute on function refresh_item_market_price(uuid, numeric, text) to authenticated;

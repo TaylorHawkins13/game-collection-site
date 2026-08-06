@@ -190,17 +190,31 @@ security definer
 set search_path = public
 as $$
 begin
-  if p_user_id is null or p_user_id <> auth.uid() then
+  -- `is distinct from` (not `<>`) on purpose: `<>` against a null
+  -- auth.uid() (a signed-out/anon caller) evaluates to NULL rather than
+  -- true, and plpgsql's `if` treats NULL as "don't enter the branch" —
+  -- so the old `p_user_id <> auth.uid()` check silently let an anon
+  -- caller through instead of rejecting them. `is distinct from` treats
+  -- null sanely and is always true/false, never null.
+  if p_user_id is null or p_user_id is distinct from auth.uid() then
     return;
   end if;
   return query select * from award_achievements_for(p_user_id);
 end;
 $$;
 
+-- Postgres grants EXECUTE on new functions to PUBLIC by default, which
+-- silently includes anon — revoke that first so only the explicit grant
+-- below actually applies (the drop-and-recreate above would otherwise
+-- reset any earlier revoke back to the default). award_achievements_for
+-- and backfill_all_achievements are deliberately not granted to anyone —
+-- they have no auth.uid() check of their own, so they must only ever be
+-- reachable from the trusted SQL editor (the backfill below) or the
+-- wrapper above (which runs as this function's owner when it calls
+-- them, so it doesn't need its own grant).
+revoke execute on function check_and_award_achievements(uuid) from public;
 grant execute on function check_and_award_achievements(uuid) to authenticated;
--- award_achievements_for is deliberately NOT granted to anon/authenticated —
--- it has no auth.uid() check, so it must only ever be reachable from the
--- trusted SQL editor (via the backfill below) or the wrapper above.
+revoke execute on function award_achievements_for(uuid) from public;
 
 -- ------------------------------------------------------------
 -- backfill_all_achievements: retroactively awards trophies to every
@@ -221,6 +235,8 @@ begin
   end loop;
 end;
 $$;
+
+revoke execute on function backfill_all_achievements() from public;
 
 -- Run the backfill right now. Safe to re-run this whole file any time —
 -- everything here is idempotent, and this will simply top up anyone
