@@ -122,6 +122,7 @@ Lets you set "notify me if this drops below $X" on a wishlist item; a Vercel Cro
 - **Installable app**: Shelf Life can be added to your phone or desktop's home screen/app list like a native app (`app/manifest.js`), with a minimal offline fallback page if you open it with no connection. Deliberately doesn't cache your actual collection data for offline browsing — that's still fetched fresh from Supabase every time, so you're never looking at stale prices or a friend's already-changed collection.
 - **Price-drop alerts**: set a target price on a wishlist item and get notified (via the bell) the first time eBay's current listings dip at or below it — checked once a day by a Vercel Cron job. See step 8 below for setup — needs `price-drop-alerts-migration.sql` on existing projects.
 - **VHS + DVD/Blu-ray auto-search**: a new VHS item type (same fields as DVD — Director, Studio, Format, Edition), and both now have a "Search" button backed by Apple's free iTunes Search API (no signup) — fills in director, studio, and genre. Needs `vhs-migration.sql` on existing projects.
+- **Passkey sign-in (Face ID / Touch ID)**: add a passkey from Profile Settings, then sign in with it from the login page instead of typing your password — real WebAuthn, verified server-side. Needs `passkey-migration.sql` on existing projects; no new env vars (reuses `SUPABASE_SERVICE_ROLE_KEY`, already required for the newsletter feature).
 
 ## Notes
 

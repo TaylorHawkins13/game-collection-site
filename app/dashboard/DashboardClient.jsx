@@ -16,6 +16,7 @@ import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
 import ActionMenu from '@/components/ActionMenu';
+import PasskeyManager from '@/components/PasskeyManager';
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
@@ -1104,6 +1105,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <p className="sub" style={{ margin: '4px 0 0' }}>
               Off by default. Occasional, manually sent — no automated marketing emails.
             </p>
+          </div>
+
+          <div className="field">
+            <label>Passkeys</label>
+            <PasskeyManager />
           </div>
 
           <div className="field">

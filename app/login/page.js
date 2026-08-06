@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
+import PasskeyLoginButton from '@/components/PasskeyLoginButton';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -47,6 +48,8 @@ export default function LoginPage() {
         <button className="btn-primary" type="submit" disabled={submitting} style={{ width: '100%', marginTop: 8 }}>
           {submitting ? 'Logging in…' : 'Log in'}
         </button>
+
+        <PasskeyLoginButton />
 
         <p className="sub" style={{ marginTop: 16, marginBottom: 0 }}>
           No account yet? <Link href="/signup">Sign up</Link>

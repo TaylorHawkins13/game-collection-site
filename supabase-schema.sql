@@ -1098,3 +1098,35 @@ alter table public.feedback enable row level security;
 create policy "Anyone can submit feedback" on public.feedback
   for insert
   with check (true);
+
+-- ============================================================
+-- Passkey (WebAuthn / Face ID / Touch ID) sign-in
+-- (see passkey-migration.sql for the standalone version used when
+-- updating an existing project)
+-- ============================================================
+
+create table if not exists public.passkey_credentials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  credential_id text not null unique,
+  public_key text not null,
+  counter bigint not null default 0,
+  transports text[],
+  device_type text,
+  backed_up boolean not null default false,
+  nickname text,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz
+);
+
+create index if not exists passkey_credentials_user_id_idx on public.passkey_credentials(user_id);
+
+alter table public.passkey_credentials enable row level security;
+
+create policy "Users can view their own passkeys"
+  on public.passkey_credentials for select
+  using (auth.uid() = user_id);
+
+create policy "Users can delete their own passkeys"
+  on public.passkey_credentials for delete
+  using (auth.uid() = user_id);
