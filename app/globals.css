@@ -2685,34 +2685,34 @@ button:disabled {
     margin-bottom: 16px;
   }
 
-  /* The item grid was collapsing to one giant card per row on narrow
-     phones (nothing else fit next to a 180px-minimum tile), which made
-     cover art huge while the stat text inside stayed the same small
-     size — exactly the "everything's big but unreadable" feeling.
-     Smaller tiles keep two per row and put text back in proportion. */
+  /* Taylor's call: a dense poster grid (like a phone home screen) beats
+     one or two big cards per row on mobile — four across, small, cover
+     art doing the work. At ~80px a tile there's no room left for the
+     stat-row detail block (platform/genre/grade/etc.) without it
+     turning into unreadable soup, so that whole section is hidden here;
+     tap the card to see the full detail view instead. */
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
   }
   /* The showcase's fixed 5-column row is a desktop layout — on a phone
-     that's 5 unreadably-thin slivers, so fall back to the same
-     auto-fill sizing as the regular grid. */
+     that's 5 unreadably-thin slivers, so match the regular grid instead. */
   .showcase-grid {
-    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
   }
   .card-title {
-    font-size: 12px;
-    padding: 7px 8px;
+    font-size: 10px;
+    padding: 5px 6px;
+    line-height: 1.25;
   }
   .card-body {
-    padding: 8px 9px 10px;
-    gap: 7px;
+    display: none;
   }
   .card-ownership-flag {
-    font-size: 9px;
-    padding: 3px 7px;
-    top: 7px;
-    right: 7px;
+    font-size: 7.5px;
+    padding: 2px 5px;
+    top: 5px;
+    right: 5px;
   }
   /* The slab flourish (holo strip + cert header) plus a full 4-5 row
      stat block was a lot to pack into a ~150px-wide phone tile. Trim
