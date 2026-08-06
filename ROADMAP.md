@@ -10,6 +10,15 @@ A living to-do list of where this could go next. Nothing here is committed or sc
 
 - **Auto-search for the remaining types** — Games, Trading cards, Books, and Consoles all have a "Search" auto-fill button now. Still missing: Comics, Vinyl, DVDs/Blu-rays, CDs, and Funko Pops. Each needs a different data source: Comics could use ComicVine (free API, needs a quick account signup like Twitch/eBay did); Vinyl/CDs could use MusicBrainz (free, no signup); DVDs/Blu-rays could use TMDb (free API, needs a quick signup). Funko Pops don't have a reliable free public database to search, so real auto-fill isn't realistically achievable there the way it is for the others.
 
+## From outside feedback (reviewed)
+
+Taylor got an external review of the site (8/10, generally positive) with a landing-page critique, promotion ideas, a domain suggestion, and a "features to prioritize" list. My take on what's actually worth doing:
+
+- **Landing page: real headline, screenshots/GIFs, repeated CTA, a social-proof counter** — the one piece of genuinely fair criticism. A clear one-line headline ("Track, organise and share your game, comic, and collectible collection"), actual screenshots or a short GIF of the dashboard instead of describing it in prose, one obvious "Start Tracking Free" button repeated down the page instead of buried once, and a live counter ("X items catalogued," "Join N collectors"). The app already does everything it needs to — this closes the gap between that and a stranger understanding it in 5 seconds.
+- **SEO landing pages for specific searches** — dedicated pages targeting terms like "video game collection tracker," "comic collection app," "collectible database," "retro game inventory." Cheap, compounds over time, and builds on the sitemap/metadata work already shipped.
+- **Domain name** — the reviewer suggested `shelflife.gg` or a `.com` over the current `.site` for credibility and memorability. Fair point, but it's a Taylor-and-budget decision, not mine to make — flagging it here rather than acting on it.
+- **Not adding: promotion channels and the "features to prioritize" list.** The promotion ideas (TikTok, Reddit, YouTube, Discord, Product Hunt) are generic startup-marketing playbook, not specific to Shelf Life — worth doing eventually, but not a build item. The "prioritize" list (collection value tracking, barcode scanning, wishlist, friends/following, public profile pages, stats, achievement badges, activity feed) is already fully shipped — every item on it exists today, so there's nothing to build there. Noting both here so it's clear they were considered and set aside on purpose, not missed.
+
 ## Ideas from Claude (new, not yet reviewed)
 
 A batch of ideas I came up with on my own — nothing here has your buy-in yet, just things I noticed would fit well given what's already built. Go through these whenever you're ready; keep what's useful (I'll fold it into the sections below, or just tell me to build straight from here) and toss the rest.
