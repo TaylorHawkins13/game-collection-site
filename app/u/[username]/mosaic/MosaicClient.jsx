@@ -5,6 +5,7 @@ import { shapeMosaic, modeLabel, titleColor, availableYears, availableTypes, TYP
 import { currencySymbol, formatMoney } from '@/lib/currency';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import { announceToast } from '@/lib/toast';
+import { attachHorizontalWheelScroll } from '@/lib/useHorizontalWheelScroll';
 
 const MODE_TABS = [
   { key: 'all', label: 'Whole Shelf' },
@@ -204,7 +205,7 @@ export default function MosaicClient({ username, displayName, currency, items })
               <div className="mosaic-row-label">
                 {row.label} · {row.items.length}
               </div>
-              <div className="mosaic-row-items">
+              <div className="mosaic-row-items" ref={attachHorizontalWheelScroll}>
                 {row.items.map((item) => (
                   <Tile
                     key={item.id}

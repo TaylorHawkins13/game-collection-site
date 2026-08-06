@@ -72,10 +72,27 @@ const VALID_MARKETPLACES = new Set([
 // much rarer Jirachi bonus disc some sellers bundle in) are effectively a
 // different, rarer item. Left in the search results, a few of these can
 // drag a small sample's average way up.
+//
+// The accessory terms below (case, skin, screen protector, etc.) fix a
+// real bug: a console search like "Nintendo Switch 2" pulls back a flood
+// of $8-15 cases/skins/docks/grips that sellers tag with the console's
+// full name for search visibility. A bare title search has no way to tell
+// those apart from an actual console listing, so without this filter they
+// can dominate the pool and drag the median down to something like $11 for
+// a console that actually sells for hundreds — confirmed happening for a
+// Switch 2 console in this app. Fixed-price + mismatch filtering already
+// falls back to the unfiltered pool if too few real listings survive, so
+// this doesn't risk zeroing out results for a genuinely thin market.
 const MISMATCH_TERMS = [
   'lot of', ' lot ', 'bundle', 'bonus disc', 'graded', 'wata', 'vga', 'cgc',
   'reproduction', 'repro ', 'replacement case', 'case only', 'manual only',
   'disc only', 'read description',
+  'case for', 'skin for', 'screen protector', 'tempered glass',
+  'charging dock', 'charging station', 'carrying case', 'travel case',
+  'joy-con grip', 'joycon grip', 'silicone cover', 'thumb grip',
+  'screen guard', 'sticker', 'decal', 'dust cover', 'protective cover',
+  'stand for', 'holder for', 'controller grip', 'cooling fan',
+  'accessory', 'accessories',
 ];
 
 function isLikelyMismatch(title) {
@@ -90,7 +107,14 @@ function median(sortedNums) {
 }
 
 async function fetchEbayItems(queryStr, marketplace, token) {
-  const params = new URLSearchParams({ q: queryStr, limit: '50' });
+  // 100 rather than 50 — a bigger raw sample matters most for exactly the
+  // case this file's accessory filter exists for: a popular console's
+  // real listings can be outnumbered by cheap accessory listings, so a
+  // small top-N page risks not containing enough genuine matches to clear
+  // the >= 3 threshold below even after filtering. eBay's Browse API caps
+  // a single page at 200; 100 is a reasonable buffer without doubling
+  // response size for the common case where 50 was already plenty.
+  const params = new URLSearchParams({ q: queryStr, limit: '100' });
   const res = await fetch(
     `https://api.ebay.com/buy/browse/v1/item_summary/search?${params.toString()}`,
     {

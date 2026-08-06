@@ -21,6 +21,7 @@ import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
 import { getPlatformColor } from '@/lib/platformColors';
+import { useHorizontalWheelScroll } from '@/lib/useHorizontalWheelScroll';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
@@ -33,6 +34,8 @@ const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 export default function DashboardClient({ userId, profile, initialGames }) {
   const supabase = createClient();
   const searchParams = useSearchParams();
+  const recommendGridRef = useHorizontalWheelScroll();
+  const systemTilesRef = useHorizontalWheelScroll();
   const [games, setGames] = useState(initialGames);
   const [modalGame, setModalGame] = useState(undefined); // undefined = closed, null = add, object = edit
   // Deleting an item removes it from view immediately but doesn't touch
@@ -1243,7 +1246,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     Based on titles you've rated 4-5 stars and what similar-taste collectors rated highly. Click one to
                     add it.
                   </p>
-                  <div className="recommend-grid">
+                  <div className="recommend-grid" ref={recommendGridRef}>
                     {recommendations.map((rec) => (
                       <RecommendationCard
                         key={rec.title}
@@ -1315,7 +1318,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 <h3>Browse by system</h3>
                 {fPlat && <button type="button" onClick={() => setFPlat('')}>Clear</button>}
               </div>
-              <div className="system-tiles">
+              <div className="system-tiles" ref={systemTilesRef}>
                 {platformCounts.map(({ platform, count }) => (
                   <button
                     key={platform}
