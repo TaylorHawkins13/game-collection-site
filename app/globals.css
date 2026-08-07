@@ -1945,41 +1945,6 @@ button:disabled {
   margin: 0 0 14px;
 }
 
-/* A deliberately compact two-column split for Recent activity / What's
-   new — unlike .feed-layout (built for the full /feed page, with a fixed
-   300px sidebar that only collapses at 800px) this stays side by side
-   down to phone width, since both columns here only ever hold one-line
-   rows rather than full paragraphs. */
-.home-split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin: 8px 0 40px;
-}
-.home-activity-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
-  line-height: 1.4;
-}
-.home-activity-row:first-of-type {
-  border-top: none;
-}
-.home-activity-avatar {
-  width: 26px;
-  height: 26px;
-  font-size: 11px;
-  flex-shrink: 0;
-}
-.home-activity-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .home-whatsnew-row {
   padding: 8px 0;
   border-top: 1px solid var(--border);
@@ -1988,10 +1953,6 @@ button:disabled {
 }
 .home-whatsnew-row:first-of-type {
   border-top: none;
-}
-.home-split-empty {
-  font-size: 13px;
-  color: var(--text-dim);
 }
 .home-split-more {
   text-decoration: none;
@@ -2012,18 +1973,7 @@ button:disabled {
   }
 }
 
-/* Collapses to one column well before real phone widths. This used to only
-   collapse below 360px, which sounded narrow enough to be "phone-safe" but
-   isn't — actual phones (iPhone included) are 375-430px wide, all above
-   that cutoff, so "Recent activity"/"What's new" stayed side by side on a
-   real device and the second column ran off the edge of the screen. Now
-   matches the same 640px breakpoint the quick-actions/article grids
-   already use, so all of these sections agree on what "mobile" means. */
 @media (max-width: 640px) {
-  .home-split {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
   .home-hub-greeting h1 {
     font-size: 26px;
     line-height: 1.25;
@@ -2054,6 +2004,13 @@ button:disabled {
   position: relative;
   left: 50%;
   margin-left: -50vw;
+  /* Full-bleed means this reaches all the way to the true screen edge,
+     unlike body's own content which already respects these same insets
+     (see the safe-area rule on body above) — without this, a landscape
+     notch or rounded display corner could clip a cover right at the
+     edge. */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 .home-banner-track {
   display: flex;

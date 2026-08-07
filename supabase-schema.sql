@@ -188,10 +188,15 @@ create trigger games_set_updated_at
 -- for everything except this one case (checking a current market price
 -- doesn't touch anything the owner actually curated). SECURITY DEFINER
 -- bypasses that RLS policy, so the authorization check has to happen
--- inside the function itself: allowed if the caller owns the item, or if
--- the item's owner has a public profile. Only ever touches the three
--- market-price columns — title, price, ownership, etc. stay untouchable
--- by anyone but the real owner.
+-- inside the function itself: only the item's actual owner may write to
+-- it. (This used to also allow anyone when the owner's profile was
+-- public — that was a copy-paste of the *read* rule onto a *write*
+-- operation, and meant any signed-in user could overwrite any public
+-- collector's market price to an arbitrary value via a direct API call.
+-- Fixed — visibility for reading is a separate question, already handled
+-- correctly by the games SELECT RLS policy above.) Only ever touches the
+-- three market-price columns — title, price, ownership, etc. stay
+-- untouchable by anyone but the real owner.
 create or replace function refresh_item_market_price(
   p_game_id uuid,
   p_market_price numeric,
@@ -204,22 +209,20 @@ set search_path = public
 as $$
 declare
   v_owner_id uuid;
-  v_is_public boolean;
 begin
   if auth.uid() is null then
     raise exception 'must be signed in';
   end if;
 
-  select g.user_id, p.is_public into v_owner_id, v_is_public
+  select g.user_id into v_owner_id
   from games g
-  join profiles p on p.id = g.user_id
   where g.id = p_game_id;
 
   if v_owner_id is null then
     raise exception 'item not found';
   end if;
 
-  if auth.uid() <> v_owner_id and not coalesce(v_is_public, false) then
+  if auth.uid() <> v_owner_id then
     raise exception 'not allowed';
   end if;
 
@@ -327,6 +330,13 @@ drop trigger if exists comments_rate_limit on comments;
 create trigger comments_rate_limit
   before insert on comments
   for each row execute function enforce_comment_rate_limit();
+
+-- This is a trigger function — it needs the NEW record from the trigger
+-- context to do anything, it was never meant to be callable directly as
+-- an RPC. Same reasoning as handle_new_user()'s revoke near the top of
+-- this file: Supabase grants EXECUTE on every new function by default,
+-- which is just unnecessary exposed API surface for something trigger-only.
+revoke execute on function enforce_comment_rate_limit() from public, anon, authenticated;
 
 -- ------------------------------------------------------------
 -- achievement_defs / user_achievements: Shelf Life's own PlayStation
