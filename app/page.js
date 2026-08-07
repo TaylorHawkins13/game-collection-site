@@ -299,13 +299,6 @@ async function LoggedInHome({ supabase, viewer }) {
     .eq('id', viewer.id)
     .single();
 
-  // Just a count for the "My Collection" shortcut badge — full item detail
-  // is what /dashboard's grid is for.
-  const { count: itemCount } = await supabase
-    .from('games')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', viewer.id);
-
   const { data: approvedSubmissions } = await supabase
     .from('article_submissions')
     .select('id, type, title, dek, body, rating, created_at, reviewed_at, profile:profiles(username, display_name)')
@@ -329,33 +322,28 @@ async function LoggedInHome({ supabase, viewer }) {
       </div>
 
       {/* Just the shortcuts that aren't already a tap away via the navbar —
-          your actual numbers (items, owned, completed, value) live on
-          /dashboard and /dashboard/insights already, so this page doesn't
-          re-show them; it earns its place with things dashboard doesn't
-          have instead (see the Reviews & Articles section below). */}
+          "My Collection" and "Articles"/"Feed" already live there (see
+          Navbar.jsx), so none of those are repeated as tiles/links down
+          here too. Your actual numbers (items, owned, completed, value)
+          live on /dashboard and /dashboard/insights already, so this page
+          doesn't re-show them either; it earns its place with things
+          dashboard doesn't have instead (see the Reviews & Articles
+          section below). */}
       <div className="quick-actions home-quick-actions">
         {quickActions.map((a) => (
           <Link key={a.href} href={a.href} className="quick-action-tile">
             {a.label}
           </Link>
         ))}
-        <Link href="/dashboard" className="quick-action-tile">
-          My Collection ({itemCount || 0})
-        </Link>
       </div>
 
       {latestArticles.length > 0 && (
         <div className="home-articles">
           <div className="home-articles-head">
             <h2 className="home-section-heading" style={{ margin: 0 }}>Reviews &amp; Articles</h2>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Link href="/articles/submit" className="btn-ghost home-split-more" style={{ margin: 0 }}>
-                Submit yours
-              </Link>
-              <Link href="/articles" className="btn-ghost home-split-more" style={{ margin: 0 }}>
-                See all
-              </Link>
-            </div>
+            <Link href="/articles/submit" className="btn-ghost home-split-more" style={{ margin: 0 }}>
+              Submit yours
+            </Link>
           </div>
           <div className="home-articles-grid">
             {latestArticles.map((a) => (
@@ -384,9 +372,6 @@ async function LoggedInHome({ supabase, viewer }) {
             {item.title}
           </div>
         ))}
-        <Link href="/feed" className="btn-ghost home-split-more">
-          See all updates
-        </Link>
       </div>
     </main>
   );
