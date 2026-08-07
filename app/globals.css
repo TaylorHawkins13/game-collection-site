@@ -2123,6 +2123,11 @@ button:disabled {
   flex: 0 0 240px;
   scroll-snap-align: start;
   display: flex;
+  /* Without this, flex's default align-items: stretch pulls the cover
+     thumbnail to match the height of the (taller, multi-line) text next
+     to it — squashing the image past its own aspect-ratio and effectively
+     cropping it. flex-start keeps the cover at its natural size. */
+  align-items: flex-start;
   gap: 12px;
   padding: 14px;
   border-radius: var(--radius);
