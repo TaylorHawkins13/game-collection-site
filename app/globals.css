@@ -92,14 +92,19 @@ textarea {
 }
 
 /* ---------- Layout ---------- */
+/* Widened from 1200px to 1440px sitewide — text-heavy content
+   (.article-detail, .form-card, etc.) already has its own tighter cap
+   independent of this one, so this change only actually affects the
+   grid-based pages (dashboard, leaderboard, players, mosaic) that were
+   leaving unused space on a big monitor. */
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 32px 60px;
 }
 
 .site-footer {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 20px 32px 40px;
   display: flex;
