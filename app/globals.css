@@ -2025,6 +2025,54 @@ button:disabled {
   }
 }
 
+/* ---------- Home top banner ---------- */
+/* Purely decorative — real cover art (highly-rated items, a different set
+   than the "Recently added" row below), continuously auto-scrolling.
+   Non-interactive (aria-hidden, no links), sized as a wide contained band
+   rather than a full-bleed edge-to-edge image — this codebase has had
+   mobile horizontal-overflow bugs from full-bleed tricks before, so this
+   stays safely inside .container's own width instead. The track renders
+   the cover list twice back to back and animates exactly -50%, which is
+   what makes the loop seamless with no jump. */
+.home-banner {
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  margin: 4px 0 28px;
+  padding: 14px 0;
+}
+.home-banner-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: home-banner-scroll 45s linear infinite;
+}
+.home-banner-cover {
+  width: 110px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: none;
+  background: var(--bg-alt);
+}
+.home-banner-cover.placeholder {
+  display: none;
+}
+@keyframes home-banner-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-banner-track {
+    animation: none;
+  }
+}
+
 /* ---------- Home discovery rows ---------- */
 /* Backloggd-home-inspired: a live wall of what other public collectors are
    adding/rating, not just people you follow. Both rows use the same

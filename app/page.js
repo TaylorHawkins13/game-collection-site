@@ -338,6 +338,22 @@ async function LoggedInHome({ supabase, viewer }) {
     .order('updated_at', { ascending: false })
     .limit(8);
 
+  // Purely decorative banner across the top — real cover art, but a
+  // different slice of it than "Recently added" below (highly-rated
+  // instead of newest, so the two rows don't just repeat each other),
+  // and non-interactive since it's meant to read as a visual, not another
+  // set of links to click through.
+  const { data: spotlightRows } = await supabase
+    .from('games')
+    .select('id, title, cover')
+    .neq('user_id', viewer.id)
+    .gte('rating', 4)
+    .not('cover', 'is', null)
+    .neq('cover', '')
+    .order('rating', { ascending: false })
+    .limit(16);
+  const spotlightCovers = spotlightRows || [];
+
   const name = profile?.display_name || profile?.username || 'there';
 
   const quickActions = [...QUICK_ACTIONS];
@@ -348,6 +364,21 @@ async function LoggedInHome({ supabase, viewer }) {
 
   return (
     <main className="container">
+      {spotlightCovers.length >= 6 && (
+        <div className="home-banner" aria-hidden="true">
+          <div className="home-banner-track">
+            {[...spotlightCovers, ...spotlightCovers].map((item, i) => (
+              <CoverThumb
+                key={`${item.id}-${i}`}
+                cover={item.cover}
+                title={item.title}
+                className="home-banner-cover"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="home-hub-greeting">
         <h1>Welcome back, {name}</h1>
         <p className="sub">What other collectors are adding, rating, and writing about.</p>
