@@ -2028,19 +2028,27 @@ button:disabled {
 /* ---------- Home top banner ---------- */
 /* Purely decorative — real cover art (highly-rated items, a different set
    than the "Recently added" row below), continuously auto-scrolling.
-   Non-interactive (aria-hidden, no links), sized as a wide contained band
-   rather than a full-bleed edge-to-edge image — this codebase has had
-   mobile horizontal-overflow bugs from full-bleed tricks before, so this
-   stays safely inside .container's own width instead. The track renders
-   the cover list twice back to back and animates exactly -50%, which is
-   what makes the loop seamless with no jump. */
+   Non-interactive (aria-hidden, no links). Deliberately full-bleed
+   (edge-to-edge, ignoring .container's max-width/padding) rather than
+   boxed like the rest of the page — that's what actually reads as "a
+   banner across the top" the way it does on the bigger sites this was
+   modeled on, instead of just another card. Safe to do here because
+   html/body already has overflow-x: hidden as a site-wide safety net (see
+   that rule above) — that's the thing that was missing during past
+   mobile-overflow bugs, not the full-bleed technique itself. The track
+   renders the cover list twice back to back and animates exactly -50%,
+   which is what makes the loop seamless with no jump. */
 .home-banner {
   overflow: hidden;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   background: var(--card);
   margin: 4px 0 28px;
   padding: 14px 0;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
 }
 .home-banner-track {
   display: flex;
