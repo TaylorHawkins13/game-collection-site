@@ -4,6 +4,9 @@ import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import { CoverThumb } from '@/components/LeaderboardThumb';
 import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
+import { formatMoney } from '@/lib/currency';
+import { WHATS_NEW } from '@/lib/whatsNew';
+import StarRating from '@/components/StarRating';
 
 const CATEGORIES = [
   'Video Games',
@@ -78,8 +81,35 @@ const TROPHY_DEFS = [
   { key: 'items-100', name: 'Centurion', description: 'Own 100 items.', tier: 'gold', sort_order: 13 },
 ];
 
+// Shortcuts into the rest of the app — same destinations already reachable
+// via the navbar/dashboard, just gathered in one tappable grid so the home
+// hub also works as a real "launcher" screen when opened as the installed
+// PWA (its start_url is "/"), not just a web page.
+const QUICK_ACTIONS = [
+  { href: '/dashboard?add=1', label: 'Add an item' },
+  { href: '/dashboard', label: 'My Collection' },
+  { href: '/feed', label: 'Feed' },
+  { href: '/players', label: 'Search' },
+  { href: '/leaderboard', label: 'Leaderboard' },
+];
+
+function activityVerb(eventType) {
+  if (eventType === 'added') return 'added';
+  if (eventType === 'completed') return 'completed';
+  if (eventType === 'rated') return 'rated';
+  if (eventType === 'trophy') return 'earned the trophy';
+  return eventType;
+}
+
 export default async function HomePage() {
   const supabase = createClient();
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
+
+  if (viewer) {
+    return <LoggedInHome supabase={supabase} viewer={viewer} />;
+  }
 
   // Real, live counts — not made-up marketing numbers. RLS means an
   // anonymous visitor only ever sees items belonging to public profiles,
@@ -256,6 +286,178 @@ export default async function HomePage() {
         <Link href="/signup" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 22px', display: 'inline-block' }}>
           Start tracking free
         </Link>
+      </div>
+    </main>
+  );
+}
+
+// The actual "home" for a signed-in visitor — distinct from /dashboard
+// (which is the collection-management workspace) and /feed (which is the
+// full activity stream). This is a lighter landing spot: a greeting, your
+// real numbers at a glance, one-tap shortcuts into the rest of the app, and
+// a peek at both feed activity and site updates so there's a reason to
+// actually land here instead of skipping straight to the dashboard. Doubles
+// as the installed PWA's launch screen, since manifest.js's start_url is "/".
+async function LoggedInHome({ supabase, viewer }) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username, display_name, currency')
+    .eq('id', viewer.id)
+    .single();
+
+  // Minimal column set — this page only needs counts and a value total,
+  // not full item detail (that's what /dashboard's grid is for).
+  const { data: games } = await supabase
+    .from('games')
+    .select('id, ownership, play_status, market_price, price, copy_type')
+    .eq('user_id', viewer.id);
+
+  const allGames = games || [];
+  const owned = allGames.filter((g) => g.ownership === 'owned');
+  const completed = allGames.filter((g) => g.play_status === 'completed').length;
+  const collectionValue = owned
+    .filter((g) => g.copy_type !== 'digital')
+    .reduce((sum, g) => {
+      const raw = g.market_price != null ? g.market_price : g.price;
+      const v = raw != null ? parseFloat(raw) : NaN;
+      return Number.isNaN(v) ? sum : sum + v;
+    }, 0);
+
+  const { data: followRows } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', viewer.id);
+  const followingIds = (followRows || []).map((r) => r.following_id);
+
+  let events = [];
+  if (followingIds.length > 0) {
+    const { data } = await supabase
+      .from('activity_events')
+      .select(
+        'id, event_type, created_at, actor:profiles!activity_events_user_id_fkey(username, display_name, avatar_url), game:games(title, item_type, rating), trophy:achievement_defs(name, tier)'
+      )
+      .in('user_id', followingIds)
+      .order('created_at', { ascending: false })
+      .limit(4);
+    events = (data || []).filter((e) => e.actor && (e.game || (e.event_type === 'trophy' && e.trophy)));
+  }
+
+  const name = profile?.display_name || profile?.username || 'there';
+  const currency = profile?.currency || 'USD';
+
+  const quickActions = [...QUICK_ACTIONS];
+  if (profile?.username) {
+    quickActions.splice(2, 0, { href: `/u/${profile.username}`, label: 'My Profile' });
+    quickActions.push({ href: `/u/${profile.username}/mosaic`, label: 'Shelf mosaic' });
+  }
+
+  return (
+    <main className="container">
+      <div className="home-hub-greeting">
+        <h1>Welcome back, {name}</h1>
+        <p className="sub">Here's where your shelf stands today.</p>
+      </div>
+
+      <div className="stats-bar">
+        <div className="stat">
+          <div className="num">{allGames.length}</div>
+          <div className="label">Total items</div>
+        </div>
+        <div className="stat">
+          <div className="num">{owned.length}</div>
+          <div className="label">Owned</div>
+        </div>
+        <div className="stat">
+          <div className="num">{completed}</div>
+          <div className="label">Completed</div>
+        </div>
+        <div className="stat">
+          <div className="num">{formatMoney(collectionValue, currency)}</div>
+          <div className="label">Collection value</div>
+        </div>
+      </div>
+
+      <div className="quick-actions">
+        {quickActions.map((a) => (
+          <Link key={a.href} href={a.href} className="quick-action-tile">
+            {a.label}
+          </Link>
+        ))}
+      </div>
+
+      <div className="feed-layout">
+        <div className="feed-main">
+          <h2 className="home-section-heading">Recent activity</h2>
+          {followingIds.length === 0 ? (
+            <div className="empty-state">
+              <div>You're not following anyone yet.</div>
+              <p className="sub">
+                <Link href="/players">Find some collectors</Link> to follow and their activity will show up here.
+              </p>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="empty-state">
+              <div>No activity yet.</div>
+              <p className="sub">Nothing to show yet — check back once the people you follow add or update items.</p>
+            </div>
+          ) : (
+            <>
+              {events.map((e) => (
+                <div className="feed-item" key={e.id}>
+                  <Link href={`/u/${e.actor.username}`} className="avatar feed-item-avatar">
+                    {e.actor.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={e.actor.avatar_url} alt={e.actor.username} />
+                    ) : (
+                      (e.actor.display_name || e.actor.username || '?').slice(0, 1).toUpperCase()
+                    )}
+                  </Link>
+                  <div className="feed-item-body">
+                    <div>
+                      <Link href={`/u/${e.actor.username}`} className="feed-item-name">
+                        {e.actor.display_name || e.actor.username}
+                      </Link>{' '}
+                      {e.event_type === 'trophy' && e.trophy ? (
+                        <>
+                          {activityVerb(e.event_type)}{' '}
+                          <span className={`feed-trophy-dot tier-${e.trophy.tier}`} aria-hidden="true" />
+                          <strong>{e.trophy.name}</strong>
+                        </>
+                      ) : (
+                        <>
+                          {activityVerb(e.event_type)} <strong>{e.game.title}</strong>
+                          {e.event_type === 'rated' && Number(e.game.rating) > 0 ? (
+                            <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
+                              <StarRating value={Number(e.game.rating)} size={13} />
+                            </span>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                    <div className="sub feed-item-time">{new Date(e.created_at).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              ))}
+              <Link href="/feed" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 10 }}>
+                See full feed
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="feed-sidebar">
+          <h2 className="feed-sidebar-heading">What's new</h2>
+          {WHATS_NEW.slice(0, 3).map((item) => (
+            <div className="whats-new-item" key={item.title}>
+              <div className="whats-new-date">{new Date(item.date).toLocaleDateString()}</div>
+              <div className="whats-new-title">{item.title}</div>
+              <div className="sub whats-new-body">{item.body}</div>
+            </div>
+          ))}
+          <Link href="/feed" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 10 }}>
+            See all updates
+          </Link>
+        </div>
       </div>
     </main>
   );

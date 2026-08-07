@@ -83,7 +83,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link href={profile ? '/dashboard' : '/'} className="brand" onClick={() => setMenuOpen(false)}>
+      <Link href="/" className="brand" onClick={() => setMenuOpen(false)}>
         <img src="/brand/icon.png" alt="" width={34} height={34} className="logo" />
         Shelf Life
       </Link>

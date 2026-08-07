@@ -1906,6 +1906,51 @@ button:disabled {
   margin: 0 auto 20px;
 }
 
+/* ---------- Logged-in home hub ---------- */
+.home-hub-greeting {
+  margin: 28px 0 20px;
+}
+.home-hub-greeting h1 {
+  margin-bottom: 4px;
+}
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 24px 0 40px;
+}
+.quick-action-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.quick-action-tile:hover {
+  border-color: var(--accent, #6c5ce7);
+  transform: translateY(-1px);
+}
+.home-section-heading {
+  font-size: 16px;
+  margin: 0 0 14px;
+}
+
+@media (max-width: 640px) {
+  .quick-actions {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .quick-action-tile {
+    padding: 14px 10px;
+    font-size: 13px;
+  }
+}
+
 /* ---------- Profile tabs ---------- */
 .profile-showcase {
   margin-bottom: 32px;
