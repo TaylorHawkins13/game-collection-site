@@ -2030,7 +2030,12 @@ button:disabled {
 }
 .home-articles-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* auto-fit rather than a fixed 1fr 1fr — with only one article published
+     so far, a hardcoded 2-column grid left an empty-looking blank slot next
+     to it. This sizes to however many articles actually exist: one card
+     fills the row today, a second appears alongside it once there's a
+     second article, no blank space either way. */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
 }
 .article-list {
