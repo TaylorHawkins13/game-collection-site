@@ -8,6 +8,9 @@ Shorter version with screenshots, per your feedback. How to send:
 2. On `/admin/newsletter`: paste the subject below into Subject, paste the HTML block below
    into Body, tick **"This body is HTML"** (a live preview appears once you do), tick
    **"Send to everyone, not just opted-in"**, then Review & send.
+3. After it actually sends, append a dated entry to `newsletter-history.md` summarizing what
+   was covered. The monthly auto-draft task reads that file to avoid repeating anything already
+   sent — if this step gets skipped, the next draft may re-cover the same features.
 
 Screenshots: dashboard, add-item search, the card grid, activity feed, the series
 completion view (the one you sent over), and the shelf mosaic. The old leaderboard
