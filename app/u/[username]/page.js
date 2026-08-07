@@ -6,6 +6,7 @@ import RefreshPricesButton from './RefreshPricesButton';
 import ProfileTabs from './ProfileTabs';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import ShowcaseButton from '@/components/ShowcaseButton';
+import ShowcaseSection from '@/components/ShowcaseSection';
 import CustomListsButton from '@/components/CustomListsButton';
 import ActionMenu from '@/components/ActionMenu';
 import GameCard from '@/components/GameCard';
@@ -257,16 +258,13 @@ export default async function ProfilePage({ params }) {
             </div>
           </div>
 
-          {showcaseGames.length > 0 && (
-            <div className="profile-showcase">
-              <h3 className="profile-showcase-heading">Showcase</h3>
-              <div className="grid showcase-grid">
-                {showcaseGames.map((g) => (
-                  <GameCard key={g.id} game={g} featured currency={profile.currency} />
-                ))}
-              </div>
-            </div>
-          )}
+          <ShowcaseSection
+            showcaseGames={showcaseGames}
+            allGames={games || []}
+            currency={profile.currency}
+            isOwner={isOwner}
+            ownerName={profile.display_name || profile.username}
+          />
 
           {listsWithItems.map((list) => (
             <div className="profile-list-block" key={list.id}>

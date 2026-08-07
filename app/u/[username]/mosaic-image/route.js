@@ -13,6 +13,7 @@ import { renderShelfMosaicElement } from '@/lib/mosaicRender';
 // since this needs a per-user, per-mode dynamic URL:
 //   /u/alice/mosaic-image?mode=all
 //   /u/alice/mosaic-image?mode=showcase
+//   /u/alice/mosaic-image?mode=custom&ids=uuid1,uuid2,uuid3
 //   /u/alice/mosaic-image?mode=type&type=vinyl
 //   /u/alice/mosaic-image?mode=year&year=2025
 //   /u/alice/mosaic-image?mode=top
@@ -47,6 +48,8 @@ export async function GET(request, { params }) {
   const mode = searchParams.get('mode') || 'all';
   const type = searchParams.get('type') || '';
   const year = searchParams.get('year') || '';
+  const idsParam = searchParams.get('ids') || '';
+  const selectedIds = idsParam ? idsParam.split(',').filter(Boolean) : [];
 
   const supabase = createClient();
   const { data: profile } = await supabase
@@ -83,7 +86,13 @@ export async function GET(request, { params }) {
     );
   }
 
-  const { rows, totalItems, shownItems } = await fetchMosaicData(supabase, profile.id, { mode, type, year, perRowCap: 10 });
+  const { rows, totalItems, shownItems } = await fetchMosaicData(supabase, profile.id, {
+    mode,
+    type,
+    year,
+    selectedIds,
+    perRowCap: 10,
+  });
 
   const allCovers = rows.flatMap((r) => r.items.map((i) => i.cover));
   const okMap = await verifyCovers(allCovers);

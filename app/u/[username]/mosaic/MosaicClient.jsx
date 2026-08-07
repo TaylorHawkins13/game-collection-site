@@ -4,12 +4,14 @@ import { useMemo, useState } from 'react';
 import { shapeMosaic, modeLabel, titleColor, availableYears, availableTypes, TYPE_LABELS } from '@/lib/mosaicData';
 import { currencySymbol, formatMoney } from '@/lib/currency';
 import ShareProfileButton from '@/components/ShareProfileButton';
+import GameCard from '@/components/GameCard';
 import { announceToast } from '@/lib/toast';
 import { attachHorizontalWheelScroll } from '@/lib/useHorizontalWheelScroll';
 
 const MODE_TABS = [
   { key: 'all', label: 'Whole Shelf' },
   { key: 'showcase', label: 'Showcase' },
+  { key: 'custom', label: 'Custom' },
   { key: 'type', label: 'By Type' },
   { key: 'year', label: 'By Year' },
   { key: 'top', label: 'Most Valuable' },
@@ -55,6 +57,14 @@ export default function MosaicClient({ username, displayName, currency, items })
   const [failedCovers, setFailedCovers] = useState(() => new Set());
   const [hovered, setHovered] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  // Custom-selection mode: a hand-picked subset instead of a computed
+  // rule. `picking` toggles the item-picker view in place of the mosaic
+  // itself — opens automatically the first time Custom is selected (empty
+  // set), and can be reopened any time via "Edit selection" to change
+  // picks without losing them.
+  const [customIds, setCustomIds] = useState(() => new Set());
+  const [picking, setPicking] = useState(false);
+  const [pickSearch, setPickSearch] = useState('');
 
   const types = useMemo(() => availableTypes(items), [items]);
   const years = useMemo(() => availableYears(items), [items]);
@@ -63,9 +73,29 @@ export default function MosaicClient({ username, displayName, currency, items })
   const effectiveYear = year || (years[0] ? String(years[0]) : '');
 
   const { rows, totalItems, shownItems } = useMemo(
-    () => shapeMosaic(items, { mode, type: effectiveType, year: effectiveYear, perRowCap: 10 }),
-    [items, mode, effectiveType, effectiveYear]
+    () => shapeMosaic(items, { mode, type: effectiveType, year: effectiveYear, selectedIds: customIds, perRowCap: 10 }),
+    [items, mode, effectiveType, effectiveYear, customIds]
   );
+
+  function selectMode(key) {
+    setMode(key);
+    if (key === 'custom' && customIds.size === 0) setPicking(true);
+  }
+
+  function toggleCustomItem(id) {
+    setCustomIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const pickMatches = useMemo(() => {
+    const q = pickSearch.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((i) => (i.title || '').toLowerCase().includes(q));
+  }, [items, pickSearch]);
 
   function handleFail(url) {
     setFailedCovers((prev) => {
@@ -79,8 +109,10 @@ export default function MosaicClient({ username, displayName, currency, items })
   const params = new URLSearchParams({ mode });
   if (mode === 'type' && effectiveType) params.set('type', effectiveType);
   if (mode === 'year' && effectiveYear) params.set('year', effectiveYear);
+  if (mode === 'custom') params.set('ids', [...customIds].join(','));
   const imageUrl = `/u/${username}/mosaic-image?${params.toString()}`;
   const fileName = `shelf-life-${username}-mosaic.png`;
+  const customEmpty = mode === 'custom' && customIds.size === 0;
 
   // A plain `<a href download>` pointing at a route (rather than a blob:
   // URL) is what this used to be, and it's unreliable on mobile — iOS
@@ -136,7 +168,7 @@ export default function MosaicClient({ username, displayName, currency, items })
               key={t.key}
               type="button"
               className={`profile-tab${mode === t.key ? ' active' : ''}`}
-              onClick={() => setMode(t.key)}
+              onClick={() => selectMode(t.key)}
             >
               {t.label}
             </button>
@@ -161,30 +193,77 @@ export default function MosaicClient({ username, displayName, currency, items })
             ))}
           </select>
         )}
+        {mode === 'custom' && !picking && (
+          <button type="button" className="btn-ghost" onClick={() => setPicking(true)}>
+            Edit selection ({customIds.size})
+          </button>
+        )}
 
         <div style={{ flex: 1 }} />
         <button
           type="button"
           className="btn-ghost"
           onClick={handleDownload}
-          disabled={downloading}
+          disabled={downloading || customEmpty || picking}
           style={{ whiteSpace: 'nowrap' }}
         >
           {downloading ? 'Preparing…' : 'Download PNG'}
         </button>
-        <ShareProfileButton
-          username={username}
-          path={`/u/${username}/mosaic`}
-          text={`Check out ${displayName || username}'s shelf mosaic on Shelf Life.`}
-          label="Share mosaic"
-        />
+        {!customEmpty && !picking && (
+          <ShareProfileButton
+            username={username}
+            path={`/u/${username}/mosaic`}
+            text={`Check out ${displayName || username}'s shelf mosaic on Shelf Life.`}
+            label="Share mosaic"
+          />
+        )}
       </div>
 
-      <div className="mosaic-sub">
-        {modeLabel(mode, { type: effectiveType, year: effectiveYear })} · {shownItems} of {totalItems} items shown
-      </div>
+      {mode === 'custom' && picking ? (
+        <div className="mosaic-picker">
+          <div className="field" style={{ margin: '0 0 12px' }}>
+            <label>Choose items for this mosaic</label>
+            <input
+              type="text"
+              placeholder="Search your collection…"
+              value={pickSearch}
+              onChange={(e) => setPickSearch(e.target.value)}
+            />
+          </div>
+          {pickMatches.length === 0 ? (
+            <div className="empty-state">
+              <div>No matches.</div>
+            </div>
+          ) : (
+            <div className="grid">
+              {pickMatches.map((item) => (
+                <GameCard
+                  key={item.id}
+                  game={item}
+                  currency={currency}
+                  selectMode
+                  selected={customIds.has(item.id)}
+                  onToggleSelect={toggleCustomItem}
+                />
+              ))}
+            </div>
+          )}
+          <div className="modal-actions" style={{ marginTop: 16 }}>
+            <div className="sub" style={{ margin: 0 }}>{customIds.size} selected</div>
+            <div className="right">
+              <button type="button" className="btn-primary" onClick={() => setPicking(false)} disabled={customIds.size === 0}>
+                Show mosaic
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mosaic-sub">
+          {modeLabel(mode, { type: effectiveType, year: effectiveYear })} · {shownItems} of {totalItems} items shown
+        </div>
+      )}
 
-      {hovered && (
+      {!picking && hovered && (
         <div className="mosaic-hover-info">
           <strong>{hovered.title}</strong>
           <span>{TYPE_LABELS[hovered.item_type] || hovered.item_type}</span>
@@ -194,9 +273,9 @@ export default function MosaicClient({ username, displayName, currency, items })
         </div>
       )}
 
-      {rows.length === 0 ? (
+      {picking ? null : rows.length === 0 ? (
         <div className="empty-state">
-          <div>Nothing to show for this view yet.</div>
+          <div>{customEmpty ? 'Pick a few items above to build your mosaic.' : 'Nothing to show for this view yet.'}</div>
         </div>
       ) : (
         <div className="mosaic-shelf-unit">
