@@ -6,7 +6,7 @@ import { CoverThumb } from '@/components/LeaderboardThumb';
 import StarRating from '@/components/StarRating';
 import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
 import { WHATS_NEW } from '@/lib/whatsNew';
-import { ARTICLES } from '@/lib/articles';
+import { getAllArticles } from '@/lib/articles';
 
 const CATEGORIES = [
   'Video Games',
@@ -90,14 +90,6 @@ const TROPHY_DEFS = [
 const QUICK_ACTIONS = [
   { href: '/dashboard?add=1', label: 'Add an item' },
 ];
-
-function activityVerb(eventType) {
-  if (eventType === 'added') return 'added';
-  if (eventType === 'completed') return 'completed';
-  if (eventType === 'rated') return 'rated';
-  if (eventType === 'trophy') return 'earned the trophy';
-  return eventType;
-}
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -295,10 +287,11 @@ export default async function HomePage() {
 // charts). Repeating either of those here was the original version's main
 // problem: this page couldn't justify its own existence next to a page
 // that does the same job better. So this one leans entirely into what
-// neither of those pages have — editorial content (Reviews & Articles) and
-// a curated peek at social/community activity — rather than your own
-// collection data a second time. Doubles as the installed PWA's launch
-// screen, since manifest.js's start_url is "/".
+// neither of those pages have — editorial content (Reviews & Articles).
+// The "Recent activity" feed preview that used to live here was cut too —
+// on reflection it was still just a smaller copy of /feed rather than
+// something distinct, same complaint as the stats bar. Doubles as the
+// installed PWA's launch screen, since manifest.js's start_url is "/".
 async function LoggedInHome({ supabase, viewer }) {
   const { data: profile } = await supabase
     .from('profiles')
@@ -313,24 +306,12 @@ async function LoggedInHome({ supabase, viewer }) {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', viewer.id);
 
-  const { data: followRows } = await supabase
-    .from('follows')
-    .select('following_id')
-    .eq('follower_id', viewer.id);
-  const followingIds = (followRows || []).map((r) => r.following_id);
-
-  let events = [];
-  if (followingIds.length > 0) {
-    const { data } = await supabase
-      .from('activity_events')
-      .select(
-        'id, event_type, created_at, actor:profiles!activity_events_user_id_fkey(username, display_name, avatar_url), game:games(title, item_type, rating), trophy:achievement_defs(name, tier)'
-      )
-      .in('user_id', followingIds)
-      .order('created_at', { ascending: false })
-      .limit(4);
-    events = (data || []).filter((e) => e.actor && (e.game || (e.event_type === 'trophy' && e.trophy)));
-  }
+  const { data: approvedSubmissions } = await supabase
+    .from('article_submissions')
+    .select('id, type, title, dek, body, rating, created_at, reviewed_at, profile:profiles(username, display_name)')
+    .eq('status', 'approved')
+    .order('reviewed_at', { ascending: false })
+    .limit(4);
 
   const name = profile?.display_name || profile?.username || 'there';
 
@@ -338,13 +319,13 @@ async function LoggedInHome({ supabase, viewer }) {
   if (profile?.username) {
     quickActions.push({ href: `/u/${profile.username}/mosaic`, label: 'Shelf mosaic' });
   }
-  const latestArticles = ARTICLES.slice(0, 2);
+  const latestArticles = getAllArticles(approvedSubmissions || []).slice(0, 2);
 
   return (
     <main className="container">
       <div className="home-hub-greeting">
         <h1>Welcome back, {name}</h1>
-        <p className="sub">What's new, what's worth reading, and what your friends are up to.</p>
+        <p className="sub">What's new, and what's worth reading.</p>
       </div>
 
       {/* Just the shortcuts that aren't already a tap away via the navbar —
@@ -367,19 +348,25 @@ async function LoggedInHome({ supabase, viewer }) {
         <div className="home-articles">
           <div className="home-articles-head">
             <h2 className="home-section-heading" style={{ margin: 0 }}>Reviews &amp; Articles</h2>
-            <Link href="/articles" className="btn-ghost home-split-more" style={{ margin: 0 }}>
-              See all
-            </Link>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Link href="/articles/submit" className="btn-ghost home-split-more" style={{ margin: 0 }}>
+                Submit yours
+              </Link>
+              <Link href="/articles" className="btn-ghost home-split-more" style={{ margin: 0 }}>
+                See all
+              </Link>
+            </div>
           </div>
           <div className="home-articles-grid">
             {latestArticles.map((a) => (
               <Link href={`/articles/${a.slug}`} key={a.slug} className="article-card">
                 <div className="article-card-meta">
                   <span className="category-pill">{a.type === 'review' ? 'Review' : 'Article'}</span>
+                  {a.community && <span className="category-pill article-community-pill">Community</span>}
                 </div>
                 <h3 className="article-card-title">{a.title}</h3>
                 <p className="article-card-dek">{a.dek}</p>
-                {a.type === 'review' && (
+                {a.type === 'review' && a.rating != null && (
                   <div className="article-card-rating">
                     <StarRating value={a.rating} size={15} />
                   </div>
@@ -390,68 +377,16 @@ async function LoggedInHome({ supabase, viewer }) {
         </div>
       )}
 
-      {/* A tighter, deliberately compact split rather than reusing the full
-          /feed page's layout — that one stacks to a single column below
-          800px, which on a phone turned this into a long scroll of full
-          feed-item rows followed by full whats-new entries. Trimmed content
-          (one line per row, no dates/body text here) keeps both columns
-          readable side by side down to phone width instead. */}
-      <div className="home-split">
-        <div>
-          <h2 className="home-section-heading">Recent activity</h2>
-          {followingIds.length === 0 ? (
-            <div className="home-split-empty">
-              Not following anyone yet.{' '}
-              <Link href="/players">Find some collectors</Link>.
-            </div>
-          ) : events.length === 0 ? (
-            <div className="home-split-empty">Nothing yet — check back soon.</div>
-          ) : (
-            <>
-              {events.map((e) => (
-                <div className="home-activity-row" key={e.id}>
-                  <Link href={`/u/${e.actor.username}`} className="avatar home-activity-avatar">
-                    {e.actor.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={e.actor.avatar_url} alt={e.actor.username} />
-                    ) : (
-                      (e.actor.display_name || e.actor.username || '?').slice(0, 1).toUpperCase()
-                    )}
-                  </Link>
-                  <div className="home-activity-text">
-                    <Link href={`/u/${e.actor.username}`} className="feed-item-name">
-                      {e.actor.display_name || e.actor.username}
-                    </Link>{' '}
-                    {e.event_type === 'trophy' && e.trophy ? (
-                      <>
-                        {activityVerb(e.event_type)} <strong>{e.trophy.name}</strong>
-                      </>
-                    ) : (
-                      <>
-                        {activityVerb(e.event_type)} <strong>{e.game.title}</strong>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <Link href="/feed" className="btn-ghost home-split-more">
-                See full feed
-              </Link>
-            </>
-          )}
-        </div>
-
-        <div>
-          <h2 className="home-section-heading">What's new</h2>
-          {WHATS_NEW.slice(0, 4).map((item) => (
-            <div className="home-whatsnew-row" key={item.title}>
-              {item.title}
-            </div>
-          ))}
-          <Link href="/feed" className="btn-ghost home-split-more">
-            See all updates
-          </Link>
-        </div>
+      <div>
+        <h2 className="home-section-heading">What's new</h2>
+        {WHATS_NEW.slice(0, 4).map((item) => (
+          <div className="home-whatsnew-row" key={item.title}>
+            {item.title}
+          </div>
+        ))}
+        <Link href="/feed" className="btn-ghost home-split-more">
+          See all updates
+        </Link>
       </div>
     </main>
   );

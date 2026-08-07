@@ -2007,12 +2007,21 @@ button:disabled {
   }
 }
 
-/* Only collapses to one column on genuinely narrow/small-text devices —
-   normal phone widths (~360px+) keep the two-column split. */
-@media (max-width: 360px) {
+/* Collapses to one column well before real phone widths. This used to only
+   collapse below 360px, which sounded narrow enough to be "phone-safe" but
+   isn't — actual phones (iPhone included) are 375-430px wide, all above
+   that cutoff, so "Recent activity"/"What's new" stayed side by side on a
+   real device and the second column ran off the edge of the screen. Now
+   matches the same 640px breakpoint the quick-actions/article grids
+   already use, so all of these sections agree on what "mobile" means. */
+@media (max-width: 640px) {
   .home-split {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+  .home-hub-greeting h1 {
+    font-size: 26px;
+    line-height: 1.25;
   }
 }
 
@@ -2080,6 +2089,35 @@ button:disabled {
 }
 .article-card-rating {
   margin-top: 10px;
+}
+
+/* Badge for community-submitted pieces, sitting next to the Review/Article
+   category-pill in .article-card-meta — same pill shape, different (accent)
+   color so it reads as a distinct signal rather than a second category. */
+.article-community-pill {
+  color: var(--accent, #6c5ce7);
+  border-color: var(--accent, #6c5ce7);
+}
+
+/* Status labels on /admin/articles' "Already decided" list. */
+.submission-status {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.submission-status-approved {
+  color: #2fa86a;
+  background: #2fa86a1a;
+}
+.submission-status-rejected {
+  color: #d9534f;
+  background: #d9534f1a;
+}
+.submission-status-pending {
+  color: var(--text-dim);
+  background: var(--card);
 }
 
 .article-detail {
