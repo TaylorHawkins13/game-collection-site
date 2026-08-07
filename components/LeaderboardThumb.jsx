@@ -9,19 +9,19 @@
 // rather than statically prerendered, so it only breaks once a real
 // request actually renders the page in production.
 
-export function CoverThumb({ cover, title }) {
+export function CoverThumb({ cover, title, className = 'leaderboard-thumb' }) {
   return cover ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      className="leaderboard-thumb"
+      className={className}
       src={cover}
       alt={title}
       onError={(e) => {
-        e.currentTarget.outerHTML = '<div class="leaderboard-thumb placeholder">No Cover</div>';
+        e.currentTarget.outerHTML = `<div class="${className} placeholder">No Cover</div>`;
       }}
     />
   ) : (
-    <div className="leaderboard-thumb placeholder">No Cover</div>
+    <div className={`${className} placeholder`}>No Cover</div>
   );
 }
 

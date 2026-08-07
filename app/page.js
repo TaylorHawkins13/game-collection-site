@@ -7,6 +7,7 @@ import StarRating from '@/components/StarRating';
 import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
 import { WHATS_NEW } from '@/lib/whatsNew';
 import { getAllArticles } from '@/lib/articles';
+import { TYPE_LABELS } from '@/lib/mosaicData';
 
 const CATEGORIES = [
   'Video Games',
@@ -287,11 +288,15 @@ export default async function HomePage() {
 // charts). Repeating either of those here was the original version's main
 // problem: this page couldn't justify its own existence next to a page
 // that does the same job better. So this one leans entirely into what
-// neither of those pages have — editorial content (Reviews & Articles).
-// The "Recent activity" feed preview that used to live here was cut too —
-// on reflection it was still just a smaller copy of /feed rather than
-// something distinct, same complaint as the stats bar. Doubles as the
-// installed PWA's launch screen, since manifest.js's start_url is "/".
+// neither of those pages have — site-wide discovery (Recently added /
+// Recent ratings, Backloggd-home-inspired: real public data, not just
+// people you follow) and editorial content (Reviews & Articles). The
+// "Recent activity" feed preview that used to live here was cut — on
+// reflection it was still just a smaller copy of /feed rather than
+// something distinct, same complaint as the stats bar — and a "Popular
+// lists" row was considered and deliberately left out too, at least for
+// now. Doubles as the installed PWA's launch screen, since manifest.js's
+// start_url is "/".
 async function LoggedInHome({ supabase, viewer }) {
   const { data: profile } = await supabase
     .from('profiles')
@@ -306,6 +311,33 @@ async function LoggedInHome({ supabase, viewer }) {
     .order('reviewed_at', { ascending: false })
     .limit(4);
 
+  // Discovery rows, Backloggd-home-style: a live wall of what other public
+  // collectors are actually adding/rating right now, not your own data (the
+  // dashboard already covers that) and not a followed-only feed (that's
+  // /feed's job). RLS on `games` already limits this to public profiles
+  // (see supabase-schema.sql's "Games readable if profile is public or
+  // owner" policy) — excluding your own rows here on top of that just keeps
+  // this feeling like real community activity rather than a mirror of your
+  // own recent adds.
+  const { data: recentItems } = await supabase
+    .from('games')
+    .select('id, item_type, title, cover')
+    .neq('user_id', viewer.id)
+    .not('cover', 'is', null)
+    .neq('cover', '')
+    .order('created_at', { ascending: false })
+    .limit(14);
+
+  const { data: recentRatings } = await supabase
+    .from('games')
+    .select('id, item_type, title, cover, rating, notes, profile:profiles(username, display_name)')
+    .neq('user_id', viewer.id)
+    .gte('rating', 4)
+    .not('notes', 'is', null)
+    .neq('notes', '')
+    .order('updated_at', { ascending: false })
+    .limit(8);
+
   const name = profile?.display_name || profile?.username || 'there';
 
   const quickActions = [...QUICK_ACTIONS];
@@ -318,7 +350,7 @@ async function LoggedInHome({ supabase, viewer }) {
     <main className="container">
       <div className="home-hub-greeting">
         <h1>Welcome back, {name}</h1>
-        <p className="sub">What's new, and what's worth reading.</p>
+        <p className="sub">What other collectors are adding, rating, and writing about.</p>
       </div>
 
       {/* Just the shortcuts that aren't already a tap away via the navbar —
@@ -336,6 +368,59 @@ async function LoggedInHome({ supabase, viewer }) {
           </Link>
         ))}
       </div>
+
+      {/* Two horizontal-scroll rows, same layout at every width (this is
+          what makes it work on mobile without a separate breakpoint —
+          it's just "swipe sideways," narrower viewports simply show fewer
+          cards at once). Links reuse /collectible's existing type+title
+          route rather than a per-owner item page, since that's the one
+          canonical page for "this title, as a thing" regardless of who
+          owns which copy. */}
+      {recentItems && recentItems.length > 0 && (
+        <div className="home-discovery-row">
+          <h2 className="home-section-heading">Recently added</h2>
+          <div className="home-wall">
+            {recentItems.map((item) => (
+              <Link
+                key={item.id}
+                href={`/collectible?type=${encodeURIComponent(item.item_type)}&title=${encodeURIComponent(item.title)}`}
+                className="home-wall-item"
+                title={item.title}
+              >
+                <CoverThumb cover={item.cover} title={item.title} className="home-wall-cover" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {recentRatings && recentRatings.length > 0 && (
+        <div className="home-discovery-row">
+          <h2 className="home-section-heading">Recent ratings</h2>
+          <div className="home-ratings-strip">
+            {recentRatings.map((item) => (
+              <Link
+                key={item.id}
+                href={`/collectible?type=${encodeURIComponent(item.item_type)}&title=${encodeURIComponent(item.title)}`}
+                className="home-rating-card"
+              >
+                <CoverThumb cover={item.cover} title={item.title} className="home-rating-cover" />
+                <div className="home-rating-body">
+                  <div className="home-rating-meta">
+                    <span className="category-pill">{TYPE_LABELS[item.item_type] || item.item_type}</span>
+                  </div>
+                  <div className="home-rating-title">{item.title}</div>
+                  <StarRating value={item.rating} size={13} />
+                  <p className="home-rating-notes">{item.notes}</p>
+                  <span className="sub">
+                    — {item.profile?.display_name || item.profile?.username || 'A Shelf Life collector'}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {latestArticles.length > 0 && (
         <div className="home-articles">
