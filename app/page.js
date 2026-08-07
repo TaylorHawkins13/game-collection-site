@@ -3,9 +3,10 @@ import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import { CoverThumb } from '@/components/LeaderboardThumb';
+import StarRating from '@/components/StarRating';
 import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
-import { formatMoney } from '@/lib/currency';
 import { WHATS_NEW } from '@/lib/whatsNew';
+import { ARTICLES } from '@/lib/articles';
 
 const CATEGORIES = [
   'Video Games',
@@ -80,16 +81,14 @@ const TROPHY_DEFS = [
   { key: 'items-100', name: 'Centurion', description: 'Own 100 items.', tier: 'gold', sort_order: 13 },
 ];
 
-// Shortcuts into the rest of the app — same destinations already reachable
-// via the navbar/dashboard, just gathered in one tappable grid so the home
-// hub also works as a real "launcher" screen when opened as the installed
-// PWA (its start_url is "/"), not just a web page.
+// Only the shortcuts that AREN'T already one tap away from the navbar
+// (Search, Leaderboard, Feed, My Collection, My Profile all live there
+// already) — this used to be a 7-tile grid that mostly just re-listed the
+// nav, which was the core complaint that led to this rewrite: the home
+// hub should offer something you can't already get from the dashboard or
+// the navbar, not duplicate them.
 const QUICK_ACTIONS = [
   { href: '/dashboard?add=1', label: 'Add an item' },
-  { href: '/dashboard', label: 'My Collection' },
-  { href: '/feed', label: 'Feed' },
-  { href: '/players', label: 'Search' },
-  { href: '/leaderboard', label: 'Leaderboard' },
 ];
 
 function activityVerb(eventType) {
@@ -291,36 +290,28 @@ export default async function HomePage() {
 }
 
 // The actual "home" for a signed-in visitor — distinct from /dashboard
-// (which is the collection-management workspace) and /feed (which is the
-// full activity stream). This is a lighter landing spot: a greeting, your
-// real numbers at a glance, one-tap shortcuts into the rest of the app, and
-// a peek at both feed activity and site updates so there's a reason to
-// actually land here instead of skipping straight to the dashboard. Doubles
-// as the installed PWA's launch screen, since manifest.js's start_url is "/".
+// (which is the collection-management workspace, and already has its own
+// stats bar) and /dashboard/insights (which already has the deep analytics
+// charts). Repeating either of those here was the original version's main
+// problem: this page couldn't justify its own existence next to a page
+// that does the same job better. So this one leans entirely into what
+// neither of those pages have — editorial content (Reviews & Articles) and
+// a curated peek at social/community activity — rather than your own
+// collection data a second time. Doubles as the installed PWA's launch
+// screen, since manifest.js's start_url is "/".
 async function LoggedInHome({ supabase, viewer }) {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, display_name, currency')
+    .select('username, display_name')
     .eq('id', viewer.id)
     .single();
 
-  // Minimal column set — this page only needs counts and a value total,
-  // not full item detail (that's what /dashboard's grid is for).
-  const { data: games } = await supabase
+  // Just a count for the "My Collection" shortcut badge — full item detail
+  // is what /dashboard's grid is for.
+  const { count: itemCount } = await supabase
     .from('games')
-    .select('id, ownership, play_status, market_price, price, copy_type')
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', viewer.id);
-
-  const allGames = games || [];
-  const owned = allGames.filter((g) => g.ownership === 'owned');
-  const completed = allGames.filter((g) => g.play_status === 'completed').length;
-  const collectionValue = owned
-    .filter((g) => g.copy_type !== 'digital')
-    .reduce((sum, g) => {
-      const raw = g.market_price != null ? g.market_price : g.price;
-      const v = raw != null ? parseFloat(raw) : NaN;
-      return Number.isNaN(v) ? sum : sum + v;
-    }, 0);
 
   const { data: followRows } = await supabase
     .from('follows')
@@ -342,53 +333,62 @@ async function LoggedInHome({ supabase, viewer }) {
   }
 
   const name = profile?.display_name || profile?.username || 'there';
-  const currency = profile?.currency || 'USD';
 
-  // Personal shortcuts (your own stuff) come first, discovery/social ones
-  // after — was previously Add/Collection/Profile/Feed/Search/Leaderboard/
-  // Mosaic, which scattered "yours" and "everyone else's" back and forth.
   const quickActions = [...QUICK_ACTIONS];
   if (profile?.username) {
-    quickActions.splice(2, 0, { href: `/u/${profile.username}`, label: 'My Profile' });
-    quickActions.splice(3, 0, { href: `/u/${profile.username}/mosaic`, label: 'Shelf mosaic' });
+    quickActions.push({ href: `/u/${profile.username}/mosaic`, label: 'Shelf mosaic' });
   }
+  const latestArticles = ARTICLES.slice(0, 2);
 
   return (
     <main className="container">
       <div className="home-hub-greeting">
         <h1>Welcome back, {name}</h1>
-        <p className="sub">Here's where your shelf stands today.</p>
+        <p className="sub">What's new, what's worth reading, and what your friends are up to.</p>
       </div>
 
-      {/* Shortcuts lead, since they're the actual reason to land on this
-          page rather than skip straight to /dashboard — stats and activity
-          are useful context, but not what someone's here to click. */}
-      <div className="quick-actions">
+      {/* Just the shortcuts that aren't already a tap away via the navbar —
+          your actual numbers (items, owned, completed, value) live on
+          /dashboard and /dashboard/insights already, so this page doesn't
+          re-show them; it earns its place with things dashboard doesn't
+          have instead (see the Reviews & Articles section below). */}
+      <div className="quick-actions home-quick-actions">
         {quickActions.map((a) => (
           <Link key={a.href} href={a.href} className="quick-action-tile">
             {a.label}
           </Link>
         ))}
+        <Link href="/dashboard" className="quick-action-tile">
+          My Collection ({itemCount || 0})
+        </Link>
       </div>
 
-      <div className="stats-bar">
-        <div className="stat">
-          <div className="num">{allGames.length}</div>
-          <div className="label">Total items</div>
+      {latestArticles.length > 0 && (
+        <div className="home-articles">
+          <div className="home-articles-head">
+            <h2 className="home-section-heading" style={{ margin: 0 }}>Reviews &amp; Articles</h2>
+            <Link href="/articles" className="btn-ghost home-split-more" style={{ margin: 0 }}>
+              See all
+            </Link>
+          </div>
+          <div className="home-articles-grid">
+            {latestArticles.map((a) => (
+              <Link href={`/articles/${a.slug}`} key={a.slug} className="article-card">
+                <div className="article-card-meta">
+                  <span className="category-pill">{a.type === 'review' ? 'Review' : 'Article'}</span>
+                </div>
+                <h3 className="article-card-title">{a.title}</h3>
+                <p className="article-card-dek">{a.dek}</p>
+                {a.type === 'review' && (
+                  <div className="article-card-rating">
+                    <StarRating value={a.rating} size={15} />
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="stat">
-          <div className="num">{owned.length}</div>
-          <div className="label">Owned</div>
-        </div>
-        <div className="stat">
-          <div className="num">{completed}</div>
-          <div className="label">Completed</div>
-        </div>
-        <div className="stat">
-          <div className="num">{formatMoney(collectionValue, currency)}</div>
-          <div className="label">Collection value</div>
-        </div>
-      </div>
+      )}
 
       {/* A tighter, deliberately compact split rather than reusing the full
           /feed page's layout — that one stacks to a single column below
