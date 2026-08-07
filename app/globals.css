@@ -1940,14 +1940,79 @@ button:disabled {
   margin: 0 0 14px;
 }
 
+/* A deliberately compact two-column split for Recent activity / What's
+   new — unlike .feed-layout (built for the full /feed page, with a fixed
+   300px sidebar that only collapses at 800px) this stays side by side
+   down to phone width, since both columns here only ever hold one-line
+   rows rather than full paragraphs. */
+.home-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 8px 0 40px;
+}
+.home-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.home-activity-row:first-of-type {
+  border-top: none;
+}
+.home-activity-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.home-activity-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-whatsnew-row {
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+}
+.home-whatsnew-row:first-of-type {
+  border-top: none;
+}
+.home-split-empty {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.home-split-more {
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 7px 14px;
+}
+
 @media (max-width: 640px) {
   .quick-actions {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
     gap: 8px;
   }
   .quick-action-tile {
-    padding: 14px 10px;
-    font-size: 13px;
+    padding: 12px 8px;
+    font-size: 12.5px;
+  }
+}
+
+/* Only collapses to one column on genuinely narrow/small-text devices —
+   normal phone widths (~360px+) keep the two-column split. */
+@media (max-width: 360px) {
+  .home-split {
+    grid-template-columns: 1fr;
+    gap: 28px;
   }
 }
 

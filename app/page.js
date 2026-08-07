@@ -6,7 +6,6 @@ import { CoverThumb } from '@/components/LeaderboardThumb';
 import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
 import { formatMoney } from '@/lib/currency';
 import { WHATS_NEW } from '@/lib/whatsNew';
-import StarRating from '@/components/StarRating';
 
 const CATEGORIES = [
   'Video Games',
@@ -345,10 +344,13 @@ async function LoggedInHome({ supabase, viewer }) {
   const name = profile?.display_name || profile?.username || 'there';
   const currency = profile?.currency || 'USD';
 
+  // Personal shortcuts (your own stuff) come first, discovery/social ones
+  // after — was previously Add/Collection/Profile/Feed/Search/Leaderboard/
+  // Mosaic, which scattered "yours" and "everyone else's" back and forth.
   const quickActions = [...QUICK_ACTIONS];
   if (profile?.username) {
     quickActions.splice(2, 0, { href: `/u/${profile.username}`, label: 'My Profile' });
-    quickActions.push({ href: `/u/${profile.username}/mosaic`, label: 'Shelf mosaic' });
+    quickActions.splice(3, 0, { href: `/u/${profile.username}/mosaic`, label: 'Shelf mosaic' });
   }
 
   return (
@@ -356,6 +358,17 @@ async function LoggedInHome({ supabase, viewer }) {
       <div className="home-hub-greeting">
         <h1>Welcome back, {name}</h1>
         <p className="sub">Here's where your shelf stands today.</p>
+      </div>
+
+      {/* Shortcuts lead, since they're the actual reason to land on this
+          page rather than skip straight to /dashboard — stats and activity
+          are useful context, but not what someone's here to click. */}
+      <div className="quick-actions">
+        {quickActions.map((a) => (
+          <Link key={a.href} href={a.href} className="quick-action-tile">
+            {a.label}
+          </Link>
+        ))}
       </div>
 
       <div className="stats-bar">
@@ -377,34 +390,27 @@ async function LoggedInHome({ supabase, viewer }) {
         </div>
       </div>
 
-      <div className="quick-actions">
-        {quickActions.map((a) => (
-          <Link key={a.href} href={a.href} className="quick-action-tile">
-            {a.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="feed-layout">
-        <div className="feed-main">
+      {/* A tighter, deliberately compact split rather than reusing the full
+          /feed page's layout — that one stacks to a single column below
+          800px, which on a phone turned this into a long scroll of full
+          feed-item rows followed by full whats-new entries. Trimmed content
+          (one line per row, no dates/body text here) keeps both columns
+          readable side by side down to phone width instead. */}
+      <div className="home-split">
+        <div>
           <h2 className="home-section-heading">Recent activity</h2>
           {followingIds.length === 0 ? (
-            <div className="empty-state">
-              <div>You're not following anyone yet.</div>
-              <p className="sub">
-                <Link href="/players">Find some collectors</Link> to follow and their activity will show up here.
-              </p>
+            <div className="home-split-empty">
+              Not following anyone yet.{' '}
+              <Link href="/players">Find some collectors</Link>.
             </div>
           ) : events.length === 0 ? (
-            <div className="empty-state">
-              <div>No activity yet.</div>
-              <p className="sub">Nothing to show yet — check back once the people you follow add or update items.</p>
-            </div>
+            <div className="home-split-empty">Nothing yet — check back soon.</div>
           ) : (
             <>
               {events.map((e) => (
-                <div className="feed-item" key={e.id}>
-                  <Link href={`/u/${e.actor.username}`} className="avatar feed-item-avatar">
+                <div className="home-activity-row" key={e.id}>
+                  <Link href={`/u/${e.actor.username}`} className="avatar home-activity-avatar">
                     {e.actor.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={e.actor.avatar_url} alt={e.actor.username} />
@@ -412,49 +418,37 @@ async function LoggedInHome({ supabase, viewer }) {
                       (e.actor.display_name || e.actor.username || '?').slice(0, 1).toUpperCase()
                     )}
                   </Link>
-                  <div className="feed-item-body">
-                    <div>
-                      <Link href={`/u/${e.actor.username}`} className="feed-item-name">
-                        {e.actor.display_name || e.actor.username}
-                      </Link>{' '}
-                      {e.event_type === 'trophy' && e.trophy ? (
-                        <>
-                          {activityVerb(e.event_type)}{' '}
-                          <span className={`feed-trophy-dot tier-${e.trophy.tier}`} aria-hidden="true" />
-                          <strong>{e.trophy.name}</strong>
-                        </>
-                      ) : (
-                        <>
-                          {activityVerb(e.event_type)} <strong>{e.game.title}</strong>
-                          {e.event_type === 'rated' && Number(e.game.rating) > 0 ? (
-                            <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
-                              <StarRating value={Number(e.game.rating)} size={13} />
-                            </span>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                    <div className="sub feed-item-time">{new Date(e.created_at).toLocaleDateString()}</div>
+                  <div className="home-activity-text">
+                    <Link href={`/u/${e.actor.username}`} className="feed-item-name">
+                      {e.actor.display_name || e.actor.username}
+                    </Link>{' '}
+                    {e.event_type === 'trophy' && e.trophy ? (
+                      <>
+                        {activityVerb(e.event_type)} <strong>{e.trophy.name}</strong>
+                      </>
+                    ) : (
+                      <>
+                        {activityVerb(e.event_type)} <strong>{e.game.title}</strong>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
-              <Link href="/feed" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 10 }}>
+              <Link href="/feed" className="btn-ghost home-split-more">
                 See full feed
               </Link>
             </>
           )}
         </div>
 
-        <div className="feed-sidebar">
-          <h2 className="feed-sidebar-heading">What's new</h2>
-          {WHATS_NEW.slice(0, 3).map((item) => (
-            <div className="whats-new-item" key={item.title}>
-              <div className="whats-new-date">{new Date(item.date).toLocaleDateString()}</div>
-              <div className="whats-new-title">{item.title}</div>
-              <div className="sub whats-new-body">{item.body}</div>
+        <div>
+          <h2 className="home-section-heading">What's new</h2>
+          {WHATS_NEW.slice(0, 4).map((item) => (
+            <div className="home-whatsnew-row" key={item.title}>
+              {item.title}
             </div>
           ))}
-          <Link href="/feed" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 10 }}>
+          <Link href="/feed" className="btn-ghost home-split-more">
             See all updates
           </Link>
         </div>
