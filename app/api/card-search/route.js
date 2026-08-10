@@ -4,53 +4,93 @@ import { NextResponse } from 'next/server';
 // auto-fill can cover the two biggest TCGs without needing anyone to
 // sign up for anything:
 //
-// - Pokémon TCG API (pokemontcg.io): free, no key required for
-//   reasonable use (1000 requests/day, 30/min).
+// - TCGdex (tcgdex.dev / api.tcgdex.net): Pokémon TCG, free, open-source,
+//   no key, no signup. This app originally used the old pokemontcg.io API
+//   here — that project has since been folded into "Scrydex," a paid
+//   product (plans start at $29/mo, no free tier), which is why Pokémon
+//   auto-fill quietly stopped working. Switched to TCGdex, a separate,
+//   still-free, actively maintained community project that covers the
+//   same ground. Its search endpoint only returns id/name/image per card
+//   (no set, card number, or rarity) — so a second, per-result detail
+//   fetch runs in parallel right after the initial search to fill those
+//   in, rather than making someone click through with half the fields
+//   still blank.
 // - Scryfall (scryfall.com): Magic: The Gathering, completely free,
-//   no key, no signup.
+//   no key, no signup, unaffected by any of the above.
 //
 // There's no good free universal database for sports cards or other
 // TCGs (Yu-Gi-Oh, etc.) — those still need to be filled in manually.
 
-async function fetchPokemonCards(query) {
+async function fetchTcgdexBrief(query) {
   const res = await fetch(
-    `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}&pageSize=6&orderBy=-set.releaseDate`,
+    `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(query)}&pagination:itemsPerPage=8`,
     { headers: { Accept: 'application/json' } }
   );
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.data || []).map((card) => ({
-    kind: 'card',
-    id: `pokemon-${card.id}`,
-    name: card.name,
-    cover: card.images?.large || card.images?.small || '',
-    set: card.set?.name || '',
-    number: card.set?.printedTotal ? `${card.number}/${card.set.printedTotal}` : card.number || '',
-    publisher: 'Pokémon TCG',
-    player_name: card.name,
-    subtitle: [card.set?.name, card.number].filter(Boolean).join(' · '),
-  }));
+  return Array.isArray(data) ? data : [];
 }
 
-// Multi-word card names (e.g. "Floette ex", "Mew VMAX") sometimes came
-// back empty with an exact quoted-phrase match even though the card
-// exists — the API's query parser is picky about phrase matching. This
-// tries an exact phrase first, then an unquoted version, then falls
-// back to a prefix match on just the first word (broadest, but better
-// than nothing) — stopping as soon as one attempt finds something.
-async function searchPokemon(q) {
-  const clean = q.replace(/"/g, '').trim();
-  if (!clean) return [];
-  const firstWord = clean.split(/\s+/)[0];
-  const attempts = clean.includes(' ')
-    ? [`name:"${clean}"`, `name:${clean}`, `name:${firstWord}*`]
-    : [`name:${clean}*`];
+async function fetchTcgdexDetail(id) {
+  const res = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
 
-  for (const query of attempts) {
-    const cards = await fetchPokemonCards(query);
-    if (cards.length) return cards;
-  }
-  return [];
+function tcgdexImage(base) {
+  // Base image URLs come back with no extension/quality — see
+  // tcgdex.dev/assets. webp/high is the site's own recommendation for a
+  // "this is the main image being shown" use case, which fits the search
+  // results list and the cover it fills in.
+  return base ? `${base}/high.webp` : '';
+}
+
+async function searchPokemon(q) {
+  const clean = q.trim();
+  if (!clean) return [];
+  // TCGdex's default filter is already a case-insensitive "contains"
+  // match (see tcgdex.dev/rest/filtering-sorting-pagination), so unlike
+  // the old pokemontcg.io integration this doesn't need a multi-attempt
+  // fallback chain for picky phrase matching.
+  const briefs = (await fetchTcgdexBrief(clean)).slice(0, 6);
+  if (!briefs.length) return [];
+
+  const details = await Promise.all(briefs.map((b) => fetchTcgdexDetail(b.id).catch(() => null)));
+
+  return details.map((card, i) => {
+    const brief = briefs[i];
+    if (!card) {
+      // Detail fetch failed for this one specifically — still show it
+      // (name/image are already known from the search step), just with
+      // set/number left blank instead of dropping the result entirely.
+      return {
+        kind: 'card',
+        id: `tcgdex-${brief.id}`,
+        name: brief.name,
+        cover: tcgdexImage(brief.image),
+        set: '',
+        number: brief.localId || '',
+        publisher: 'Pokémon TCG',
+        player_name: brief.name,
+        subtitle: brief.localId ? `#${brief.localId}` : '',
+      };
+    }
+    const total = card.set?.cardCount?.official || card.set?.cardCount?.total;
+    const numberStr = total ? `${card.localId}/${total}` : card.localId || '';
+    return {
+      kind: 'card',
+      id: `tcgdex-${card.id}`,
+      name: card.name,
+      cover: tcgdexImage(card.image),
+      set: card.set?.name || '',
+      number: numberStr,
+      publisher: 'Pokémon TCG',
+      player_name: card.name,
+      subtitle: [card.set?.name, numberStr].filter(Boolean).join(' · '),
+    };
+  });
 }
 
 async function searchScryfall(q) {
