@@ -481,6 +481,41 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     runMusicSearch(form.title);
   }
 
+  // Comic Vine's free API — see lib/comicVineSearch.js for why this is
+  // one search call now and a second, on-demand /api/comic-detail call
+  // only once a result is actually picked (applySearchResult below).
+  async function runComicSearch(query) {
+    const q = (query || '').trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchHint('Searching…');
+    try {
+      const res = await fetch(`/api/comic-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.error === 'not_configured') {
+        setSearchHint('Auto-fill is not configured on this site (no Comic Vine API key set).');
+        setSearchResults([]);
+        return;
+      }
+      if (data.error) {
+        setSearchHint('Search failed — try again in a moment.');
+        setSearchResults([]);
+        return;
+      }
+      const list = data.results || [];
+      setSearchResults(list);
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No matches found on Comic Vine.');
+    } catch {
+      setSearchHint('Search failed — check your connection.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function comicSearch() {
+    runComicSearch(form.title);
+  }
+
   function consoleSearch() {
     const q = (form.title || '').trim();
     if (!q) return;
@@ -498,7 +533,41 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     );
   }
 
+  // Comics get their own apply path (rather than fitting the synchronous
+  // pattern every other kind uses) because writer/artist/publisher aren't
+  // on the initial search result — see lib/comicVineSearch.js. Title,
+  // series, issue number, and cover come from the search result and fill
+  // in instantly; the detail fetch that fills writer/artist/publisher
+  // happens right after, with its own hint text so it doesn't read as
+  // the search having silently done nothing for a moment.
+  async function applyComicResult(item) {
+    set('title', item.series || item.name || form.title);
+    set('series', item.series || form.series);
+    if (item.issue_number) set('issue_number', item.issue_number);
+    set('cover', item.cover || form.cover);
+    setSearchResults([]);
+    setSearchHint(`Filled from Comic Vine: ${item.name} — looking up writer/artist…`);
+    try {
+      const res = await fetch(`/api/comic-detail?id=${encodeURIComponent(item.id)}`);
+      const data = await res.json();
+      if (data.error) {
+        setSearchHint(`Filled from Comic Vine: ${item.name} (couldn't fetch writer/artist/publisher — fill in manually).`);
+        return;
+      }
+      if (data.writer) set('writer', data.writer);
+      if (data.artist) set('artist', data.artist);
+      if (data.publisher) set('publisher', data.publisher);
+      setSearchHint(`Filled from Comic Vine: ${item.name}`);
+    } catch {
+      setSearchHint(`Filled from Comic Vine: ${item.name} (couldn't fetch writer/artist/publisher — fill in manually).`);
+    }
+  }
+
   function applySearchResult(item) {
+    if (item.kind === 'comic') {
+      applyComicResult(item);
+      return;
+    }
     set('title', item.name || form.title);
     set('cover', item.cover || form.cover);
     if (item.kind === 'card') {
@@ -749,6 +818,11 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
                 Search
               </button>
             )}
+            {isComic && (
+              <button type="button" className="btn-ghost" onClick={comicSearch} disabled={searching}>
+                Search
+              </button>
+            )}
             {isCard && (
               <button type="button" className="btn-ghost" onClick={cardSearch} disabled={searching}>
                 Search
@@ -775,10 +849,10 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
               </button>
             )}
           </div>
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie) && searchHint && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchHint && (
             <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
           )}
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie) && searchResults.length > 0 && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
               {searchResults.map((r) => (
                 <div
