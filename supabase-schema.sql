@@ -31,11 +31,11 @@ create policy "Profiles are publicly readable"
 
 create policy "Users can insert their own profile"
   on profiles for insert
-  with check (auth.uid() = id);
+  with check ((select auth.uid()) = id);
 
 create policy "Users can update their own profile"
   on profiles for update
-  using (auth.uid() = id);
+  using ((select auth.uid()) = id);
 
 -- Auto-create a profile row when someone signs up.
 -- Expects username to be passed in signUp() options.data.username
@@ -152,21 +152,21 @@ alter table games enable row level security;
 create policy "Games readable if profile is public or owner"
   on games for select
   using (
-    user_id = auth.uid()
+    user_id = (select auth.uid())
     or exists (select 1 from profiles p where p.id = games.user_id and p.is_public = true)
   );
 
 create policy "Owners can insert their own games"
   on games for insert
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 create policy "Owners can update their own games"
   on games for update
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 create policy "Owners can delete their own games"
   on games for delete
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 -- keep updated_at fresh
 create or replace function set_updated_at()
@@ -262,11 +262,11 @@ create policy "Follows are publicly readable"
 
 create policy "Users can follow as themselves"
   on follows for insert
-  with check (follower_id = auth.uid());
+  with check (follower_id = (select auth.uid()));
 
 create policy "Users can unfollow as themselves"
   on follows for delete
-  using (follower_id = auth.uid());
+  using (follower_id = (select auth.uid()));
 
 -- ------------------------------------------------------------
 -- comments: lightweight "wall" comments on a profile
@@ -286,21 +286,21 @@ alter table comments enable row level security;
 create policy "Comments readable if profile is public or owner/author"
   on comments for select
   using (
-    author_id = auth.uid()
+    author_id = (select auth.uid())
     or exists (
       select 1 from profiles p
       where p.id = comments.profile_id
-      and (p.is_public = true or p.id = auth.uid())
+      and (p.is_public = true or p.id = (select auth.uid()))
     )
   );
 
 create policy "Logged-in users can post comments as themselves"
   on comments for insert
-  with check (author_id = auth.uid());
+  with check (author_id = (select auth.uid()));
 
 create policy "Authors or profile owners can delete comments"
   on comments for delete
-  using (author_id = auth.uid() or profile_id = auth.uid());
+  using (author_id = (select auth.uid()) or profile_id = (select auth.uid()));
 
 -- Server-enforced rate limit — max 5 comments per author per 5 minutes,
 -- regardless of how the insert is made.
@@ -603,11 +603,11 @@ alter table value_snapshots enable row level security;
 
 create policy "Owners can read their own value snapshots"
   on value_snapshots for select
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 create policy "Owners can insert their own value snapshots"
   on value_snapshots for insert
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 -- ------------------------------------------------------------
 -- custom_lists / custom_list_items: curated sub-lists within a
@@ -630,21 +630,21 @@ alter table custom_lists enable row level security;
 create policy "Lists readable if owner or profile is public"
   on custom_lists for select
   using (
-    user_id = auth.uid()
+    user_id = (select auth.uid())
     or exists (select 1 from profiles p where p.id = custom_lists.user_id and p.is_public = true)
   );
 
 create policy "Owners can create their own lists"
   on custom_lists for insert
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 create policy "Owners can update their own lists"
   on custom_lists for update
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 create policy "Owners can delete their own lists"
   on custom_lists for delete
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 create table if not exists custom_list_items (
   list_id uuid not null references custom_lists(id) on delete cascade,
@@ -665,7 +665,7 @@ create policy "List items readable if list is readable"
       select 1 from custom_lists l
       where l.id = custom_list_items.list_id
       and (
-        l.user_id = auth.uid()
+        l.user_id = (select auth.uid())
         or exists (select 1 from profiles p where p.id = l.user_id and p.is_public = true)
       )
     )
@@ -674,19 +674,19 @@ create policy "List items readable if list is readable"
 create policy "Owners can add items to their own lists"
   on custom_list_items for insert
   with check (
-    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = auth.uid())
+    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = (select auth.uid()))
   );
 
 create policy "Owners can reorder items in their own lists"
   on custom_list_items for update
   using (
-    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = auth.uid())
+    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = (select auth.uid()))
   );
 
 create policy "Owners can remove items from their own lists"
   on custom_list_items for delete
   using (
-    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = auth.uid())
+    exists (select 1 from custom_lists l where l.id = custom_list_items.list_id and l.user_id = (select auth.uid()))
   );
 
 -- ------------------------------------------------------------
@@ -713,13 +713,13 @@ alter table activity_events enable row level security;
 create policy "Activity readable if profile is public or owner"
   on activity_events for select
   using (
-    user_id = auth.uid()
+    user_id = (select auth.uid())
     or exists (select 1 from profiles p where p.id = activity_events.user_id and p.is_public = true)
   );
 
 create policy "Owners can insert their own activity"
   on activity_events for insert
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 -- ------------------------------------------------------------
 -- notifications: a bell/inbox for follows, comments, and trophies, so
@@ -748,23 +748,23 @@ alter table notifications enable row level security;
 
 create policy "Recipients can read their own notifications"
   on notifications for select
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 create policy "Actors can notify others, or notify themselves about trophies"
   on notifications for insert
   with check (
-    actor_id = auth.uid()
-    or (type = 'trophy' and actor_id is null and user_id = auth.uid())
+    actor_id = (select auth.uid())
+    or (type = 'trophy' and actor_id is null and user_id = (select auth.uid()))
   );
 
 create policy "Recipients can mark their own notifications read"
   on notifications for update
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid());
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
 
 create policy "Recipients can delete their own notifications"
   on notifications for delete
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 -- ------------------------------------------------------------
 -- activity_reactions: a plain "like" on a /feed activity_events entry.
@@ -787,17 +787,17 @@ create policy "Reactions readable if the underlying event is readable"
       select 1 from activity_events ae
       join profiles p on p.id = ae.user_id
       where ae.id = activity_reactions.event_id
-        and (p.is_public = true or ae.user_id = auth.uid())
+        and (p.is_public = true or ae.user_id = (select auth.uid()))
     )
   );
 
 create policy "Signed-in users can react as themselves"
   on activity_reactions for insert
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 create policy "Users can remove their own reaction"
   on activity_reactions for delete
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 -- ------------------------------------------------------------
 -- recommend_games: "Recommended for you" on the dashboard. Finds other
@@ -1136,8 +1136,8 @@ alter table public.passkey_credentials enable row level security;
 
 create policy "Users can view their own passkeys"
   on public.passkey_credentials for select
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create policy "Users can delete their own passkeys"
   on public.passkey_credentials for delete
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);

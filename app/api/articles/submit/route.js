@@ -48,6 +48,12 @@ export async function POST(request) {
   });
 
   if (error) {
+    if (error.message?.includes('rate_limited')) {
+      return NextResponse.json(
+        { error: "You're submitting too fast — wait a few minutes and try again." },
+        { status: 429 }
+      );
+    }
     console.error('Article submission insert failed', error);
     return NextResponse.json({ error: "Couldn't save your submission, try again in a bit." }, { status: 500 });
   }

@@ -2,21 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import Papa from 'papaparse';
 import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
-import GameModal from '@/components/GameModal';
-import ImportCsvModal from '@/components/ImportCsvModal';
-import SteamImportModal from '@/components/SteamImportModal';
-import BulkScanSession from '@/components/BulkScanSession';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
 import ActionMenu from '@/components/ActionMenu';
-import PasskeyManager from '@/components/PasskeyManager';
+// Code-split: these are all either heavy (GameModal alone pulls in the
+// @zxing barcode-scanning libraries via BarcodeScanner, the single biggest
+// contributor to the dashboard's JS bundle) or only ever needed after a
+// deliberate click (import/Steam-import/bulk-scan modals, the passkeys
+// settings panel) rather than on first paint. Loading them on demand
+// instead of eagerly keeps them out of the bundle every dashboard visit
+// pays for, even when nobody opens them this session.
+const GameModal = dynamic(() => import('@/components/GameModal'), { ssr: false });
+const ImportCsvModal = dynamic(() => import('@/components/ImportCsvModal'), { ssr: false });
+const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), { ssr: false });
+const BulkScanSession = dynamic(() => import('@/components/BulkScanSession'), { ssr: false });
+const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
@@ -866,8 +873,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // Full-collection CSV backup, generated client-side from what's already
   // loaded — no server round-trip needed. Column order matches the import
   // template so the file can be re-imported as-is if needed.
-  function handleExport() {
+  async function handleExport() {
     if (games.length === 0) return;
+    const { default: Papa } = await import('papaparse');
     const csv = Papa.unparse(gamesToCsvRows(games));
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

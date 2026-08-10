@@ -17,12 +17,12 @@ on conflict (id) do nothing;
 
 create policy "Users can upload their own item photos"
   on storage.objects for insert
-  with check (bucket_id = 'item-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+  with check (bucket_id = 'item-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 create policy "Users can update their own item photos"
   on storage.objects for update
-  using (bucket_id = 'item-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'item-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 create policy "Users can delete their own item photos"
   on storage.objects for delete
-  using (bucket_id = 'item-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'item-photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
