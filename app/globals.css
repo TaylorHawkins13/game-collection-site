@@ -892,7 +892,7 @@ button:disabled {
 .stat-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 8px;
   padding: 6px 10px;
   font-size: 12px;
@@ -911,7 +911,16 @@ button:disabled {
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: 0.3px;
-  flex: none;
+  /* Was `flex: none`, which locks the label at its full single-line
+     width no matter how narrow the card is. On the grid's minimum
+     180px-wide tiles, longer labels ("Storage / variant", "Special
+     edition", "Market value") ate the whole row, leaving the value
+     zero pixels to render in — not truncated, just gone. Letting the
+     label shrink and wrap onto a second line keeps both halves of the
+     row actually visible. */
+  flex: 0 1 auto;
+  max-width: 62%;
+  overflow-wrap: break-word;
 }
 .stat-value {
   font-weight: 700;
@@ -919,6 +928,11 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1 1 auto;
+  /* Guarantees a sliver of width even when the label above claims its
+     full 62% max — enough for the ellipsis to actually show instead of
+     the value collapsing to nothing. */
+  min-width: 3.5em;
 }
 .badge-row {
   display: flex;
