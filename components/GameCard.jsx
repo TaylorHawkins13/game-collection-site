@@ -94,8 +94,8 @@ export default function GameCard({
     if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
   } else if (isConsole) {
     statRows.push({ label: 'Manufacturer', value: game.publisher || '—' });
-    statRows.push({ label: 'Storage / variant', value: game.format || '—' });
-    if (game.edition) statRows.push({ label: 'Special edition', value: game.edition });
+    statRows.push({ label: 'Storage', value: game.format || '—' });
+    if (game.edition) statRows.push({ label: 'Edition', value: game.edition });
     if (game.region) statRows.push({ label: 'Region', value: game.region });
     if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
     if (game.completeness) {
@@ -104,11 +104,11 @@ export default function GameCard({
     }
     statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
   } else if (isFunko) {
-    statRows.push({ label: 'Series / line', value: game.card_set || '—' });
+    statRows.push({ label: 'Series', value: game.card_set || '—' });
     statRows.push({ label: 'Pop! #', value: game.card_number || '—' });
     statRows.push({ label: 'Character', value: game.player_name || '—' });
-    if (game.publisher) statRows.push({ label: 'Exclusive to', value: game.publisher });
-    if (game.condition) statRows.push({ label: 'Box condition', value: game.condition });
+    if (game.publisher) statRows.push({ label: 'Exclusive', value: game.publisher });
+    if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
     statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
   } else {
     statRows.push({
@@ -144,7 +144,7 @@ export default function GameCard({
     // flag it explicitly whenever the two don't match.
     const mismatched = currency && priceCurrency !== currency;
     statRows.push({
-      label: 'Market value',
+      label: 'Value',
       value: mismatched
         ? `${currencySymbol(priceCurrency)}${game.market_price} (${priceCurrency})`
         : `${currencySymbol(priceCurrency)}${game.market_price}`,

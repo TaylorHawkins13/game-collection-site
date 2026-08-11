@@ -708,7 +708,13 @@ button:disabled {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* Was 180px. auto-fill means a wide desktop window doesn't make each
+     card wider — it just packs in more (narrower) columns, so cards sat
+     close to this minimum even at full width. That's what was starving
+     the stat-row values of any real room. Bumping the floor gives every
+     card, at any window size, enough width for a typical value to show
+     without truncating. */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 18px;
 }
 
@@ -919,7 +925,7 @@ button:disabled {
      label shrink and wrap onto a second line keeps both halves of the
      row actually visible. */
   flex: 0 1 auto;
-  max-width: 62%;
+  max-width: 50%;
   overflow-wrap: break-word;
 }
 .stat-value {
@@ -930,7 +936,7 @@ button:disabled {
   white-space: nowrap;
   flex: 1 1 auto;
   /* Guarantees a sliver of width even when the label above claims its
-     full 62% max — enough for the ellipsis to actually show instead of
+     full 50% max — enough for the ellipsis to actually show instead of
      the value collapsing to nothing. */
   min-width: 3.5em;
 }
