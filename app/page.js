@@ -4,7 +4,7 @@ import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import { CoverThumb } from '@/components/LeaderboardThumb';
 import StarRating from '@/components/StarRating';
-import { fetchIgdbCover, fetchOpenLibraryCover, fetchPokemonCardCover } from '@/lib/showcaseCovers';
+import { fetchIgdbCover, fetchOpenLibraryCover } from '@/lib/showcaseCovers';
 import { WHATS_NEW } from '@/lib/whatsNew';
 import { getAllArticles } from '@/lib/articles';
 import { TYPE_LABELS } from '@/lib/mosaicData';
@@ -22,13 +22,21 @@ const CATEGORIES = [
   'Funko Pops',
 ];
 
-// Curated fallback for each showcase slot. All 3 get a genuinely real
-// photo, fetched live from a free API the app already uses elsewhere —
-// game (IGDB), trading card (Pokémon TCG API, keyless — same source as
-// the real "Search" button), book (Open Library). Comic was the 4th
+// Curated fallback for each showcase slot. Game and book get a
+// genuinely real photo, fetched live from a free API the app already
+// uses elsewhere — game (IGDB), book (Open Library). Comic was the 4th
 // candidate but has no equivalent free cover API in the app yet, so it
 // sat out in favor of a type that can show a real photo instead of
 // generated art.
+//
+// The trading-card slot deliberately does NOT do the same — it used to
+// pull a real Charizard card (Pokémon TCG API), which is what got the
+// 1.0 App Store resubmission rejected under Guideline 4.1(a) (Copycats:
+// "screenshots includes references to Pokemon"). A different real card
+// game's art would carry the same category of risk with a different
+// trademark holder, so this uses fully generic, made-up card details
+// and no fetched image instead — same as how any item with no cover art
+// already renders elsewhere on the site.
 const FALLBACK_ITEMS = {
   game: {
     id: 'demo-game-000-0000-0000-000000000004',
@@ -44,12 +52,13 @@ const FALLBACK_ITEMS = {
   trading_card: {
     id: 'demo-card-000-0000-0000-000000000006',
     item_type: 'trading_card',
-    title: 'Charizard VMAX',
+    title: 'Mint Condition Holo',
     cover: '',
     ownership: 'owned',
-    card_set: "Champion's Path",
-    player_name: 'Charizard',
-    publisher: 'Pokémon',
+    card_set: 'First Edition',
+    card_number: '4/102',
+    player_name: 'Rare Holo',
+    publisher: 'Trading Card Co.',
     rating: 5,
   },
   book: {
@@ -64,12 +73,12 @@ const FALLBACK_ITEMS = {
     rating: 5,
   },
 };
-// Live cover lookup for each fallback slot — always called, since every
-// showcase slot now has a real photo source (see the showcaseItems
-// logic below).
+// Live cover lookup for each fallback slot that has one — the
+// trading-card slot intentionally has no fetcher (see above), so it
+// always falls through to its blank `cover` and renders the same "No
+// Cover" placeholder any item without art gets.
 const FALLBACK_FETCHERS = {
   game: () => fetchIgdbCover(FALLBACK_ITEMS.game.title),
-  trading_card: () => fetchPokemonCardCover(FALLBACK_ITEMS.trading_card.title),
   book: () => fetchOpenLibraryCover(FALLBACK_ITEMS.book.title),
 };
 const SHOWCASE_TYPES = ['game', 'trading_card', 'book'];
@@ -123,9 +132,10 @@ export default async function HomePage() {
   // (region, condition, completeness, market value...), which made the
   // 3 cards wildly different heights and truncated real long field
   // values in the narrow hero layout. Curated fields keep the row count
-  // (and the layout) consistent and predictable. The photo itself is
-  // still genuinely real: all 3 slots fetch an actual live cover
-  // (IGDB / Pokémon TCG / Open Library).
+  // (and the layout) consistent and predictable. The game and book
+  // slots' photos are still genuinely real (IGDB / Open Library) — the
+  // trading-card slot uses generic placeholder text and no photo at all
+  // on purpose, see the FALLBACK_ITEMS comment above.
   const showcaseItems = await Promise.all(
     SHOWCASE_TYPES.map(async (type) => {
       const fetcher = FALLBACK_FETCHERS[type];

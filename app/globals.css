@@ -1757,6 +1757,47 @@ button:disabled {
   font-size: 12.5px;
   line-height: 1.45;
 }
+/* Entries with a `detail` field (see lib/whatsNew.js) render their title
+   as a real button instead of plain text, so it's clear there's more to
+   see — a chevron that rotates on open is the only visual difference
+   from the old static title otherwise. */
+.whats-new-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 3px 0 3px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.whats-new-toggle .whats-new-title {
+  margin: 0;
+}
+.whats-new-chevron {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s ease;
+}
+.whats-new-toggle.open .whats-new-chevron {
+  transform: rotate(90deg);
+}
+.whats-new-toggle:hover .whats-new-title {
+  color: var(--accent);
+}
+.whats-new-detail {
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
 
 /* ---------- Landing page ---------- */
 .hero-split {

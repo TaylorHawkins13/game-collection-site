@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabaseServer';
 import { WHATS_NEW } from '@/lib/whatsNew';
 import StarRating from '@/components/StarRating';
 import ReactionButton from '@/components/ReactionButton';
+import WhatsNewList from '@/components/WhatsNewList';
 
 export const metadata = {
   title: 'Feed',
@@ -129,13 +130,7 @@ export default async function FeedPage() {
 
         <div className="feed-sidebar">
           <h2 className="feed-sidebar-heading">What's new</h2>
-          {WHATS_NEW.map((item) => (
-            <div className="whats-new-item" key={item.title}>
-              <div className="whats-new-date">{new Date(item.date).toLocaleDateString()}</div>
-              <div className="whats-new-title">{item.title}</div>
-              <div className="sub whats-new-body">{item.body}</div>
-            </div>
-          ))}
+          <WhatsNewList items={WHATS_NEW} />
         </div>
       </div>
     </main>

@@ -35,8 +35,20 @@ import { estimateCollectionValue } from '@/lib/valueSnapshot';
 import { announceToast } from '@/lib/toast';
 import { buildActivityEvents } from '@/lib/activityEvents';
 import { gamesToCsvRows } from '@/lib/csvExport';
+import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
+
+// Avatars are stored at a fixed `<uid>/avatar.<ext>` path (see
+// handleAvatarFile below) — this pulls that path back out of a stored
+// avatar_url (which may have a cache-busting `?t=...` query string on
+// it) so it can be targeted for removal.
+function avatarStoragePath(url) {
+  if (!url) return null;
+  const marker = '/avatars/';
+  const idx = url.indexOf(marker);
+  return idx === -1 ? null : url.slice(idx + marker.length).split('?')[0];
+}
 
 export default function DashboardClient({ userId, profile, initialGames }) {
   const supabase = createClient();
@@ -208,6 +220,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [showSteamImport, setShowSteamImport] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
@@ -547,8 +563,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     });
   }
 
-  async function commitDelete(id) {
-    const { error } = await supabase.from('games').delete().eq('id', id);
+  async function commitDelete(item) {
+    // Clean up any uploaded condition photos first — deleting the row
+    // alone would leave those files orphaned in Storage forever (see
+    // CHANGELOG.md "orphaned Storage files"). Best-effort: a failed
+    // cleanup shouldn't block the actual delete the person asked for.
+    await removeItemPhotos(supabase, item.condition_photos);
+    const { error } = await supabase.from('games').delete().eq('id', item.id);
     if (error && isMountedRef.current) {
       // The item's already hidden from the grid at this point — surface
       // the failure rather than leaving it silently mismatched between
@@ -565,13 +586,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // than juggling multiple timers.
     if (pendingDelete) {
       clearTimeout(pendingDeleteTimer.current);
-      commitDelete(pendingDelete.item.id);
+      commitDelete(pendingDelete.item);
     }
     setGames((gs) => gs.filter((g) => g.id !== id));
     setModalGame(undefined);
     setPendingDelete({ item });
     pendingDeleteTimer.current = setTimeout(() => {
-      commitDelete(item.id);
+      commitDelete(item);
       if (isMountedRef.current) setPendingDelete(null);
     }, 6000);
   }
@@ -677,6 +698,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const ids = [...selectedIds];
     if (!confirm(`Delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return;
     setBulkBusy(true);
+    // Same Storage cleanup as the single-item delete above, just gathered
+    // across every selected item first so it's one batched remove() call
+    // instead of one per item.
+    const photoUrls = games
+      .filter((g) => selectedIds.has(g.id))
+      .flatMap((g) => g.condition_photos || []);
+    await removeItemPhotos(supabase, photoUrls);
     const { error } = await supabase.from('games').delete().in('id', ids);
     setBulkBusy(false);
     if (error) {
@@ -924,6 +952,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setAvatarUploading(true);
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `${userId}/avatar.${ext}`;
+    const previousPath = avatarStoragePath(settingsForm.avatar_url);
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(path, file, { upsert: true, cacheControl: '3600' });
@@ -938,10 +967,40 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       return;
     }
 
+    // The path is keyed by extension, so `upsert` only overwrote the old
+    // file in place when it matched (a .jpg replaced with another .jpg).
+    // Switching file types — a .jpg avatar replaced with a .png one —
+    // just uploaded to a new path instead, leaving the old extension's
+    // file orphaned in Storage. Clean it up now that the new one's
+    // confirmed live. Best-effort — doesn't block the new avatar from
+    // showing if this fails.
+    if (previousPath && previousPath !== path) {
+      try {
+        await supabase.storage.from('avatars').remove([previousPath]);
+      } catch {
+        // ignore
+      }
+    }
+
     const { data } = supabase.storage.from('avatars').getPublicUrl(path);
     const bustedUrl = `${data.publicUrl}?t=${Date.now()}`;
     setSettingsForm((f) => ({ ...f, avatar_url: bustedUrl }));
     setAvatarUploading(false);
+  }
+
+  // Clicking Remove previously only cleared the form field — the
+  // uploaded file itself stayed in Storage forever with nothing pointing
+  // at it. Delete it too (best-effort; the field clears either way).
+  async function handleRemoveAvatar() {
+    const path = avatarStoragePath(settingsForm.avatar_url);
+    setSettingsForm((f) => ({ ...f, avatar_url: '' }));
+    if (path) {
+      try {
+        await supabase.storage.from('avatars').remove([path]);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async function saveSettings() {
@@ -963,6 +1022,35 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       setCurrency(settingsForm.currency);
     }
     setSettingsMsg(error ? `Failed to save: ${error.message}` : 'Saved!');
+  }
+
+  // Self-service account deletion — required so the app has a real
+  // in-app way to delete an account, not just deactivate one (see
+  // ROADMAP.md/CHANGELOG.md). The actual deletion happens server-side
+  // (app/api/account/delete) using the caller's own verified session;
+  // this just gates the request behind typing your own username first,
+  // since there's no undo once it goes through.
+  async function handleDeleteAccount() {
+    if (deleteConfirmText.trim() !== profile?.username || deletingAccount) return;
+    setDeletingAccount(true);
+    setDeleteAccountError('');
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeletingAccount(false);
+        setDeleteAccountError(body.error || "Couldn't delete your account — try again.");
+        return;
+      }
+      // The account (and its session server-side) is already gone at
+      // this point — signOut() here is just to clear the browser's own
+      // local session state before leaving.
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch {
+      setDeletingAccount(false);
+      setDeleteAccountError("Couldn't delete your account — try again.");
+    }
   }
 
   return (
@@ -1068,7 +1156,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     type="button"
                     className="btn-ghost"
                     style={{ marginLeft: 8 }}
-                    onClick={() => setSettingsForm((f) => ({ ...f, avatar_url: '' }))}
+                    onClick={handleRemoveAvatar}
                   >
                     Remove
                   </button>
@@ -1187,6 +1275,58 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <button className="btn-primary" onClick={saveSettings} disabled={settingsSaving} type="button">
             {settingsSaving ? 'Saving…' : 'Save settings'}
           </button>
+
+          <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <label>Danger zone</label>
+            {!deleteAccountOpen ? (
+              <div>
+                <p className="sub" style={{ marginTop: 0 }}>
+                  Permanently delete your account — your profile, every item in your collection, comments,
+                  follows, and trophies all go with it. This can&apos;t be undone.
+                </p>
+                <button type="button" className="btn-danger" onClick={() => setDeleteAccountOpen(true)}>
+                  Delete my account
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="sub" style={{ marginTop: 0 }}>
+                  There&apos;s no undo. Type your username (<strong>{profile?.username}</strong>) to confirm.
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={profile?.username || ''}
+                  style={{ maxWidth: 260 }}
+                  disabled={deletingAccount}
+                />
+                {deleteAccountError && <div className="error-text">{deleteAccountError}</div>}
+                <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    onClick={handleDeleteAccount}
+                    disabled={deletingAccount || deleteConfirmText.trim() !== profile?.username}
+                  >
+                    {deletingAccount ? 'Deleting…' : 'Permanently delete my account'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => {
+                      setDeleteAccountOpen(false);
+                      setDeleteConfirmText('');
+                      setDeleteAccountError('');
+                    }}
+                    disabled={deletingAccount}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

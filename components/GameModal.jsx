@@ -11,6 +11,7 @@ import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
+import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, seriesQueryValueFor, ownedKeysFor } from '@/lib/seriesLookup';
@@ -197,15 +198,7 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
     if (game?.id) {
       await supabase.from('games').update({ condition_photos: nextPhotos }).eq('id', game.id);
     }
-    // Best-effort cleanup — an orphaned file left in Storage costs
-    // nothing functionally, so a failure here isn't worth surfacing.
-    try {
-      const marker = '/item-photos/';
-      const idx = url.indexOf(marker);
-      if (idx !== -1) await supabase.storage.from('item-photos').remove([url.slice(idx + marker.length)]);
-    } catch {
-      // ignore
-    }
+    await removeItemPhotos(supabase, [url]);
   }
 
   // As you type a title, check whether anyone else (or you, previously)
