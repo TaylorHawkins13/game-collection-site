@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-whats-new-freshness.js",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check:whatsnew": "node scripts/check-whats-new-freshness.js"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
