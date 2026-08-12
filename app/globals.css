@@ -1116,6 +1116,23 @@ button:disabled {
   font-size: 12.5px;
   line-height: 1.5;
 }
+/* Shown at the top of the dashboard when a signed-in visitor's own
+   account has a pending deletion request (see the grace-period logic
+   in app/api/account/delete + DashboardClient.jsx) — deliberately as
+   loud as the duplicate-item warning is quiet, since this one actually
+   matters if missed. */
+.deletion-pending-banner {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
 
 /* ---------- Chip input ---------- */
 .chip-input {
@@ -1797,6 +1814,19 @@ button:disabled {
   border-top: 1px dashed var(--border);
   font-size: 12.5px;
   line-height: 1.45;
+}
+/* The standalone /whats-new page reuses the same .whats-new-item rows
+   as the /feed sidebar, just wrapped in a plain card instead of the
+   sidebar's sticky-positioned one. */
+.whats-new-page-list {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 18px;
+}
+.whats-new-page-list .whats-new-item:first-of-type {
+  border-top: none;
+  padding-top: 10px;
 }
 
 /* ---------- Landing page ---------- */

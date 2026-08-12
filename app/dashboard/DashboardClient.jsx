@@ -36,6 +36,7 @@ import { announceToast } from '@/lib/toast';
 import { buildActivityEvents } from '@/lib/activityEvents';
 import { gamesToCsvRows } from '@/lib/csvExport';
 import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
+import { GRACE_PERIOD_HOURS } from '@/lib/accountDeletion';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -224,6 +225,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteAccountError, setDeleteAccountError] = useState('');
+  const [deletionRequestedAt, setDeletionRequestedAt] = useState(profile?.deletion_requested_at || null);
+  const [cancelingDeletion, setCancelingDeletion] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
@@ -1042,9 +1045,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         setDeleteAccountError(body.error || "Couldn't delete your account — try again.");
         return;
       }
-      // The account (and its session server-side) is already gone at
-      // this point — signOut() here is just to clear the browser's own
-      // local session state before leaving.
+      // The account itself isn't gone yet — deletion is only scheduled
+      // now, see app/api/account/delete. signOut() here just clears the
+      // browser's own local session; signing back in before the grace
+      // period ends shows a Cancel option instead of deleting for real.
       await supabase.auth.signOut();
       window.location.href = '/';
     } catch {
@@ -1053,8 +1057,45 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     }
   }
 
+  // Clears deletion_requested_at on the caller's own profile — RLS
+  // already scopes "users can update their own profile" to auth.uid(),
+  // so this is safe to do directly from the client without a server
+  // route, unlike requesting deletion (which goes through
+  // app/api/account/delete so the grace-period timestamp comes from a
+  // trusted server clock, not the browser's).
+  async function handleCancelDeletion() {
+    if (cancelingDeletion) return;
+    setCancelingDeletion(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ deletion_requested_at: null })
+      .eq('id', userId);
+    setCancelingDeletion(false);
+    if (error) {
+      announceToast("Couldn't cancel the deletion — try again.");
+      return;
+    }
+    setDeletionRequestedAt(null);
+    announceToast('Account deletion canceled — good to have you back.', 'success');
+  }
+
   return (
     <main className="container">
+      {deletionRequestedAt && (
+        <div className="deletion-pending-banner">
+          <div>
+            <strong>Your account is scheduled for deletion</strong>
+            <div className="sub" style={{ margin: '2px 0 0' }}>
+              Requested {new Date(deletionRequestedAt).toLocaleString()} — everything will be permanently removed{' '}
+              {new Date(new Date(deletionRequestedAt).getTime() + GRACE_PERIOD_HOURS * 60 * 60 * 1000).toLocaleString()}{' '}
+              unless you cancel.
+            </div>
+          </div>
+          <button type="button" className="btn-primary" onClick={handleCancelDeletion} disabled={cancelingDeletion}>
+            {cancelingDeletion ? 'Canceling…' : 'Cancel deletion'}
+          </button>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 24 }}>My Collection</h1>
@@ -1281,8 +1322,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             {!deleteAccountOpen ? (
               <div>
                 <p className="sub" style={{ marginTop: 0 }}>
-                  Permanently delete your account — your profile, every item in your collection, comments,
-                  follows, and trophies all go with it. This can&apos;t be undone.
+                  Delete your account — your profile, every item in your collection, comments, follows, and
+                  trophies all go with it. You&apos;ll be signed out right away; the account itself is kept for{' '}
+                  {GRACE_PERIOD_HOURS} hours before anything is actually, permanently removed, in case you change
+                  your mind — sign back in during that window and you&apos;ll get a chance to cancel.
                 </p>
                 <button type="button" className="btn-danger" onClick={() => setDeleteAccountOpen(true)}>
                   Delete my account
@@ -1291,7 +1334,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             ) : (
               <div>
                 <p className="sub" style={{ marginTop: 0 }}>
-                  There&apos;s no undo. Type your username (<strong>{profile?.username}</strong>) to confirm.
+                  You&apos;ll have {GRACE_PERIOD_HOURS} hours to change your mind before this is permanent. Type
+                  your username (<strong>{profile?.username}</strong>) to confirm.
                 </p>
                 <input
                   type="text"
@@ -1309,7 +1353,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     onClick={handleDeleteAccount}
                     disabled={deletingAccount || deleteConfirmText.trim() !== profile?.username}
                   >
-                    {deletingAccount ? 'Deleting…' : 'Permanently delete my account'}
+                    {deletingAccount ? 'Scheduling…' : 'Delete my account'}
                   </button>
                   <button
                     type="button"

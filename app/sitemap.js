@@ -14,6 +14,7 @@ export default async function sitemap() {
     { url: `${SITE_URL}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${SITE_URL}/players`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/leaderboard`, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
   ];
 
   let profileRoutes = [];

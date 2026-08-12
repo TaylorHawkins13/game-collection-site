@@ -32,6 +32,32 @@ export default function SignupPage() {
     }
 
     setSubmitting(true);
+
+    // Free stand-in for Supabase's "Leaked password protection" (that toggle is
+    // Pro-plan-only) — checks against Have I Been Pwned's breach database via a
+    // server route so the password itself never leaves the server as plaintext.
+    // Fails open: if the check itself fails, signup proceeds rather than blocking
+    // on a third-party outage.
+    try {
+      const pwnedRes = await fetch('/api/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (pwnedRes.ok) {
+        const { pwned, count } = await pwnedRes.json();
+        if (pwned) {
+          setSubmitting(false);
+          setError(
+            `That password has appeared in ${count.toLocaleString()} known data breaches — pick a different one to keep your account safe.`
+          );
+          return;
+        }
+      }
+    } catch {
+      // Network hiccup checking the password — don't block signup over it.
+    }
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
