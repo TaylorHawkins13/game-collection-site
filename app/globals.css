@@ -2048,15 +2048,6 @@ button:disabled {
   margin: 0 0 14px;
 }
 
-.home-whatsnew-row {
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
-  font-weight: 600;
-}
-.home-whatsnew-row:first-of-type {
-  border-top: none;
-}
 .home-split-more {
   text-decoration: none;
   display: inline-block;

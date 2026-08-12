@@ -6,6 +6,7 @@ import { CoverThumb } from '@/components/LeaderboardThumb';
 import StarRating from '@/components/StarRating';
 import { fetchIgdbCover, fetchOpenLibraryCover } from '@/lib/showcaseCovers';
 import { WHATS_NEW } from '@/lib/whatsNew';
+import WhatsNewList from '@/components/WhatsNewList';
 import { getAllArticles } from '@/lib/articles';
 import { TYPE_LABELS } from '@/lib/mosaicData';
 
@@ -491,13 +492,14 @@ async function LoggedInHome({ supabase, viewer }) {
         </div>
       )}
 
+      <div className="home-articles-head">
+        <h2 className="home-section-heading" style={{ margin: 0 }}>What's new</h2>
+        <Link href="/whats-new" className="btn-ghost home-split-more" style={{ margin: 0 }}>
+          See all updates
+        </Link>
+      </div>
       <div>
-        <h2 className="home-section-heading">What's new</h2>
-        {WHATS_NEW.slice(0, 4).map((item) => (
-          <div className="home-whatsnew-row" key={item.title}>
-            {item.title}
-          </div>
-        ))}
+        <WhatsNewList items={WHATS_NEW.slice(0, 4)} />
       </div>
     </main>
   );
