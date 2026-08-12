@@ -1000,8 +1000,8 @@ select
   p.avatar_url,
   p.currency,
   round(sum(coalesce(g.market_price, g.price))::numeric, 2) as total_value,
-  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd,
-  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count
+  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count,
+  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd
 from profiles p
 join games g on g.user_id = p.id
 left join currency_rates_to_usd r on r.code = p.currency
@@ -1072,8 +1072,8 @@ select
   p.avatar_url,
   p.currency,
   round(sum(coalesce(g.market_price, g.price))::numeric, 2) as total_value,
-  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd,
-  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count
+  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count,
+  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd
 from profiles p
 join follows f on f.following_id = p.id and f.follower_id = auth.uid()
 join games g on g.user_id = p.id

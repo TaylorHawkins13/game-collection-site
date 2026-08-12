@@ -49,6 +49,14 @@ on conflict (code) do nothing;
 -- collector whose currency somehow isn't in the rate table above still
 -- shows up (coalesced to a 1:1 fallback) rather than silently
 -- vanishing from the board.
+-- Column order matters here: `create or replace view` can only ever
+-- APPEND new columns to an existing view's column list, never insert
+-- one in the middle — Postgres reads that as an attempted rename of
+-- whatever column used to be in that position and refuses. total_value_usd
+-- has to go after priced_count (the view's existing last column), not
+-- between total_value and priced_count, even though that reads a little
+-- less naturally. Caught by actually running this migration, not just
+-- reading it — worth remembering for any future column additions here.
 create or replace view leaderboard_most_valuable as
 select
   p.id as user_id,
@@ -57,8 +65,8 @@ select
   p.avatar_url,
   p.currency,
   round(sum(coalesce(g.market_price, g.price))::numeric, 2) as total_value,
-  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd,
-  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count
+  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count,
+  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd
 from profiles p
 join games g on g.user_id = p.id
 left join currency_rates_to_usd r on r.code = p.currency
@@ -78,8 +86,8 @@ select
   p.avatar_url,
   p.currency,
   round(sum(coalesce(g.market_price, g.price))::numeric, 2) as total_value,
-  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd,
-  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count
+  count(g.id) filter (where coalesce(g.market_price, g.price) is not null) as priced_count,
+  round((sum(coalesce(g.market_price, g.price)) * coalesce(r.rate_to_usd, 1))::numeric, 2) as total_value_usd
 from profiles p
 join follows f on f.following_id = p.id and f.follower_id = auth.uid()
 join games g on g.user_id = p.id
