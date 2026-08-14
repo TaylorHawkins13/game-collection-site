@@ -75,6 +75,7 @@ export default function ProfileTabs({
           item={seriesItem}
           items={games}
           ownerLabel={isOwnProfile ? null : ownerName}
+          isOwnProfile={isOwnProfile}
           onClose={() => setSeriesItem(null)}
         />
       )}

@@ -214,6 +214,28 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Arriving from a missing series entry clicked on your own profile page
+  // (SeriesModal, `isOwnProfile` only — see its comment for why) —
+  // there's no Add Item form to open in place there, so it redirects
+  // here instead with the prefill flattened into query params, same
+  // pattern as ?add=1 above. Goes through the exact same
+  // handleAddFromSeries the in-dashboard "See full series" click uses,
+  // so the resulting draft gets the same 'series' messaging either way.
+  useEffect(() => {
+    if (searchParams.get('addFromSeries') === '1') {
+      handleAddFromSeries({
+        item_type: searchParams.get('item_type') || 'game',
+        title: searchParams.get('title') || '',
+        cover: searchParams.get('cover') || '',
+        series: searchParams.get('series') || '',
+        issue_number: searchParams.get('issue_number') || '',
+        card_set: searchParams.get('card_set') || '',
+        card_number: searchParams.get('card_number') || '',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Catch up on any trophies earned since the last visit.
   useEffect(() => {
     checkTrophies();

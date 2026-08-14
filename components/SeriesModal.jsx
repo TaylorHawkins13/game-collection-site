@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesQueryValueFor, ownedKeysFor } from '@/lib/seriesLookup';
+import { seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
 import SeriesGrid from './SeriesGrid';
 
 // Read-only counterpart to the "Series" section in GameModal — opened by
@@ -15,8 +16,20 @@ import SeriesGrid from './SeriesGrid';
 // shows their completion, not yours). The parent should mount this with
 // `key={item.id}` so switching items remounts fresh rather than showing
 // stale data while the new lookup is still loading.
-export default function SeriesModal({ item, items, ownerLabel, onClose }) {
+//
+// `isOwnProfile` gates the same "click a missing entry to check its eBay
+// price" flow GameModal has (see ROADMAP.md "Full series view") — only
+// makes sense here when `items` is your own collection, since "missing
+// from `items`" only means "missing from your own collection" in that
+// case. On someone else's shelf it just means missing from theirs, which
+// says nothing about whether you already have it. There's no Add Item
+// form on a profile page to open in place, so this hands off to
+// /dashboard via a query-string deep link instead — the same pattern the
+// collectible detail page's "Add to your shelf" link already uses for
+// ?add=1.
+export default function SeriesModal({ item, items, ownerLabel, isOwnProfile, onClose }) {
   const modalRef = useModalA11y(onClose);
+  const router = useRouter();
   const series = useSeriesLookup();
 
   useEffect(() => {
@@ -27,6 +40,12 @@ export default function SeriesModal({ item, items, ownerLabel, onClose }) {
   }, []);
 
   const ownedKeys = ownedKeysFor(items, item.item_type);
+
+  function handleSelectMissing(entry) {
+    const prefill = prefillFromSeriesEntry(item.item_type, series.data.seriesName, entry);
+    const params = new URLSearchParams({ addFromSeries: '1', ...prefill });
+    router.push(`/dashboard?${params.toString()}`);
+  }
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -40,7 +59,14 @@ export default function SeriesModal({ item, items, ownerLabel, onClose }) {
         <div className="sub">Series completion</div>
         {series.loading && <div className="sub">Looking up the series…</div>}
         {series.error && <div className="sub">{series.error}</div>}
-        {series.data && <SeriesGrid data={series.data} ownedKeys={ownedKeys} ownerLabel={ownerLabel} />}
+        {series.data && (
+          <SeriesGrid
+            data={series.data}
+            ownedKeys={ownedKeys}
+            ownerLabel={ownerLabel}
+            onSelectMissing={isOwnProfile ? handleSelectMissing : undefined}
+          />
+        )}
       </div>
     </div>
   );

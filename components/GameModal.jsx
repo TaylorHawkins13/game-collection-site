@@ -748,7 +748,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
           <h2 id="game-modal-title" style={{ margin: 0 }}>
-            {game ? 'Edit Item' : duplicateSource === 'series' ? 'Add Item — from the series' : 'Add Item'}
+            {game?.id ? 'Edit Item' : duplicateSource === 'series' ? 'Add Item — from the series' : 'Add Item'}
           </h2>
           {/* Editing an existing item only — a blank Add form or a
               duplicateOf pre-fill both have no id yet, and series lookup
@@ -767,14 +767,18 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           )}
         </div>
         <div className="sub">
-          {/* !game guards every duplicateOf/duplicateSource branch below —
-              both only ever describe an Add-mode prefill, and a stale
-              duplicateSource can outlive the add it described (state
-              that's only cleared on save/close, not on every open). If a
-              real edit ever re-rendered while one was still set, skipping
-              this guard would show an Add-flow explanation on someone's
-              actual existing item. */}
-          {!game && duplicateSource === 'series'
+          {/* !game?.id guards every duplicateOf/duplicateSource branch
+              below — both only ever describe an Add-mode prefill, and a
+              stale duplicateSource can outlive the add it described
+              (state that's only cleared on save/close, not on every
+              open). If a real edit ever re-rendered while one was still
+              set, skipping this guard would show an Add-flow explanation
+              on someone's actual existing item. `.id` specifically
+              (not just truthiness) since the ?add=1 deep link from the
+              collectible detail page passes a real-but-id-less `game`
+              object too — see the footer actions block below, which had
+              the same bare-truthiness bug. */}
+          {!game?.id && duplicateSource === 'series'
             // The one duplicateOf path that doesn't start from "an item
             // you already have" — someone clicked a *missing* series
             // entry, so this is worth spelling all the way out. Same
@@ -1501,7 +1505,14 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         {saveError && <div className="error-text">Couldn't save: {saveError}</div>}
 
         <div className="modal-actions">
-          {game ? (
+          {/* game?.id, not just game — a truthy-but-unsaved game object
+              (the ?add=1 deep link from the collectible detail page
+              passes `{item_type, title, cover}` with no id) used to slip
+              through the old bare `game ?` check here, showing Duplicate/
+              Delete on an item that didn't exist yet; Delete would have
+              called onDelete(undefined). Found while fixing the same bug
+              in the heading above. */}
+          {game?.id ? (
             <ActionMenu label="More actions">
               <button className="btn-ghost" type="button" onClick={() => onDuplicate(form)}>
                 Duplicate
