@@ -79,6 +79,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     };
   }, []);
   const [duplicateOf, setDuplicateOf] = useState(undefined); // prefill data when adding a copy of an existing item
+  // Which of the three duplicateOf-prefill flows triggered the current
+  // one ('copy' | 'recommendation' | 'series') — GameModal uses this to
+  // show a flow-specific explanation, since "series" in particular
+  // reuses the modal you were already editing and switches it into a new
+  // draft in place; without a clear "this is a new item, yours is
+  // untouched" message, that read as the current item silently changing.
+  const [duplicateSource, setDuplicateSource] = useState(null);
   const [search, setSearch] = useState('');
   const [fOwn, setFOwn] = useState('');
   const [fPlat, setFPlat] = useState('');
@@ -526,6 +533,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         setGames((gs) => gs.map((g) => (g.id === data.id ? data : g)));
         setModalGame(undefined);
         setDuplicateOf(undefined);
+        setDuplicateSource(null);
         checkTrophies();
         logActivity(buildActivityEvents(userId, data.id, modalGame, data));
       }
@@ -540,6 +548,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (data) {
         setGames((gs) => [...gs, data]);
         setModalGame(undefined);
+        // Also clear these here, not just on the update branch above —
+        // left unset otherwise, a stale duplicateOf/duplicateSource from
+        // this save would silently reappear the next time "+ Add Item"
+        // (a genuinely blank form) gets clicked.
+        setDuplicateOf(undefined);
+        setDuplicateSource(null);
         checkTrophies();
         logActivity(buildActivityEvents(userId, data.id, null, data));
       }
@@ -740,6 +754,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       showcase_order: null, // don't silently double up a showcase slot
       steam_appid: null, // a duplicate is a manual copy, not another Steam import
     });
+    setDuplicateSource('copy');
     setModalGame(null);
   }
 
@@ -753,6 +768,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       item_type: rec.item_type,
       cover: rec.cover || '',
     });
+    setDuplicateSource('recommendation');
     setModalGame(null);
   }
 
@@ -765,6 +781,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // into "what would this cost me" (see ROADMAP.md "Full series view").
   function handleAddFromSeries(prefill) {
     setDuplicateOf(prefill);
+    setDuplicateSource('series');
     setModalGame(null);
   }
 
@@ -1791,6 +1808,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         <GameModal
           game={modalGame}
           duplicateOf={duplicateOf}
+          duplicateSource={duplicateSource}
           currency={currency}
           userId={userId}
           suggestions={suggestions}
@@ -1798,6 +1816,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           onClose={() => {
             setModalGame(undefined);
             setDuplicateOf(undefined);
+            setDuplicateSource(null);
           }}
           onSave={handleSave}
           onDelete={handleDelete}
