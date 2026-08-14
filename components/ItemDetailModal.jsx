@@ -1,0 +1,122 @@
+'use client';
+
+import useModalA11y from '@/lib/useModalA11y';
+import { getStatRows } from './GameCard';
+import { currencySymbol } from '@/lib/currency';
+
+function cap(s) {
+  if (!s) return '';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Read-only "view" state for a card in your own collection grid — the
+// new default click target now that clicking a card no longer jumps
+// straight into editing (see ROADMAP.md "Collection/profile cards": "a
+// real view/detail state as the default click target with Edit as its
+// own separate, explicit action instead"). Shows the same stat rows the
+// card itself does (via GameCard's exported getStatRows, so the two never
+// drift apart), plus the handful of fields that only ever lived inside
+// the edit form before this — notes, purchase price/date, variant
+// details, condition photos — since those are exactly the kind of thing
+// worth a quick look without committing to editing anything.
+export default function ItemDetailModal({ game, currency, onClose, onEdit }) {
+  const modalRef = useModalA11y(onClose);
+  const statRows = getStatRows(game, currency);
+  const isComic = game.item_type === 'comic';
+  const isCard = game.item_type === 'trading_card';
+  const isFunko = game.item_type === 'funko_pop';
+  const hasVariant = (isComic || isCard || isFunko) && game.is_variant;
+  const priceCurrency = game.market_price_currency || currency || 'USD';
+
+  return (
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+          <h2 id="detail-modal-title" style={{ margin: 0 }}>{game.title}</h2>
+          <button type="button" className="btn-ghost" style={{ flexShrink: 0 }} onClick={onClose}>
+            Close
+          </button>
+        </div>
+        <div className="sub" style={{ textTransform: 'capitalize' }}>
+          {game.ownership} · {(game.item_type || '').replace('_', ' ')}
+        </div>
+
+        <div className="detail-layout">
+          <div className="detail-cover-wrap">
+            {game.cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="detail-cover" src={game.cover} alt={game.title} />
+            ) : (
+              <div className="detail-cover placeholder">No Cover</div>
+            )}
+          </div>
+          <div className="stat-rows detail-stat-rows">
+            {statRows.map((row) => (
+              <div className={`stat-row${row.className ? ` ${row.className}` : ''}`} key={row.label}>
+                <span className="stat-label">{row.label}</span>
+                <span className="stat-value">{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {(hasVariant || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
+          <div className="badge-row" style={{ marginTop: 10 }}>
+            {hasVariant && <span className="badge tag">{isFunko ? 'Chase' : isCard ? 'Parallel' : 'Variant'}</span>}
+            {game.copy_type && <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>}
+            {game.fully_completed && <span className="badge tag complete-100">100% Complete</span>}
+            {game.showcase_order != null && <span className="badge tag showcase-badge">Showcased</span>}
+            {(game.tags || []).map((t) => (
+              <span className="badge tag" key={t}>{t}</span>
+            ))}
+          </div>
+        )}
+
+        {hasVariant && game.variant_notes && (
+          <div className="field">
+            <label>Variant details</label>
+            <p className="sub" style={{ margin: 0 }}>{game.variant_notes}</p>
+          </div>
+        )}
+
+        {(game.price != null || game.purchase_date) && (
+          <div className="field">
+            <label>Purchase</label>
+            <p className="sub" style={{ margin: 0 }}>
+              {game.price != null ? `${currencySymbol(priceCurrency)}${game.price}` : 'Price not recorded'}
+              {game.purchase_date ? ` · ${new Date(game.purchase_date).toLocaleDateString()}` : ''}
+            </p>
+          </div>
+        )}
+
+        {game.notes && (
+          <div className="field">
+            <label>Notes</label>
+            <p className="sub" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{game.notes}</p>
+          </div>
+        )}
+
+        {game.condition_photos?.length > 0 && (
+          <div className="field">
+            <label>Condition photos</label>
+            <div className="condition-photos-grid">
+              {game.condition_photos.map((url, i) => (
+                <div className="condition-photo" key={url}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Condition photo ${i + 1}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="modal-actions">
+          <span />
+          <button type="button" className="btn-primary" onClick={() => onEdit(game)}>
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

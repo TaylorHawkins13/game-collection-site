@@ -10,51 +10,13 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default function GameCard({
-  game,
-  onClick,
-  featured = false,
-  currency,
-  selectMode = false,
-  selected = false,
-  onToggleSelect,
-}) {
-  // Supabase can hand numeric columns back as strings — coerce before
-  // any arithmetic/comparison.
-  const rating = Number(game.rating) || 0;
+// The type-specific "which fields matter" logic used to build a card's
+// stat-row list — pulled out so ItemDetailModal (the card's read-only
+// detail view, opened by the default click; see ROADMAP.md "Collection/
+// profile cards") can render the exact same rows without duplicating this
+// switch, rather than the two views silently drifting apart over time.
+export function getStatRows(game, currency) {
   const isComic = game.item_type === 'comic';
-  const [artColor, setArtColor] = useState(null);
-
-  // Pull a dominant color from the cover art (when the image host allows
-  // it) so the slab strip and nameplate feel tied to the artwork instead
-  // of always using the same fixed accent color.
-  useEffect(() => {
-    let active = true;
-    if (game.cover) {
-      getCoverColor(game.cover).then((c) => {
-        if (active) setArtColor(c);
-      });
-    } else {
-      setArtColor(null);
-    }
-    return () => {
-      active = false;
-    };
-  }, [game.cover]);
-
-  const titleStyle = artColor
-    ? {
-        background: `linear-gradient(135deg, ${colorToCss(artColor)}, ${shadeColor(artColor, -45)})`,
-        color: readableTextColor(artColor),
-      }
-    : undefined;
-  const stripStyle = artColor
-    ? {
-        background: `linear-gradient(90deg, ${shadeColor(artColor, 50)}, ${colorToCss(artColor)}, ${shadeColor(artColor, -35)})`,
-        backgroundSize: '200% 100%',
-      }
-    : undefined;
-
   const isCard = game.item_type === 'trading_card';
   const isVinyl = game.item_type === 'vinyl';
   const isBook = game.item_type === 'book';
@@ -64,6 +26,7 @@ export default function GameCard({
   const isConsole = game.item_type === 'console';
   const isFunko = game.item_type === 'funko_pop';
   const isMediaLike = isBook || isDvd || isVhs || isCd;
+  const rating = Number(game.rating) || 0;
 
   const statRows = [];
   if (isComic) {
@@ -155,6 +118,56 @@ export default function GameCard({
     value: rating > 0 ? <StarRating value={rating} size={13} /> : 'Unrated',
     isRating: true,
   });
+  return statRows;
+}
+
+export default function GameCard({
+  game,
+  onClick,
+  onEdit,
+  featured = false,
+  currency,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+}) {
+  const isComic = game.item_type === 'comic';
+  const [artColor, setArtColor] = useState(null);
+
+  // Pull a dominant color from the cover art (when the image host allows
+  // it) so the slab strip and nameplate feel tied to the artwork instead
+  // of always using the same fixed accent color.
+  useEffect(() => {
+    let active = true;
+    if (game.cover) {
+      getCoverColor(game.cover).then((c) => {
+        if (active) setArtColor(c);
+      });
+    } else {
+      setArtColor(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [game.cover]);
+
+  const titleStyle = artColor
+    ? {
+        background: `linear-gradient(135deg, ${colorToCss(artColor)}, ${shadeColor(artColor, -45)})`,
+        color: readableTextColor(artColor),
+      }
+    : undefined;
+  const stripStyle = artColor
+    ? {
+        background: `linear-gradient(90deg, ${shadeColor(artColor, 50)}, ${colorToCss(artColor)}, ${shadeColor(artColor, -35)})`,
+        backgroundSize: '200% 100%',
+      }
+    : undefined;
+
+  const isCard = game.item_type === 'trading_card';
+  const isFunko = game.item_type === 'funko_pop';
+
+  const statRows = getStatRows(game, currency);
 
   return (
     <div
@@ -168,19 +181,40 @@ export default function GameCard({
       )}
       {featured && <div className="card-featured-flag">Featured</div>}
       <div className={`card-ownership-flag ${game.ownership}`}>{game.ownership}</div>
-      {game.cover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="cover"
-          src={game.cover}
-          alt={game.title}
-          onError={(e) => {
-            e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
-          }}
-        />
-      ) : (
-        <div className="cover placeholder">No Cover</div>
-      )}
+      <div className="card-cover-wrap">
+        {game.cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className="cover"
+            src={game.cover}
+            alt={game.title}
+            onError={(e) => {
+              e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
+            }}
+          />
+        ) : (
+          <div className="cover placeholder">No Cover</div>
+        )}
+        {/* Explicit, separate path into editing — the default click on
+            the card itself now opens the read-only detail view instead
+            (see ROADMAP.md "Collection/profile cards"). Only rendered
+            when the parent actually wants edit access from this grid
+            (the dashboard's own collection), not on public/read-only
+            views of someone else's cards. */}
+        {onEdit && !selectMode && (
+          <button
+            type="button"
+            className="btn-icon card-edit-btn"
+            aria-label={`Edit ${game.title}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(game);
+            }}
+          >
+            ✎
+          </button>
+        )}
+      </div>
       <div className="card-title" style={titleStyle}>{game.title}</div>
       <div className="card-body">
         <div className="stat-list">

@@ -1195,3 +1195,23 @@ create policy "Users can view their own passkeys"
 create policy "Users can delete their own passkeys"
   on public.passkey_credentials for delete
   using ((select auth.uid()) = user_id);
+
+-- ============================================================
+-- WebAuthn rate limiting
+-- (see webauthn-rate-limit-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+create table if not exists webauthn_rate_limit_events (
+  id bigint generated always as identity primary key,
+  identifier text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists webauthn_rate_limit_events_identifier_idx
+  on webauthn_rate_limit_events (identifier, created_at desc);
+
+alter table webauthn_rate_limit_events enable row level security;
+-- No policies at all — only ever touched by the service-role client
+-- (lib/supabaseAdmin.js), same reasoning as passkey_credentials above.
+revoke all on webauthn_rate_limit_events from anon, authenticated;

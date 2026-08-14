@@ -59,8 +59,8 @@ export default function PasskeyManager() {
     setAdding(true);
     try {
       const optionsRes = await fetch('/api/webauthn/register-options', { method: 'POST' });
-      if (!optionsRes.ok) throw new Error('Could not start passkey setup.');
       const options = await optionsRes.json();
+      if (!optionsRes.ok) throw new Error(options.error || 'Could not start passkey setup.');
 
       // Opens the OS's own Face ID/Touch ID/security-key prompt —
       // there's nothing to build UI for here, the browser owns this

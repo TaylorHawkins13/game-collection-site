@@ -823,6 +823,27 @@ button:disabled {
   height: 16px;
   cursor: pointer;
 }
+/* Wraps the cover image so the explicit Edit button (see ROADMAP.md
+   "Collection/profile cards") can anchor to the bottom of the artwork
+   itself rather than the whole card, whose height varies with how many
+   stat rows/badges a given item type has. */
+.card-cover-wrap {
+  position: relative;
+}
+.card-edit-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 2;
+  background: rgba(6, 7, 15, 0.65);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+.card-edit-btn:hover {
+  background: rgba(6, 7, 15, 0.85);
+}
 .bulk-bar {
   position: sticky;
   top: 0;
@@ -1285,6 +1306,67 @@ button:disabled {
 .franchise-item.owned .franchise-item-name {
   color: var(--text);
   font-weight: 600;
+}
+/* Missing entries only (see ROADMAP.md "Full series view: let a missing
+   entry link straight to an eBay check") — owned entries have nothing to
+   act on, so they stay non-interactive. */
+.franchise-item.missing-clickable {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: inherit;
+}
+.franchise-item.missing-clickable:hover,
+.franchise-item.missing-clickable:focus-visible {
+  opacity: 0.75;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Item detail view (ItemDetailModal) ---------- */
+.detail-layout {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  align-items: flex-start;
+}
+.detail-cover-wrap {
+  flex-shrink: 0;
+  width: 140px;
+}
+.detail-cover {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  display: block;
+}
+.detail-cover.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.detail-stat-rows {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+@media (max-width: 480px) {
+  .detail-layout {
+    flex-direction: column;
+  }
+  .detail-cover-wrap {
+    width: 120px;
+  }
 }
 
 .cover-preview {

@@ -5,11 +5,20 @@ import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import { createClient } from '@/lib/supabaseServer';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { RP_ID, EXPECTED_ORIGIN } from '@/lib/webauthnConfig';
+import { checkWebauthnRateLimit } from '@/lib/webauthnRateLimit';
 
 // Step 2 of "add a passkey": verifies the browser's response to the
 // options from register-options, and — only if that verification
 // genuinely passes — stores the new credential.
 export async function POST(req) {
+  // Same shared budget as the other three WebAuthn routes — see
+  // lib/webauthnRateLimit.js and ROADMAP.md "WebAuthn/passkey API routes
+  // have no rate limiting".
+  const { limited } = await checkWebauthnRateLimit(req);
+  if (limited) {
+    return NextResponse.json({ error: 'Too many attempts — wait a few minutes and try again.' }, { status: 429 });
+  }
+
   const supabase = createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {

@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
 import GameCard from '@/components/GameCard';
+import ItemDetailModal from '@/components/ItemDetailModal';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
@@ -58,6 +59,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const systemTilesRef = useHorizontalWheelScroll();
   const [games, setGames] = useState(initialGames);
   const [modalGame, setModalGame] = useState(undefined); // undefined = closed, null = add, object = edit
+  // Read-only detail view — the default click target for a card in the
+  // grid now that clicking a card no longer jumps straight into editing
+  // (see ROADMAP.md "Collection/profile cards"). Edit stays one explicit
+  // click away, either from the card's own edit button or from this
+  // view's "Edit" button, both of which hand off to modalGame above.
+  const [detailGame, setDetailGame] = useState(null);
   // Deleting an item removes it from view immediately but doesn't touch
   // the database until this timer fires — gives a few seconds to hit
   // Undo before it's actually gone. Only one pending delete at a time;
@@ -746,6 +753,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       item_type: rec.item_type,
       cover: rec.cover || '',
     });
+    setModalGame(null);
+  }
+
+  // Clicking a greyed-out (not-yet-owned) entry in GameModal's "See full
+  // series" grid opens a fresh Add Item form prefilled from that entry —
+  // same idea as handleAddFromRecommendation, just sourced from the
+  // series lookup instead of the recommendations feed. Lands the missing
+  // entry's title/set/number/cover straight into a form that already has
+  // its own "Check eBay price" button, so spotting a gap turns directly
+  // into "what would this cost me" (see ROADMAP.md "Full series view").
+  function handleAddFromSeries(prefill) {
+    setDuplicateOf(prefill);
     setModalGame(null);
   }
 
@@ -1733,7 +1752,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 <GameCard
                   key={g.id}
                   game={g}
-                  onClick={() => setModalGame(g)}
+                  onClick={() => setDetailGame(g)}
+                  onEdit={(item) => setModalGame(item)}
                   currency={currency}
                   selectMode={selectMode}
                   selected={selectedIds.has(g.id)}
@@ -1743,6 +1763,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </div>
           )}
         </>
+      )}
+
+      {detailGame && (
+        <ItemDetailModal
+          key={detailGame.id}
+          game={detailGame}
+          currency={currency}
+          onClose={() => setDetailGame(null)}
+          onEdit={(item) => {
+            setDetailGame(null);
+            setModalGame(item);
+          }}
+        />
       )}
 
       {pendingDelete && (
@@ -1769,6 +1802,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           onSave={handleSave}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
+          onAddFromSeries={handleAddFromSeries}
         />
       )}
 

@@ -27,8 +27,8 @@ export default function PasskeyLoginButton() {
     setBusy(true);
     try {
       const optionsRes = await fetch('/api/webauthn/login-options', { method: 'POST' });
-      if (!optionsRes.ok) throw new Error('Could not start sign-in.');
       const options = await optionsRes.json();
+      if (!optionsRes.ok) throw new Error(options.error || 'Could not start sign-in.');
 
       // No email typed in first — the OS shows whatever passkeys it
       // already has saved for this site and lets the person pick.

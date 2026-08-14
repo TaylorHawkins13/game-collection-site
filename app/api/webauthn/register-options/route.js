@@ -5,13 +5,24 @@ import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import { createClient } from '@/lib/supabaseServer';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { RP_ID, RP_NAME } from '@/lib/webauthnConfig';
+import { checkWebauthnRateLimit } from '@/lib/webauthnRateLimit';
 
 // Step 1 of "add a passkey": generates a random challenge + registration
 // options for the browser's navigator.credentials.create() call. Requires
 // an existing signed-in session — this is for adding a passkey to an
 // account you're already logged into (via Settings), not for creating a
 // brand-new account.
-export async function POST() {
+export async function POST(req) {
+  // Being signed-in-only already rules out the account-enumeration angle
+  // login-options doesn't have, but nothing stopped a signed-in session
+  // from hammering this for cheap challenge generation either — same
+  // shared budget as the sign-in routes. See ROADMAP.md "WebAuthn/passkey
+  // API routes have no rate limiting".
+  const { limited } = await checkWebauthnRateLimit(req);
+  if (limited) {
+    return NextResponse.json({ error: 'Too many attempts — wait a few minutes and try again.' }, { status: 429 });
+  }
+
   const supabase = createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {

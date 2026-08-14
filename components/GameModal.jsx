@@ -14,7 +14,7 @@ import { searchConsoles } from '@/lib/consoleList';
 import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesSupported, seriesQueryValueFor, ownedKeysFor } from '@/lib/seriesLookup';
+import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
 import SeriesGrid from './SeriesGrid';
 
 const EMPTY = {
@@ -58,7 +58,7 @@ const EMPTY = {
   price_alert_threshold: '',
 };
 
-export default function GameModal({ game, duplicateOf, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
+export default function GameModal({ game, duplicateOf, currency, userId, onClose, onSave, onDelete, onDuplicate, onAddFromSeries, suggestions, existingItems }) {
   const sg = suggestions || {};
   const supabase = createClient();
   const [form, setForm] = useState(EMPTY);
@@ -776,7 +776,17 @@ export default function GameModal({ game, duplicateOf, currency, userId, onClose
           <div className="field">
             {series.loading && <div className="sub" style={{ marginTop: 0 }}>Looking up the series…</div>}
             {series.error && <div className="sub" style={{ marginTop: 0 }}>{series.error}</div>}
-            {series.data && <SeriesGrid data={series.data} ownedKeys={ownedKeys} />}
+            {series.data && (
+              <SeriesGrid
+                data={series.data}
+                ownedKeys={ownedKeys}
+                onSelectMissing={
+                  onAddFromSeries
+                    ? (entry) => onAddFromSeries(prefillFromSeriesEntry(form.item_type, series.data.seriesName, entry))
+                    : undefined
+                }
+              />
+            )}
           </div>
         )}
 

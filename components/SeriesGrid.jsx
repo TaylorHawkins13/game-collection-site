@@ -7,7 +7,15 @@
 // looking at). `data` is the normalizeSeriesResponse() shape from
 // lib/seriesLookup.js: { seriesName, entries: [{id, cover, label,
 // matchKey}] }.
-export default function SeriesGrid({ data, ownedKeys, ownerLabel }) {
+//
+// `onSelectMissing`, when passed, makes every not-owned entry clickable —
+// GameModal wires this to open a fresh Add Item form prefilled from that
+// entry, straight into the same "Check eBay price" button the form
+// already has (see ROADMAP.md "Full series view"). SeriesModal (the
+// read-only profile view, where there's no add-item flow to hand off to)
+// simply doesn't pass it, so those grids stay exactly as before —
+// greyed-out but inert.
+export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissing }) {
   if (!data) return null;
   const ownedCount = data.entries.filter((e) => ownedKeys.has(e.matchKey)).length;
 
@@ -20,8 +28,9 @@ export default function SeriesGrid({ data, ownedKeys, ownerLabel }) {
       <div className="franchise-grid">
         {data.entries.map((e) => {
           const owned = ownedKeys.has(e.matchKey);
-          return (
-            <div key={e.id} className={`franchise-item${owned ? ' owned' : ''}`} title={e.label}>
+          const clickable = !owned && !!onSelectMissing;
+          const content = (
+            <>
               {e.cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={e.cover} alt={e.label} />
@@ -29,6 +38,24 @@ export default function SeriesGrid({ data, ownedKeys, ownerLabel }) {
                 <div className="franchise-item-placeholder">{(e.label || '?').replace('#', '').slice(0, 1)}</div>
               )}
               <div className="franchise-item-name">{e.label}</div>
+            </>
+          );
+          if (clickable) {
+            return (
+              <button
+                key={e.id}
+                type="button"
+                className="franchise-item missing-clickable"
+                title={`${e.label} — not in the collection yet. Check its eBay price.`}
+                onClick={() => onSelectMissing(e)}
+              >
+                {content}
+              </button>
+            );
+          }
+          return (
+            <div key={e.id} className={`franchise-item${owned ? ' owned' : ''}`} title={e.label}>
+              {content}
             </div>
           );
         })}

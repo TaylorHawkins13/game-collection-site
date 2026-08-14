@@ -4,6 +4,7 @@ import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { RP_ID, EXPECTED_ORIGIN } from '@/lib/webauthnConfig';
+import { checkWebauthnRateLimit } from '@/lib/webauthnRateLimit';
 
 // Verifies a passkey sign-in attempt and, if it's genuinely valid, mints
 // a real Supabase session for whoever that credential belongs to.
@@ -22,6 +23,15 @@ import { RP_ID, EXPECTED_ORIGIN } from '@/lib/webauthnConfig';
 // is actually sent; generateLink() just mints the token, it doesn't
 // deliver it anywhere on its own.
 export async function POST(req) {
+  // Same shared IP-based budget as login-options — see
+  // lib/webauthnRateLimit.js and ROADMAP.md "WebAuthn/passkey API routes
+  // have no rate limiting". A failed lookup below ("Passkey not
+  // recognized") is exactly the cheap-probe case that budget exists for.
+  const { limited } = await checkWebauthnRateLimit(req);
+  if (limited) {
+    return NextResponse.json({ error: 'Too many attempts — wait a few minutes and try again.' }, { status: 429 });
+  }
+
   const expectedChallenge = cookies().get('webauthn_challenge')?.value;
   if (!expectedChallenge) {
     return NextResponse.json({ error: 'Sign-in expired — try again.' }, { status: 400 });
