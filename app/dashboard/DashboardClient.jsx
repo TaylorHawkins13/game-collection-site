@@ -1809,10 +1809,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           key={detailGame.id}
           game={detailGame}
           currency={currency}
+          existingItems={games}
           onClose={() => setDetailGame(null)}
           onEdit={(item) => {
             setDetailGame(null);
             setModalGame(item);
+          }}
+          onAddFromSeries={(prefill) => {
+            setDetailGame(null);
+            handleAddFromSeries(prefill);
           }}
         />
       )}

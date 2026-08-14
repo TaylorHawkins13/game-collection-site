@@ -1,6 +1,9 @@
 'use client';
 
 import useModalA11y from '@/lib/useModalA11y';
+import useSeriesLookup from '@/lib/useSeriesLookup';
+import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
+import SeriesGrid from './SeriesGrid';
 import { getStatRows } from './GameCard';
 import { currencySymbol } from '@/lib/currency';
 
@@ -19,14 +22,30 @@ function cap(s) {
 // the edit form before this — notes, purchase price/date, variant
 // details, condition photos — since those are exactly the kind of thing
 // worth a quick look without committing to editing anything.
-export default function ItemDetailModal({ game, currency, onClose, onEdit }) {
+//
+// Also carries its own "See full series" toggle, same as GameModal's —
+// requested directly: checking series completion from the card you
+// clicked was buried behind Edit, when it's a read-only look that has
+// nothing to do with editing anything. `existingItems` is always your
+// own full collection here (this modal only ever appears from the
+// dashboard grid), so unlike SeriesModal there's no "whose collection is
+// this comparing against" ambiguity — missing entries are always
+// actionable, same as GameModal's edit-mode version.
+export default function ItemDetailModal({ game, currency, existingItems, onClose, onEdit, onAddFromSeries }) {
   const modalRef = useModalA11y(onClose);
+  const series = useSeriesLookup();
   const statRows = getStatRows(game, currency);
   const isComic = game.item_type === 'comic';
   const isCard = game.item_type === 'trading_card';
   const isFunko = game.item_type === 'funko_pop';
   const hasVariant = (isComic || isCard || isFunko) && game.is_variant;
   const priceCurrency = game.market_price_currency || currency || 'USD';
+  const seriesValue = seriesQueryValueFor(game);
+  const ownedKeys = ownedKeysFor(existingItems, game.item_type);
+
+  function handleSelectMissing(entry) {
+    onAddFromSeries(prefillFromSeriesEntry(game.item_type, series.data.seriesName, entry));
+  }
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -40,6 +59,14 @@ export default function ItemDetailModal({ game, currency, onClose, onEdit }) {
         <div className="sub" style={{ textTransform: 'capitalize' }}>
           {game.ownership} · {(game.item_type || '').replace('_', ' ')}
         </div>
+
+        {(series.loading || series.error || series.data) && (
+          <div className="field">
+            {series.loading && <div className="sub" style={{ marginTop: 0 }}>Looking up the series…</div>}
+            {series.error && <div className="sub" style={{ marginTop: 0 }}>{series.error}</div>}
+            {series.data && <SeriesGrid data={series.data} ownedKeys={ownedKeys} onSelectMissing={handleSelectMissing} />}
+          </div>
+        )}
 
         <div className="detail-layout">
           <div className="detail-cover-wrap">
@@ -112,9 +139,21 @@ export default function ItemDetailModal({ game, currency, onClose, onEdit }) {
 
         <div className="modal-actions">
           <span />
-          <button type="button" className="btn-primary" onClick={() => onEdit(game)}>
-            Edit
-          </button>
+          <div className="right">
+            {seriesSupported(game.item_type) && (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => (series.data ? series.reset() : series.load(game.item_type, seriesValue))}
+                disabled={series.loading}
+              >
+                {series.loading ? 'Loading…' : series.data ? 'Hide series' : 'See full series'}
+              </button>
+            )}
+            <button type="button" className="btn-primary" onClick={() => onEdit(game)}>
+              Edit
+            </button>
+          </div>
         </div>
       </div>
     </div>
