@@ -1215,3 +1215,23 @@ alter table webauthn_rate_limit_events enable row level security;
 -- No policies at all — only ever touched by the service-role client
 -- (lib/supabaseAdmin.js), same reasoning as passkey_credentials above.
 revoke all on webauthn_rate_limit_events from anon, authenticated;
+
+-- ============================================================
+-- Feedback rate limiting
+-- (see feedback-rate-limit-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+create table if not exists feedback_rate_limit_events (
+  id bigint generated always as identity primary key,
+  identifier text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists feedback_rate_limit_events_identifier_idx
+  on feedback_rate_limit_events (identifier, created_at desc);
+
+alter table feedback_rate_limit_events enable row level security;
+-- No policies at all — only ever touched by the service-role client
+-- (lib/supabaseAdmin.js), same reasoning as webauthn_rate_limit_events above.
+revoke all on feedback_rate_limit_events from anon, authenticated;

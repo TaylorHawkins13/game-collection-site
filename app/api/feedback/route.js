@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabaseServer';
 import { sendEmail } from '@/lib/resend';
+import { checkFeedbackRateLimit } from '@/lib/feedbackRateLimit';
 
 const TYPES = ['bug', 'issue', 'suggestion'];
 
@@ -10,6 +11,17 @@ const TYPES = ['bug', 'issue', 'suggestion'];
 // durable record; the email notification is best-effort on top of that
 // so a Resend hiccup never loses a report.
 export async function POST(request) {
+  // Checked before anything else — an IP-based cap (see
+  // lib/feedbackRateLimit.js), since most submitters here aren't signed
+  // in, unlike comments/articles which can key their limit on user_id.
+  const { limited } = await checkFeedbackRateLimit(request);
+  if (limited) {
+    return NextResponse.json(
+      { error: "You're submitting too fast — wait a few minutes and try again." },
+      { status: 429 }
+    );
+  }
+
   let body;
   try {
     body = await request.json();

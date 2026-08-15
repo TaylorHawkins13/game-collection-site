@@ -41,6 +41,9 @@ export default function LoginPage() {
         <div className="field">
           <label>Password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <p className="sub" style={{ margin: '6px 0 0' }}>
+            <Link href="/forgot-password">Forgot password?</Link>
+          </p>
         </div>
 
         {error && <div className="error-text">{error}</div>}
