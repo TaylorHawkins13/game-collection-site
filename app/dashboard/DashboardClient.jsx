@@ -241,6 +241,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [deleteAccountError, setDeleteAccountError] = useState('');
   const [deletionRequestedAt, setDeletionRequestedAt] = useState(profile?.deletion_requested_at || null);
   const [cancelingDeletion, setCancelingDeletion] = useState(false);
+  const [signingOutOthers, setSigningOutOthers] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
   const refreshStopRef = useRef(false);
@@ -1102,6 +1103,27 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     announceToast('Account deletion canceled — good to have you back.', 'success');
   }
 
+  // Revokes every other signed-in session (other browsers/devices) while
+  // leaving this one alone — for the "I think someone else has my
+  // password" case, or just tidying up an old browser you signed into
+  // once and forgot about. Supabase Auth's own scoped sign-out handles
+  // this directly from the browser client; no service-role key or new
+  // backend route needed, since it only ever acts on the caller's own
+  // sessions. See ROADMAP.md — this doesn't touch the password itself,
+  // it's a companion to /forgot-password for closing out access that a
+  // reset alone doesn't.
+  async function handleSignOutOthers() {
+    if (signingOutOthers) return;
+    setSigningOutOthers(true);
+    const { error } = await supabase.auth.signOut({ scope: 'others' });
+    setSigningOutOthers(false);
+    if (error) {
+      announceToast("Couldn't sign out other devices — try again.");
+      return;
+    }
+    announceToast('Signed out everywhere else — this device stays signed in.', 'success');
+  }
+
   return (
     <main className="container">
       {deletionRequestedAt && (
@@ -1339,6 +1361,22 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <button className="btn-primary" onClick={saveSettings} disabled={settingsSaving} type="button">
             {settingsSaving ? 'Saving…' : 'Save settings'}
           </button>
+
+          <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <label>Account security</label>
+            <p className="sub" style={{ marginTop: 0 }}>
+              Signed into Shelf Life somewhere you don&apos;t recognize, or just used a public/shared computer once?
+              This signs every other browser and device out, leaving this one untouched — no password change needed.
+            </p>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={handleSignOutOthers}
+              disabled={signingOutOthers}
+            >
+              {signingOutOthers ? 'Signing out…' : 'Sign out of all other devices'}
+            </button>
+          </div>
 
           <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
             <label>Danger zone</label>
