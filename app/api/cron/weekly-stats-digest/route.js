@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSiteStats } from '@/lib/siteStats';
 import { sendEmail } from '@/lib/resend';
 import { notifyCronFailure } from '@/lib/cronAlert';
+import { recordCronRun } from '@/lib/cronHeartbeat';
 import { SITE_URL } from '@/lib/siteUrl';
+import { createAdminClient } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -29,12 +31,24 @@ export async function GET(request) {
     return NextResponse.json({ error: 'not_configured' }, { status: 503 });
   }
 
+  // Only for the heartbeat table below — getSiteStats() creates its own
+  // separate admin client internally for the actual stats queries.
+  // Best-effort: if this fails, the digest itself still runs fine, it
+  // just won't show up on /admin/stats' "Cron jobs" section.
+  let admin = null;
+  try {
+    admin = createAdminClient();
+  } catch {
+    // no-op
+  }
+
   let stats, topCollectors;
   try {
     ({ stats, topCollectors } = await getSiteStats());
   } catch (e) {
     console.error('weekly-stats-digest: failed to load stats', e);
     await notifyCronFailure('weekly-stats-digest', e);
+    if (admin) await recordCronRun(admin, 'weekly-stats-digest', 'error');
     return NextResponse.json({ error: 'query_failed' }, { status: 500 });
   }
 
@@ -65,8 +79,10 @@ export async function GET(request) {
     // route through the same (apparently broken) send path this call
     // just failed on.
     console.error('weekly-stats-digest: send failed', e);
+    if (admin) await recordCronRun(admin, 'weekly-stats-digest', 'error');
     return NextResponse.json({ error: 'send_failed' }, { status: 502 });
   }
 
+  if (admin) await recordCronRun(admin, 'weekly-stats-digest', 'success');
   return NextResponse.json({ sent: true });
 }

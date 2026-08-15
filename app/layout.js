@@ -51,8 +51,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
+        {/* Standard skip-to-content pattern — hidden until it receives
+            keyboard focus (Tab from the very top of the page), then jumps
+            straight past the navbar into the actual page content. Every
+            page already renders its content as the first thing inside
+            this wrapper (most use <main className="container">), so
+            wrapping {children} in one element with a stable id here
+            covers every page at once instead of needing an id added to
+            each page's own <main> individually. */}
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <Navbar />
-        {children}
+        <div id="main-content">{children}</div>
         <Footer />
         <TrophyToastListener />
         <ToastListener />

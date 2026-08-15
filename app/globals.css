@@ -84,6 +84,29 @@ a {
   color: inherit;
 }
 
+/* Skip-to-content link (app/layout.js) — standard accessibility pattern,
+   invisible until it receives keyboard focus (the very first Tab press
+   on any page), then jumps straight past the navbar into the actual
+   page content instead of forcing a keyboard/screen-reader user to tab
+   through every nav link on every single page load. */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 8px;
+  z-index: 1000;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
 button,
 input,
 select,
@@ -1165,6 +1188,16 @@ button:disabled {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+}
+/* The inner input's own outline is suppressed (it sits flush inside the
+   chip row with no border of its own), so without this a keyboard user
+   tabbing into it got no visual indicator at all that it was focused.
+   Highlighting the whole chip-input container on :focus-within replaces
+   that, same idea as .mosaic-tile's :focus-visible border-color further
+   down this file. */
+.chip-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .chip-input input {
   flex: 1;

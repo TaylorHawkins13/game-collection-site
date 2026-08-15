@@ -29,11 +29,12 @@ export default async function AdminStatsPage() {
 
   let stats = null;
   let topCollectors = [];
+  let cronRuns = [];
   try {
     // Shared with the weekly-stats-digest cron (see lib/siteStats.js) so
     // this page and the emailed version can never quietly show different
     // numbers.
-    ({ stats, topCollectors } = await getSiteStats());
+    ({ stats, topCollectors, cronRuns } = await getSiteStats());
   } catch {
     // SUPABASE_SERVICE_ROLE_KEY not set yet — let the page render anyway
     // so the setup note is visible instead of a hard crash, same pattern
@@ -105,6 +106,39 @@ export default async function AdminStatsPage() {
               ))}
             </div>
           )}
+
+          {/* Visibility layer for each scheduled Vercel Cron job — see
+              lib/cronHeartbeat.js. Just "did this run recently and how
+              did it go," not real monitoring: a job that stops firing
+              entirely (not just erroring) won't show up any differently
+              here, since nothing calls recordCronRun() if the job never
+              runs at all. See ROADMAP.md's "External cron watchdog"
+              entry for the piece that actually closes that gap. */}
+          <h2 className="home-section-heading" style={{ marginTop: 32 }}>
+            Cron jobs
+          </h2>
+          <div className="home-articles">
+            {cronRuns.map((job) => (
+              <div
+                key={job.name}
+                className="home-whatsnew-row"
+                style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}
+              >
+                <span>
+                  {job.label} <span className="sub">({job.schedule})</span>
+                </span>
+                <span className="sub">
+                  {job.run
+                    ? `Last ran ${new Date(job.run.last_run_at).toLocaleString()} — ${job.run.last_status}${
+                        job.run.last_success_at
+                          ? `, last success ${new Date(job.run.last_success_at).toLocaleString()}`
+                          : ''
+                      }`
+                    : 'Never run yet'}
+                </span>
+              </div>
+            ))}
+          </div>
         </>
       )}
     </main>

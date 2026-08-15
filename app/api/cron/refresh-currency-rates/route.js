@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { CURRENCIES } from '@/lib/currency';
 import { notifyCronFailure } from '@/lib/cronAlert';
+import { recordCronRun } from '@/lib/cronHeartbeat';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -51,6 +52,7 @@ export async function GET(request) {
   } catch (e) {
     console.error('refresh-currency-rates: fetch failed', e);
     await notifyCronFailure('refresh-currency-rates', e);
+    await recordCronRun(admin, 'refresh-currency-rates', 'error');
     return NextResponse.json({ error: 'fetch_failed' }, { status: 502 });
   }
 
@@ -78,5 +80,6 @@ export async function GET(request) {
     }
   }
 
+  await recordCronRun(admin, 'refresh-currency-rates', updated > 0 ? 'success' : 'error');
   return NextResponse.json({ updated, skipped, total: codes.length });
 }

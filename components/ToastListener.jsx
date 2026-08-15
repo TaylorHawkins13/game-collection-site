@@ -34,7 +34,14 @@ export default function ToastListener() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="toast-stack">
+    // role="status" + aria-live="polite" so a screen reader announces a
+    // toast as it appears — previously this was silent unless something
+    // happened to already have focus inside the stack, which nothing
+    // normally does (toasts show up in response to an action elsewhere
+    // on the page, like a failed follow or a rate-limited comment).
+    // "polite" rather than "assertive" so a toast doesn't barge in over
+    // whatever the screen reader is already announcing.
+    <div className="toast-stack" role="status" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className={`toast toast-${t.type}`} onClick={() => dismiss(t.id)}>
           {t.message}

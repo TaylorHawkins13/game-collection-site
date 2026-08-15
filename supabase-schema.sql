@@ -1295,3 +1295,22 @@ drop trigger if exists reports_rate_limit on reports;
 create trigger reports_rate_limit
   before insert on reports
   for each row execute function enforce_report_rate_limit();
+
+-- ============================================================
+-- Cron heartbeat
+-- (see cron-heartbeat-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+create table if not exists cron_runs (
+  job_name text primary key,
+  last_run_at timestamptz not null default now(),
+  last_success_at timestamptz,
+  last_status text not null default 'unknown' check (last_status in ('success', 'error', 'unknown')),
+  updated_at timestamptz not null default now()
+);
+
+alter table cron_runs enable row level security;
+-- No policies at all — only ever touched by the service-role client
+-- (lib/cronHeartbeat.js), same reasoning as feedback_rate_limit_events above.
+revoke all on cron_runs from anon, authenticated;

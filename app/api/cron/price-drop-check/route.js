@@ -4,6 +4,7 @@ import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
 import { SITE_URL } from '@/lib/siteUrl';
 import { notifyCronFailure } from '@/lib/cronAlert';
+import { recordCronRun } from '@/lib/cronHeartbeat';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -94,6 +95,7 @@ export async function GET(request) {
   if (error) {
     console.error('price-drop-check: failed to load wishlist items', error);
     await notifyCronFailure('price-drop-check', error);
+    await recordCronRun(supabase, 'price-drop-check', 'error');
     return NextResponse.json({ error: 'query_failed' }, { status: 500 });
   }
 
@@ -105,5 +107,6 @@ export async function GET(request) {
     if (result.checked || result.notified) checked += 1;
   }
 
+  await recordCronRun(supabase, 'price-drop-check', 'success');
   return NextResponse.json({ total: (items || []).length, checked, notified });
 }

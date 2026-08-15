@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { GRACE_PERIOD_HOURS, performAccountDeletion } from '@/lib/accountDeletion';
 import { notifyCronFailure } from '@/lib/cronAlert';
+import { recordCronRun } from '@/lib/cronHeartbeat';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -46,6 +47,7 @@ export async function GET(request) {
   if (error) {
     console.error('process-account-deletions: failed to load pending deletions', error);
     await notifyCronFailure('process-account-deletions', error);
+    await recordCronRun(admin, 'process-account-deletions', 'error');
     return NextResponse.json({ error: 'query_failed' }, { status: 500 });
   }
 
@@ -71,5 +73,6 @@ export async function GET(request) {
     await notifyCronFailure('process-account-deletions', new Error(`${failed} account deletion(s) failed:\n${failures.join('\n')}`));
   }
 
+  await recordCronRun(admin, 'process-account-deletions', failed > 0 ? 'error' : 'success');
   return NextResponse.json({ total: (expired || []).length, deleted, failed });
 }
