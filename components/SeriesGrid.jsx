@@ -10,8 +10,8 @@
 //
 // `onSelectMissing`, when passed, makes every not-owned entry clickable —
 // GameModal, ItemDetailModal, and SeriesModal (when `isOwnProfile`) all
-// wire this to open real eBay and CeX listing search pages for that
-// entry in new tabs (see lib/externalListings.js). Callers that don't
+// wire this to open one real listing tab for that entry: eBay if it has
+// any, CeX otherwise (see lib/externalListings.js). Callers that don't
 // pass it leave those grids exactly as before — greyed-out but inert.
 export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissing }) {
   if (!data) return null;
@@ -44,7 +44,7 @@ export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissin
                 key={e.id}
                 type="button"
                 className="franchise-item missing-clickable"
-                title={`${e.label} — not in the collection yet. Look it up on eBay and CeX.`}
+                title={`${e.label} — not in the collection yet. Checks eBay, opens CeX if there's nothing there.`}
                 onClick={() => onSelectMissing(e)}
               >
                 {content}

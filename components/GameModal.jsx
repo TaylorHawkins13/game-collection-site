@@ -9,7 +9,7 @@ import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
-import { openListingSearches } from '@/lib/externalListings';
+import { openBestListingTab } from '@/lib/externalListings';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
 import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
@@ -796,7 +796,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 ownedKeys={ownedKeys}
                 onSelectMissing={(entry) => {
                   const prefill = prefillFromSeriesEntry(form.item_type, series.data.seriesName, entry);
-                  openListingSearches(buildPriceQuery(prefill), currency);
+                  openBestListingTab(prefill, currency);
                 }}
               />
             )}

@@ -4,8 +4,7 @@ import { useEffect } from 'react';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
-import { buildPriceQuery } from '@/lib/marketPrice';
-import { openListingSearches } from '@/lib/externalListings';
+import { openBestListingTab } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 
 // Read-only counterpart to the "Series" section in GameModal — opened by
@@ -40,7 +39,7 @@ export default function SeriesModal({ item, items, ownerLabel, isOwnProfile, onC
 
   function handleSelectMissing(entry) {
     const prefill = prefillFromSeriesEntry(item.item_type, series.data.seriesName, entry);
-    openListingSearches(buildPriceQuery(prefill));
+    openBestListingTab(prefill);
   }
 
   return (
