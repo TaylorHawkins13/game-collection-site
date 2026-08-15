@@ -98,7 +98,9 @@ Lets you set "notify me if this drops below $X" on a wishlist item; a Vercel Cro
 2. Make sure `SUPABASE_SERVICE_ROLE_KEY` is also set (see step 6 under Feedback emails above) — the daily check has no signed-in user to run as, so it needs the same service-role client the newsletter uses.
 3. `vercel.json` already schedules the job (`/api/cron/price-drop-check`, once daily) — Vercel picks this up automatically on deploy, nothing to configure in the dashboard. Needs `price-drop-alerts-migration.sql` on existing projects.
 
-The same `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` also cover the account-deletion cron (`/api/cron/process-account-deletions`) and the weekly currency-rate refresh (`/api/cron/refresh-currency-rates`) below — nothing extra to set up for either once this step is done.
+The same `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` also cover the account-deletion cron (`/api/cron/process-account-deletions`), the weekly currency-rate refresh (`/api/cron/refresh-currency-rates`), and the weekly stats digest (`/api/cron/weekly-stats-digest`, needs `ADMIN_EMAIL` and Resend set up too — see step 7) below — nothing extra to set up for any of them once this step is done.
+
+If a cron job actually fails (a query error, a fetch failure, missing config), it now emails `ADMIN_EMAIL` directly rather than only logging it — Vercel's runtime log retention on the current plan is 1 hour, too short to reliably catch an overnight failure. See `lib/cronAlert.js`.
 
 ## What's included
 
@@ -132,6 +134,9 @@ The same `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` also cover the account-de
 - **Collection cards: view first, edit as its own action**: clicking a card in your dashboard grid opens a read-only detail view (notes, purchase price/date, condition photos — the fields that only ever lived inside the edit form before) rather than jumping straight into editing; an explicit Edit button, both on the card itself and inside the detail view, is the separate path into the actual edit form.
 - **Site stats** (`/admin/stats`, private/unlinked — only visible to `ADMIN_EMAIL`): total users, new signups this week/month, items logged site-wide, and the most active public collectors over the last 30 days — pulled from data that already exists in every table involved, no new fields to fill in.
 - **Currency rates auto-refresh**: the "Most valuable" leaderboard's USD conversion table used to be a one-time hand-typed snapshot with no way to know it had gone stale; a weekly Vercel Cron job now refreshes it from a free, no-key rates API (frankfurter.app). See step 8 for setup (reuses the same `CRON_SECRET`/`SUPABASE_SERVICE_ROLE_KEY` the price-drop cron already needs).
+- **Weekly stats digest**: the same numbers `/admin/stats` shows on demand now also land in `ADMIN_EMAIL`'s inbox automatically every Sunday morning, via a Vercel Cron job — turns it from something you have to remember to check into something that just shows up. See step 8 for setup.
+- **Cron failure alerts**: every scheduled job (price-drop checks, account deletions, currency refresh, the stats digest) now emails `ADMIN_EMAIL` if it actually fails, instead of the failure only existing in Vercel's 1-hour runtime logs. See step 8.
+- **Public trust stats**: the logged-out home page's stat strip ("X items catalogued," "Y public collectors") now also shows a live count of trophies earned site-wide, once there are enough to be worth showing — a little more social proof for a first-time visitor deciding whether to sign up.
 
 ## Notes
 

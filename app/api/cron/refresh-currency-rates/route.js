@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { CURRENCIES } from '@/lib/currency';
+import { notifyCronFailure } from '@/lib/cronAlert';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -32,7 +33,8 @@ export async function GET(request) {
   let admin;
   try {
     admin = createAdminClient();
-  } catch {
+  } catch (e) {
+    await notifyCronFailure('refresh-currency-rates', e);
     return NextResponse.json({ error: 'not_configured' }, { status: 503 });
   }
 
@@ -48,6 +50,7 @@ export async function GET(request) {
     data = await res.json();
   } catch (e) {
     console.error('refresh-currency-rates: fetch failed', e);
+    await notifyCronFailure('refresh-currency-rates', e);
     return NextResponse.json({ error: 'fetch_failed' }, { status: 502 });
   }
 

@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
-import { createAdminClient } from '@/lib/supabaseAdmin';
+import { getSiteStats } from '@/lib/siteStats';
 import { isAdminViewer } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
@@ -9,10 +9,6 @@ export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'Site stats — Shelf Life',
 };
-
-function daysAgoIso(days) {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-}
 
 // Private, unlinked admin page — same gating pattern as /admin/articles
 // and /admin/newsletter (404 rather than a "not authorized" screen, so a
@@ -34,58 +30,10 @@ export default async function AdminStatsPage() {
   let stats = null;
   let topCollectors = [];
   try {
-    // Admin client — the counts need to include private profiles too
-    // (site-wide totals, not "what's visible to this viewer"), same
-    // reasoning /admin/newsletter's counts already use.
-    const admin = createAdminClient();
-    const sevenDaysAgo = daysAgoIso(7);
-    const thirtyDaysAgo = daysAgoIso(30);
-
-    const [
-      { count: totalUsers },
-      { count: publicProfiles },
-      { count: signups7d },
-      { count: signups30d },
-      { count: totalItems },
-      { count: activity7d },
-      { data: recentActivity },
-      { data: publicProfilesList },
-    ] = await Promise.all([
-      admin.from('profiles').select('*', { count: 'exact', head: true }),
-      admin.from('profiles').select('*', { count: 'exact', head: true }).eq('is_public', true),
-      admin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
-      admin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo),
-      admin.from('games').select('*', { count: 'exact', head: true }),
-      admin.from('activity_events').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
-      admin.from('activity_events').select('user_id').gte('created_at', thirtyDaysAgo),
-      admin.from('profiles').select('id, username, display_name').eq('is_public', true),
-    ]);
-
-    stats = {
-      totalUsers: totalUsers || 0,
-      publicProfiles: publicProfiles || 0,
-      signups7d: signups7d || 0,
-      signups30d: signups30d || 0,
-      totalItems: totalItems || 0,
-      activity7d: activity7d || 0,
-    };
-
-    // "Most active" is aggregated here in JS rather than a SQL group-by —
-    // at Shelf Life's current scale this is a handful of rows, and it
-    // avoids needing a new view/migration just for one admin page. Public
-    // profiles only, same privacy rule the real leaderboard already
-    // applies (a private collector's activity never surfaces here).
-    const publicIds = new Set((publicProfilesList || []).map((p) => p.id));
-    const counts = new Map();
-    for (const row of recentActivity || []) {
-      if (!publicIds.has(row.user_id)) continue;
-      counts.set(row.user_id, (counts.get(row.user_id) || 0) + 1);
-    }
-    const profileById = new Map((publicProfilesList || []).map((p) => [p.id, p]));
-    topCollectors = [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([id, count]) => ({ ...profileById.get(id), count }));
+    // Shared with the weekly-stats-digest cron (see lib/siteStats.js) so
+    // this page and the emailed version can never quietly show different
+    // numbers.
+    ({ stats, topCollectors } = await getSiteStats());
   } catch {
     // SUPABASE_SERVICE_ROLE_KEY not set yet — let the page render anyway
     // so the setup note is visible instead of a hard crash, same pattern

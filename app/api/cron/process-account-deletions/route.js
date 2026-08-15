@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { GRACE_PERIOD_HOURS, performAccountDeletion } from '@/lib/accountDeletion';
+import { notifyCronFailure } from '@/lib/cronAlert';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -30,7 +31,8 @@ export async function GET(request) {
   let admin;
   try {
     admin = createAdminClient();
-  } catch {
+  } catch (e) {
+    await notifyCronFailure('process-account-deletions', e);
     return NextResponse.json({ error: 'not_configured' }, { status: 503 });
   }
 
@@ -43,19 +45,30 @@ export async function GET(request) {
 
   if (error) {
     console.error('process-account-deletions: failed to load pending deletions', error);
+    await notifyCronFailure('process-account-deletions', error);
     return NextResponse.json({ error: 'query_failed' }, { status: 500 });
   }
 
   let deleted = 0;
   let failed = 0;
+  const failures = [];
   for (const row of expired || []) {
     const { error: deleteError } = await performAccountDeletion(admin, row.id);
     if (deleteError) {
       failed += 1;
+      failures.push(`${row.username} (${row.id}): ${deleteError.message || deleteError}`);
       console.error(`process-account-deletions: failed to delete account ${row.id} (${row.username})`, deleteError);
     } else {
       deleted += 1;
     }
+  }
+
+  // Unlike the two guard clauses above, this isn't a config problem —
+  // it's an account that was supposed to be irreversibly deleted and
+  // wasn't, which needs a human to actually look rather than silently
+  // retrying tomorrow.
+  if (failed > 0) {
+    await notifyCronFailure('process-account-deletions', new Error(`${failed} account deletion(s) failed:\n${failures.join('\n')}`));
   }
 
   return NextResponse.json({ total: (expired || []).length, deleted, failed });

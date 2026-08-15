@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/refresh-currency-rates",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/weekly-stats-digest",
+      "schedule": "0 13 * * 0"
     }
   ]
 }

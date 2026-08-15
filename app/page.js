@@ -119,13 +119,18 @@ export default async function HomePage() {
   // If either count is too small to say anything meaningful yet, the
   // stat strip just doesn't render rather than showing an unimpressive
   // number.
-  const [{ count: itemCount }, { count: collectorCount }, { data: topOwned }] = await Promise.all([
+  const [{ count: itemCount }, { count: collectorCount }, { count: trophyCount }, { data: topOwned }] = await Promise.all([
     supabase.from('games').select('id', { count: 'exact', head: true }),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_public', true),
+    // user_achievements is a fully public-readable table (see
+    // supabase-schema.sql) — same trust/RLS rationale as the two counts
+    // above, no admin client needed for a site-wide, non-identifying total.
+    supabase.from('user_achievements').select('user_id', { count: 'exact', head: true }),
     supabase.from('leaderboard_most_owned').select('*').limit(3),
   ]);
   const showItemStat = (itemCount || 0) >= 20;
   const showCollectorStat = (collectorCount || 0) >= 3;
+  const showTrophyStat = (trophyCount || 0) >= 10;
 
   // Hero cards always use curated field values (title, platform, genre,
   // etc.) rather than pulling a real person's actual item — a real
@@ -179,7 +184,7 @@ export default async function HomePage() {
               See the leaderboard
             </Link>
           </div>
-          {(showItemStat || showCollectorStat) && (
+          {(showItemStat || showCollectorStat || showTrophyStat) && (
             <div className="hero-stats">
               {showItemStat && (
                 <div className="hero-stat">
@@ -189,6 +194,11 @@ export default async function HomePage() {
               {showCollectorStat && (
                 <div className="hero-stat">
                   <span className="hero-stat-num">{collectorCount.toLocaleString()}</span> public collectors
+                </div>
+              )}
+              {showTrophyStat && (
+                <div className="hero-stat">
+                  <span className="hero-stat-num">{trophyCount.toLocaleString()}</span> trophies earned
                 </div>
               )}
             </div>
