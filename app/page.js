@@ -292,6 +292,23 @@ export default async function HomePage() {
         </div>
       </div>
 
+      {/* Closes a real gap flagged in ROADMAP.md: /whats-new was only ever
+          reachable from a small footer link, so a first-time signed-out
+          visitor deciding whether to sign up had no way to see that this
+          is actively maintained. Same WHATS_NEW data and WhatsNewList
+          component the logged-in home page and /whats-new itself already
+          use — just the newest 3 instead of 4, since this is a teaser
+          pointing at the full page, not the full list. */}
+      <div className="home-articles-head" style={{ marginBottom: 12 }}>
+        <h2 className="home-section-heading" style={{ margin: 0 }}>What&apos;s new</h2>
+        <Link href="/whats-new" className="btn-ghost home-split-more" style={{ margin: 0 }}>
+          See all updates
+        </Link>
+      </div>
+      <div style={{ marginBottom: 40 }}>
+        <WhatsNewList items={WHATS_NEW.slice(0, 3)} />
+      </div>
+
       <div className="cta-band">
         <div className="cta-band-title">Ready to catalog your collection?</div>
         <div className="cta-band-text">It's free, takes a minute to set up, and your shelf is yours to make public or keep private.</div>

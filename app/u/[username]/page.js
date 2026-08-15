@@ -8,6 +8,7 @@ import ShareProfileButton from '@/components/ShareProfileButton';
 import ShowcaseButton from '@/components/ShowcaseButton';
 import ShowcaseSection from '@/components/ShowcaseSection';
 import CustomListsButton from '@/components/CustomListsButton';
+import ReportProfileButton from '@/components/ReportProfileButton';
 import ActionMenu from '@/components/ActionMenu';
 import GameCard from '@/components/GameCard';
 import { estimateCollectionValue } from '@/lib/valueSnapshot';
@@ -211,6 +212,7 @@ export default async function ProfilePage({ params }) {
                 </Link>
               )}
               {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
+              <ReportProfileButton profileId={profile.id} />
             </ActionMenu>
           </div>
         )}

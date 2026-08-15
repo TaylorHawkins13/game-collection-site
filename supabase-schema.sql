@@ -1235,3 +1235,63 @@ alter table feedback_rate_limit_events enable row level security;
 -- No policies at all — only ever touched by the service-role client
 -- (lib/supabaseAdmin.js), same reasoning as webauthn_rate_limit_events above.
 revoke all on feedback_rate_limit_events from anon, authenticated;
+
+-- ============================================================
+-- Reports (moderation)
+-- (see report-migration.sql for the standalone version used when
+-- updating an existing project)
+-- ============================================================
+
+create table if not exists reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references profiles(id) on delete cascade,
+  target_type text not null check (target_type in ('comment', 'profile')),
+  -- No foreign key here on purpose — target_id points at either
+  -- comments(id) or profiles(id) depending on target_type, and the
+  -- target can legitimately be deleted after a report's filed without
+  -- the report itself needing to disappear too.
+  target_id uuid not null,
+  reason text check (char_length(reason) <= 500),
+  status text not null default 'open' check (status in ('open', 'reviewed', 'actioned')),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz
+);
+
+create index if not exists reports_status_idx on reports (status, created_at desc);
+
+alter table reports enable row level security;
+
+create policy "Signed-in users can file a report as themselves"
+  on reports for insert
+  to authenticated
+  with check (reporter_id = (select auth.uid()));
+
+revoke all on reports from anon, authenticated;
+grant insert on reports to authenticated;
+
+create or replace function enforce_report_rate_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_recent_count int;
+begin
+  select count(*) into v_recent_count
+  from reports
+  where reporter_id = new.reporter_id
+    and created_at > now() - interval '5 minutes';
+
+  if v_recent_count >= 5 then
+    raise exception 'rate_limited: too many reports — slow down and try again in a few minutes';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists reports_rate_limit on reports;
+create trigger reports_rate_limit
+  before insert on reports
+  for each row execute function enforce_report_rate_limit();

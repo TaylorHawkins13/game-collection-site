@@ -11,7 +11,36 @@ export default function CommentSection({ profileId, initialComments, canComment 
   const [comments, setComments] = useState(initialComments);
   const [body, setBody] = useState('');
   const [posting, setPosting] = useState(false);
+  const [reportedIds, setReportedIds] = useState(new Set());
+  const [reportingId, setReportingId] = useState(null);
   const supabase = createClient();
+
+  // Smallest real version of "report a comment" (see ROADMAP.md) — one
+  // click, no reason text, immediately files it via /api/reports and
+  // swaps that comment's link to a disabled "Reported" state. Only
+  // rendered when `canComment` is true (a signed-in viewer) — the route
+  // itself requires sign-in regardless.
+  async function reportComment(commentId) {
+    if (reportedIds.has(commentId) || reportingId === commentId) return;
+    setReportingId(commentId);
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType: 'comment', targetId: commentId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setReportedIds((s) => new Set(s).add(commentId));
+      announceToast("Comment reported — thanks, we'll take a look.", 'success');
+    } catch (err) {
+      announceToast(
+        err.message && err.message !== 'Failed' ? err.message : "Couldn't report that — try again in a moment."
+      );
+    } finally {
+      setReportingId(null);
+    }
+  }
 
   async function post() {
     const text = body.trim();
@@ -86,6 +115,28 @@ export default function CommentSection({ profileId, initialComments, canComment 
               )}
               {' · '}
               {new Date(c.created_at).toLocaleDateString()}
+              {canComment && (
+                <>
+                  {' · '}
+                  <button
+                    type="button"
+                    onClick={() => reportComment(c.id)}
+                    disabled={reportedIds.has(c.id) || reportingId === c.id}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      font: 'inherit',
+                      color: 'inherit',
+                      textDecoration: 'underline',
+                      cursor: reportedIds.has(c.id) ? 'default' : 'pointer',
+                      opacity: reportedIds.has(c.id) ? 0.6 : 1,
+                    }}
+                  >
+                    {reportedIds.has(c.id) ? 'Reported' : 'Report'}
+                  </button>
+                </>
+              )}
             </div>
             <div>{c.body}</div>
           </div>

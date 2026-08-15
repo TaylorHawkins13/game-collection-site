@@ -944,6 +944,17 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     URL.revokeObjectURL(url);
   }
 
+  // "Download my data" — everything about the account beyond the
+  // collection itself (profile, comments, follows, activity, trophies).
+  // The actual file is built server-side (/api/account/export, entirely
+  // through the caller's own RLS-scoped session — see that route), so
+  // this just triggers the browser's normal download prompt via the
+  // response's Content-Disposition header rather than fetching a blob
+  // client-side the way handleExport does for the CSV.
+  function handleDownloadData() {
+    window.location.href = '/api/account/export';
+  }
+
   // Same shape as handleImported — used by SteamImportModal instead of CSV.
   function handleSteamImported(newRows) {
     setGames((gs) => [...gs, ...newRows]);
@@ -1326,6 +1337,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               </button>
               <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
                 Export CSV
+              </button>
+              <button className="btn-ghost" onClick={handleDownloadData} type="button">
+                Download my data
               </button>
               {steamId && syncingAchievements && (
                 <>
