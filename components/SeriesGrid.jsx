@@ -9,12 +9,10 @@
 // matchKey}] }.
 //
 // `onSelectMissing`, when passed, makes every not-owned entry clickable —
-// GameModal wires this to open a fresh Add Item form prefilled from that
-// entry, straight into the same "Check eBay price" button the form
-// already has (see ROADMAP.md "Full series view"). SeriesModal (the
-// read-only profile view, where there's no add-item flow to hand off to)
-// simply doesn't pass it, so those grids stay exactly as before —
-// greyed-out but inert.
+// GameModal, ItemDetailModal, and SeriesModal (when `isOwnProfile`) all
+// wire this to open real eBay and CeX listing search pages for that
+// entry in new tabs (see lib/externalListings.js). Callers that don't
+// pass it leave those grids exactly as before — greyed-out but inert.
 export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissing }) {
   if (!data) return null;
   const ownedCount = data.entries.filter((e) => ownedKeys.has(e.matchKey)).length;
@@ -46,7 +44,7 @@ export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissin
                 key={e.id}
                 type="button"
                 className="franchise-item missing-clickable"
-                title={`${e.label} — not in the collection yet. Check its eBay price.`}
+                title={`${e.label} — not in the collection yet. Look it up on eBay and CeX.`}
                 onClick={() => onSelectMissing(e)}
               >
                 {content}

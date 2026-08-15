@@ -214,28 +214,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Arriving from a missing series entry clicked on your own profile page
-  // (SeriesModal, `isOwnProfile` only — see its comment for why) —
-  // there's no Add Item form to open in place there, so it redirects
-  // here instead with the prefill flattened into query params, same
-  // pattern as ?add=1 above. Goes through the exact same
-  // handleAddFromSeries the in-dashboard "See full series" click uses,
-  // so the resulting draft gets the same 'series' messaging either way.
-  useEffect(() => {
-    if (searchParams.get('addFromSeries') === '1') {
-      handleAddFromSeries({
-        item_type: searchParams.get('item_type') || 'game',
-        title: searchParams.get('title') || '',
-        cover: searchParams.get('cover') || '',
-        series: searchParams.get('series') || '',
-        issue_number: searchParams.get('issue_number') || '',
-        card_set: searchParams.get('card_set') || '',
-        card_number: searchParams.get('card_number') || '',
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Catch up on any trophies earned since the last visit.
   useEffect(() => {
     checkTrophies();
@@ -791,19 +769,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       cover: rec.cover || '',
     });
     setDuplicateSource('recommendation');
-    setModalGame(null);
-  }
-
-  // Clicking a greyed-out (not-yet-owned) entry in GameModal's "See full
-  // series" grid opens a fresh Add Item form prefilled from that entry —
-  // same idea as handleAddFromRecommendation, just sourced from the
-  // series lookup instead of the recommendations feed. Lands the missing
-  // entry's title/set/number/cover straight into a form that already has
-  // its own "Check eBay price" button, so spotting a gap turns directly
-  // into "what would this cost me" (see ROADMAP.md "Full series view").
-  function handleAddFromSeries(prefill) {
-    setDuplicateOf(prefill);
-    setDuplicateSource('series');
     setModalGame(null);
   }
 
@@ -1815,10 +1780,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             setDetailGame(null);
             setModalGame(item);
           }}
-          onAddFromSeries={(prefill) => {
-            setDetailGame(null);
-            handleAddFromSeries(prefill);
-          }}
         />
       )}
 
@@ -1848,7 +1809,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           onSave={handleSave}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
-          onAddFromSeries={handleAddFromSeries}
         />
       )}
 

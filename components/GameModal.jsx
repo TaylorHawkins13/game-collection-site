@@ -9,6 +9,7 @@ import { currencySymbol } from '@/lib/currency';
 import { createClient } from '@/lib/supabaseClient';
 import { buildPriceQuery } from '@/lib/marketPrice';
 import { marketplaceForCurrency } from '@/lib/ebayMarketplace';
+import { openListingSearches } from '@/lib/externalListings';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
 import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
@@ -58,7 +59,7 @@ const EMPTY = {
   price_alert_threshold: '',
 };
 
-export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, onAddFromSeries, suggestions, existingItems }) {
+export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
   const sg = suggestions || {};
   const supabase = createClient();
   const [form, setForm] = useState(EMPTY);
@@ -748,7 +749,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
           <h2 id="game-modal-title" style={{ margin: 0 }}>
-            {game?.id ? 'Edit Item' : duplicateSource === 'series' ? 'Add Item — from the series' : 'Add Item'}
+            {game?.id ? 'Edit Item' : 'Add Item'}
           </h2>
           {/* Editing an existing item only — a blank Add form or a
               duplicateOf pre-fill both have no id yet, and series lookup
@@ -767,28 +768,18 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           )}
         </div>
         <div className="sub">
-          {/* !game?.id guards every duplicateOf/duplicateSource branch
-              below — both only ever describe an Add-mode prefill, and a
-              stale duplicateSource can outlive the add it described
-              (state that's only cleared on save/close, not on every
-              open). If a real edit ever re-rendered while one was still
-              set, skipping this guard would show an Add-flow explanation
-              on someone's actual existing item. `.id` specifically
-              (not just truthiness) since the ?add=1 deep link from the
-              collectible detail page passes a real-but-id-less `game`
-              object too — see the footer actions block below, which had
-              the same bare-truthiness bug. */}
-          {!game?.id && duplicateSource === 'series'
-            // The one duplicateOf path that doesn't start from "an item
-            // you already have" — someone clicked a *missing* series
-            // entry, so this is worth spelling all the way out. Same
-            // modal instance just switched from editing that item to
-            // this new draft (see DashboardClient's handleAddFromSeries);
-            // without an explicit "your item is untouched" line here,
-            // that in-place switch reads as "my item just changed" —
-            // reported exactly that way once this shipped.
-            ? 'Pre-filled from the series entry you clicked — this starts a brand-new item. The one you were editing is untouched and unsaved changes to it were discarded.'
-            : duplicateOf
+          {/* !game?.id guards the duplicateOf branch below — it only ever
+              describes an Add-mode prefill, and duplicateOf can outlive
+              the add it described (state that's only cleared on
+              save/close, not on every open). If a real edit ever
+              re-rendered while one was still set, skipping this guard
+              would show an Add-flow explanation on someone's actual
+              existing item. `.id` specifically (not just truthiness)
+              since the ?add=1 deep link from the collectible detail page
+              passes a real-but-id-less `game` object too — see the
+              footer actions block below, which had the same
+              bare-truthiness bug. */}
+          {!game?.id && duplicateOf
             ? 'Pre-filled as a copy — adjust what\'s different, then save.'
             : isGame
             ? 'Fill in the details, or search to auto-fill cover art & info.'
@@ -803,11 +794,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               <SeriesGrid
                 data={series.data}
                 ownedKeys={ownedKeys}
-                onSelectMissing={
-                  onAddFromSeries
-                    ? (entry) => onAddFromSeries(prefillFromSeriesEntry(form.item_type, series.data.seriesName, entry))
-                    : undefined
-                }
+                onSelectMissing={(entry) => {
+                  const prefill = prefillFromSeriesEntry(form.item_type, series.data.seriesName, entry);
+                  openListingSearches(buildPriceQuery(prefill), currency);
+                }}
               />
             )}
           </div>

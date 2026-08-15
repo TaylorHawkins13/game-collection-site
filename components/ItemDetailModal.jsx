@@ -3,6 +3,8 @@
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
+import { buildPriceQuery } from '@/lib/marketPrice';
+import { openListingSearches } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 import { getStatRows } from './GameCard';
 import { currencySymbol } from '@/lib/currency';
@@ -30,8 +32,12 @@ function cap(s) {
 // own full collection here (this modal only ever appears from the
 // dashboard grid), so unlike SeriesModal there's no "whose collection is
 // this comparing against" ambiguity — missing entries are always
-// actionable, same as GameModal's edit-mode version.
-export default function ItemDetailModal({ game, currency, existingItems, onClose, onEdit, onAddFromSeries }) {
+// actionable, same as GameModal's edit-mode version. Clicking one opens
+// real eBay/CeX listing search pages in new tabs (see
+// lib/externalListings.js) rather than routing through this app's own
+// Add Item form first — reported back directly that the extra form click
+// wasn't wanted, just the listing itself.
+export default function ItemDetailModal({ game, currency, existingItems, onClose, onEdit }) {
   const modalRef = useModalA11y(onClose);
   const series = useSeriesLookup();
   const statRows = getStatRows(game, currency);
@@ -44,7 +50,8 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
   const ownedKeys = ownedKeysFor(existingItems, game.item_type);
 
   function handleSelectMissing(entry) {
-    onAddFromSeries(prefillFromSeriesEntry(game.item_type, series.data.seriesName, entry));
+    const prefill = prefillFromSeriesEntry(game.item_type, series.data.seriesName, entry);
+    openListingSearches(buildPriceQuery(prefill), currency);
   }
 
   return (
