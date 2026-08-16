@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
+import { seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantCardNumbersFor } from '@/lib/seriesLookup';
 import { openBestListingTab } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 
@@ -29,7 +29,11 @@ export default function SeriesModal({ item, items, ownerLabel, isOwnProfile, onC
   const series = useSeriesLookup();
 
   useEffect(() => {
-    series.load(item.item_type, seriesQueryValueFor(item));
+    series.load(
+      item.item_type,
+      seriesQueryValueFor(item),
+      item.item_type === 'trading_card' ? variantCardNumbersFor(items, item.card_set) : undefined
+    );
     // Runs once per mount (parent remounts this via `key` on item
     // change) — see the component comment above.
     // eslint-disable-next-line react-hooks/exhaustive-deps

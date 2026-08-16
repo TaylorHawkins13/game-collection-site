@@ -2,7 +2,7 @@
 
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry } from '@/lib/seriesLookup';
+import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantCardNumbersFor } from '@/lib/seriesLookup';
 import { openBestListingTab } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 import { getStatRows } from './GameCard';
@@ -150,7 +150,15 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
               <button
                 type="button"
                 className="btn-ghost"
-                onClick={() => (series.data ? series.reset() : series.load(game.item_type, seriesValue))}
+                onClick={() =>
+                  series.data
+                    ? series.reset()
+                    : series.load(
+                        game.item_type,
+                        seriesValue,
+                        game.item_type === 'trading_card' ? variantCardNumbersFor(existingItems, game.card_set) : undefined
+                      )
+                }
                 disabled={series.loading}
               >
                 {series.loading

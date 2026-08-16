@@ -11,10 +11,18 @@ export async function GET(request) {
   if (!value) {
     return NextResponse.json({ error: 'no_series_value' }, { status: 400 });
   }
+  // Which card numbers (already normalized client-side — see
+  // lib/seriesLookup.js's variantCardNumbersFor) actually need a real
+  // per-card variant fetch. See lib/tcgdexSetLookup.js for why this is
+  // targeted rather than every card in the set.
+  const variantNumbers = (searchParams.get('variantNumbers') || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   let result;
   try {
-    result = await getMasterSetEntries(value);
+    result = await getMasterSetEntries(value, variantNumbers);
   } catch (e) {
     console.error('pokemon-master-set: lookup failed', e);
     return NextResponse.json({ error: 'query_failed' }, { status: 502 });
