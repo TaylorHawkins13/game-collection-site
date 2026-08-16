@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SITE_URL } from '@/lib/siteUrl';
+import { LANDING_PAGES } from '@/lib/landingPages';
 
 // Plain anon client rather than lib/supabaseServer's cookie-bound one —
 // this only ever needs public data (public profiles), and avoiding
@@ -15,6 +16,16 @@ export default async function sitemap() {
     { url: `${SITE_URL}/players`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/leaderboard`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
+    // The dedicated SEO landing pages (lib/landingPages.js) — evergreen
+    // content, not something that changes often, but worth a slightly
+    // higher priority than /whats-new since these are the pages actually
+    // meant to rank for outside search traffic rather than just serve
+    // existing users.
+    ...Object.keys(LANDING_PAGES).map((slug) => ({
+      url: `${SITE_URL}/${slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    })),
   ];
 
   let profileRoutes = [];
