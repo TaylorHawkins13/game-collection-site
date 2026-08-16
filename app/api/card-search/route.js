@@ -22,8 +22,19 @@ import { NextResponse } from 'next/server';
 // TCGs (Yu-Gi-Oh, etc.) — those still need to be filled in manually.
 
 async function fetchTcgdexBrief(query) {
+  // Was itemsPerPage=8 — way too tight for a lot of real Pokémon names.
+  // A name that's been reprinted across many sets/generations (which is
+  // most of them — Beldum alone has more than 8 real prints) meant the
+  // one card someone actually owns could get pushed off the end before
+  // it ever reached the results list, even though it was a genuine match.
+  // 48 is a deliberate middle ground, not "no limit": true unbounded
+  // pagination would mean fetching every print of every card sharing a
+  // name (Pikachu alone runs into the hundreds), which is both a slow
+  // burst of parallel detail-fetches per search and a dropdown nobody
+  // could usefully scroll through. 48 comfortably covers real per-card
+  // reprint counts for the vast majority of Pokémon without either problem.
   const res = await fetch(
-    `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(query)}&pagination:itemsPerPage=8`,
+    `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(query)}&pagination:itemsPerPage=48`,
     { headers: { Accept: 'application/json' } }
   );
   if (!res.ok) return [];
@@ -54,7 +65,11 @@ async function searchPokemon(q) {
   // match (see tcgdex.dev/rest/filtering-sorting-pagination), so unlike
   // the old pokemontcg.io integration this doesn't need a multi-attempt
   // fallback chain for picky phrase matching.
-  const briefs = (await fetchTcgdexBrief(clean)).slice(0, 6);
+  // No further slicing here — fetchTcgdexBrief's itemsPerPage is already
+  // the real cap. Slicing again on top of that (this used to cut down to
+  // 6) was the actual bug: it silently dropped real matches that the API
+  // had already returned.
+  const briefs = await fetchTcgdexBrief(clean);
   if (!briefs.length) return [];
 
   const details = await Promise.all(briefs.map((b) => fetchTcgdexDetail(b.id).catch(() => null)));
@@ -100,7 +115,11 @@ async function searchScryfall(q) {
   if (res.status === 404) return []; // Scryfall's "no matches" response
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.data || []).slice(0, 5).map((card) => {
+  // Same fix as the Pokémon side above — 5 was too tight for a card
+  // that's had many reprints across sets. Scryfall's search endpoint
+  // already returns up to 175 per page; 30 is a generous cap that still
+  // keeps the dropdown scrollable rather than fetching everything Scryfall has.
+  return (data.data || []).slice(0, 30).map((card) => {
     const images = card.image_uris || card.card_faces?.[0]?.image_uris || {};
     return {
       kind: 'card',
