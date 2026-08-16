@@ -15,7 +15,7 @@ import { searchConsoles } from '@/lib/consoleList';
 import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantCardNumbersFor } from '@/lib/seriesLookup';
+import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
 import SeriesGrid from './SeriesGrid';
 
 const EMPTY = {
@@ -766,7 +766,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                   : series.load(
                       form.item_type,
                       seriesValue,
-                      form.item_type === 'trading_card' ? variantCardNumbersFor(existingItems, form.card_set) : undefined
+                      form.item_type === 'trading_card' ? variantHintsFor(existingItems, form.card_set) : undefined
                     )
               }
               disabled={series.loading}

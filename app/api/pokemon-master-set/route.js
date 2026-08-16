@@ -11,38 +11,39 @@ export async function GET(request) {
   if (!value) {
     return NextResponse.json({ error: 'no_series_value' }, { status: 400 });
   }
-  // Which card numbers (already normalized client-side — see
-  // lib/seriesLookup.js's variantCardNumbersFor) actually need a real
-  // per-card variant fetch. See lib/tcgdexSetLookup.js for why this is
-  // targeted rather than every card in the set.
-  const variantNumbers = (searchParams.get('variantNumbers') || '')
+  // Which cards (already normalized client-side — see
+  // lib/seriesLookup.js's variantHintsFor) the requester has actually
+  // logged a variant copy of, each as "number:guessedVariant" (e.g.
+  // "71:reverse"). Two jobs: (1) tells getMasterSetEntries which cards
+  // are worth a real per-card TCGdex detail fetch (targeted, not every
+  // card in the set — see lib/tcgdexSetLookup.js), and (2) the guessed
+  // variant itself gets unioned with whatever TCGdex reports, so a print
+  // you've genuinely logged still shows up even when TCGdex's own
+  // variants data hasn't caught up yet (real gap for very recently
+  // released sets — confirmed via debug logging against "Chaos Rising":
+  // TCGdex reported reverse:false for a card a real reverse holo copy
+  // had already been logged for).
+  const variantHints = (searchParams.get('variantNumbers') || '')
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean);
-
-  // TEMP DEBUG (see ROADMAP.md/CHANGELOG.md note — remove once the
-  // "still the same" reverse-holo-tile report is root-caused): logs
-  // straight to Vercel runtime logs so a real click-through can be
-  // inspected without needing browser devtools access.
-  console.log('[master-set debug] value=', JSON.stringify(value), 'variantNumbers=', JSON.stringify(variantNumbers));
+    .filter(Boolean)
+    .map((s) => {
+      const [number, variant] = s.split(':');
+      return { number: (number || '').trim(), variant: (variant || '').trim() };
+    })
+    .filter((h) => h.number && h.variant);
 
   let result;
   try {
-    result = await getMasterSetEntries(value, variantNumbers);
+    result = await getMasterSetEntries(value, variantHints);
   } catch (e) {
     console.error('pokemon-master-set: lookup failed', e);
     return NextResponse.json({ error: 'query_failed' }, { status: 502 });
   }
 
   if (result.error) {
-    console.log('[master-set debug] error result=', result.error);
     const status = result.error === 'no_series' ? 404 : 502;
     return NextResponse.json({ error: result.error }, { status });
   }
-  console.log(
-    '[master-set debug] seriesName=', result.seriesName,
-    'entryCount=', result.entries?.length,
-    'variantEntries=', JSON.stringify((result.entries || []).filter((e) => !e.label.endsWith('#' + e.number)).map((e) => e.label))
-  );
   return NextResponse.json({ seriesName: result.seriesName, entries: result.entries });
 }
