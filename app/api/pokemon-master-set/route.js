@@ -20,6 +20,12 @@ export async function GET(request) {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  // TEMP DEBUG (see ROADMAP.md/CHANGELOG.md note — remove once the
+  // "still the same" reverse-holo-tile report is root-caused): logs
+  // straight to Vercel runtime logs so a real click-through can be
+  // inspected without needing browser devtools access.
+  console.log('[master-set debug] value=', JSON.stringify(value), 'variantNumbers=', JSON.stringify(variantNumbers));
+
   let result;
   try {
     result = await getMasterSetEntries(value, variantNumbers);
@@ -29,8 +35,14 @@ export async function GET(request) {
   }
 
   if (result.error) {
+    console.log('[master-set debug] error result=', result.error);
     const status = result.error === 'no_series' ? 404 : 502;
     return NextResponse.json({ error: result.error }, { status });
   }
+  console.log(
+    '[master-set debug] seriesName=', result.seriesName,
+    'entryCount=', result.entries?.length,
+    'variantEntries=', JSON.stringify((result.entries || []).filter((e) => !e.label.endsWith('#' + e.number)).map((e) => e.label))
+  );
   return NextResponse.json({ seriesName: result.seriesName, entries: result.entries });
 }
