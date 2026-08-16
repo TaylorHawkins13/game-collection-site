@@ -1205,16 +1205,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           <h2 style={{ marginTop: 0, fontSize: 16 }}>Profile settings</h2>
           <div className="row2">
             <div className="field">
-              <label>Display name</label>
+              <label htmlFor="dash-settings-display-name">Display name</label>
               <input
+                id="dash-settings-display-name"
                 type="text"
                 value={settingsForm.display_name}
                 onChange={(e) => setSettingsForm((f) => ({ ...f, display_name: e.target.value }))}
               />
             </div>
             <div className="field">
-              <label>Currency</label>
+              <label htmlFor="dash-settings-currency">Currency</label>
               <select
+                id="dash-settings-currency"
                 value={settingsForm.currency}
                 onChange={(e) => setSettingsForm((f) => ({ ...f, currency: e.target.value }))}
               >
@@ -1264,8 +1266,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           </div>
 
           <div className="field">
-            <label>Bio</label>
+            <label htmlFor="dash-settings-bio">Bio</label>
             <textarea
+              id="dash-settings-bio"
               value={settingsForm.bio}
               onChange={(e) => setSettingsForm((f) => ({ ...f, bio: e.target.value }))}
             />
@@ -1343,7 +1346,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               </button>
               {steamId && syncingAchievements && (
                 <>
-                  <span className="sub" style={{ margin: 0 }}>
+                  {/* role="status"/aria-live so screen readers hear each progress
+                      update as achievements sync, not just whatever the count
+                      happened to be on the last manual re-navigation — same
+                      reasoning as ImportCsvModal's progress readout. */}
+                  <span className="sub" style={{ margin: 0 }} role="status" aria-live="polite">
                     Syncing achievements… {syncProgress.done}/{syncProgress.total}
                   </span>
                   <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">

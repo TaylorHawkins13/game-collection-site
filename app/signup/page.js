@@ -115,8 +115,9 @@ export default function SignupPage() {
         <p className="sub">Free forever. Takes about a minute.</p>
 
         <div className="field">
-          <label>Username</label>
+          <label htmlFor="signup-username">Username</label>
           <input
+            id="signup-username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -125,12 +126,13 @@ export default function SignupPage() {
           />
         </div>
         <div className="field">
-          <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label htmlFor="signup-email">Email</label>
+          <input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div className="field">
-          <label>Password</label>
+          <label htmlFor="signup-password">Password</label>
           <input
+            id="signup-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

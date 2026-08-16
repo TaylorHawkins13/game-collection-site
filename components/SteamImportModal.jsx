@@ -173,7 +173,10 @@ export default function SteamImportModal({ userId, existingAppIds, onClose, onIm
         )}
 
         {importing && (
-          <div className="sub" style={{ marginTop: 8 }}>
+          // aria-live so a screen reader announces each batch as it completes,
+          // instead of only reading the count once on manual re-navigation —
+          // same reasoning as ImportCsvModal's progress readout.
+          <div className="sub" style={{ marginTop: 8 }} role="status" aria-live="polite">
             Importing… {progress.done}/{progress.total}
           </div>
         )}

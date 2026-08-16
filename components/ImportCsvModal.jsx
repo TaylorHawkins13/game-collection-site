@@ -97,8 +97,8 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
 
         {!done && (
           <div className="field" style={{ marginTop: 12 }}>
-            <label>CSV file</label>
-            <input type="file" accept=".csv,text/csv" onChange={handleFile} disabled={parsing || importing} />
+            <label htmlFor="import-csv-file">CSV file</label>
+            <input id="import-csv-file" type="file" accept=".csv,text/csv" onChange={handleFile} disabled={parsing || importing} />
           </div>
         )}
 
@@ -142,7 +142,10 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
         )}
 
         {importing && (
-          <div className="sub" style={{ marginTop: 8 }}>
+          // aria-live so a screen reader announces each batch as it completes,
+          // instead of only reading the count once on manual re-navigation —
+          // this modal's own progress readout, separate from ToastListener's.
+          <div className="sub" style={{ marginTop: 8 }} role="status" aria-live="polite">
             Importing… {progress.done}/{progress.total}
           </div>
         )}

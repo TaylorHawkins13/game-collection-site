@@ -75,8 +75,8 @@ export default function SubmitArticleForm({ pastSubmissions }) {
         </p>
 
         <div className="field">
-          <label>What is this?</label>
-          <select value={type} onChange={(e) => setType(e.target.value)}>
+          <label htmlFor="submit-article-type">What is this?</label>
+          <select id="submit-article-type" value={type} onChange={(e) => setType(e.target.value)}>
             <option value="review">A review (with a star rating)</option>
             <option value="article">An article (no rating)</option>
           </select>
@@ -90,8 +90,9 @@ export default function SubmitArticleForm({ pastSubmissions }) {
         )}
 
         <div className="field">
-          <label>Title</label>
+          <label htmlFor="submit-article-title">Title</label>
           <input
+            id="submit-article-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -102,8 +103,9 @@ export default function SubmitArticleForm({ pastSubmissions }) {
         </div>
 
         <div className="field">
-          <label>One-line summary</label>
+          <label htmlFor="submit-article-dek">One-line summary</label>
           <input
+            id="submit-article-dek"
             type="text"
             value={dek}
             onChange={(e) => setDek(e.target.value)}
@@ -114,8 +116,9 @@ export default function SubmitArticleForm({ pastSubmissions }) {
         </div>
 
         <div className="field">
-          <label>Body</label>
+          <label htmlFor="submit-article-body">Body</label>
           <textarea
+            id="submit-article-body"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={12}

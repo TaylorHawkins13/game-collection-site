@@ -62,12 +62,13 @@ export default function NewsletterForm({ optedInCount, totalCount }) {
         </p>
 
         <div className="field">
-          <label>Subject</label>
-          <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="What's new on Shelf Life" />
+          <label htmlFor="newsletter-subject">Subject</label>
+          <input id="newsletter-subject" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="What's new on Shelf Life" />
         </div>
         <div className="field">
-          <label>Body</label>
+          <label htmlFor="newsletter-body">Body</label>
           <textarea
+            id="newsletter-body"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={10}

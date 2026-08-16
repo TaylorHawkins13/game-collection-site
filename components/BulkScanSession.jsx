@@ -101,8 +101,8 @@ export default function BulkScanSession({ userId, onClose, onItemAdded }) {
         {!started ? (
           <>
             <div className="field">
-              <label>Item type</label>
-              <select value={itemType} onChange={(e) => setItemType(e.target.value)}>
+              <label htmlFor="bulk-scan-item-type">Item type</label>
+              <select id="bulk-scan-item-type" value={itemType} onChange={(e) => setItemType(e.target.value)}>
                 {TYPE_OPTIONS.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}

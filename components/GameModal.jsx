@@ -816,8 +816,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         )}
 
         <div className="field">
-          <label>Type</label>
-          <select value={form.item_type} onChange={(e) => set('item_type', e.target.value)}>
+          <label htmlFor="gm-item-type">Type</label>
+          <select id="gm-item-type" value={form.item_type} onChange={(e) => set('item_type', e.target.value)}>
             <option value="game">Video Game</option>
             <option value="comic">Comic</option>
             <option value="trading_card">Trading Card</option>
@@ -832,9 +832,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         </div>
 
         <div className="field">
-          <label>Title</label>
+          <label htmlFor="gm-title">Title</label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
+              id="gm-title"
               type="text"
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
@@ -940,12 +941,12 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         {isGame && (
           <div className="row2">
             <div className="field">
-              <label>Platforms</label>
-              <ChipInput value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" suggestions={sg.platforms} />
+              <label htmlFor="gm-platforms">Platforms</label>
+              <ChipInput id="gm-platforms" value={form.platforms} onChange={(v) => set('platforms', v)} placeholder="Type a platform, press Enter" suggestions={sg.platforms} />
             </div>
             <div className="field">
-              <label>Region</label>
-              <select value={form.region} onChange={(e) => set('region', e.target.value)}>
+              <label htmlFor="gm-region-game">Region</label>
+              <select id="gm-region-game" value={form.region} onChange={(e) => set('region', e.target.value)}>
                 <option value="">—</option>
                 <option value="NTSC-U/C">NTSC-U/C (North America)</option>
                 <option value="NTSC-J">NTSC-J (Japan)</option>
@@ -960,32 +961,32 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           <>
             <div className="row2">
               <div className="field">
-                <label>Series</label>
-                <input type="text" value={form.series} onChange={(e) => set('series', e.target.value)} placeholder="e.g. Amazing Spider-Man" list="dl-series" />
+                <label htmlFor="gm-series">Series</label>
+                <input id="gm-series" type="text" value={form.series} onChange={(e) => set('series', e.target.value)} placeholder="e.g. Amazing Spider-Man" list="dl-series" />
               </div>
               <div className="field">
-                <label>Issue number</label>
-                <input type="text" value={form.issue_number} onChange={(e) => set('issue_number', e.target.value)} placeholder="e.g. #300" />
-              </div>
-            </div>
-            <div className="row2">
-              <div className="field">
-                <label>Publisher</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Marvel" list="dl-publisher" />
-              </div>
-              <div className="field">
-                <label>Grade</label>
-                <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. 9.8 or Near Mint" />
+                <label htmlFor="gm-issue-number">Issue number</label>
+                <input id="gm-issue-number" type="text" value={form.issue_number} onChange={(e) => set('issue_number', e.target.value)} placeholder="e.g. #300" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
-                <label>Writer</label>
-                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} list="dl-writer" />
+                <label htmlFor="gm-publisher-comic">Publisher</label>
+                <input id="gm-publisher-comic" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Marvel" list="dl-publisher" />
               </div>
               <div className="field">
-                <label>Artist</label>
-                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} list="dl-artist" />
+                <label htmlFor="gm-grade-comic">Grade</label>
+                <input id="gm-grade-comic" type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. 9.8 or Near Mint" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label htmlFor="gm-writer-comic">Writer</label>
+                <input id="gm-writer-comic" type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} list="dl-writer" />
+              </div>
+              <div className="field">
+                <label htmlFor="gm-artist-comic">Artist</label>
+                <input id="gm-artist-comic" type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} list="dl-artist" />
               </div>
             </div>
             <div className="field">
@@ -1001,8 +1002,9 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             </div>
             {form.is_variant && (
               <div className="field">
-                <label>Variant details</label>
+                <label htmlFor="gm-variant-notes-comic">Variant details</label>
                 <input
+                  id="gm-variant-notes-comic"
                   type="text"
                   value={form.variant_notes}
                   onChange={(e) => set('variant_notes', e.target.value)}
@@ -1017,27 +1019,27 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           <>
             <div className="row2">
               <div className="field">
-                <label>Set / expansion</label>
-                <input type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. 2023 Topps Chrome" list="dl-card_set" />
+                <label htmlFor="gm-card-set">Set / expansion</label>
+                <input id="gm-card-set" type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. 2023 Topps Chrome" list="dl-card_set" />
               </div>
               <div className="field">
-                <label>Card number</label>
-                <input type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #150" />
+                <label htmlFor="gm-card-number">Card number</label>
+                <input id="gm-card-number" type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #150" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
-                <label>Player / character</label>
-                <input type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} list="dl-player_name" />
+                <label htmlFor="gm-player-name-card">Player / character</label>
+                <input id="gm-player-name-card" type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} list="dl-player_name" />
               </div>
               <div className="field">
-                <label>Manufacturer / brand</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Topps, Panini, Pokémon" list="dl-publisher" />
+                <label htmlFor="gm-publisher-card">Manufacturer / brand</label>
+                <input id="gm-publisher-card" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Topps, Panini, Pokémon" list="dl-publisher" />
               </div>
             </div>
             <div className="field">
-              <label>Grade</label>
-              <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. PSA 10, Raw" />
+              <label htmlFor="gm-grade-card">Grade</label>
+              <input id="gm-grade-card" type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. PSA 10, Raw" />
             </div>
             <div className="field">
               <label>
@@ -1052,8 +1054,9 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             </div>
             {form.is_variant && (
               <div className="field">
-                <label>Details</label>
+                <label htmlFor="gm-variant-notes-card">Details</label>
                 <input
+                  id="gm-variant-notes-card"
                   type="text"
                   value={form.variant_notes}
                   onChange={(e) => set('variant_notes', e.target.value)}
@@ -1074,22 +1077,22 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           <>
             <div className="row2">
               <div className="field">
-                <label>Artist</label>
-                <input type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} list="dl-artist" />
+                <label htmlFor="gm-artist-vinyl">Artist</label>
+                <input id="gm-artist-vinyl" type="text" value={form.artist} onChange={(e) => set('artist', e.target.value)} list="dl-artist" />
               </div>
               <div className="field">
-                <label>Label</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Sub Pop" list="dl-publisher" />
+                <label htmlFor="gm-publisher-vinyl">Label</label>
+                <input id="gm-publisher-vinyl" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Sub Pop" list="dl-publisher" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
-                <label>Format</label>
-                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder='e.g. LP, 7", box set' list="dl-format" />
+                <label htmlFor="gm-format-vinyl">Format</label>
+                <input id="gm-format-vinyl" type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder='e.g. LP, 7", box set' list="dl-format" />
               </div>
               <div className="field">
-                <label>Edition / pressing</label>
-                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. 1st pressing, 180g reissue" list="dl-edition" />
+                <label htmlFor="gm-edition-vinyl">Edition / pressing</label>
+                <input id="gm-edition-vinyl" type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. 1st pressing, 180g reissue" list="dl-edition" />
               </div>
             </div>
           </>
@@ -1099,22 +1102,22 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           <>
             <div className="row2">
               <div className="field">
-                <label>{mediaCreatorLabel}</label>
-                <input type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} list="dl-writer" />
+                <label htmlFor="gm-writer-media">{mediaCreatorLabel}</label>
+                <input id="gm-writer-media" type="text" value={form.writer} onChange={(e) => set('writer', e.target.value)} list="dl-writer" />
               </div>
               <div className="field">
-                <label>{mediaPublisherLabel}</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} list="dl-publisher" />
+                <label htmlFor="gm-publisher-media">{mediaPublisherLabel}</label>
+                <input id="gm-publisher-media" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} list="dl-publisher" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
-                <label>Format</label>
-                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder={mediaFormatPlaceholder} list="dl-format" />
+                <label htmlFor="gm-format-media">Format</label>
+                <input id="gm-format-media" type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder={mediaFormatPlaceholder} list="dl-format" />
               </div>
               <div className="field">
-                <label>Edition</label>
-                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder={mediaEditionPlaceholder} list="dl-edition" />
+                <label htmlFor="gm-edition-media">Edition</label>
+                <input id="gm-edition-media" type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder={mediaEditionPlaceholder} list="dl-edition" />
               </div>
             </div>
           </>
@@ -1124,22 +1127,22 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           <>
             <div className="row2">
               <div className="field">
-                <label>Manufacturer</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Nintendo, Sony, Microsoft, Sega" list="dl-publisher" />
+                <label htmlFor="gm-publisher-console">Manufacturer</label>
+                <input id="gm-publisher-console" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Nintendo, Sony, Microsoft, Sega" list="dl-publisher" />
               </div>
               <div className="field">
-                <label>Storage / variant</label>
-                <input type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder="e.g. 512GB, OLED, Digital Edition" list="dl-format" />
+                <label htmlFor="gm-format-console">Storage / variant</label>
+                <input id="gm-format-console" type="text" value={form.format} onChange={(e) => set('format', e.target.value)} placeholder="e.g. 512GB, OLED, Digital Edition" list="dl-format" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
-                <label>Special edition</label>
-                <input type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. Pokémon Scarlet & Violet Edition, Steelbook" list="dl-edition" />
+                <label htmlFor="gm-edition-console">Special edition</label>
+                <input id="gm-edition-console" type="text" value={form.edition} onChange={(e) => set('edition', e.target.value)} placeholder="e.g. Pokémon Scarlet & Violet Edition, Steelbook" list="dl-edition" />
               </div>
               <div className="field">
-                <label>Region</label>
-                <select value={form.region} onChange={(e) => set('region', e.target.value)}>
+                <label htmlFor="gm-region-console">Region</label>
+                <select id="gm-region-console" value={form.region} onChange={(e) => set('region', e.target.value)}>
                   <option value="">—</option>
                   <option value="NTSC-U/C">NTSC-U/C (North America)</option>
                   <option value="NTSC-J">NTSC-J (Japan)</option>
@@ -1149,8 +1152,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               </div>
             </div>
             <div className="field">
-              <label>Grade</label>
-              <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. WATA 9.6 A++, VGA 85, Raw" />
+              <label htmlFor="gm-grade-console">Grade</label>
+              <input id="gm-grade-console" type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. WATA 9.6 A++, VGA 85, Raw" />
             </div>
           </>
         )}
@@ -1159,27 +1162,27 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           <>
             <div className="row2">
               <div className="field">
-                <label>Series / line</label>
-                <input type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. Marvel, Star Wars, Animation, Retro Toys" list="dl-card_set" />
+                <label htmlFor="gm-card-set-funko">Series / line</label>
+                <input id="gm-card-set-funko" type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. Marvel, Star Wars, Animation, Retro Toys" list="dl-card_set" />
               </div>
               <div className="field">
-                <label>Pop! #</label>
-                <input type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #1141" />
+                <label htmlFor="gm-card-number-funko">Pop! #</label>
+                <input id="gm-card-number-funko" type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #1141" />
               </div>
             </div>
             <div className="row2">
               <div className="field">
-                <label>Character</label>
-                <input type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} list="dl-player_name" />
+                <label htmlFor="gm-player-name-funko">Character</label>
+                <input id="gm-player-name-funko" type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} list="dl-player_name" />
               </div>
               <div className="field">
-                <label>Exclusive to</label>
-                <input type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Hot Topic, SDCC, GameStop, Funko Shop" list="dl-publisher" />
+                <label htmlFor="gm-publisher-funko">Exclusive to</label>
+                <input id="gm-publisher-funko" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. Hot Topic, SDCC, GameStop, Funko Shop" list="dl-publisher" />
               </div>
             </div>
             <div className="field">
-              <label>Grade</label>
-              <input type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. PPJoe 9.5, GalaxyPop 10, Raw" />
+              <label htmlFor="gm-grade-funko">Grade</label>
+              <input id="gm-grade-funko" type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. PPJoe 9.5, GalaxyPop 10, Raw" />
             </div>
             <div className="field">
               <label>
@@ -1194,8 +1197,9 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             </div>
             {form.is_variant && (
               <div className="field">
-                <label>Details</label>
+                <label htmlFor="gm-variant-notes-funko">Details</label>
                 <input
+                  id="gm-variant-notes-funko"
                   type="text"
                   value={form.variant_notes}
                   onChange={(e) => set('variant_notes', e.target.value)}
@@ -1208,13 +1212,14 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
 
         <div className="row2">
           <div className="field">
-            <label>Genre</label>
-            <input type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={genrePlaceholder} list="dl-genre" />
+            <label htmlFor="gm-genre">Genre</label>
+            <input id="gm-genre" type="text" value={form.genre} onChange={(e) => set('genre', e.target.value)} placeholder={genrePlaceholder} list="dl-genre" />
           </div>
           <div className="field">
-            <label>Barcode / UPC</label>
+            <label htmlFor="gm-barcode">Barcode / UPC</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
+                id="gm-barcode"
                 type="text"
                 value={form.barcode}
                 onChange={(e) => set('barcode', e.target.value)}
@@ -1236,14 +1241,15 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         )}
 
         <div className="field">
-          <label>Tags</label>
-          <ChipInput value={form.tags} onChange={(v) => set('tags', v)} placeholder="Type a tag, press Enter" suggestions={sg.tags} />
+          <label htmlFor="gm-tags">Tags</label>
+          <ChipInput id="gm-tags" value={form.tags} onChange={(v) => set('tags', v)} placeholder="Type a tag, press Enter" suggestions={sg.tags} />
         </div>
 
         <div className="field">
-          <label>Cover image URL</label>
+          <label htmlFor="gm-cover">Cover image URL</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <input
+              id="gm-cover"
               type="url"
               value={form.cover}
               onChange={(e) => set('cover', e.target.value)}
@@ -1255,7 +1261,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 {coverBroken ? (
                   <span>Can't load</span>
                 ) : (
-                  <img src={form.cover} alt="" onError={() => setCoverBroken(true)} />
+                  <img src={form.cover} alt={form.title ? `Cover preview for ${form.title}` : 'Cover preview'} onError={() => setCoverBroken(true)} />
                 )}
               </div>
             )}
@@ -1263,7 +1269,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         </div>
 
         <div className="field">
-          <label>
+          <label htmlFor="gm-condition-photo-file">
             Condition photos{form.condition_photos?.length > 0 ? ` (${form.condition_photos.length}/${MAX_PHOTOS})` : ''}
           </label>
           {!game?.id ? (
@@ -1293,7 +1299,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               )}
               {(form.condition_photos?.length || 0) < MAX_PHOTOS && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: form.condition_photos?.length > 0 ? 8 : 0 }}>
-                  <input type="file" accept="image/*" onChange={handlePhotoFile} disabled={photoUploading} />
+                  <input id="gm-condition-photo-file" type="file" accept="image/*" onChange={handlePhotoFile} disabled={photoUploading} />
                   {photoUploading && <span className="sub" style={{ margin: 0 }}>Uploading…</span>}
                 </div>
               )}
@@ -1304,8 +1310,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
 
         <div className="row2">
           <div className="field">
-            <label>Ownership status</label>
-            <select value={form.ownership} onChange={(e) => set('ownership', e.target.value)}>
+            <label htmlFor="gm-ownership">Ownership status</label>
+            <select id="gm-ownership" value={form.ownership} onChange={(e) => set('ownership', e.target.value)}>
               <option value="owned">Owned</option>
               <option value="wishlist">Wishlist</option>
               <option value="sold">Sold</option>
@@ -1313,8 +1319,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           </div>
           {!isComic && (
             <div className="field">
-              <label>Condition</label>
-              <select value={form.condition} onChange={(e) => set('condition', e.target.value)}>
+              <label htmlFor="gm-condition">Condition</label>
+              <select id="gm-condition" value={form.condition} onChange={(e) => set('condition', e.target.value)}>
                 <option value="">—</option>
                 <option value="sealed">Sealed</option>
                 <option value="mint">Mint</option>
@@ -1326,8 +1332,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           )}
           {!isConsole && !isFunko && (
             <div className="field">
-              <label>Copy</label>
-              <select value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
+              <label htmlFor="gm-copy-type">Copy</label>
+              <select id="gm-copy-type" value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
                 <option value="">—</option>
                 <option value="physical">Physical</option>
                 <option value="digital">Digital</option>
@@ -1336,8 +1342,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           )}
           {(isGame || isConsole) && (
             <div className="field">
-              <label>Completeness</label>
-              <select value={form.completeness} onChange={(e) => set('completeness', e.target.value)}>
+              <label htmlFor="gm-completeness">Completeness</label>
+              <select id="gm-completeness" value={form.completeness} onChange={(e) => set('completeness', e.target.value)}>
                 <option value="">—</option>
                 <option value="loose">{isConsole ? 'Loose (unit only)' : 'Loose (cart/disc only)'}</option>
                 <option value="no_manual">CIB minus manual (missing only the manual)</option>
@@ -1350,20 +1356,21 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
 
         <div className="row2">
           <div className="field">
-            <label>Purchase price ({currencySymbol(currency)})</label>
-            <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} />
+            <label htmlFor="gm-price">Purchase price ({currencySymbol(currency)})</label>
+            <input id="gm-price" type="number" step="0.01" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} />
           </div>
           <div className="field">
-            <label>Purchase date</label>
-            <input type="date" value={form.purchase_date || ''} onChange={(e) => set('purchase_date', e.target.value)} />
+            <label htmlFor="gm-purchase-date">Purchase date</label>
+            <input id="gm-purchase-date" type="date" value={form.purchase_date || ''} onChange={(e) => set('purchase_date', e.target.value)} />
           </div>
         </div>
 
         {form.ownership === 'wishlist' && (
           <div className="row2">
             <div className="field">
-              <label>Notify me if price drops below ({currencySymbol(currency)})</label>
+              <label htmlFor="gm-price-alert-threshold">Notify me if price drops below ({currencySymbol(currency)})</label>
               <input
+                id="gm-price-alert-threshold"
                 type="number"
                 step="0.01"
                 min="0"
@@ -1425,8 +1432,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         <div className="row2">
           {isGame && (
             <div className="field">
-              <label>Play status</label>
-              <select value={form.play_status} onChange={(e) => set('play_status', e.target.value)}>
+              <label htmlFor="gm-play-status">Play status</label>
+              <select id="gm-play-status" value={form.play_status} onChange={(e) => set('play_status', e.target.value)}>
                 <option value="backlog">Backlog</option>
                 <option value="playing">Playing</option>
                 <option value="completed">Completed</option>
@@ -1493,8 +1500,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         </div>
 
         <div className="field">
-          <label>Notes</label>
-          <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Anything worth remembering…" />
+          <label htmlFor="gm-notes">Notes</label>
+          <textarea id="gm-notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Anything worth remembering…" />
         </div>
 
         {/* Autocomplete lists for the fields above, built from your own

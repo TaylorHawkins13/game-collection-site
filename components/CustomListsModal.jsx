@@ -151,7 +151,7 @@ export default function CustomListsModal({ userId, games, lists, listItemsByList
                   <button
                     type="button"
                     className="btn-icon"
-                    aria-label="Rename list"
+                    aria-label={`Rename list "${l.name}"`}
                     onClick={() => {
                       setRenamingId(l.id);
                       setRenameValue(l.name);
@@ -159,7 +159,7 @@ export default function CustomListsModal({ userId, games, lists, listItemsByList
                   >
                     ✎
                   </button>
-                  <button type="button" className="btn-icon" aria-label="Delete list" onClick={() => deleteList(l.id)}>
+                  <button type="button" className="btn-icon" aria-label={`Delete list "${l.name}"`} onClick={() => deleteList(l.id)}>
                     ✕
                   </button>
                 </div>
@@ -200,7 +200,7 @@ export default function CustomListsModal({ userId, games, lists, listItemsByList
                             className="btn-icon"
                             onClick={() => removeItem(g.id)}
                             disabled={busyGameId === g.id}
-                            aria-label="Remove from list"
+                            aria-label={`Remove "${g.title}" from list`}
                           >
                             ✕
                           </button>
@@ -211,8 +211,9 @@ export default function CustomListsModal({ userId, games, lists, listItemsByList
                 </div>
 
                 <div className="field" style={{ marginTop: 16 }}>
-                  <label>Add an item</label>
+                  <label htmlFor="custom-lists-add-item">Add an item</label>
                   <input
+                    id="custom-lists-add-item"
                     type="text"
                     placeholder="Search your collection…"
                     value={search}

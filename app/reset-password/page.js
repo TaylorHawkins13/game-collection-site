@@ -192,8 +192,9 @@ function ResetPasswordForm() {
         <p className="sub">Choose a new password for your account.</p>
 
         <div className="field">
-          <label>New password</label>
+          <label htmlFor="reset-password-new">New password</label>
           <input
+            id="reset-password-new"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -202,8 +203,9 @@ function ResetPasswordForm() {
           />
         </div>
         <div className="field">
-          <label>Confirm new password</label>
+          <label htmlFor="reset-password-confirm">Confirm new password</label>
           <input
+            id="reset-password-confirm"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}

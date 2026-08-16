@@ -57,8 +57,8 @@ export default function ForgotPasswordPage() {
         <p className="sub">Enter the email on your account and we'll send you a link to set a new password.</p>
 
         <div className="field">
-          <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label htmlFor="forgot-password-email">Email</label>
+          <input id="forgot-password-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
 
         {error && <div className="error-text">{error}</div>}

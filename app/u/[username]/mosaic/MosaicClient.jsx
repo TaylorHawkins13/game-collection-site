@@ -222,8 +222,9 @@ export default function MosaicClient({ username, displayName, currency, items })
       {mode === 'custom' && picking ? (
         <div className="mosaic-picker">
           <div className="field" style={{ margin: '0 0 12px' }}>
-            <label>Choose items for this mosaic</label>
+            <label htmlFor="mosaic-pick-search">Choose items for this mosaic</label>
             <input
+              id="mosaic-pick-search"
               type="text"
               placeholder="Search your collection…"
               value={pickSearch}

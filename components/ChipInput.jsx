@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 
-export default function ChipInput({ value, onChange, placeholder, suggestions }) {
+export default function ChipInput({ id, value, onChange, placeholder, suggestions }) {
   const [input, setInput] = useState('');
   const listId = useId();
   // Don't suggest chips that are already added.
@@ -37,12 +37,13 @@ export default function ChipInput({ value, onChange, placeholder, suggestions })
       {value.map((v, i) => (
         <span className="chip" key={v + i}>
           {v}
-          <button type="button" onClick={() => remove(i)} aria-label="Remove">
+          <button type="button" onClick={() => remove(i)} aria-label={`Remove ${v}`}>
             ×
           </button>
         </span>
       ))}
       <input
+        id={id}
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}

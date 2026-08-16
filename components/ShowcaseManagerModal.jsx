@@ -108,7 +108,7 @@ export default function ShowcaseManagerModal({ games, onClose, onSaved }) {
                     className="btn-icon"
                     onClick={() => move(i, -1)}
                     disabled={i === 0}
-                    aria-label="Move up"
+                    aria-label={`Move ${g.title} up`}
                   >
                     ↑
                   </button>
@@ -117,7 +117,7 @@ export default function ShowcaseManagerModal({ games, onClose, onSaved }) {
                     className="btn-icon"
                     onClick={() => move(i, 1)}
                     disabled={i === selected.length - 1}
-                    aria-label="Move down"
+                    aria-label={`Move ${g.title} down`}
                   >
                     ↓
                   </button>
@@ -125,7 +125,7 @@ export default function ShowcaseManagerModal({ games, onClose, onSaved }) {
                     type="button"
                     className="btn-icon"
                     onClick={() => removeItem(g.id)}
-                    aria-label="Remove from showcase"
+                    aria-label={`Remove ${g.title} from showcase`}
                   >
                     ✕
                   </button>
@@ -136,8 +136,9 @@ export default function ShowcaseManagerModal({ games, onClose, onSaved }) {
         </div>
 
         <div className="field" style={{ marginTop: 16 }}>
-          <label>Add an item</label>
+          <label htmlFor="showcase-add-item">Add an item</label>
           <input
+            id="showcase-add-item"
             type="text"
             placeholder="Search your collection…"
             value={search}

@@ -35,12 +35,12 @@ export default function LoginPage() {
         <p className="sub">Log in to manage your collection.</p>
 
         <div className="field">
-          <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label htmlFor="login-email">Email</label>
+          <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div className="field">
-          <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label htmlFor="login-password">Password</label>
+          <input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <p className="sub" style={{ margin: '6px 0 0' }}>
             <Link href="/forgot-password">Forgot password?</Link>
           </p>

@@ -62,8 +62,8 @@ export default function FeedbackForm() {
       </p>
 
       <div className="field">
-        <label>What's this about?</label>
-        <select value={type} onChange={(e) => setType(e.target.value)}>
+        <label htmlFor="feedback-type">What's this about?</label>
+        <select id="feedback-type" value={type} onChange={(e) => setType(e.target.value)}>
           {TYPES.map((t) => (
             <option key={t.key} value={t.key}>
               {t.label}
@@ -73,8 +73,9 @@ export default function FeedbackForm() {
       </div>
 
       <div className="field">
-        <label>Details</label>
+        <label htmlFor="feedback-details">Details</label>
         <textarea
+          id="feedback-details"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={6}
@@ -91,8 +92,8 @@ export default function FeedbackForm() {
       </div>
 
       <div className="field">
-        <label>Your email (optional, if you want a reply)</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+        <label htmlFor="feedback-email">Your email (optional, if you want a reply)</label>
+        <input id="feedback-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
       </div>
 
       {error && <div className="error-text">{error}</div>}

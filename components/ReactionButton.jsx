@@ -57,6 +57,7 @@ export default function ReactionButton({ eventId, eventOwnerId, viewerId, initia
       onClick={toggle}
       disabled={busy}
       aria-pressed={reacted}
+      aria-label={reacted ? 'Unlike this' : 'Like this'}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill={reacted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M7 10v12" />
