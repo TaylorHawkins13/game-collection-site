@@ -153,7 +153,11 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
                 onClick={() => (series.data ? series.reset() : series.load(game.item_type, seriesValue))}
                 disabled={series.loading}
               >
-                {series.loading ? 'Loading…' : series.data ? 'Hide series' : 'See full series'}
+                {series.loading
+                  ? 'Loading…'
+                  : series.data
+                    ? (game.item_type === 'trading_card' ? 'Hide master set' : 'Hide series')
+                    : (game.item_type === 'trading_card' ? 'See master set' : 'See full series')}
               </button>
             )}
             <button type="button" className="btn-primary" onClick={() => onEdit(game)}>

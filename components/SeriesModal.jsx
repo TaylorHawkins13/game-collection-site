@@ -51,7 +51,7 @@ export default function SeriesModal({ item, items, ownerLabel, isOwnProfile, onC
             Close
           </button>
         </div>
-        <div className="sub">Series completion</div>
+        <div className="sub">{item.item_type === 'trading_card' ? 'Master set completion' : 'Series completion'}</div>
         {series.loading && <div className="sub">Looking up the series…</div>}
         {series.error && <div className="sub">{series.error}</div>}
         {series.data && (

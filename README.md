@@ -141,6 +141,7 @@ If a cron job actually fails (a query error, a fetch failure, missing config), i
 - **"Download my data"**: a "Download my data" button next to Export CSV in Profile settings downloads a full JSON export of everything about your account beyond the collection itself — profile, comments written and received, follows, activity feed entries, and trophies. Runs entirely through your own signed-in session (no admin access involved), so there's nothing new to configure.
 - **"What's new" on the logged-out home page**: the newest few entries from `/whats-new` now show right on the home page for signed-out visitors too, not just behind a small footer link — the same section the logged-in home page already had.
 - **Accessibility improvements**: a skip-to-content link for keyboard users, toast notifications now announced to screen readers (`aria-live`), and a fixed missing focus indicator on tag/chip input fields — first slice of a larger accessibility pass, see `ROADMAP.md` for what's still open.
+- **"See master set" for Pokémon trading cards**: editing a trading card and hitting "See master set" shows every real card in that set, including every print variant (Normal, Reverse Holo, Holo, 1st Edition, W Promo) as its own checkable tile — pulled live from TCGdex, not just from what's already logged on the site. Works best when the card was added via the trading-card Search button, so the set name matches TCGdex's exactly. Magic still uses the older crowdsourced series view for now — see `ROADMAP.md`.
 
 ## Notes
 

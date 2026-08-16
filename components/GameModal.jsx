@@ -763,7 +763,11 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               onClick={() => (series.data ? series.reset() : series.load(form.item_type, seriesValue))}
               disabled={series.loading}
             >
-              {series.loading ? 'Loading…' : series.data ? 'Hide series' : 'See full series'}
+              {series.loading
+                ? 'Loading…'
+                : series.data
+                  ? (form.item_type === 'trading_card' ? 'Hide master set' : 'Hide series')
+                  : (form.item_type === 'trading_card' ? 'See master set' : 'See full series')}
             </button>
           )}
         </div>
@@ -1047,6 +1051,12 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                   onChange={(e) => set('variant_notes', e.target.value)}
                   placeholder="e.g. Gold refractor /50, silver prizm"
                 />
+                {isCard && (
+                  <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>
+                    For master set tracking: include "reverse holo," "holo," "1st edition," or "promo" if it's one of
+                    those, so it matches the right print on the master set grid.
+                  </div>
+                )}
               </div>
             )}
           </>
