@@ -3361,28 +3361,25 @@ button.badge.tag:hover {
     font-size: 10px;
     padding: 5px 6px;
     line-height: 1.25;
-    /* With .card-body hidden below (next rule), the title bar is the only
-       part of the card whose height can vary at all — a one-word title
-       and a long one sitting in the same grid row otherwise leave the
-       short card's cell visibly shorter, and since CSS Grid sizes every
-       row to its tallest member, that shows up as a slab of empty space
-       under the short card, not just a shorter card. Clamping every
-       title to the same fixed number of lines (with an ellipsis for
-       anything longer) makes every card in the grid the same height
-       regardless of title length, so rows pack evenly instead of leaving
-       gaps. 3 lines rather than 2 — 2 was cutting off enough real titles
-       ("The Legend of Zelda: Breath of the Wild" and the like) at this
-       card width to read as broken, not just tidy; 3 covers most real
-       titles while still keeping every card the same height. Height is
-       set explicitly (line-height × line count) rather than left to grow
-       with content — -webkit-line-clamp alone only reserves as much
-       height as a title actually needs, which reintroduces the exact
-       gap this rule exists to prevent for anything shorter than 3 lines. */
-    height: 3.75em;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
+    /* Two rounds of picking a line-clamp count (2, then 3) both turned
+       out to just be different guesses at "enough room for most titles"
+       — and any fixed N > 1 lines is a guess: whatever N is chosen,
+       some real title will be longer than N lines and still get cut
+       off, while shorter titles still fall short of N lines and leave
+       the exact whitespace gap this rule exists to prevent (CSS Grid
+       sizes every row to its tallest card — see .grid below — so any
+       height mismatch between cards in the same row shows up as dead
+       space under the shorter one). One line is the only value that
+       isn't a guess: it's the natural minimum every title already
+       needs, so it's mathematically guaranteed every card gets exactly
+       the same title height regardless of what the title says — zero
+       whitespace, permanently, not "usually enough." This also matches
+       how virtually every dense poster/tile grid handles it (Netflix,
+       Steam, the App Store) — a single truncated line under the art,
+       full title one tap away in the detail view. */
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
   .card-body {
     display: none;
