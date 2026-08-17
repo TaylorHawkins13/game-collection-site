@@ -18,6 +18,21 @@ import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
 import SeriesGrid from './SeriesGrid';
 
+// Kept in sync with the <option> values in the Type <select> further down.
+const KNOWN_ITEM_TYPES = [
+  'game',
+  'comic',
+  'trading_card',
+  'vinyl',
+  'book',
+  'dvd',
+  'vhs',
+  'cd',
+  'console',
+  'funko_pop',
+];
+const LAST_ITEM_TYPE_KEY = 'gct_last_item_type';
+
 const EMPTY = {
   item_type: 'game',
   title: '',
@@ -135,7 +150,20 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         price_alert_threshold: duplicateOf ? '' : source.price_alert_threshold ?? '',
       });
     } else {
-      setForm(EMPTY);
+      // Blank "Add Item" (no item being edited, no duplicateOf source) —
+      // default to whatever type was last successfully added instead of
+      // always Video Game, so someone mostly logging trading cards isn't
+      // reselecting the dropdown every single time. Falls back to the
+      // original 'game' default the first time, or if storage is
+      // unavailable (private browsing, etc.).
+      let lastType = 'game';
+      try {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem(LAST_ITEM_TYPE_KEY) : null;
+        if (stored && KNOWN_ITEM_TYPES.includes(stored)) lastType = stored;
+      } catch {
+        // ignore — localStorage can throw in some private-browsing setups
+      }
+      setForm({ ...EMPTY, item_type: lastType });
     }
     setSearchResults([]);
     setSearchHint('');
@@ -741,6 +769,15 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     setSaving(false);
     if (result?.error) {
       setSaveError(result.error);
+    } else if (!game?.id) {
+      // Only remember the type for genuinely new items — editing an
+      // existing item's type shouldn't change what the next blank Add
+      // form defaults to.
+      try {
+        if (typeof window !== 'undefined') localStorage.setItem(LAST_ITEM_TYPE_KEY, form.item_type);
+      } catch {
+        // ignore — localStorage can throw in some private-browsing setups
+      }
     }
   }
 

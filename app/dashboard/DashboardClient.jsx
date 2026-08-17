@@ -1874,6 +1874,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       {showImport && (
         <ImportCsvModal
           userId={userId}
+          existingItems={games}
           onClose={() => setShowImport(false)}
           onImported={handleImported}
         />

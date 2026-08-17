@@ -1,25 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabaseClient';
 import { normalizeRow } from '@/lib/csvImport';
+import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import useModalA11y from '@/lib/useModalA11y';
 
 const BATCH_SIZE = 100;
 
-export default function ImportCsvModal({ userId, onClose, onImported }) {
+export default function ImportCsvModal({ userId, existingItems, onClose, onImported }) {
   const supabase = createClient();
   const [fileName, setFileName] = useState('');
   const [rows, setRows] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [skipped, setSkipped] = useState(0);
+  // Rows that look like something already in the signed-in user's own
+  // collection — same title-matching rule as the single-item add form's
+  // "You might already have this" warning (lib/duplicateCheck.js), just
+  // run across every parsed row instead of one title as you type. Each
+  // entry is { index, title, matchTitle } — index into `rows`.
+  const [duplicateRows, setDuplicateRows] = useState([]);
+  const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const modalRef = useModalA11y(onClose);
+
+  const duplicateIndexes = useMemo(() => new Set(duplicateRows.map((d) => d.index)), [duplicateRows]);
+  const importCount = skipDuplicates ? Math.max(0, rows.length - duplicateRows.length) : rows.length;
 
   function handleFile(e) {
     const file = e.target.files?.[0];
@@ -30,6 +41,8 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
     setRows([]);
     setWarnings([]);
     setSkipped(0);
+    setDuplicateRows([]);
+    setSkipDuplicates(true);
     setFileName(file.name);
     setParsing(true);
     Papa.parse(file, {
@@ -51,9 +64,15 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
           }
           validRows.push(data);
         });
+        const dupRows = [];
+        validRows.forEach((data, i) => {
+          const matches = findPossibleDuplicates(data.title, data.item_type, existingItems);
+          if (matches.length) dupRows.push({ index: i, title: data.title, matchTitle: matches[0].title });
+        });
         setRows(validRows);
         setWarnings(allWarnings);
         setSkipped(skippedCount);
+        setDuplicateRows(dupRows);
         setParsing(false);
       },
       error: () => {
@@ -64,20 +83,21 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
   }
 
   async function handleImport() {
-    if (rows.length === 0) return;
+    const toImport = skipDuplicates ? rows.filter((_, i) => !duplicateIndexes.has(i)) : rows;
+    if (toImport.length === 0) return;
     setImporting(true);
     setError('');
-    setProgress({ done: 0, total: rows.length });
+    setProgress({ done: 0, total: toImport.length });
     const inserted = [];
-    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-      const batch = rows.slice(i, i + BATCH_SIZE).map((r) => ({ ...r, user_id: userId }));
+    for (let i = 0; i < toImport.length; i += BATCH_SIZE) {
+      const batch = toImport.slice(i, i + BATCH_SIZE).map((r) => ({ ...r, user_id: userId }));
       const { data, error: insertError } = await supabase.from('games').insert(batch).select();
       if (insertError) {
         setError(`Import stopped partway through: ${insertError.message}`);
         break;
       }
       if (data) inserted.push(...data);
-      setProgress({ done: Math.min(i + BATCH_SIZE, rows.length), total: rows.length });
+      setProgress({ done: Math.min(i + BATCH_SIZE, toImport.length), total: toImport.length });
     }
     setImporting(false);
     setDone(true);
@@ -138,6 +158,33 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
                 </div>
               </details>
             )}
+            {duplicateRows.length > 0 && (
+              // Same "you might already have this" title-matching rule the
+              // single-item Add form uses, just run across every parsed
+              // row — a CSV that overlaps with what's already logged
+              // otherwise creates silent duplicate rows with no heads-up.
+              <div style={{ marginTop: 8 }}>
+                <label className="sub" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={skipDuplicates}
+                    onChange={(e) => setSkipDuplicates(e.target.checked)}
+                  />
+                  Skip {duplicateRows.length} row{duplicateRows.length === 1 ? '' : 's'} that look
+                  {duplicateRows.length === 1 ? 's' : ''} like something you already have (recommended)
+                </label>
+                <details style={{ marginTop: 6 }}>
+                  <summary className="sub" style={{ cursor: 'pointer' }}>See which ones</summary>
+                  <div style={{ maxHeight: 140, overflowY: 'auto', marginTop: 6 }}>
+                    {duplicateRows.map((d) => (
+                      <div key={d.index} className="sub" style={{ margin: '2px 0' }}>
+                        {d.title} — you already have &ldquo;{d.matchTitle}&rdquo;
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
           </>
         )}
 
@@ -163,9 +210,9 @@ export default function ImportCsvModal({ userId, onClose, onImported }) {
                 className="btn-primary"
                 type="button"
                 onClick={handleImport}
-                disabled={rows.length === 0 || parsing || importing}
+                disabled={importCount === 0 || parsing || importing}
               >
-                {importing ? 'Importing…' : `Import ${rows.length || ''} item${rows.length === 1 ? '' : 's'}`}
+                {importing ? 'Importing…' : `Import ${importCount || ''} item${importCount === 1 ? '' : 's'}`}
               </button>
             )}
           </div>

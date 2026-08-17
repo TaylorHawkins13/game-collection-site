@@ -11,6 +11,15 @@ const TITLE = 'Shelf Life — Collection Tracker';
 const DESCRIPTION = 'Track your games, comics, cards, vinyl, and more — share your shelf, and see how it stacks up.';
 
 export const viewport = {
+  // Defining a custom `viewport` export at all replaces Next.js's sensible
+  // built-in default rather than merging with it — without these two
+  // explicit, a mobile browser can lay the page out at a wider virtual
+  // width than the actual screen and then scale it down to fit, which
+  // reads as both "everything looks slightly zoomed in" and "there's room
+  // to pan sideways" at once. Reported directly; this was the missing
+  // piece.
+  width: 'device-width',
+  initialScale: 1,
   themeColor: '#0f1220',
   // Lets the page draw under the notch/status bar and home indicator
   // instead of Safari/WKWebView leaving a hard black bar there — paired
