@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import BarcodeScanner from './BarcodeScanner';
 
 // Digitizing a big physical pile in one sitting shouldn't mean closing
@@ -24,7 +25,7 @@ const TYPE_OPTIONS = [
   { value: 'console', label: 'Consoles' },
 ];
 
-export default function BulkScanSession({ userId, onClose, onItemAdded }) {
+export default function BulkScanSession({ userId, existingItems, onClose, onItemAdded }) {
   const supabase = createClient();
   const [itemType, setItemType] = useState('game');
   const [started, setStarted] = useState(false);
@@ -32,6 +33,25 @@ export default function BulkScanSession({ userId, onClose, onItemAdded }) {
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState([]);
   const [seenCodes, setSeenCodes] = useState(() => new Set());
+  // A scanned code that looks like something already in the collection —
+  // same rule the single-item Add form and CSV import already use
+  // (lib/duplicateCheck.js) — pauses the scanner and waits for an
+  // explicit Add anyway / Skip choice instead of silently inserting a
+  // second copy. { code, title, row, found, matchTitle } while pending.
+  const [pendingDuplicate, setPendingDuplicate] = useState(null);
+
+  async function insertRow(code, title, row, found) {
+    const { data: inserted, error } = await supabase.from('games').insert(row).select().single();
+    setSeenCodes((s) => new Set(s).add(code));
+    if (error) {
+      setLog((l) => [{ code, title, status: 'error' }, ...l]);
+    } else {
+      setLog((l) => [{ code, title, status: found ? 'added' : 'added-blank' }, ...l]);
+      onItemAdded?.(inserted);
+    }
+    setBusy(false);
+    setScanKey((k) => k + 1);
+  }
 
   async function handleDetected(code) {
     if (busy) return;
@@ -72,17 +92,34 @@ export default function BulkScanSession({ userId, onClose, onItemAdded }) {
       row.publisher = data.publisher || data.creator || '';
     }
 
-    const { data: inserted, error } = await supabase.from('games').insert(row).select().single();
-
-    setSeenCodes((s) => new Set(s).add(code));
-    if (error) {
-      setLog((l) => [{ code, title, status: 'error' }, ...l]);
-    } else {
-      setLog((l) => [{ code, title, status: data.found ? 'added' : 'added-blank' }, ...l]);
-      onItemAdded?.(inserted);
+    const matches = data.found ? findPossibleDuplicates(title, itemType, existingItems) : [];
+    if (matches.length) {
+      // Pause here instead of inserting straight away — same "you might
+      // already have this" heads-up the other two entry points give, just
+      // as a blocking choice rather than a checkbox, since scanning keeps
+      // moving and there's no form sitting open to attach a warning to.
+      setBusy(false);
+      setPendingDuplicate({ code, title, row, found: data.found, matchTitle: matches[0].title });
+      return;
     }
 
-    setBusy(false);
+    await insertRow(code, title, row, data.found);
+  }
+
+  function confirmAddDuplicate() {
+    if (!pendingDuplicate) return;
+    const { code, title, row, found } = pendingDuplicate;
+    setPendingDuplicate(null);
+    setBusy(true);
+    insertRow(code, title, row, found);
+  }
+
+  function skipDuplicate() {
+    if (!pendingDuplicate) return;
+    const { code, title } = pendingDuplicate;
+    setLog((l) => [{ code, title: `${title} — skipped (already in your collection)`, status: 'skipped' }, ...l]);
+    setSeenCodes((s) => new Set(s).add(code));
+    setPendingDuplicate(null);
     setScanKey((k) => k + 1);
   }
 
@@ -118,7 +155,17 @@ export default function BulkScanSession({ userId, onClose, onItemAdded }) {
           </>
         ) : (
           <>
-            {busy ? (
+            {pendingDuplicate ? (
+              <div className="scanner-frame" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, textAlign: 'center' }}>
+                <span className="sub" style={{ margin: 0 }}>
+                  You might already have this: <strong>{pendingDuplicate.title}</strong> looks like &ldquo;{pendingDuplicate.matchTitle}&rdquo;
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn-ghost" type="button" onClick={skipDuplicate}>Skip</button>
+                  <button className="btn-primary" type="button" onClick={confirmAddDuplicate}>Add anyway</button>
+                </div>
+              </div>
+            ) : busy ? (
               <div className="scanner-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span className="sub" style={{ margin: 0 }}>Looking that one up…</span>
               </div>

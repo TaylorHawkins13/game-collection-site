@@ -130,6 +130,10 @@ export default function GameCard({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  // Only passed on the owner's own dashboard, where there's a tag filter
+  // to jump to — public/read-only card views (profile, mosaic, compare)
+  // don't pass it, so tags there stay plain, non-interactive badges.
+  onTagClick,
 }) {
   const isComic = game.item_type === 'comic';
   const [artColor, setArtColor] = useState(null);
@@ -246,9 +250,23 @@ export default function GameCard({
             {game.showcase_order != null && (
               <span className="badge tag showcase-badge">Showcased</span>
             )}
-            {(game.tags || []).map((t) => (
-              <span className="badge tag" key={t}>{t}</span>
-            ))}
+            {(game.tags || []).map((t) =>
+              onTagClick ? (
+                <button
+                  type="button"
+                  className="badge tag"
+                  key={t}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTagClick(t);
+                  }}
+                >
+                  {t}
+                </button>
+              ) : (
+                <span className="badge tag" key={t}>{t}</span>
+              )
+            )}
           </div>
         )}
       </div>

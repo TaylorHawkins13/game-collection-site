@@ -1016,6 +1016,21 @@ button:disabled {
   background: #00d2a81a;
   color: var(--accent-2);
 }
+/* Tags render as real <button>s (not <span>s) on the owner's own
+   dashboard so a click can jump straight to "filter by this tag" — this
+   resets the parts of the browser's default button chrome .badge.tag
+   doesn't already override (border, font-family, cursor). Everywhere
+   else (public profile, mosaic, compare) tags stay plain <span>s and
+   this rule never applies. */
+button.badge.tag {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+button.badge.tag:hover {
+  filter: brightness(1.35);
+}
 .badge.copy-digital {
   background: #6c5ce722;
   color: #a29bfe;

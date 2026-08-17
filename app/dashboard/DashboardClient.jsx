@@ -89,6 +89,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [search, setSearch] = useState('');
   const [fOwn, setFOwn] = useState('');
   const [fPlat, setFPlat] = useState('');
+  const [fTag, setFTag] = useState('');
+  const [fList, setFList] = useState('');
   const [fPlay, setFPlay] = useState('');
   const [fType, setFType] = useState('');
   const [fCopy, setFCopy] = useState('');
@@ -282,6 +284,41 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Custom lists (see components/CustomListsModal.jsx, managed from the
+  // public profile) previously only ever showed up on the profile page —
+  // there was no way to use one as a working filter back here on the
+  // dashboard, where the collection actually gets managed. Loaded once,
+  // read-only from here (list membership is still edited from the
+  // profile's "Manage lists"); safe to no-op if the migration hasn't run.
+  const [customLists, setCustomLists] = useState([]);
+  const [listItemsByList, setListItemsByList] = useState({});
+  useEffect(() => {
+    supabase
+      .from('custom_lists')
+      .select('id, name')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true })
+      .then(({ data: listsData, error: listsError }) => {
+        if (listsError || !listsData) return;
+        setCustomLists(listsData);
+        const listIds = listsData.map((l) => l.id);
+        if (!listIds.length) return;
+        supabase
+          .from('custom_list_items')
+          .select('list_id, game_id')
+          .in('list_id', listIds)
+          .then(({ data: itemsData }) => {
+            const map = {};
+            (itemsData || []).forEach((it) => {
+              if (!map[it.list_id]) map[it.list_id] = new Set();
+              map[it.list_id].add(it.game_id);
+            });
+            setListItemsByList(map);
+          });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function recordSnapshot(gamesList) {
     const { total, itemCount } = estimateCollectionValue(gamesList || games);
     setSnapshotSaving(true);
@@ -300,6 +337,20 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     () => [...new Set(games.flatMap((g) => g.platforms || []))].sort(),
     [games]
   );
+
+  const tagOptions = useMemo(
+    () => [...new Set(games.flatMap((g) => g.tags || []))].sort(),
+    [games]
+  );
+
+  // Click any tag badge on a card (or pick one from the Filters panel
+  // below) to filter the grid down to just that tag — same spirit as
+  // the "Browse by system" platform tiles, for a field that otherwise
+  // only ever matched through the free-text search box.
+  function jumpToTag(tag) {
+    setFTag((current) => (current === tag ? '' : tag));
+    document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
   // Steam appids already in the collection, so SteamImportModal only
   // offers games that aren't already here (regardless of how they were
@@ -328,7 +379,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct].filter(Boolean).length;
+  const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fTag, fList, fPlay, fTrophyPct].filter(Boolean).length;
 
   function clearFilters() {
     setFType('');
@@ -336,6 +387,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFCopy('');
     setFComplete('');
     setFPlat('');
+    setFTag('');
+    setFList('');
     setFPlay('');
     setFTrophyPct('');
   }
@@ -372,7 +425,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     const view = {
       id: Date.now(),
       name,
-      filters: { search, fType, fOwn, fCopy, fComplete, fPlat, fPlay, fTrophyPct, sortBy },
+      filters: { search, fType, fOwn, fCopy, fComplete, fPlat, fTag, fList, fPlay, fTrophyPct, sortBy },
     };
     persistViews([...savedViews, view]);
     setNewViewName('');
@@ -386,6 +439,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFCopy(f.fCopy || '');
     setFComplete(f.fComplete || '');
     setFPlat(f.fPlat || '');
+    setFTag(f.fTag || '');
+    setFList(f.fList || '');
     setFPlay(f.fPlay || '');
     setFTrophyPct(f.fTrophyPct || '');
     setSortBy(f.sortBy || 'titleAsc');
@@ -477,6 +532,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       if (hideDigital && g.copy_type === 'digital') return false;
       if (fOwn && g.ownership !== fOwn) return false;
       if (fPlat && !(g.platforms || []).includes(fPlat)) return false;
+      if (fTag && !(g.tags || []).includes(fTag)) return false;
+      if (fList && !(listItemsByList[fList] || new Set()).has(g.id)) return false;
       if (fPlay && g.play_status !== fPlay) return false;
       if (fType && (g.item_type || 'game') !== fType) return false;
       if (fCopy && g.copy_type !== fCopy) return false;
@@ -519,7 +576,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       }
     });
     return list;
-  }, [games, search, fOwn, fPlat, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy, hideDigital]);
+  }, [games, search, fOwn, fPlat, fTag, fList, listItemsByList, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy, hideDigital]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -1195,6 +1252,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       {showBulkScan && (
         <BulkScanSession
           userId={userId}
+          existingItems={games}
           onClose={() => setShowBulkScan(false)}
           onItemAdded={(item) => setGames((gs) => [item, ...gs])}
         />
@@ -1724,6 +1782,22 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     <option key={p} value={p}>{p}</option>
                   ))}
                 </select>
+                {tagOptions.length > 0 && (
+                  <select value={fTag} onChange={(e) => setFTag(e.target.value)}>
+                    <option value="">All tags</option>
+                    {tagOptions.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                )}
+                {customLists.length > 0 && (
+                  <select value={fList} onChange={(e) => setFList(e.target.value)}>
+                    <option value="">All lists</option>
+                    {customLists.map((l) => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                )}
                 <select value={fPlay} onChange={(e) => setFPlay(e.target.value)}>
                   <option value="">All play status</option>
                   <option value="backlog">Backlog</option>
@@ -1821,6 +1895,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   selectMode={selectMode}
                   selected={selectedIds.has(g.id)}
                   onToggleSelect={toggleSelected}
+                  onTagClick={jumpToTag}
                 />
               ))}
             </div>
