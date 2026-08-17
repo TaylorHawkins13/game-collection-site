@@ -3367,12 +3367,20 @@ button.badge.tag:hover {
        short card's cell visibly shorter, and since CSS Grid sizes every
        row to its tallest member, that shows up as a slab of empty space
        under the short card, not just a shorter card. Clamping every
-       title to exactly 2 lines (with an ellipsis for anything longer)
-       makes every card in the grid the same height regardless of title
-       length, so rows pack evenly instead of leaving gaps. */
-    height: 2.5em;
+       title to the same fixed number of lines (with an ellipsis for
+       anything longer) makes every card in the grid the same height
+       regardless of title length, so rows pack evenly instead of leaving
+       gaps. 3 lines rather than 2 — 2 was cutting off enough real titles
+       ("The Legend of Zelda: Breath of the Wild" and the like) at this
+       card width to read as broken, not just tidy; 3 covers most real
+       titles while still keeping every card the same height. Height is
+       set explicitly (line-height × line count) rather than left to grow
+       with content — -webkit-line-clamp alone only reserves as much
+       height as a title actually needs, which reintroduces the exact
+       gap this rule exists to prevent for anything shorter than 3 lines. */
+    height: 3.75em;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
