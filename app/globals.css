@@ -3346,6 +3346,20 @@ button:disabled {
     font-size: 10px;
     padding: 5px 6px;
     line-height: 1.25;
+    /* With .card-body hidden below (next rule), the title bar is the only
+       part of the card whose height can vary at all — a one-word title
+       and a long one sitting in the same grid row otherwise leave the
+       short card's cell visibly shorter, and since CSS Grid sizes every
+       row to its tallest member, that shows up as a slab of empty space
+       under the short card, not just a shorter card. Clamping every
+       title to exactly 2 lines (with an ellipsis for anything longer)
+       makes every card in the grid the same height regardless of title
+       length, so rows pack evenly instead of leaving gaps. */
+    height: 2.5em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .card-body {
     display: none;
