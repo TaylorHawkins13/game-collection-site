@@ -229,6 +229,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     bio: profile?.bio || '',
     avatar_url: profile?.avatar_url || '',
     is_public: profile?.is_public ?? true,
+    wishlist_public: profile?.wishlist_public ?? false,
     currency: profile?.currency || 'USD',
     newsletter_opt_in: profile?.newsletter_opt_in ?? false,
     muted_notification_types: profile?.muted_notification_types || [],
@@ -1182,6 +1183,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         bio: settingsForm.bio.trim(),
         avatar_url: settingsForm.avatar_url.trim(),
         is_public: settingsForm.is_public,
+        wishlist_public: settingsForm.wishlist_public,
         currency: settingsForm.currency,
         newsletter_opt_in: settingsForm.newsletter_opt_in,
         muted_notification_types: settingsForm.muted_notification_types,
@@ -1429,6 +1431,22 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               />
               Make my profile and collection public
             </label>
+          </div>
+          <div className="field">
+            <label>
+              <input
+                type="checkbox"
+                checked={settingsForm.wishlist_public}
+                onChange={(e) => setSettingsForm((f) => ({ ...f, wishlist_public: e.target.checked }))}
+                style={{ width: 'auto', marginRight: 8 }}
+              />
+              Share my gift list even when my profile is private
+            </label>
+            <p className="sub" style={{ margin: '4px 0 0' }}>
+              Only matters if the profile visibility toggle above is off — a public profile already shows your
+              gift list along with everything else. With this on, the gift list link (from "More actions" on
+              your profile) still works for anyone you send it to, while the rest of your collection stays private.
+            </p>
           </div>
           <div className="field">
             <label>

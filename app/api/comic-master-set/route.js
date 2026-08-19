@@ -12,6 +12,14 @@ import { getComicMasterSetEntries } from '@/lib/comicVineSeriesLookup';
 // shape (no_series_value/no_series/query_failed/not_configured) so
 // lib/useSeriesLookup.js can handle all three master-set-ish backends
 // with the same small set of branches.
+//
+// maxDuration raised from the platform default (10-15s) to give
+// lib/comicVineSeriesLookup.js's time-budgeted pagination (DEADLINE_MS =
+// 45s) real headroom to actually use — without this, a long series would
+// still hit the platform's own default timeout well before the
+// pagination loop's own budget kicked in. Same value the cron routes use.
+export const maxDuration = 60;
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const value = (searchParams.get('value') || '').trim();

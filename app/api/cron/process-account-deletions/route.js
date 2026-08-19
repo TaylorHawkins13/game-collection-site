@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabaseAdmin';
 import { GRACE_PERIOD_HOURS, performAccountDeletion } from '@/lib/accountDeletion';
 import { notifyCronFailure } from '@/lib/cronAlert';
 import { recordCronRun } from '@/lib/cronHeartbeat';
+import { purgeOldNotifications } from '@/lib/notificationCleanup';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -73,6 +74,17 @@ export async function GET(request) {
     await notifyCronFailure('process-account-deletions', new Error(`${failed} account deletion(s) failed:\n${failures.join('\n')}`));
   }
 
+  // Unrelated housekeeping bolted onto this same daily run rather than a
+  // dedicated cron — see lib/notificationCleanup.js. Deliberately doesn't
+  // affect the deletion-failure status above: a purge failure here is
+  // worth knowing about, but it isn't the same kind of "someone's account
+  // was supposed to be gone and isn't" problem the rest of this route
+  // exists to catch.
+  const { deleted: notificationsPurged, error: purgeError } = await purgeOldNotifications(admin);
+  if (purgeError) {
+    await notifyCronFailure('process-account-deletions', new Error(`Notification cleanup failed: ${purgeError.message || purgeError}`));
+  }
+
   await recordCronRun(admin, 'process-account-deletions', failed > 0 ? 'error' : 'success');
-  return NextResponse.json({ total: (expired || []).length, deleted, failed });
+  return NextResponse.json({ total: (expired || []).length, deleted, failed, notificationsPurged });
 }

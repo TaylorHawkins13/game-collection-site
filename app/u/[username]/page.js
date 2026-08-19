@@ -77,6 +77,14 @@ export default async function ProfilePage({ params }) {
 
   const isOwner = viewer?.id === profile.id;
   const canView = profile.is_public || isOwner;
+  // Separate from canView — see app/u/[username]/wishlist/page.js and
+  // ROADMAP.md/CHANGELOG.md "Gift list link can't be shared without
+  // making the whole profile public." A profile can have wishlist_public
+  // on while is_public stays off, so the "Gift list" link in the header
+  // below needs its own visibility check rather than reusing canView,
+  // which would otherwise hide it even when the gift list itself is
+  // genuinely shareable.
+  const canViewWishlist = profile.is_public || profile.wishlist_public || isOwner;
 
   const [
     { data: games },
@@ -153,7 +161,22 @@ export default async function ProfilePage({ params }) {
   // showing — for a viewer, only if there's actually something on it;
   // the owner always sees it, same as Showcase/Manage lists, since it
   // doubles as the entry point for "here's how to send this to someone."
-  const wishlistCount = (games || []).filter((g) => g.ownership === 'wishlist').length;
+  // `games` above is only fetched when canView is true (the whole
+  // collection), so a wishlist-public-but-otherwise-private profile needs
+  // its own narrow, wishlist-only query here instead — deliberately never
+  // fetches (or has in scope) any owned/other-item data for a profile
+  // this viewer isn't allowed to see the rest of.
+  let wishlistCount = 0;
+  if (canView) {
+    wishlistCount = (games || []).filter((g) => g.ownership === 'wishlist').length;
+  } else if (canViewWishlist) {
+    const { count } = await supabase
+      .from('games')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', profile.id)
+      .eq('ownership', 'wishlist');
+    wishlistCount = count || 0;
+  }
   // Same blend DashboardClient's own "Collection value" stat uses: the
   // last eBay check where there is one, purchase price otherwise, digital
   // items excluded. Shown in the collector's own currency, not the
@@ -216,7 +239,7 @@ export default async function ProfilePage({ params }) {
                   Shelf mosaic
                 </Link>
               )}
-              {canView && wishlistCount > 0 && (
+              {canViewWishlist && wishlistCount > 0 && (
                 <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
                   Gift list
                 </Link>

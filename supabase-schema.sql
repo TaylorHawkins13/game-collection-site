@@ -1331,3 +1331,36 @@ revoke all on cron_runs from anon, authenticated;
 -- this column existed.
 alter table public.profiles
   add column if not exists muted_notification_types text[] not null default '{}'::text[];
+
+-- ============================================================
+-- Gift list (wishlist) sharing independent of full-profile privacy
+-- (see wishlist-public-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+-- Lets someone share app/u/[username]/wishlist without making their
+-- whole profile/collection public via profiles.is_public — see
+-- ROADMAP.md "Gift list link can't be shared without making the whole
+-- profile public." Defaults to false, so nobody's existing privacy
+-- changes just because this column now exists.
+alter table public.profiles
+  add column if not exists wishlist_public boolean not null default false;
+
+-- The column above is necessary but not sufficient on its own: games
+-- select access is actually enforced by the policy below, not by
+-- anything in app code, so a viewer who isn't the owner still couldn't
+-- see a shared gift list's items without this. Widens the existing
+-- policy with a third, narrower clause — readable if the *item itself*
+-- is a wishlist row and the owning profile has wishlist_public set,
+-- regardless of is_public. The first two clauses (owner, or the whole
+-- profile is public) are unchanged.
+alter policy "Games readable if profile is public or owner"
+  on public.games
+  using (
+    user_id = (select auth.uid())
+    or exists (select 1 from profiles p where p.id = games.user_id and p.is_public = true)
+    or (
+      games.ownership = 'wishlist'
+      and exists (select 1 from profiles p where p.id = games.user_id and p.wishlist_public = true)
+    )
+  );
