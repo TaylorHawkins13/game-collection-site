@@ -26,6 +26,7 @@ const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), 
 const BulkScanSession = dynamic(() => import('@/components/BulkScanSession'), { ssr: false });
 const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
 import { CURRENCIES, formatMoney } from '@/lib/currency';
+import { NOTIFICATION_TYPES } from '@/lib/notificationTypes';
 import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
 import { getPlatformColor } from '@/lib/platformColors';
@@ -230,6 +231,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     is_public: profile?.is_public ?? true,
     currency: profile?.currency || 'USD',
     newsletter_opt_in: profile?.newsletter_opt_in ?? false,
+    muted_notification_types: profile?.muted_notification_types || [],
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
@@ -813,6 +815,40 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     );
   }
 
+  // The other direction of handleBulkAddToList above — noticed right
+  // after that shipped (see ROADMAP.md): once the dashboard's list filter
+  // lets you view just one list, multi-selecting within it is the
+  // natural place to want "take these off this list," not just "add more
+  // to it." Reuses the same list-picker select as Add to list rather than
+  // a second dropdown — pick a list, then either button acts on it.
+  async function handleBulkRemoveFromList() {
+    if (selectedIds.size === 0 || !bulkListId || bulkBusy) return;
+    const onList = listItemsByList[bulkListId] || new Set();
+    const targets = [...selectedIds].filter((id) => onList.has(id));
+    if (targets.length === 0) {
+      announceToast('None of the selected items are on that list.');
+      return;
+    }
+    setBulkBusy(true);
+    const { error } = await supabase
+      .from('custom_list_items')
+      .delete()
+      .eq('list_id', bulkListId)
+      .in('game_id', targets);
+    setBulkBusy(false);
+    if (error) {
+      announceToast("Couldn't remove those items from the list — try again.");
+      return;
+    }
+    setListItemsByList((prev) => {
+      const next = { ...prev, [bulkListId]: new Set(prev[bulkListId] || []) };
+      targets.forEach((id) => next[bulkListId].delete(id));
+      return next;
+    });
+    const listName = customLists.find((l) => l.id === bulkListId)?.name || 'the list';
+    announceToast(`Removed ${targets.length} item${targets.length === 1 ? '' : 's'} from "${listName}".`, 'success');
+  }
+
   async function handleBulkDelete() {
     if (selectedIds.size === 0 || bulkBusy) return;
     const ids = [...selectedIds];
@@ -1148,6 +1184,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         is_public: settingsForm.is_public,
         currency: settingsForm.currency,
         newsletter_opt_in: settingsForm.newsletter_opt_in,
+        muted_notification_types: settingsForm.muted_notification_types,
       })
       .eq('id', userId);
     setSettingsSaving(false);
@@ -1155,6 +1192,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       setCurrency(settingsForm.currency);
     }
     setSettingsMsg(error ? `Failed to save: ${error.message}` : 'Saved!');
+  }
+
+  // Checked = deliver that notification type, same sense as the bell
+  // itself; profiles.muted_notification_types stores the opposite (the
+  // types NOT to deliver), so this flips the checkbox state into the
+  // muted-list shape NotificationBell.jsx actually reads.
+  function toggleNotificationType(key, deliver) {
+    setSettingsForm((f) => ({
+      ...f,
+      muted_notification_types: deliver
+        ? f.muted_notification_types.filter((t) => t !== key)
+        : [...f.muted_notification_types, key],
+    }));
   }
 
   // Self-service account deletion — required so the app has a real
@@ -1394,6 +1444,27 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               On by default for new accounts, off any time you want. Occasional, manually sent — no
               automated marketing emails.
             </p>
+          </div>
+
+          <div className="field">
+            <label>Notifications</label>
+            <p className="sub" style={{ margin: '0 0 6px' }}>
+              What shows up in the bell (top right). Muting a type here doesn&apos;t affect anyone else — it only
+              changes what you see.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {NOTIFICATION_TYPES.map((t) => (
+                <label key={t.key} style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={!settingsForm.muted_notification_types.includes(t.key)}
+                    onChange={(e) => toggleNotificationType(t.key, e.target.checked)}
+                    style={{ width: 'auto', marginRight: 8 }}
+                  />
+                  {t.label}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="field">
@@ -1920,6 +1991,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   </select>
                   <button type="button" className="btn-ghost" onClick={handleBulkAddToList} disabled={selectedIds.size === 0 || !bulkListId || bulkBusy}>
                     Add to list
+                  </button>
+                  <button type="button" className="btn-ghost" onClick={handleBulkRemoveFromList} disabled={selectedIds.size === 0 || !bulkListId || bulkBusy}>
+                    Remove from list
                   </button>
                 </>
               )}

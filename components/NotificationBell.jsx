@@ -45,13 +45,24 @@ export default function NotificationBell({ userId }) {
   const [loaded, setLoaded] = useState(false);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
+  // Types this user has muted, from Profile settings (lib/notificationTypes.js,
+  // profiles.muted_notification_types) — a ref rather than state so
+  // refreshCount's setInterval closure (created once, below) always reads
+  // the current value instead of whatever it was when the interval started.
+  // Muting is enforced entirely here, at read time: both refreshCount's
+  // unread badge and handleToggle's dropdown list exclude muted types.
+  // Rows for a muted type still get inserted (every notifyX call site is
+  // unchanged) — they're just never surfaced, so un-muting later doesn't
+  // lose anything that happened while muted.
+  const mutedRef = useRef([]);
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from('profiles').select('username').eq('id', userId).single().then(({ data }) => {
+    supabase.from('profiles').select('username, muted_notification_types').eq('id', userId).single().then(({ data }) => {
       setOwnUsername(data?.username || null);
+      mutedRef.current = data?.muted_notification_types || [];
+      refreshCount();
     });
-    refreshCount();
     const interval = setInterval(refreshCount, POLL_MS);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,12 +91,13 @@ export default function NotificationBell({ userId }) {
   }, [open]);
 
   function refreshCount() {
-    supabase
+    let query = supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('read', false)
-      .then(({ count }) => setUnreadCount(count || 0));
+      .eq('read', false);
+    if (mutedRef.current.length) query = query.not('type', 'in', `(${mutedRef.current.join(',')})`);
+    query.then(({ count }) => setUnreadCount(count || 0));
   }
 
   async function handleToggle() {
@@ -94,14 +106,14 @@ export default function NotificationBell({ userId }) {
     if (!next) return;
 
     setLoaded(false);
-    const { data } = await supabase
+    let query = supabase
       .from('notifications')
       .select(
         '*, actor:profiles!notifications_actor_id_fkey(username, display_name), achievement:achievement_defs!notifications_trophy_key_fkey(name, tier), game:games(title)'
       )
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(30);
+      .eq('user_id', userId);
+    if (mutedRef.current.length) query = query.not('type', 'in', `(${mutedRef.current.join(',')})`);
+    const { data } = await query.order('created_at', { ascending: false }).limit(30);
     setNotifications(data || []);
     setLoaded(true);
 

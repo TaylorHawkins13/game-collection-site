@@ -149,6 +149,11 @@ export default async function ProfilePage({ params }) {
 
   const owned = (games || []).filter((g) => g.ownership === 'owned').length;
   const completed = (games || []).filter((g) => g.play_status === 'completed').length;
+  // Whether the "Gift list" link (app/u/[username]/wishlist) is worth
+  // showing — for a viewer, only if there's actually something on it;
+  // the owner always sees it, same as Showcase/Manage lists, since it
+  // doubles as the entry point for "here's how to send this to someone."
+  const wishlistCount = (games || []).filter((g) => g.ownership === 'wishlist').length;
   // Same blend DashboardClient's own "Collection value" stat uses: the
   // last eBay check where there is one, purchase price otherwise, digital
   // items excluded. Shown in the collector's own currency, not the
@@ -211,6 +216,11 @@ export default async function ProfilePage({ params }) {
                   Shelf mosaic
                 </Link>
               )}
+              {canView && wishlistCount > 0 && (
+                <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                  Gift list
+                </Link>
+              )}
               {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
               <ReportProfileButton profileId={profile.id} />
             </ActionMenu>
@@ -228,6 +238,9 @@ export default async function ProfilePage({ params }) {
                   Shelf mosaic
                 </Link>
               )}
+              <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Gift list
+              </Link>
               <ShowcaseButton userId={profile.id} />
               <CustomListsButton userId={profile.id} />
             </ActionMenu>

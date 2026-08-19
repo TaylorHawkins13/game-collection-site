@@ -1314,3 +1314,20 @@ alter table cron_runs enable row level security;
 -- No policies at all — only ever touched by the service-role client
 -- (lib/cronHeartbeat.js), same reasoning as feedback_rate_limit_events above.
 revoke all on cron_runs from anon, authenticated;
+
+-- ============================================================
+-- Per-category notification mute
+-- (see notification-mute-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+-- Which of notifications.type's values this profile doesn't want to
+-- receive — filtered out at read time by NotificationBell.jsx (both the
+-- unread count and the dropdown list), not at insert time, so muting is
+-- retroactive-free (existing rows are never deleted, just no longer
+-- surfaced) and every existing notification insert call site (follow,
+-- comment, trophy, reaction, price_drop) needed zero changes. Empty
+-- array — the default — means every type is delivered, same as before
+-- this column existed.
+alter table public.profiles
+  add column if not exists muted_notification_types text[] not null default '{}'::text[];
