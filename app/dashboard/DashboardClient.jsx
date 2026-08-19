@@ -109,6 +109,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [bulkOwnership, setBulkOwnership] = useState('owned');
   const [bulkPlatform, setBulkPlatform] = useState('');
   const [bulkTag, setBulkTag] = useState('');
+  const [bulkListId, setBulkListId] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showBulkScan, setShowBulkScan] = useState(false);
@@ -773,6 +774,43 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setBulkTag('');
     if (failed > 0) announceToast(`Added the tag, but ${failed} item${failed === 1 ? '' : 's'} failed — try again for those.`);
     else announceToast(`Added "${tag}" to ${results.length} item${results.length === 1 ? '' : 's'}.`, 'success');
+  }
+
+  // Custom lists (see the customLists/listItemsByList load above) could
+  // previously only be built up one item at a time from "Manage lists" on
+  // the public profile — multi-select is the natural way to build a big
+  // list ("For sale," say) all at once instead. One insert per new
+  // membership row (like handleBulkAddTag, not one update like ownership/
+  // platform) since custom_list_items is its own join table; items
+  // already on the list are skipped rather than erroring on a duplicate
+  // row.
+  async function handleBulkAddToList() {
+    if (selectedIds.size === 0 || !bulkListId || bulkBusy) return;
+    const already = listItemsByList[bulkListId] || new Set();
+    const targets = [...selectedIds].filter((id) => !already.has(id));
+    if (targets.length === 0) {
+      announceToast('Every selected item is already on that list.');
+      return;
+    }
+    setBulkBusy(true);
+    const rows = targets.map((gameId, i) => ({ list_id: bulkListId, game_id: gameId, sort_order: already.size + i }));
+    const { error } = await supabase.from('custom_list_items').insert(rows);
+    setBulkBusy(false);
+    if (error) {
+      announceToast("Couldn't add those items to the list — try again.");
+      return;
+    }
+    setListItemsByList((prev) => {
+      const next = { ...prev, [bulkListId]: new Set(prev[bulkListId] || []) };
+      targets.forEach((id) => next[bulkListId].add(id));
+      return next;
+    });
+    const listName = customLists.find((l) => l.id === bulkListId)?.name || 'the list';
+    const skipped = selectedIds.size - targets.length;
+    announceToast(
+      `Added ${targets.length} item${targets.length === 1 ? '' : 's'} to "${listName}"${skipped ? ` (${skipped} already there)` : ''}.`,
+      'success'
+    );
   }
 
   async function handleBulkDelete() {
@@ -1872,6 +1910,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <button type="button" className="btn-ghost" onClick={handleBulkAddTag} disabled={selectedIds.size === 0 || !bulkTag.trim() || bulkBusy}>
                 Add tag
               </button>
+              {customLists.length > 0 && (
+                <>
+                  <select value={bulkListId} onChange={(e) => setBulkListId(e.target.value)} disabled={selectedIds.size === 0}>
+                    <option value="">List…</option>
+                    {customLists.map((l) => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn-ghost" onClick={handleBulkAddToList} disabled={selectedIds.size === 0 || !bulkListId || bulkBusy}>
+                    Add to list
+                  </button>
+                </>
+              )}
               <div style={{ flex: 1 }} />
               <button type="button" className="btn-danger" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkBusy}>
                 Delete selected

@@ -15,11 +15,15 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
   const [rows, setRows] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [skipped, setSkipped] = useState(0);
-  // Rows that look like something already in the signed-in user's own
-  // collection — same title-matching rule as the single-item add form's
-  // "You might already have this" warning (lib/duplicateCheck.js), just
-  // run across every parsed row instead of one title as you type. Each
-  // entry is { index, title, matchTitle } — index into `rows`.
+  // Rows that look like a duplicate — either of something already in the
+  // signed-in user's own collection, or of an earlier row in this same
+  // file (same title-matching rule either way — lib/duplicateCheck.js,
+  // same as the single-item add form's "You might already have this").
+  // A file listing the same item twice (a copy-paste mistake, a
+  // re-exported file merged with an older one) used to import both rows
+  // with no heads-up at all, since the check only ever compared against
+  // the existing collection. Each entry is { index, title, reason } —
+  // index into `rows`.
   const [duplicateRows, setDuplicateRows] = useState([]);
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [parsing, setParsing] = useState(false);
@@ -50,6 +54,11 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
       skipEmptyLines: true,
       complete: (results) => {
         const validRows = [];
+        // Real spreadsheet row number for each entry in validRows (header
+        // is row 1, so raw index 0 is row 2) — validRows itself loses that
+        // mapping once invalid rows get filtered out, so it's tracked
+        // alongside rather than re-derived from validRows' own index.
+        const validRowNumbers = [];
         const allWarnings = [];
         let skippedCount = 0;
         (results.data || []).forEach((raw, i) => {
@@ -63,11 +72,27 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
             allWarnings.push(`Row ${i + 2} (${data.title}): ${rowWarnings.join(', ')}`);
           }
           validRows.push(data);
+          validRowNumbers.push(i + 2);
         });
+        // Checked in two passes: first against the existing collection
+        // (same as before), then — only for rows that didn't already
+        // match there — against earlier rows in this same file. Only
+        // flagging the second-and-later occurrence of a repeated item
+        // (never the first) means the default "skip flagged rows" keeps
+        // exactly one copy instead of skipping every copy of it.
         const dupRows = [];
+        const priorRows = [];
         validRows.forEach((data, i) => {
-          const matches = findPossibleDuplicates(data.title, data.item_type, existingItems);
-          if (matches.length) dupRows.push({ index: i, title: data.title, matchTitle: matches[0].title });
+          const collectionMatches = findPossibleDuplicates(data.title, data.item_type, existingItems);
+          if (collectionMatches.length) {
+            dupRows.push({ index: i, title: data.title, reason: `you already have "${collectionMatches[0].title}"` });
+          } else {
+            const fileMatches = findPossibleDuplicates(data.title, data.item_type, priorRows);
+            if (fileMatches.length) {
+              dupRows.push({ index: i, title: data.title, reason: `duplicate of row ${fileMatches[0].rowNumber} in this file` });
+            }
+          }
+          priorRows.push({ id: i, item_type: data.item_type, title: data.title, rowNumber: validRowNumbers[i] });
         });
         setRows(validRows);
         setWarnings(allWarnings);
@@ -160,9 +185,12 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
             )}
             {duplicateRows.length > 0 && (
               // Same "you might already have this" title-matching rule the
-              // single-item Add form uses, just run across every parsed
-              // row — a CSV that overlaps with what's already logged
-              // otherwise creates silent duplicate rows with no heads-up.
+              // single-item Add form uses, run two ways: against the
+              // existing collection (a spreadsheet overlapping what's
+              // already logged), and against earlier rows in this same
+              // file (the file itself listing something twice) — either
+              // way, without this the row(s) would otherwise import as
+              // silent duplicates with no heads-up.
               <div style={{ marginTop: 8 }}>
                 <label className="sub" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <input
@@ -170,15 +198,14 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
                     checked={skipDuplicates}
                     onChange={(e) => setSkipDuplicates(e.target.checked)}
                   />
-                  Skip {duplicateRows.length} row{duplicateRows.length === 1 ? '' : 's'} that look
-                  {duplicateRows.length === 1 ? 's' : ''} like something you already have (recommended)
+                  Skip {duplicateRows.length} likely duplicate row{duplicateRows.length === 1 ? '' : 's'} (recommended)
                 </label>
                 <details style={{ marginTop: 6 }}>
                   <summary className="sub" style={{ cursor: 'pointer' }}>See which ones</summary>
                   <div style={{ maxHeight: 140, overflowY: 'auto', marginTop: 6 }}>
                     {duplicateRows.map((d) => (
                       <div key={d.index} className="sub" style={{ margin: '2px 0' }}>
-                        {d.title} — you already have &ldquo;{d.matchTitle}&rdquo;
+                        {d.title} — {d.reason}
                       </div>
                     ))}
                   </div>

@@ -2,7 +2,7 @@
 
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
+import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
 import { openBestListingTab } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 import { getStatRows } from './GameCard';
@@ -164,8 +164,8 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
                 {series.loading
                   ? 'Loading…'
                   : series.data
-                    ? (game.item_type === 'trading_card' ? 'Hide master set' : 'Hide series')
-                    : (game.item_type === 'trading_card' ? 'See master set' : 'See full series')}
+                    ? (isMasterSetType(game.item_type) ? 'Hide master set' : 'Hide series')
+                    : (isMasterSetType(game.item_type) ? 'See master set' : 'See full series')}
               </button>
             )}
             <button type="button" className="btn-primary" onClick={() => onEdit(game)}>

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
+import { seriesQueryValueFor, isMasterSetType, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
 import { openBestListingTab } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 
@@ -55,7 +55,7 @@ export default function SeriesModal({ item, items, ownerLabel, isOwnProfile, onC
             Close
           </button>
         </div>
-        <div className="sub">{item.item_type === 'trading_card' ? 'Master set completion' : 'Series completion'}</div>
+        <div className="sub">{isMasterSetType(item.item_type) ? 'Master set completion' : 'Series completion'}</div>
         {series.loading && <div className="sub">Looking up the series…</div>}
         {series.error && <div className="sub">{series.error}</div>}
         {series.data && (

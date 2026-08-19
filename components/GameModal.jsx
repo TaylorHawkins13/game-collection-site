@@ -15,7 +15,7 @@ import { searchConsoles } from '@/lib/consoleList';
 import { removeItemPhotos } from '@/lib/itemPhotoCleanup';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
-import { seriesSupported, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
+import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
 import SeriesGrid from './SeriesGrid';
 
 // Kept in sync with the <option> values in the Type <select> further down.
@@ -811,8 +811,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               {series.loading
                 ? 'Loading…'
                 : series.data
-                  ? (form.item_type === 'trading_card' ? 'Hide master set' : 'Hide series')
-                  : (form.item_type === 'trading_card' ? 'See master set' : 'See full series')}
+                  ? (isMasterSetType(form.item_type) ? 'Hide master set' : 'Hide series')
+                  : (isMasterSetType(form.item_type) ? 'See master set' : 'See full series')}
             </button>
           )}
         </div>
