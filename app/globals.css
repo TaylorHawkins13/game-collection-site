@@ -228,15 +228,103 @@ textarea {
   display: none;
 }
 
-/* Mobile-only drawer scaffolding for the dashboard's Play Next /
-   Recommended / Value chart panels — see the 640px media query below
-   for the actual slide-in behavior. Defined here (outside the media
-   query) so desktop never renders them, full stop, regardless of
-   viewport-resize edge cases. */
-.dash-tools-trigger,
-.dash-tools-overlay,
+/* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
+   Next/Recommended/value-chart/Browse-by-system insights all live here
+   now instead of four separate toggles and three panels stacked above
+   the grid by default (see ROADMAP.md/CHANGELOG.md). This used to be
+   mobile-only drawer scaffolding (desktop rendered everything inline
+   instead); it now runs at every viewport width, so these rules moved
+   out of the 640px media query down below rather than staying scoped to
+   it. Off-screen via transform rather than display:none so it can
+   slide, same pattern the mobile nav drawer already used. */
+.dash-tools-overlay.open {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 140;
+}
+.dash-tools {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(90vw, 380px);
+  height: 100dvh;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.3);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 150;
+  overflow-y: auto;
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+}
+.dash-tools.open {
+  transform: translateX(0);
+}
 .dash-tools-header {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dash-tools-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+/* Tighter padding for panels specifically inside the 380px-wide drawer —
+   doesn't touch .form-card/.playnext-panel/.recommend-panel anywhere
+   else they're used (login form, etc.). */
+.dash-tools .form-card,
+.dash-tools .playnext-panel,
+.dash-tools .recommend-panel {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.dash-tools-section {
+  margin-bottom: 22px;
+}
+.dash-tools-section:last-child {
+  margin-bottom: 0;
+}
+.dash-tools-section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* Profile settings' tab strip (Profile/Notifications/Security/Data &
+   danger zone) — see ROADMAP.md/CHANGELOG.md, replaces what used to be
+   one continuous scroll with no subheadings. */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: 4px 0 20px;
+  overflow-x: auto;
+}
+.settings-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 4px 10px;
+  margin-right: 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-tab:hover {
+  color: var(--text);
+}
+.settings-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .notif-wrap {
@@ -3283,64 +3371,10 @@ button.badge.tag:hover {
     font-size: 10.5px;
   }
 
-  /* Play Next / Recommended / Value chart used to stack inline right
-     above the collection — three full panels of scrolling before you
-     ever reached your actual items. They now live in a slide-in "Tools"
-     drawer instead, opened by the button below; the grid is the first
-     thing you see under the stats bar. Off-screen via transform (not
-     display:none) so it can slide, same pattern as the nav drawer. */
-  .dash-tools-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    margin-bottom: 16px;
-  }
-  .dash-tools-overlay.open {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 140;
-  }
-  .dash-tools {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: min(86vw, 380px);
-    height: 100dvh;
-    background: var(--bg);
-    border-left: 1px solid var(--border);
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.3);
-    transform: translateX(100%);
-    transition: transform 0.25s ease;
-    z-index: 150;
-    overflow-y: auto;
-    padding: calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
-  }
-  .dash-tools.open {
-    transform: translateX(0);
-  }
-  .dash-tools-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-  .dash-tools-header h3 {
-    margin: 0;
-    font-size: 15px;
-  }
-  /* Tighter padding for the three panels specifically inside the
-     380px-wide drawer — doesn't touch .form-card/.playnext-panel/
-     .recommend-panel anywhere else they're used (login form, etc.). */
-  .dash-tools .form-card,
-  .dash-tools .playnext-panel,
-  .dash-tools .recommend-panel {
-    padding: 14px 16px;
-    margin-bottom: 16px;
-  }
+  /* .dash-tools-overlay/.dash-tools and friends used to be redefined
+     here for the mobile breakpoint specifically — they're unconditional
+     now (see the base rules above), so there's nothing mobile-specific
+     left to add for the Tools panel itself at this width. */
 
   /* Taylor's call: a dense poster grid (like a phone home screen) beats
      one or two big cards per row on mobile — four across, small, cover

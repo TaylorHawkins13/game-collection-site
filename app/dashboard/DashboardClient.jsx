@@ -111,15 +111,31 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [bulkPlatform, setBulkPlatform] = useState('');
   const [bulkTag, setBulkTag] = useState('');
   const [bulkListId, setBulkListId] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // Which Profile settings tab is active — Profile/Notifications/Security/
+  // "Data & danger zone" (see ROADMAP.md/CHANGELOG.md). Only "Profile" and
+  // "Notifications" write through settingsForm/saveSettings; everything on
+  // the other two tabs already saves immediately on its own button, same
+  // as before this was split into tabs.
+  const [settingsTab, setSettingsTab] = useState('profile');
   const [showBulkScan, setShowBulkScan] = useState(false);
-  const [collapsedPanels, setCollapsedPanels] = useState({ playnext: false, recommend: false, value: false });
+  // Collapsed-by-default now (see ROADMAP.md/CHANGELOG.md) — these four
+  // used to default to expanded and stack above the toolbar on every
+  // visit; now they're accordion rows inside the Tools panel below,
+  // closed until you open one. Still remembered per-device once toggled,
+  // same as before.
+  const [collapsedPanels, setCollapsedPanels] = useState({
+    playnext: true,
+    recommend: true,
+    value: true,
+    systemtiles: true,
+  });
   const [hideDigital, setHideDigital] = useState(false);
-  // On phones, Play Next / Recommended / Value chart live in a slide-in
-  // "Tools" drawer instead of stacking inline above the collection — on
-  // desktop this state is unused since the drawer CSS is scoped to the
-  // mobile breakpoint (the panels just render inline as always).
+  // Filters, Select/Views, and the four Insights panels above all live in
+  // one slide-in "Tools" panel now (see ROADMAP.md/CHANGELOG.md) instead
+  // of four separate toggles — this used to be mobile-only drawer state
+  // (desktop rendered everything inline instead), now it's the one
+  // mechanism at every screen width.
   const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
@@ -127,17 +143,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     function onKeyDown(e) {
       if (e.key === 'Escape') setToolsOpen(false);
     }
-    const mql = window.matchMedia('(max-width: 640px)');
-    function onBreakpointChange() {
-      if (!mql.matches) setToolsOpen(false);
-    }
     document.addEventListener('keydown', onKeyDown);
-    mql.addEventListener('change', onBreakpointChange);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      mql.removeEventListener('change', onBreakpointChange);
       document.body.style.overflow = prevOverflow;
     };
   }, [toolsOpen]);
@@ -187,6 +197,20 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     if (searchParams.get('settings') === '1') {
       setShowSettings(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Arriving from a price-drop notification (?item=<id>) opens straight to
+  // that item's detail view instead of leaving you to find it yourself —
+  // every other notification type already deep-links somewhere specific
+  // (see lib/notificationTypes.js, ROADMAP.md/CHANGELOG.md); this used to
+  // just send you to a bare /dashboard. Silently does nothing if the item
+  // was deleted/sold off the wishlist since the notification fired.
+  useEffect(() => {
+    const itemId = searchParams.get('item');
+    if (!itemId) return;
+    const match = games.find((g) => g.id === itemId);
+    if (match) setDetailGame(match);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -402,7 +426,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // "Comics worth price-checking" doesn't mean re-picking the same
   // dropdowns every time.
   const [savedViews, setSavedViews] = useState([]);
-  const [showViews, setShowViews] = useState(false);
   const [newViewName, setNewViewName] = useState('');
 
   useEffect(() => {
@@ -448,7 +471,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFPlay(f.fPlay || '');
     setFTrophyPct(f.fTrophyPct || '');
     setSortBy(f.sortBy || 'titleAsc');
-    setShowViews(false);
   }
 
   function deleteView(id) {
@@ -1351,293 +1373,335 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       {showSettings && (
         <div className="form-card" style={{ margin: '0 0 24px', maxWidth: 'none' }}>
           <h2 style={{ marginTop: 0, fontSize: 16 }}>Profile settings</h2>
-          <div className="row2">
-            <div className="field">
-              <label htmlFor="dash-settings-display-name">Display name</label>
-              <input
-                id="dash-settings-display-name"
-                type="text"
-                value={settingsForm.display_name}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, display_name: e.target.value }))}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="dash-settings-currency">Currency</label>
-              <select
-                id="dash-settings-currency"
-                value={settingsForm.currency}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, currency: e.target.value }))}
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
 
-          <div className="field">
-            <label>Avatar</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div className="avatar" style={{ width: 56, height: 56, fontSize: 20 }}>
-                {settingsForm.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={settingsForm.avatar_url} alt="Avatar preview" />
-                ) : (
-                  (settingsForm.display_name || profile?.username || '?').slice(0, 1).toUpperCase()
-                )}
-              </div>
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarFile}
-                  disabled={avatarUploading}
-                  id="avatarFile"
-                  style={{ display: 'none' }}
-                />
-                <label htmlFor="avatarFile" className="btn-ghost" style={{ display: 'inline-block', cursor: 'pointer' }}>
-                  {avatarUploading ? 'Uploading…' : 'Upload image'}
-                </label>
-                {settingsForm.avatar_url && (
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    style={{ marginLeft: 8 }}
-                    onClick={handleRemoveAvatar}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </div>
-            {avatarError && <div className="error-text">{avatarError}</div>}
-          </div>
-
-          <div className="field">
-            <label htmlFor="dash-settings-bio">Bio</label>
-            <textarea
-              id="dash-settings-bio"
-              value={settingsForm.bio}
-              onChange={(e) => setSettingsForm((f) => ({ ...f, bio: e.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label>
-              <input
-                type="checkbox"
-                checked={settingsForm.is_public}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, is_public: e.target.checked }))}
-                style={{ width: 'auto', marginRight: 8 }}
-              />
-              Make my profile and collection public
-            </label>
-          </div>
-          <div className="field">
-            <label>
-              <input
-                type="checkbox"
-                checked={settingsForm.wishlist_public}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, wishlist_public: e.target.checked }))}
-                style={{ width: 'auto', marginRight: 8 }}
-              />
-              Share my gift list even when my profile is private
-            </label>
-            <p className="sub" style={{ margin: '4px 0 0' }}>
-              Only matters if the profile visibility toggle above is off — a public profile already shows your
-              gift list along with everything else. With this on, the gift list link (from "More actions" on
-              your profile) still works for anyone you send it to, while the rest of your collection stays private.
-            </p>
-          </div>
-          <div className="field">
-            <label>
-              <input
-                type="checkbox"
-                checked={settingsForm.newsletter_opt_in}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, newsletter_opt_in: e.target.checked }))}
-                style={{ width: 'auto', marginRight: 8 }}
-              />
-              Email me when something new ships
-            </label>
-            <p className="sub" style={{ margin: '4px 0 0' }}>
-              On by default for new accounts, off any time you want. Occasional, manually sent — no
-              automated marketing emails.
-            </p>
-          </div>
-
-          <div className="field">
-            <label>Notifications</label>
-            <p className="sub" style={{ margin: '0 0 6px' }}>
-              What shows up in the bell (top right). Muting a type here doesn&apos;t affect anyone else — it only
-              changes what you see.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {NOTIFICATION_TYPES.map((t) => (
-                <label key={t.key} style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={!settingsForm.muted_notification_types.includes(t.key)}
-                    onChange={(e) => toggleNotificationType(t.key, e.target.checked)}
-                    style={{ width: 'auto', marginRight: 8 }}
-                  />
-                  {t.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Passkeys</label>
-            <PasskeyManager />
-          </div>
-
-          <div className="field">
-            <label>Connected accounts</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <span className="sub" style={{ margin: 0 }}>
-                Steam: {steamId ? `Connected (SteamID ${steamId})` : 'Not connected'}
-              </span>
-              {steamId ? (
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={handleDisconnectSteam}
-                  disabled={steamDisconnecting}
-                >
-                  {steamDisconnecting ? 'Disconnecting…' : 'Disconnect'}
-                </button>
-              ) : (
-                <a href="/api/steam-login" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block' }}>
-                  Log in with Steam
-                </a>
-              )}
-            </div>
-            <p className="sub" style={{ marginTop: 6 }}>
-              Connecting lets you import your Steam library as owned/digital games. Your Steam profile's
-              "Game details" privacy setting needs to be Public for the import to see your games.
-            </p>
-          </div>
-
-          <div className="field">
-            <label>Collection tools</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
-                Import CSV
-              </button>
-              <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
-                Export CSV
-              </button>
-              <button className="btn-ghost" onClick={handleDownloadData} type="button">
-                Download my data
-              </button>
-              {steamId && syncingAchievements && (
-                <>
-                  {/* role="status"/aria-live so screen readers hear each progress
-                      update as achievements sync, not just whatever the count
-                      happened to be on the last manual re-navigation — same
-                      reasoning as ImportCsvModal's progress readout. */}
-                  <span className="sub" style={{ margin: 0 }} role="status" aria-live="polite">
-                    Syncing achievements… {syncProgress.done}/{syncProgress.total}
-                  </span>
-                  <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
-                    Stop
-                  </button>
-                </>
-              )}
-              {steamId && !syncingAchievements && (
-                <ActionMenu label="More collection tools">
-                  <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
-                    Import from Steam
-                  </button>
-                  <button
-                    className="btn-ghost"
-                    onClick={handleSyncAchievements}
-                    type="button"
-                    disabled={!games.some((g) => g.steam_appid != null)}
-                  >
-                    Sync achievements from Steam
-                  </button>
-                </ActionMenu>
-              )}
-            </div>
-          </div>
-
-          {settingsMsg && (
-            <div className={settingsMsg.startsWith('Failed') ? 'error-text' : 'success-text'}>{settingsMsg}</div>
-          )}
-          <button className="btn-primary" onClick={saveSettings} disabled={settingsSaving} type="button">
-            {settingsSaving ? 'Saving…' : 'Save settings'}
-          </button>
-
-          <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-            <label>Account security</label>
-            <p className="sub" style={{ marginTop: 0 }}>
-              Signed into Shelf Life somewhere you don&apos;t recognize, or just used a public/shared computer once?
-              This signs every other browser and device out, leaving this one untouched — no password change needed.
-            </p>
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={handleSignOutOthers}
-              disabled={signingOutOthers}
-            >
-              {signingOutOthers ? 'Signing out…' : 'Sign out of all other devices'}
+          {/* Used to be one continuous scroll of roughly ten unrelated
+              concerns with no subheadings at all — see ROADMAP.md/
+              CHANGELOG.md. Split into tabs instead; nothing below moved
+              or lost any capability, "Profile" and "Notifications" still
+              share the one settingsForm/saveSettings flow (Save settings
+              only shows on those two), everything on Security and Data &
+              danger zone already saved/acted immediately on its own
+              button same as before. */}
+          <div className="settings-tabs">
+            <button type="button" className={`settings-tab${settingsTab === 'profile' ? ' active' : ''}`} onClick={() => setSettingsTab('profile')}>
+              Profile
+            </button>
+            <button type="button" className={`settings-tab${settingsTab === 'notifications' ? ' active' : ''}`} onClick={() => setSettingsTab('notifications')}>
+              Notifications
+            </button>
+            <button type="button" className={`settings-tab${settingsTab === 'security' ? ' active' : ''}`} onClick={() => setSettingsTab('security')}>
+              Security
+            </button>
+            <button type="button" className={`settings-tab${settingsTab === 'data' ? ' active' : ''}`} onClick={() => setSettingsTab('data')}>
+              Data &amp; danger zone
             </button>
           </div>
 
-          <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-            <label>Danger zone</label>
-            {!deleteAccountOpen ? (
-              <div>
-                <p className="sub" style={{ marginTop: 0 }}>
-                  Delete your account — your profile, every item in your collection, comments, follows, and
-                  trophies all go with it. You&apos;ll be signed out right away; the account itself is kept for{' '}
-                  {GRACE_PERIOD_HOURS} hours before anything is actually, permanently removed, in case you change
-                  your mind — sign back in during that window and you&apos;ll get a chance to cancel.
-                </p>
-                <button type="button" className="btn-danger" onClick={() => setDeleteAccountOpen(true)}>
-                  Delete my account
-                </button>
-              </div>
-            ) : (
-              <div>
-                <p className="sub" style={{ marginTop: 0 }}>
-                  You&apos;ll have {GRACE_PERIOD_HOURS} hours to change your mind before this is permanent. Type
-                  your username (<strong>{profile?.username}</strong>) to confirm.
-                </p>
-                <input
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder={profile?.username || ''}
-                  style={{ maxWidth: 260 }}
-                  disabled={deletingAccount}
-                />
-                {deleteAccountError && <div className="error-text">{deleteAccountError}</div>}
-                <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="btn-danger"
-                    onClick={handleDeleteAccount}
-                    disabled={deletingAccount || deleteConfirmText.trim() !== profile?.username}
+          {settingsTab === 'profile' && (
+            <>
+              <div className="row2">
+                <div className="field">
+                  <label htmlFor="dash-settings-display-name">Display name</label>
+                  <input
+                    id="dash-settings-display-name"
+                    type="text"
+                    value={settingsForm.display_name}
+                    onChange={(e) => setSettingsForm((f) => ({ ...f, display_name: e.target.value }))}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="dash-settings-currency">Currency</label>
+                  <select
+                    id="dash-settings-currency"
+                    value={settingsForm.currency}
+                    onChange={(e) => setSettingsForm((f) => ({ ...f, currency: e.target.value }))}
                   >
-                    {deletingAccount ? 'Scheduling…' : 'Delete my account'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    onClick={() => {
-                      setDeleteAccountOpen(false);
-                      setDeleteConfirmText('');
-                      setDeleteAccountError('');
-                    }}
-                    disabled={deletingAccount}
-                  >
-                    Cancel
-                  </button>
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
-          </div>
+
+              <div className="field">
+                <label>Avatar</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="avatar" style={{ width: 56, height: 56, fontSize: 20 }}>
+                    {settingsForm.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={settingsForm.avatar_url} alt="Avatar preview" />
+                    ) : (
+                      (settingsForm.display_name || profile?.username || '?').slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarFile}
+                      disabled={avatarUploading}
+                      id="avatarFile"
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="avatarFile" className="btn-ghost" style={{ display: 'inline-block', cursor: 'pointer' }}>
+                      {avatarUploading ? 'Uploading…' : 'Upload image'}
+                    </label>
+                    {settingsForm.avatar_url && (
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        style={{ marginLeft: 8 }}
+                        onClick={handleRemoveAvatar}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {avatarError && <div className="error-text">{avatarError}</div>}
+              </div>
+
+              <div className="field">
+                <label htmlFor="dash-settings-bio">Bio</label>
+                <textarea
+                  id="dash-settings-bio"
+                  value={settingsForm.bio}
+                  onChange={(e) => setSettingsForm((f) => ({ ...f, bio: e.target.value }))}
+                />
+              </div>
+              <div className="field">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settingsForm.is_public}
+                    onChange={(e) => setSettingsForm((f) => ({ ...f, is_public: e.target.checked }))}
+                    style={{ width: 'auto', marginRight: 8 }}
+                  />
+                  Make my profile and collection public
+                </label>
+              </div>
+              <div className="field">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settingsForm.wishlist_public}
+                    onChange={(e) => setSettingsForm((f) => ({ ...f, wishlist_public: e.target.checked }))}
+                    style={{ width: 'auto', marginRight: 8 }}
+                  />
+                  Share my gift list even when my profile is private
+                </label>
+                <p className="sub" style={{ margin: '4px 0 0' }}>
+                  Only matters if the profile visibility toggle above is off — a public profile already shows your
+                  gift list along with everything else. With this on, the gift list link (from "More actions" on
+                  your profile) still works for anyone you send it to, while the rest of your collection stays private.
+                </p>
+              </div>
+              <div className="field">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settingsForm.newsletter_opt_in}
+                    onChange={(e) => setSettingsForm((f) => ({ ...f, newsletter_opt_in: e.target.checked }))}
+                    style={{ width: 'auto', marginRight: 8 }}
+                  />
+                  Email me when something new ships
+                </label>
+                <p className="sub" style={{ margin: '4px 0 0' }}>
+                  On by default for new accounts, off any time you want. Occasional, manually sent — no
+                  automated marketing emails.
+                </p>
+              </div>
+            </>
+          )}
+
+          {settingsTab === 'notifications' && (
+            <div className="field">
+              <label>Notifications</label>
+              <p className="sub" style={{ margin: '0 0 6px' }}>
+                What shows up in the bell (top right). Muting a type here doesn&apos;t affect anyone else — it only
+                changes what you see.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {NOTIFICATION_TYPES.map((t) => (
+                  <label key={t.key} style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={!settingsForm.muted_notification_types.includes(t.key)}
+                      onChange={(e) => toggleNotificationType(t.key, e.target.checked)}
+                      style={{ width: 'auto', marginRight: 8 }}
+                    />
+                    {t.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(settingsTab === 'profile' || settingsTab === 'notifications') && (
+            <>
+              {settingsMsg && (
+                <div className={settingsMsg.startsWith('Failed') ? 'error-text' : 'success-text'}>{settingsMsg}</div>
+              )}
+              <button className="btn-primary" onClick={saveSettings} disabled={settingsSaving} type="button">
+                {settingsSaving ? 'Saving…' : 'Save settings'}
+              </button>
+            </>
+          )}
+
+          {settingsTab === 'security' && (
+            <>
+              <div className="field">
+                <label>Passkeys</label>
+                <PasskeyManager />
+              </div>
+
+              <div className="field">
+                <label>Connected accounts</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span className="sub" style={{ margin: 0 }}>
+                    Steam: {steamId ? `Connected (SteamID ${steamId})` : 'Not connected'}
+                  </span>
+                  {steamId ? (
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={handleDisconnectSteam}
+                      disabled={steamDisconnecting}
+                    >
+                      {steamDisconnecting ? 'Disconnecting…' : 'Disconnect'}
+                    </button>
+                  ) : (
+                    <a href="/api/steam-login" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                      Log in with Steam
+                    </a>
+                  )}
+                </div>
+                <p className="sub" style={{ marginTop: 6 }}>
+                  Connecting lets you import your Steam library as owned/digital games. Your Steam profile's
+                  "Game details" privacy setting needs to be Public for the import to see your games.
+                </p>
+              </div>
+
+              <div className="field">
+                <label>Account security</label>
+                <p className="sub" style={{ marginTop: 0 }}>
+                  Signed into Shelf Life somewhere you don&apos;t recognize, or just used a public/shared computer once?
+                  This signs every other browser and device out, leaving this one untouched — no password change needed.
+                </p>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleSignOutOthers}
+                  disabled={signingOutOthers}
+                >
+                  {signingOutOthers ? 'Signing out…' : 'Sign out of all other devices'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {settingsTab === 'data' && (
+            <>
+              <div className="field">
+                <label>Collection tools</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
+                    Import CSV
+                  </button>
+                  <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
+                    Export CSV
+                  </button>
+                  <button className="btn-ghost" onClick={handleDownloadData} type="button">
+                    Download my data
+                  </button>
+                  {steamId && syncingAchievements && (
+                    <>
+                      {/* role="status"/aria-live so screen readers hear each progress
+                          update as achievements sync, not just whatever the count
+                          happened to be on the last manual re-navigation — same
+                          reasoning as ImportCsvModal's progress readout. */}
+                      <span className="sub" style={{ margin: 0 }} role="status" aria-live="polite">
+                        Syncing achievements… {syncProgress.done}/{syncProgress.total}
+                      </span>
+                      <button className="btn-ghost" onClick={() => { syncStopRef.current = true; }} type="button">
+                        Stop
+                      </button>
+                    </>
+                  )}
+                  {steamId && !syncingAchievements && (
+                    <ActionMenu label="More collection tools">
+                      <button className="btn-ghost" onClick={() => setShowSteamImport(true)} type="button">
+                        Import from Steam
+                      </button>
+                      <button
+                        className="btn-ghost"
+                        onClick={handleSyncAchievements}
+                        type="button"
+                        disabled={!games.some((g) => g.steam_appid != null)}
+                      >
+                        Sync achievements from Steam
+                      </button>
+                    </ActionMenu>
+                  )}
+                </div>
+              </div>
+
+              <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                <label>Danger zone</label>
+                {!deleteAccountOpen ? (
+                  <div>
+                    <p className="sub" style={{ marginTop: 0 }}>
+                      Delete your account — your profile, every item in your collection, comments, follows, and
+                      trophies all go with it. You&apos;ll be signed out right away; the account itself is kept for{' '}
+                      {GRACE_PERIOD_HOURS} hours before anything is actually, permanently removed, in case you change
+                      your mind — sign back in during that window and you&apos;ll get a chance to cancel.
+                    </p>
+                    <button type="button" className="btn-danger" onClick={() => setDeleteAccountOpen(true)}>
+                      Delete my account
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="sub" style={{ marginTop: 0 }}>
+                      You&apos;ll have {GRACE_PERIOD_HOURS} hours to change your mind before this is permanent. Type
+                      your username (<strong>{profile?.username}</strong>) to confirm.
+                    </p>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder={profile?.username || ''}
+                      style={{ maxWidth: 260 }}
+                      disabled={deletingAccount}
+                    />
+                    {deleteAccountError && <div className="error-text">{deleteAccountError}</div>}
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn-danger"
+                        onClick={handleDeleteAccount}
+                        disabled={deletingAccount || deleteConfirmText.trim() !== profile?.username}
+                      >
+                        {deletingAccount ? 'Scheduling…' : 'Delete my account'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        onClick={() => {
+                          setDeleteAccountOpen(false);
+                          setDeleteConfirmText('');
+                          setDeleteAccountError('');
+                        }}
+                        disabled={deletingAccount}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -1658,135 +1722,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             ))}
           </div>
 
-          {/* On phones, a "Tools" button opens these three as a slide-in
-              drawer instead of stacking them above the collection grid —
-              desktop is untouched (the trigger/overlay/header below are
-              display:none outside the mobile breakpoint, so this wrapper
-              has zero visual effect there). */}
-          <button type="button" className="dash-tools-trigger btn-ghost" onClick={() => setToolsOpen(true)}>
-            Tools &amp; insights
-          </button>
-          <div
-            className={`dash-tools-overlay${toolsOpen ? ' open' : ''}`}
-            onClick={() => setToolsOpen(false)}
-            aria-hidden="true"
-          />
-          <div className={`dash-tools${toolsOpen ? ' open' : ''}`}>
-            <div className="dash-tools-header">
-              <h3>Tools &amp; insights</h3>
-              <button type="button" className="btn-icon" onClick={() => setToolsOpen(false)} aria-label="Close">
-                ✕
-              </button>
-            </div>
-
-          <PlayNextWidget
-            games={games}
-            onOpen={(g) => setModalGame(g)}
-            collapsed={collapsedPanels.playnext}
-            onToggleCollapse={() => togglePanel('playnext')}
-          />
-
-          {!recsError && recommendations && recommendations.length > 0 && (
-            <div className="recommend-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <h3 className="recommend-heading" style={{ margin: 0 }}>Recommended for you</h3>
-                <CollapseToggle collapsed={collapsedPanels.recommend} onToggle={() => togglePanel('recommend')} />
-              </div>
-              {!collapsedPanels.recommend && (
-                <>
-                  <p className="sub" style={{ margin: '6px 0 12px' }}>
-                    Based on titles you've rated 4-5 stars and what similar-taste collectors rated highly. Click one to
-                    add it.
-                  </p>
-                  <div className="recommend-grid" ref={recommendGridRef}>
-                    {recommendations.map((rec) => (
-                      <RecommendationCard
-                        key={rec.title}
-                        rec={rec}
-                        onClick={() => handleAddFromRecommendation(rec)}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {!recsError && recommendations && recommendations.length === 0 && (
-            <div className="recommend-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <h3 className="recommend-heading" style={{ margin: 0 }}>Recommended for you</h3>
-                <CollapseToggle collapsed={collapsedPanels.recommend} onToggle={() => togglePanel('recommend')} />
-              </div>
-              {!collapsedPanels.recommend && (
-                <p className="sub" style={{ margin: '6px 0 0' }}>
-                  Rate a few things you own 4-5 stars, and once other public collectors have rated some of the same
-                  titles highly, recommendations based on shared taste will show up here.
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="form-card" style={{ margin: '0 0 20px', maxWidth: 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {!collapsedPanels.value && (
-                  <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
-                    {snapshotSaving ? 'Recording…' : 'Record snapshot'}
-                  </button>
-                )}
-                <CollapseToggle collapsed={collapsedPanels.value} onToggle={() => togglePanel('value')} />
-              </div>
-            </div>
-            {!collapsedPanels.value && (
-              snapshots.length >= 2 ? (
-                <>
-                  <div style={{ marginTop: 12 }}>
-                    <ValueChart snapshots={snapshots} currency={currency} />
-                  </div>
-                  <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
-                    Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
-                    {snapshots[snapshots.length - 1].item_count} owned item
-                    {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
-                    {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
-                    {' '}There's no live currency conversion — purchase prices and eBay prices (checked from whichever region matches your currency at the time) are just summed as-is, so a total mixing currencies is approximate.
-                  </div>
-                </>
-              ) : (
-                <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
-                  Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
-                  or click "Record snapshot" above to log the current estimated value (eBay price where checked,
-                  purchase price otherwise) right now.
-                </div>
-              )
-            )}
-          </div>
-          </div>
-
-          {platformCounts.length > 0 && (
-            <div className="system-tiles-wrap">
-              <div className="system-tiles-heading">
-                <h3>Browse by system</h3>
-                {fPlat && <button type="button" onClick={() => setFPlat('')}>Clear</button>}
-              </div>
-              <div className="system-tiles" ref={systemTilesRef}>
-                {platformCounts.map(({ platform, count }) => (
-                  <button
-                    key={platform}
-                    type="button"
-                    className={`system-tile${fPlat === platform ? ' active' : ''}`}
-                    style={{ '--tile-color': getPlatformColor(platform) }}
-                    onClick={() => jumpToSystem(platform)}
-                  >
-                    <span className="sys-name">{platform}</span>
-                    <span className="sys-count">{count} item{count === 1 ? '' : 's'}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="toolbar">
             <input
               type="text"
@@ -1794,27 +1729,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <button
-              className={`btn-ghost${activeFilterCount > 0 ? ' active' : ''}`}
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-            >
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-            </button>
-            <button
-              className={`btn-ghost${selectMode ? ' active' : ''}`}
-              type="button"
-              onClick={toggleSelectMode}
-            >
-              {selectMode ? 'Done selecting' : 'Select'}
-            </button>
-            <button
-              className={`btn-ghost${showViews ? ' active' : ''}`}
-              type="button"
-              onClick={() => setShowViews((v) => !v)}
-            >
-              Views{savedViews.length > 0 ? ` (${savedViews.length})` : ''}
-            </button>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="titleAsc">Title A–Z</option>
               <option value="titleDesc">Title Z–A</option>
@@ -1823,56 +1737,40 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <option value="valueDesc">Highest Value</option>
               <option value="completionDesc">Highest Trophy Completion %</option>
             </select>
+            <button
+              className={`btn-ghost${activeFilterCount > 0 || selectMode ? ' active' : ''}`}
+              type="button"
+              onClick={() => setToolsOpen(true)}
+            >
+              Tools{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </button>
           </div>
 
-          {showViews && (
-            <div className="filters-panel">
-              {savedViews.length === 0 ? (
-                <div className="sub" style={{ margin: '0 0 12px' }}>
-                  No saved views yet — set the search/filters/sort the way you want below, then save it here as a
-                  one-click shortcut for next time.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                  {savedViews.map((v) => (
-                    <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button
-                        type="button"
-                        className="btn-ghost"
-                        style={{ flex: 1, textAlign: 'left' }}
-                        onClick={() => applyView(v)}
-                      >
-                        {v.name}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-icon"
-                        onClick={() => deleteView(v.id)}
-                        aria-label={`Delete saved view "${v.name}"`}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  placeholder='Name this view, e.g. "PS5 backlog"'
-                  value={newViewName}
-                  onChange={(e) => setNewViewName(e.target.value)}
-                  style={{ flex: 1, minWidth: 180 }}
-                />
-                <button type="button" className="btn-ghost" onClick={saveCurrentView} disabled={!newViewName.trim()}>
-                  Save current search/filters/sort
-                </button>
-              </div>
+          {/* Filters, Select/Views, and the Play Next/Recommended/value-chart/
+              Browse-by-system insights used to each open a different way —
+              Filters as its own inline panel, Select and Views as separate
+              toggles, and the three insight panels stacked above the toolbar
+              expanded by default. All of it lives in this one slide-in panel
+              now instead (see ROADMAP.md/CHANGELOG.md) — this is the same
+              drawer that used to be mobile-only scaffolding, now used at
+              every screen width rather than a second, desktop-only
+              mechanism. Off-screen via transform rather than display:none so
+              it can slide, same pattern the mobile nav drawer already used. */}
+          <div
+            className={`dash-tools-overlay${toolsOpen ? ' open' : ''}`}
+            onClick={() => setToolsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className={`dash-tools${toolsOpen ? ' open' : ''}`}>
+            <div className="dash-tools-header">
+              <h3>Tools</h3>
+              <button type="button" className="btn-icon" onClick={() => setToolsOpen(false)} aria-label="Close">
+                ✕
+              </button>
             </div>
-          )}
 
-          {showFilters && (
-            <div className="filters-panel">
+            <div className="dash-tools-section">
+              <div className="dash-tools-section-label">Filters</div>
               <div className="filters-grid">
                 <select value={fType} onChange={(e) => setFType(e.target.value)}>
                   <option value="">All types</option>
@@ -1959,7 +1857,187 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 </button>
               )}
             </div>
-          )}
+
+            <div className="dash-tools-section">
+              <div className="dash-tools-section-label">Selection &amp; views</div>
+              <button
+                type="button"
+                className={`btn-ghost${selectMode ? ' active' : ''}`}
+                onClick={() => {
+                  toggleSelectMode();
+                  setToolsOpen(false);
+                }}
+                style={{ marginBottom: 12 }}
+              >
+                {selectMode ? 'Done selecting' : 'Select items'}
+              </button>
+              {savedViews.length === 0 ? (
+                <div className="sub" style={{ margin: '0 0 12px' }}>
+                  No saved views yet — set the search/filters/sort the way you want, then save it below as a
+                  one-click shortcut for next time.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                  {savedViews.map((v) => (
+                    <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        style={{ flex: 1, textAlign: 'left' }}
+                        onClick={() => {
+                          applyView(v);
+                          setToolsOpen(false);
+                        }}
+                      >
+                        {v.name}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        onClick={() => deleteView(v.id)}
+                        aria-label={`Delete saved view "${v.name}"`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder='Name this view, e.g. "PS5 backlog"'
+                  value={newViewName}
+                  onChange={(e) => setNewViewName(e.target.value)}
+                  style={{ flex: 1, minWidth: 140 }}
+                />
+                <button type="button" className="btn-ghost" onClick={saveCurrentView} disabled={!newViewName.trim()}>
+                  Save current view
+                </button>
+              </div>
+            </div>
+
+            <div className="dash-tools-section">
+              <div className="dash-tools-section-label">Insights</div>
+
+              <PlayNextWidget
+                games={games}
+                onOpen={(g) => setModalGame(g)}
+                collapsed={collapsedPanels.playnext}
+                onToggleCollapse={() => togglePanel('playnext')}
+              />
+
+              {!recsError && recommendations && recommendations.length > 0 && (
+                <div className="recommend-panel">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <h3 className="recommend-heading" style={{ margin: 0 }}>Recommended for you</h3>
+                    <CollapseToggle collapsed={collapsedPanels.recommend} onToggle={() => togglePanel('recommend')} />
+                  </div>
+                  {!collapsedPanels.recommend && (
+                    <>
+                      <p className="sub" style={{ margin: '6px 0 12px' }}>
+                        Based on titles you've rated 4-5 stars and what similar-taste collectors rated highly. Click one to
+                        add it.
+                      </p>
+                      <div className="recommend-grid" ref={recommendGridRef}>
+                        {recommendations.map((rec) => (
+                          <RecommendationCard
+                            key={rec.title}
+                            rec={rec}
+                            onClick={() => handleAddFromRecommendation(rec)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {!recsError && recommendations && recommendations.length === 0 && (
+                <div className="recommend-panel">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <h3 className="recommend-heading" style={{ margin: 0 }}>Recommended for you</h3>
+                    <CollapseToggle collapsed={collapsedPanels.recommend} onToggle={() => togglePanel('recommend')} />
+                  </div>
+                  {!collapsedPanels.recommend && (
+                    <p className="sub" style={{ margin: '6px 0 0' }}>
+                      Rate a few things you own 4-5 stars, and once other public collectors have rated some of the same
+                      titles highly, recommendations based on shared taste will show up here.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="form-card" style={{ margin: '0 0 16px', maxWidth: 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {!collapsedPanels.value && (
+                      <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
+                        {snapshotSaving ? 'Recording…' : 'Record snapshot'}
+                      </button>
+                    )}
+                    <CollapseToggle collapsed={collapsedPanels.value} onToggle={() => togglePanel('value')} />
+                  </div>
+                </div>
+                {!collapsedPanels.value && (
+                  snapshots.length >= 2 ? (
+                    <>
+                      <div style={{ marginTop: 12 }}>
+                        <ValueChart snapshots={snapshots} currency={currency} />
+                      </div>
+                      <div className="sub" style={{ marginTop: 6, marginBottom: 0 }}>
+                        Latest: {formatMoney(snapshots[snapshots.length - 1].total_value, currency)} across{' '}
+                        {snapshots[snapshots.length - 1].item_count} owned item
+                        {snapshots[snapshots.length - 1].item_count === 1 ? '' : 's'}, recorded{' '}
+                        {new Date(snapshots[snapshots.length - 1].taken_at).toLocaleDateString()}.
+                        {' '}There's no live currency conversion — purchase prices and eBay prices (checked from whichever region matches your currency at the time) are just summed as-is, so a total mixing currencies is approximate.
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sub" style={{ marginTop: 8, marginBottom: 0 }}>
+                      Not enough data yet to chart a trend. Each "Refresh all prices" run records a snapshot automatically —
+                      or click "Record snapshot" above to log the current estimated value (eBay price where checked,
+                      purchase price otherwise) right now.
+                    </div>
+                  )
+                )}
+              </div>
+
+              {platformCounts.length > 0 && (
+                <div className="form-card" style={{ margin: '0 0 4px', maxWidth: 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <h3 style={{ margin: 0, fontSize: 15 }}>Browse by system</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {fPlat && !collapsedPanels.systemtiles && (
+                        <button className="btn-ghost" type="button" onClick={() => setFPlat('')}>Clear</button>
+                      )}
+                      <CollapseToggle collapsed={collapsedPanels.systemtiles} onToggle={() => togglePanel('systemtiles')} />
+                    </div>
+                  </div>
+                  {!collapsedPanels.systemtiles && (
+                    <div className="system-tiles" ref={systemTilesRef} style={{ marginTop: 12 }}>
+                      {platformCounts.map(({ platform, count }) => (
+                        <button
+                          key={platform}
+                          type="button"
+                          className={`system-tile${fPlat === platform ? ' active' : ''}`}
+                          style={{ '--tile-color': getPlatformColor(platform) }}
+                          onClick={() => {
+                            jumpToSystem(platform);
+                            setToolsOpen(false);
+                          }}
+                        >
+                          <span className="sys-name">{platform}</span>
+                          <span className="sys-count">{count} item{count === 1 ? '' : 's'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
           {selectMode && (
             <div className="bulk-bar">

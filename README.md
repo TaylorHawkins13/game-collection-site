@@ -151,6 +151,8 @@ If a cron job actually fails (a query error, a fetch failure, missing config), i
 - **Old notification rows now get cleaned up automatically**: notifications older than 180 days (read or not — a muted type's rows never get marked read at all) are purged daily as part of the existing account-deletions cron job, instead of accumulating in the database forever with no cleanup path.
 - **Full notification history** (`/notifications`, linked from the bottom of the bell dropdown): the bell itself only ever shows your most recent 30 — this page shows everything still in the database, 50 at a time. Same per-category mute settings apply here too. No new env vars or migration.
 - **`SeriesGrid` pagination**: any "See master set"/"See full series" grid (Pokémon, comics, or the crowdsourced fallback) now shows the first 100 entries with a "Show more" button for the rest, instead of rendering a very large set all at once.
+- **Dashboard "Tools" panel**: Filters, Select, Views, and the Play Next/Recommended/value-chart/Browse-by-system panels now live behind one "Tools" button next to Search and Sort, instead of several separate toggles and panels stacked above the grid by default. No new env vars or migration.
+- **Profile Settings tabs**: the settings panel is now four tabs (Profile, Notifications, Security, Data & danger zone) instead of one long scroll — same fields, same behavior, just organized.
 
 ## Notes
 
