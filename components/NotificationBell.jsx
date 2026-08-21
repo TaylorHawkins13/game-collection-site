@@ -3,33 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
+import { describeNotification } from '@/lib/notificationTypes';
 
 const POLL_MS = 60000;
-
-function describe(n, ownUsername) {
-  const actorName = n.actor?.display_name || n.actor?.username || 'Someone';
-  if (n.type === 'follow') {
-    return { text: `${actorName} followed you.`, href: n.actor?.username ? `/u/${n.actor.username}` : null };
-  }
-  if (n.type === 'comment') {
-    return {
-      text: `${actorName} commented on your profile.`,
-      href: ownUsername ? `/u/${ownUsername}` : null,
-    };
-  }
-  if (n.type === 'trophy') {
-    const name = n.achievement?.name || 'a trophy';
-    return { text: `You earned "${name}".`, href: ownUsername ? `/u/${ownUsername}` : null };
-  }
-  if (n.type === 'reaction') {
-    return { text: `${actorName} reacted to your activity.`, href: '/feed' };
-  }
-  if (n.type === 'price_drop') {
-    const title = n.game?.title || 'A wishlist item';
-    return { text: `${title} dropped in price.`, href: '/dashboard' };
-  }
-  return { text: 'Something happened.', href: null };
-}
 
 // Bell/inbox for follows, comments, and trophies — lives in the navbar so
 // these moments don't only exist as an in-the-moment toast (which you'd
@@ -153,7 +129,7 @@ export default function NotificationBell({ userId }) {
             <div className="sub" style={{ padding: 12 }}>No notifications yet.</div>
           ) : (
             notifications.map((n) => {
-              const { text, href } = describe(n, ownUsername);
+              const { text, href } = describeNotification(n, ownUsername);
               const row = (
                 <div className="notif-row" key={n.id}>
                   <div>{text}</div>
@@ -168,6 +144,15 @@ export default function NotificationBell({ userId }) {
                 row
               );
             })
+          )}
+          {/* Always shown once loaded (even with zero rows here — a
+              muted-but-active account could have real history beyond
+              what this dropdown ever shows) — see ROADMAP.md "No way to
+              see notification history beyond the last 30 in the bell." */}
+          {loaded && (
+            <Link href="/notifications" className="notif-row-link" style={{ textAlign: 'center' }} onClick={() => setOpen(false)}>
+              See all notifications
+            </Link>
           )}
         </div>
       )}
