@@ -145,6 +145,9 @@ create table if not exists games (
   -- item is currently below it (see app/api/cron/price-drop-check)
   price_alert_threshold numeric,
   price_alert_active boolean not null default false,
+  -- optional wishlist-only 1/2/3 (High/Medium/Low) gift-list priority
+  -- (see wishlist-priority-migration.sql, components/GameModal.jsx)
+  wishlist_priority smallint check (wishlist_priority in (1, 2, 3)),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -10,6 +10,13 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// See ROADMAP.md "Gift list items have no priority/ranking" — wishlist-only
+// field (GameModal.jsx), 1/2/3 stored on the row, shown here as a badge so
+// it's visible wherever a wishlist item's card renders: the dashboard grid,
+// a profile's Collection tab, and the public gift-list page at
+// /u/[username]/wishlist, which is the one this was actually built for.
+const WISHLIST_PRIORITY_LABELS = { 1: 'High priority', 2: 'Medium priority', 3: 'Low priority' };
+
 // The type-specific "which fields matter" logic used to build a card's
 // stat-row list — pulled out so ItemDetailModal (the card's read-only
 // detail view, opened by the default click; see ROADMAP.md "Collection/
@@ -236,7 +243,7 @@ export default function GameCard({
             ))}
           </div>
         </div>
-        {(((isComic || isCard || isFunko) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
+        {(((isComic || isCard || isFunko) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.tags || []).length > 0) && (
           <div className="badge-row">
             {(isComic || isCard || isFunko) && game.is_variant && (
               <span className="badge tag">{isFunko ? 'Chase' : isCard ? 'Parallel' : 'Variant'}</span>
@@ -249,6 +256,11 @@ export default function GameCard({
             )}
             {game.showcase_order != null && (
               <span className="badge tag showcase-badge">Showcased</span>
+            )}
+            {game.ownership === 'wishlist' && game.wishlist_priority && (
+              <span className={`badge tag priority-${game.wishlist_priority}`}>
+                {WISHLIST_PRIORITY_LABELS[game.wishlist_priority]}
+              </span>
             )}
             {(game.tags || []).map((t) =>
               onTagClick ? (

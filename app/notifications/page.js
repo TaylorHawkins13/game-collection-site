@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
-import { describeNotification } from '@/lib/notificationTypes';
+import { describeNotification, NOTIFICATION_TYPES } from '@/lib/notificationTypes';
 
 const PAGE_SIZE = 50;
 
@@ -23,8 +23,18 @@ export async function generateMetadata() {
 //
 // Respects the same per-category mute (profiles.muted_notification_types,
 // lib/notificationTypes.js) NotificationBell.jsx already does — a muted
-// type stays hidden here too, not just in the dropdown. Opening this page
-// marks whatever's shown as read, same as opening the bell.
+// type stays hidden here too, not just in the dropdown, regardless of the
+// type filter below (picking "Trophies" while trophies are muted still
+// shows nothing — the mute is a standing preference, not overridden by a
+// one-off filter pick). Opening this page marks whatever's shown as read,
+// same as opening the bell.
+//
+// ?type=<key> narrows the list to one notification type — closes the gap
+// flagged in ROADMAP.md right after this page shipped: the bell dropdown
+// is short enough that one undifferentiated list is fine, but this page
+// can run to hundreds of rows across months with no way to jump straight
+// to, say, just comments. Plain links (?type=...), not a client-side
+// dropdown, consistent with "Load more" already being a plain link here.
 export default async function NotificationsPage({ searchParams }) {
   const supabase = createClient();
   const {
@@ -40,6 +50,8 @@ export default async function NotificationsPage({ searchParams }) {
 
   const muted = profile?.muted_notification_types || [];
   const before = searchParams?.before || null;
+  const typeParam = searchParams?.type || '';
+  const activeType = NOTIFICATION_TYPES.some((t) => t.key === typeParam) ? typeParam : '';
 
   let query = supabase
     .from('notifications')
@@ -48,6 +60,7 @@ export default async function NotificationsPage({ searchParams }) {
     )
     .eq('user_id', user.id);
   if (muted.length) query = query.not('type', 'in', `(${muted.join(',')})`);
+  if (activeType) query = query.eq('type', activeType);
   if (before) query = query.lt('created_at', before);
 
   const { data: rows } = await query.order('created_at', { ascending: false }).limit(PAGE_SIZE);
@@ -62,6 +75,7 @@ export default async function NotificationsPage({ searchParams }) {
   // means this was the last one, so there's nothing left to page into.
   const hasMore = notifications.length === PAGE_SIZE;
   const nextBefore = hasMore ? notifications[notifications.length - 1].created_at : null;
+  const typeQS = activeType ? `&type=${encodeURIComponent(activeType)}` : '';
 
   return (
     <main className="container">
@@ -71,9 +85,41 @@ export default async function NotificationsPage({ searchParams }) {
         automatically and won&apos;t appear here either.
       </p>
 
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        <Link href="/notifications" className={`btn-ghost${activeType ? '' : ' active'}`}>
+          All
+        </Link>
+        {NOTIFICATION_TYPES.map((t) => (
+          <Link
+            key={t.key}
+            href={`/notifications?type=${encodeURIComponent(t.key)}`}
+            className={`btn-ghost${activeType === t.key ? ' active' : ''}`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </div>
+
       {notifications.length === 0 && !before ? (
         <div className="empty-state">
-          <div>No notifications yet.</div>
+          {/* A muted type looks identical to "never got one of these" without this —
+              see ROADMAP.md: filtering to a type you've muted showed a plain "Nothing
+              here yet" with no explanation. Points straight at the Notifications tab
+              of Settings (DashboardClient.jsx's ?settingsTab= deep link) so unmuting
+              is one click away instead of hunting for it. */}
+          <div>
+            {activeType && muted.includes(activeType) ? (
+              <>
+                You&apos;ve muted {NOTIFICATION_TYPES.find((t) => t.key === activeType)?.label.toLowerCase()} — that&apos;s
+                why nothing shows up here.{' '}
+                <Link href="/dashboard?settingsTab=notifications">Manage what notifies you</Link>.
+              </>
+            ) : activeType ? (
+              'Nothing here for this type yet.'
+            ) : (
+              'No notifications yet.'
+            )}
+          </div>
         </div>
       ) : (
         <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
@@ -100,7 +146,7 @@ export default async function NotificationsPage({ searchParams }) {
 
       {hasMore && (
         <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <Link href={`/notifications?before=${encodeURIComponent(nextBefore)}`} className="btn-ghost">
+          <Link href={`/notifications?before=${encodeURIComponent(nextBefore)}${typeQS}`} className="btn-ghost">
             Load more
           </Link>
         </div>

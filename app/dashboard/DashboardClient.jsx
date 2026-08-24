@@ -129,6 +129,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     recommend: true,
     value: true,
     systemtiles: true,
+    // Expanded by default (unlike the others above) — this one only ever
+    // renders at all when there's actually something to show today (see
+    // the onThisDay useMemo below), so there's no clutter cost to leaving
+    // it open, and it's exactly the kind of small surprise that's easy to
+    // miss if it starts collapsed.
+    onthisday: false,
   });
   const [hideDigital, setHideDigital] = useState(false);
   // Filters, Select/Views, and the four Insights panels above all live in
@@ -192,10 +198,20 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   }
 
   // Arriving from the profile page's "Edit profile" link (?settings=1) opens
-  // the settings panel automatically instead of making people find the button.
+  // the settings panel automatically instead of making people find the
+  // button. ?settingsTab=<profile|notifications|security|data> additionally
+  // (or on its own — either param alone opens the panel) jumps straight to
+  // that tab instead of always landing on Profile (see ROADMAP.md/
+  // CHANGELOG.md) — for a future in-app nudge or support reply that should
+  // land somewhere more specific than the first tab.
   useEffect(() => {
-    if (searchParams.get('settings') === '1') {
+    const tab = searchParams.get('settingsTab');
+    const validTab = ['profile', 'notifications', 'security', 'data'].includes(tab) ? tab : null;
+    if (searchParams.get('settings') === '1' || validTab) {
       setShowSettings(true);
+    }
+    if (validTab) {
+      setSettingsTab(validTab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -406,6 +422,32 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setFPlat((current) => (current === platform ? '' : platform));
     document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+
+  // "On this day" (see ROADMAP.md "Collection memories") — items added on
+  // today's month/day in a previous year. Reads straight off games.created_at
+  // rather than activity_events: created_at has existed on every row since
+  // the very first schema, so this works all the way back to someone's
+  // first-ever item, not just from whenever the activity feed shipped.
+  // Purely a client-side filter over data already loaded for the grid — no
+  // new query, no migration. Grouped by year, most recent first.
+  const onThisDay = useMemo(() => {
+    const now = new Date();
+    const month = now.getMonth();
+    const day = now.getDate();
+    const thisYear = now.getFullYear();
+    const matches = games.filter((g) => {
+      if (!g.created_at) return false;
+      const d = new Date(g.created_at);
+      return d.getMonth() === month && d.getDate() === day && d.getFullYear() !== thisYear;
+    });
+    const byYear = new Map();
+    for (const g of matches) {
+      const y = new Date(g.created_at).getFullYear();
+      if (!byYear.has(y)) byYear.set(y, []);
+      byYear.get(y).push(g);
+    }
+    return [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+  }, [games]);
 
   const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fTag, fList, fPlay, fTrophyPct].filter(Boolean).length;
 
@@ -1919,6 +1961,39 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
             <div className="dash-tools-section">
               <div className="dash-tools-section-label">Insights</div>
+
+              {onThisDay.length > 0 && (
+                <div className="form-card" style={{ margin: '0 0 16px', maxWidth: 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <h3 style={{ margin: 0, fontSize: 15 }}>On this day</h3>
+                    <CollapseToggle collapsed={collapsedPanels.onthisday} onToggle={() => togglePanel('onthisday')} />
+                  </div>
+                  {!collapsedPanels.onthisday && (
+                    <div style={{ marginTop: 10 }}>
+                      {onThisDay.map(([year, items]) => (
+                        <div key={year} style={{ marginBottom: 10 }}>
+                          <div className="sub" style={{ margin: '0 0 6px' }}>
+                            {new Date().getFullYear() - year} year{new Date().getFullYear() - year === 1 ? '' : 's'} ago
+                            today
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {items.map((g) => (
+                              <button
+                                key={g.id}
+                                type="button"
+                                className="btn-ghost"
+                                onClick={() => setDetailGame(g)}
+                              >
+                                {g.title}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <PlayNextWidget
                 games={games}

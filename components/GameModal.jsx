@@ -72,6 +72,7 @@ const EMPTY = {
   trophy_platinum: false,
   trophy_completion: null,
   price_alert_threshold: '',
+  wishlist_priority: '',
 };
 
 export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
@@ -148,6 +149,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         trophy_platinum: duplicateOf ? false : source.trophy_platinum || false,
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
         price_alert_threshold: duplicateOf ? '' : source.price_alert_threshold ?? '',
+        wishlist_priority: duplicateOf ? '' : source.wishlist_priority ?? '',
       });
     } else {
       // Blank "Add Item" (no item being edited, no duplicateOf source) —
@@ -764,6 +766,14 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       price_alert_threshold:
         form.ownership === 'wishlist' && form.price_alert_threshold !== ''
           ? parseFloat(form.price_alert_threshold)
+          : null,
+      // Same rule as price_alert_threshold above — only meaningful on a
+      // wishlist row, cleared if ownership changes away from Wishlist so a
+      // stale "High priority" doesn't linger once something's actually
+      // owned (see ROADMAP.md "Gift list items have no priority/ranking").
+      wishlist_priority:
+        form.ownership === 'wishlist' && form.wishlist_priority !== ''
+          ? parseInt(form.wishlist_priority, 10)
           : null,
     });
     setSaving(false);
@@ -1417,6 +1427,22 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               />
               <p className="sub" style={{ margin: '4px 0 0' }}>
                 Checked once a day against current eBay listings for this title.
+              </p>
+            </div>
+            <div className="field">
+              <label htmlFor="gm-wishlist-priority">Gift priority</label>
+              <select
+                id="gm-wishlist-priority"
+                value={form.wishlist_priority}
+                onChange={(e) => set('wishlist_priority', e.target.value)}
+              >
+                <option value="">No priority</option>
+                <option value="1">High — get this one first</option>
+                <option value="2">Medium</option>
+                <option value="3">Low — only if there's money left over</option>
+              </select>
+              <p className="sub" style={{ margin: '4px 0 0' }}>
+                Shows on your gift list so whoever's shopping knows what to prioritize.
               </p>
             </div>
           </div>

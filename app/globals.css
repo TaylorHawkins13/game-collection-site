@@ -781,7 +781,13 @@ button:disabled {
   flex: 1;
   min-width: 180px;
 }
-.toolbar .btn-ghost.active {
+/* Was scoped to `.toolbar .btn-ghost.active` only — broadened to apply
+   anywhere, since it's a generic "active/selected" ghost-button state
+   used outside the toolbar too now: the Tools drawer's "Select items"
+   button (a latent miss from when Select moved out of .toolbar into the
+   drawer — it was relying on this same rule and silently never got the
+   accent highlight) and the /notifications page's type-filter pills. */
+.btn-ghost.active {
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1134,6 +1140,21 @@ button.badge.tag:hover {
 .badge.showcase-badge {
   background: #ffd15c22;
   color: #ffd15c;
+}
+/* Gift-list priority badge (see ROADMAP.md "Gift list items have no
+   priority/ranking") — red/amber/gray for High/Medium/Low, same intensity
+   pattern as the other .badge.tag variants above. */
+.badge.priority-1 {
+  background: #ff6b6b22;
+  color: #ff6b6b;
+}
+.badge.priority-2 {
+  background: #fdcb6e22;
+  color: #fdcb6e;
+}
+.badge.priority-3 {
+  background: #9aa1c422;
+  color: var(--text-dim);
 }
 .empty-state {
   text-align: center;

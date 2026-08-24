@@ -78,6 +78,11 @@ export default async function WishlistPage({ params }) {
         .select('*')
         .eq('user_id', profile.id)
         .eq('ownership', 'wishlist')
+        // High priority first (see ROADMAP.md "Gift list items have no
+        // priority/ranking") — unranked items (null) sort to the end
+        // rather than mixing in wherever their title happens to fall, so
+        // whoever's shopping sees "get this one first" items up top.
+        .order('wishlist_priority', { ascending: true, nullsFirst: false })
         .order('title', { ascending: true })
     : { data: [] };
 
