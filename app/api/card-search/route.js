@@ -62,9 +62,19 @@ async function fetchTcgdexBrief(query) {
     `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(query)}&pagination:itemsPerPage=48`,
     { headers: { Accept: 'application/json' } }
   );
-  if (!res.ok) return [];
+  if (!res.ok) {
+    // Same silent-empty-array problem as the GET handler's catch blocks
+    // above — a non-2xx from TCGdex itself (rate limit, their own outage)
+    // used to look identical to "this card doesn't exist" from the outside.
+    console.error('card-search: TCGdex brief request not ok', query, res.status);
+    return [];
+  }
   const data = await res.json();
-  return Array.isArray(data) ? data : [];
+  if (!Array.isArray(data)) {
+    console.error('card-search: TCGdex brief response was not an array', query, JSON.stringify(data).slice(0, 500));
+    return [];
+  }
+  return data;
 }
 
 async function fetchTcgdexDetail(id) {
@@ -177,9 +187,25 @@ export async function GET(request) {
     return NextResponse.json({ results: [] });
   }
 
+  // These used to swallow a genuine failure (a thrown network/parse error,
+  // as opposed to TCGdex/Scryfall legitimately returning zero matches)
+  // into a silent empty array — from the outside, indistinguishable from
+  // "no matches," which made a real live report ("still not working" for
+  // Poltchageist, a card confirmed to exist in TCGdex's own data — see
+  // CHANGELOG.md) impossible to diagnose from production logs alone, since
+  // nothing ever got logged. Logging here doesn't change the response
+  // (still an empty array either way, so a real outage still degrades
+  // gracefully instead of 500ing), it just makes the two cases tell
+  // themselves apart the next time this happens.
   const [pokemon, scryfall] = await Promise.all([
-    searchPokemon(q).catch(() => []),
-    searchScryfall(q).catch(() => []),
+    searchPokemon(q).catch((e) => {
+      console.error('card-search: TCGdex lookup failed', q, e);
+      return [];
+    }),
+    searchScryfall(q).catch((e) => {
+      console.error('card-search: Scryfall lookup failed', q, e);
+      return [];
+    }),
   ]);
 
   return NextResponse.json({ results: [...pokemon, ...scryfall] });
