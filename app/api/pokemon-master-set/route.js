@@ -5,6 +5,14 @@ import { getMasterSetEntries } from '@/lib/tcgdexSetLookup';
 // lib/tcgdexSetLookup.js for the full reasoning. Mirrors
 // /api/series-lookup's error-code shape (no_series_value/no_series/
 // query_failed) so lib/useSeriesLookup.js can handle both the same way.
+
+// Same backstop as app/api/card-search/route.js's maxDuration — see that
+// file's comment. tcgdexSetLookup.js's own per-fetch timeout (8s) plus its
+// MAX_DETAIL_FETCHES cap (25, run in parallel) keeps the real worst case
+// well under this; it's here so an unexpected hang fails on a timeframe
+// someone would actually wait through, not Vercel's 300-second default.
+export const maxDuration = 20;
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const value = (searchParams.get('value') || '').trim();

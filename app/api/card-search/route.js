@@ -21,6 +21,31 @@ import { NextResponse } from 'next/server';
 // There's no good free universal database for sports cards or other
 // TCGs (Yu-Gi-Oh, etc.) — those still need to be filled in manually.
 
+// None of the fetches below used to have a timeout — reported live (Aug
+// 2026) as Pokémon search "randomly" stopping finding cards. Root cause,
+// confirmed against production logs: a single slow/hanging TCGdex request
+// (its own intermittent slowness, not anything wrong on this end) had
+// nothing capping how long it could take, so the request just sat there
+// until Vercel's own platform-level timeout killed the whole function —
+// 300 seconds later, as a 504 with no useful body, which the client then
+// can't even parse as JSON (see runCardSearch in GameModal.jsx), so it
+// surfaced as a generic "Search failed" a full 5 minutes after clicking
+// Search. fetchWithTimeout below aborts any single request that takes
+// longer than TIMEOUT_MS, so one slow card fails fast (and, for the
+// per-card detail fetch specifically, falls back to the brief-only result
+// already handled below) instead of holding the entire search hostage.
+const TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchTcgdexBrief(query) {
   // Was itemsPerPage=8 — way too tight for a lot of real Pokémon names.
   // A name that's been reprinted across many sets/generations (which is
@@ -33,7 +58,7 @@ async function fetchTcgdexBrief(query) {
   // burst of parallel detail-fetches per search and a dropdown nobody
   // could usefully scroll through. 48 comfortably covers real per-card
   // reprint counts for the vast majority of Pokémon without either problem.
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(query)}&pagination:itemsPerPage=48`,
     { headers: { Accept: 'application/json' } }
   );
@@ -43,7 +68,7 @@ async function fetchTcgdexBrief(query) {
 }
 
 async function fetchTcgdexDetail(id) {
-  const res = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`, {
+  const res = await fetchWithTimeout(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`, {
     headers: { Accept: 'application/json' },
   });
   if (!res.ok) return null;
@@ -109,9 +134,10 @@ async function searchPokemon(q) {
 }
 
 async function searchScryfall(q) {
-  const res = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&order=released&dir=desc`, {
-    headers: { Accept: 'application/json', 'User-Agent': 'ShelfLifeApp/1.0 (collection tracker)' },
-  });
+  const res = await fetchWithTimeout(
+    `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&order=released&dir=desc`,
+    { headers: { Accept: 'application/json', 'User-Agent': 'ShelfLifeApp/1.0 (collection tracker)' } }
+  );
   if (res.status === 404) return []; // Scryfall's "no matches" response
   if (!res.ok) return [];
   const data = await res.json();
@@ -134,6 +160,15 @@ async function searchScryfall(q) {
     };
   });
 }
+
+// Backstop under the per-request fetchWithTimeout above, not a replacement
+// for it: even if every one of a name's detail fetches hit the full 8s
+// timeout, they run in parallel (Promise.all), so worst case is close to
+// TIMEOUT_MS twice over (brief, then details), never anywhere near this.
+// Without this, an unexpected hang would still fall back to Vercel's own
+// platform default rather than failing on a timeframe someone's actually
+// willing to wait through.
+export const maxDuration = 20;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
