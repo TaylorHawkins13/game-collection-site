@@ -11,13 +11,32 @@ import { NextResponse } from 'next/server';
 //   (100 lookups/day, 6/min) and coverage is best-effort — not every
 //   barcode will be in it.
 
+// Same fix, same reason, as app/api/card-search/route.js's fetchWithTimeout
+// (see that file's comment) — neither fetch below had a timeout, so a slow
+// response from either free service could hang this route until Vercel's
+// own 300-second platform ceiling stepped in. This route's blast radius is
+// bigger than most: every barcode scan, across every item type, goes
+// through here.
+const TIMEOUT_MS = 8000;
+export const maxDuration = 20;
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function isLikelyIsbn(code) {
   const digits = (code || '').replace(/[^0-9Xx]/g, '');
   return digits.length === 13 && (digits.startsWith('978') || digits.startsWith('979'));
 }
 
 async function lookupOpenLibrary(code) {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(code)}&format=json&jscmd=data`,
     { headers: { 'User-Agent': 'ShelfLifeApp/1.0 (collection tracker; contact via app)' } }
   );
@@ -47,7 +66,7 @@ function genreFromCategory(category) {
 }
 
 async function lookupUpcItemDb(code) {
-  const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`, {
+  const res = await fetchWithTimeout(`https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`, {
     headers: { Accept: 'application/json' },
   });
   if (!res.ok) return null;

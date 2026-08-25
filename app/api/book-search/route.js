@@ -5,6 +5,17 @@ import { NextResponse } from 'next/server';
 // just extended from ISBN lookup to a plain title search so it works
 // when you don't have the physical barcode in hand.
 
+// Same fix, same reason, as app/api/card-search/route.js's fetchWithTimeout
+// (see that file's comment) — this fetch had no timeout at all, so an
+// Open Library slow patch could hang the whole request until Vercel's own
+// 300-second platform ceiling stepped in. Applied here too even though the
+// live report that prompted this (Aug 2026 — "can't find Pokeology") turned
+// out to most likely be a real Open Library coverage gap, not a hang (see
+// the "no results" hint below) — the missing timeout was still a real,
+// separate exposure worth closing while in this code.
+const TIMEOUT_MS = 8000;
+export const maxDuration = 20;
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') || '').trim();
@@ -13,10 +24,20 @@ export async function GET(request) {
   }
 
   try {
-    const res = await fetch(
-      `https://openlibrary.org/search.json?title=${encodeURIComponent(q)}&limit=6&fields=key,title,author_name,first_publish_year,cover_i,publisher`,
-      { headers: { 'User-Agent': 'ShelfLifeApp/1.0 (collection tracker; contact via app)' } }
-    );
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    let res;
+    try {
+      res = await fetch(
+        `https://openlibrary.org/search.json?title=${encodeURIComponent(q)}&limit=6&fields=key,title,author_name,first_publish_year,cover_i,publisher`,
+        {
+          headers: { 'User-Agent': 'ShelfLifeApp/1.0 (collection tracker; contact via app)' },
+          signal: controller.signal,
+        }
+      );
+    } finally {
+      clearTimeout(timer);
+    }
     if (!res.ok) {
       return NextResponse.json({ error: 'search_failed' }, { status: 500 });
     }

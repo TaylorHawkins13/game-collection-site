@@ -444,7 +444,11 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       const data = await res.json();
       const list = data.results || [];
       setSearchResults(list);
-      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No matches found on Open Library.');
+      setSearchHint(
+        list.length
+          ? `${list.length} result(s) — click one to auto-fill`
+          : 'No matches found on Open Library — worth trying a shorter or slightly different title, since Open Library is a library-catalog database and can take a while to pick up very recently published books. Otherwise it just needs entering by hand this time.'
+      );
     } catch {
       setSearchHint('Search failed — check your connection.');
     } finally {
