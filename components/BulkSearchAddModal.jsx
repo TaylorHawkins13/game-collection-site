@@ -19,11 +19,28 @@ import { currencySymbol } from '@/lib/currency';
 // mapping per result kind mirrors GameModal.jsx's applySearchResult()
 // exactly, just building a full row object instead of calling set() on
 // live form state. Each queued row also gets its own inline ownership/
-// condition/price controls — the three fields no search source ever
-// returns, so without them every batch-added item would silently land
-// as "Owned," no condition, no price, with no chance to correct that
-// before it saves.
+// condition/completeness-or-price controls — fields no search source
+// ever returns, so without them every batch-added item would silently
+// land as "Owned," no condition, no price/completeness, with no chance
+// to correct that before it saves.
 const BATCH_SIZE = 100;
+
+// Same platform-visibility gap as GameModal's own search dropdown: an
+// IGDB game result's `platforms` array is what actually ends up in the
+// saved item's Platforms field if you click it, but with nothing shown
+// but a title and a year, there was no way to tell which platform(s) a
+// given result covers before clicking — awkward for a title re-released
+// across a decade of hardware. Capped at 3 named platforms plus a "+N
+// more" tail rather than an unbounded list, since some long-running
+// titles carry a dozen-plus platform tags.
+function resultMeta(r) {
+  if (r.platforms && r.platforms.length) {
+    const shown = r.platforms.slice(0, 3).join(', ');
+    const extra = r.platforms.length > 3 ? ` +${r.platforms.length - 3} more` : '';
+    return [r.year, shown + extra].filter(Boolean).join(' · ');
+  }
+  return r.subtitle || r.year || '—';
+}
 
 const TYPE_OPTIONS = [
   { value: 'game', label: 'Video games' },
@@ -118,14 +135,19 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
       item_type: itemType,
       title: result.name || query,
       cover: result.cover || result.thumb || '',
-      // These three are never returned by any search source — they're the
+      // None of these are ever returned by any search source — they're the
       // fields someone actually wants to set per item before it saves, not
       // auto-filled ones. Editable per row in the queue below (see
       // updateQueueField) before committing; not pulled from `result` at
-      // all here since there's nothing to pull.
+      // all here since there's nothing to pull. Completeness only actually
+      // shows in the queue UI for games/consoles (same gate GameModal's own
+      // form uses), but every row gets the key regardless — same "always
+      // present in the row shape, only conditionally rendered" pattern
+      // GameModal's own save payload already follows.
       ownership: 'owned',
       condition: '',
       price: '',
+      completeness: '',
     };
     if (result.kind === 'card') {
       return { ...base, card_set: result.set || '', card_number: result.number || '', publisher: result.publisher || '', player_name: result.player_name || '' };
@@ -319,7 +341,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                     )}
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                      <div className="sub" style={{ margin: 0 }}>{r.subtitle || r.year || '—'}</div>
+                      <div className="sub" style={{ margin: 0 }}>{resultMeta(r)}</div>
                     </div>
                   </div>
                 ))}
@@ -351,13 +373,19 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                           ×
                         </button>
                       </div>
-                      {/* Ownership/condition/price — the fields no search source
+                      {/* Ownership/condition, plus either Completeness or Price
+                          depending on item type — the fields no search source
                           fills in, so they need a place to be set (or left as
                           the "Owned"/blank defaults) before this row commits.
-                          Deliberately just these three, not every field the
-                          full Add form has — Platforms already comes back
-                          from search for games, and anything else is still
-                          reachable afterward via Edit on the saved item. */}
+                          Completeness replaces Price for games/consoles (same
+                          isGame||isConsole gate GameModal's own form uses for
+                          that field) since it's the more useful thing to set
+                          right away for those two types; Price still applies
+                          to everything else. Deliberately just these fields,
+                          not every field the full Add form has — Platforms
+                          already comes back from search for games, and
+                          anything else is still reachable afterward via Edit
+                          on the saved item. */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6, paddingLeft: item.cover ? 36 : 0 }}>
                         <select
                           aria-label={`Ownership for ${item.title}`}
@@ -386,17 +414,33 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                             <option value="poor">Poor</option>
                           </select>
                         )}
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          aria-label={`Purchase price for ${item.title}, in ${currencySymbol(currency)}`}
-                          placeholder={`Price (${currencySymbol(currency)})`}
-                          value={item.row.price}
-                          onChange={(e) => updateQueueField(item.key, 'price', e.target.value)}
-                          disabled={adding}
-                          style={{ fontSize: 12, padding: '3px 6px', width: 90 }}
-                        />
+                        {itemType === 'game' || itemType === 'console' ? (
+                          <select
+                            aria-label={`Completeness for ${item.title}`}
+                            value={item.row.completeness}
+                            onChange={(e) => updateQueueField(item.key, 'completeness', e.target.value)}
+                            disabled={adding}
+                            style={{ fontSize: 12, padding: '3px 6px' }}
+                          >
+                            <option value="">Completeness —</option>
+                            <option value="loose">{itemType === 'console' ? 'Loose (unit only)' : 'Loose (cart/disc only)'}</option>
+                            <option value="no_manual">CIB minus manual</option>
+                            <option value="cib">CIB (complete in box)</option>
+                            <option value="box_only">Box only</option>
+                          </select>
+                        ) : (
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            aria-label={`Purchase price for ${item.title}, in ${currencySymbol(currency)}`}
+                            placeholder={`Price (${currencySymbol(currency)})`}
+                            value={item.row.price}
+                            onChange={(e) => updateQueueField(item.key, 'price', e.target.value)}
+                            disabled={adding}
+                            style={{ fontSize: 12, padding: '3px 6px', width: 90 }}
+                          />
+                        )}
                       </div>
                     </div>
                   ))}

@@ -32,6 +32,24 @@ const KNOWN_ITEM_TYPES = [
 ];
 const LAST_ITEM_TYPE_KEY = 'gct_last_item_type';
 
+// An IGDB game result's `platforms` array is what actually ends up in the
+// saved item's Platforms field if you click it, but showing only a title
+// and a year gave no way to tell which platform(s) a given result covers
+// before clicking — awkward for a title re-released across a decade of
+// hardware. Capped at 3 named platforms plus a "+N more" tail rather than
+// an unbounded list, since some long-running titles carry a dozen-plus
+// platform tags. Same helper as BulkSearchAddModal.jsx's own copy, kept
+// duplicated rather than shared since these two files don't otherwise
+// import from each other.
+function resultMeta(r) {
+  if (r.platforms && r.platforms.length) {
+    const shown = r.platforms.slice(0, 3).join(', ');
+    const extra = r.platforms.length > 3 ? ` +${r.platforms.length - 3} more` : '';
+    return [r.year, shown + extra].filter(Boolean).join(' · ');
+  }
+  return r.subtitle || r.year || '—';
+}
+
 const EMPTY = {
   item_type: 'game',
   title: '',
@@ -906,7 +924,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                   )}
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                    <div className="sub" style={{ margin: 0 }}>{r.subtitle || r.year || '—'}</div>
+                    <div className="sub" style={{ margin: 0 }}>{resultMeta(r)}</div>
                   </div>
                 </div>
               ))}
