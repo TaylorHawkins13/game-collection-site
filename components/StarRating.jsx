@@ -13,8 +13,26 @@
 // without a separate slider.
 export default function StarRating({ value = 0, size = 16, interactive = false, onChange }) {
   const stars = [1, 2, 3, 4, 5];
+
+  // Real keyboard support beyond the per-star buttons' own default
+  // Enter/Space activation (ROADMAP.md "Rest of the Accessibility
+  // checklist"): arrow keys step the rating up/down in the same 0.5
+  // increments a click does, from anywhere focus currently sits inside
+  // the group, instead of requiring a precise click on one of the 10
+  // half-star hit targets.
+  function handleKeyDown(e) {
+    if (!interactive) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      onChange(Math.min(5, value + 0.5));
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      onChange(Math.max(0, value - 0.5));
+    }
+  }
+
   return (
-    <span className="star-rating" style={{ fontSize: size }}>
+    <span className="star-rating" style={{ fontSize: size }} onKeyDown={handleKeyDown}>
       {stars.map((n) => {
         const fillPct = Math.max(0, Math.min(1, value - (n - 1))) * 100;
         return (

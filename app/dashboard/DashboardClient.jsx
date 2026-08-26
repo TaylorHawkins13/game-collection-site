@@ -854,10 +854,31 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setGames((gs) => gs.filter((g) => g.id !== id));
     setModalGame(undefined);
     setPendingDelete({ item });
+    startPendingDeleteTimer(item);
+  }
+
+  // Pulled out of handleDelete so hover/focus can restart it (see
+  // pausePendingDeleteTimer below) — a flat, unpausable 6-second window
+  // was flagged in ROADMAP.md as too easy to miss for anyone reading the
+  // toast text or using a screen reader, not just clicking fast.
+  function startPendingDeleteTimer(item) {
+    clearTimeout(pendingDeleteTimer.current);
     pendingDeleteTimer.current = setTimeout(() => {
       commitDelete(item);
       if (isMountedRef.current) setPendingDelete(null);
     }, 6000);
+  }
+
+  // Hovering or keyboard-focusing the undo toast pauses the countdown
+  // entirely instead of it silently ticking down out of sight; moving
+  // away (or blurring) restarts a fresh full 6 seconds rather than
+  // resuming a partial one, so glancing at it never costs you the window.
+  function pausePendingDeleteTimer() {
+    clearTimeout(pendingDeleteTimer.current);
+  }
+
+  function resumePendingDeleteTimer() {
+    if (pendingDelete) startPendingDeleteTimer(pendingDelete.item);
   }
 
   function handleUndoDelete() {
@@ -1544,6 +1565,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </Link>
             <Link href="/dashboard/wrapped" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Your Wrapped
+            </Link>
+            <Link href="/dashboard/appraisal" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Collection appraisal
             </Link>
             <button className="btn-ghost" onClick={() => setShowBulkScan(true)} type="button">
               Scan multiple
@@ -2404,7 +2428,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       )}
 
       {pendingDelete && (
-        <div className="undo-toast">
+        <div
+          className="undo-toast"
+          role="status"
+          onMouseEnter={pausePendingDeleteTimer}
+          onMouseLeave={resumePendingDeleteTimer}
+          onFocus={pausePendingDeleteTimer}
+          onBlur={resumePendingDeleteTimer}
+        >
           <span>Deleted &ldquo;{pendingDelete.item.title}&rdquo;.</span>
           <button type="button" className="btn-ghost" onClick={handleUndoDelete}>
             Undo

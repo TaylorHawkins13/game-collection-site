@@ -2431,6 +2431,27 @@ button.badge.tag:hover {
   }
 }
 
+/* ---------- Reduced motion (site-wide) ---------- */
+/* ROADMAP.md "Rest of the Accessibility checklist" — Motion: closes the
+   general case, not just the home banner marquee above (which stays as
+   its own explicit rule since a bare `animation: none` reads clearer
+   there than relying on this catch-all). Covers the trophy-earned
+   popup's slide-up (`trophy-toast-in`, further down this file) and every
+   hover-lift/press `transition: transform ...` rule on cards and
+   buttons throughout — near-zero duration rather than `none` so a
+   transition-end-triggered listener (if one's ever added) still fires,
+   same reasoning as the well-known original version of this pattern. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ---------- Home discovery rows ---------- */
 /* Backloggd-home-inspired: a live wall of what other public collectors are
    adding/rating, not just people you follow. Both rows use the same
@@ -2862,6 +2883,162 @@ button.badge.tag:hover {
   font-size: 13px;
   opacity: 0.8;
   margin-top: 4px;
+}
+
+/* ---------- Collection appraisal export ---------- */
+/* ROADMAP.md "Collection appraisal / insurance-ready PDF export" — a
+   print-optimized page rather than a PDF library: the on-screen styling
+   below is a light document-preview look, and the @media print block
+   further down hides everything but the document itself so the browser's
+   own "Save as PDF" print target produces a clean, presentation-style
+   result with zero new dependencies. */
+.appraisal-doc {
+  margin: 20px 0 40px;
+  padding: 32px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.appraisal-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border);
+}
+.appraisal-doc-title {
+  font-size: 19px;
+  font-weight: 700;
+}
+.appraisal-doc-total {
+  text-align: right;
+}
+.appraisal-doc-total-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.appraisal-category {
+  margin-bottom: 24px;
+}
+.appraisal-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+.appraisal-category-header h2 {
+  font-size: 15px;
+  margin: 0;
+}
+.appraisal-category-subtotal {
+  font-weight: 700;
+  font-size: 14px;
+}
+.appraisal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.appraisal-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  padding: 4px 8px 4px 0;
+}
+.appraisal-table td {
+  padding: 6px 8px 6px 0;
+  border-top: 1px solid var(--border);
+  vertical-align: top;
+}
+.appraisal-table-value {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.appraisal-doc-footnote {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+@media print {
+  .navbar,
+  .site-footer,
+  .appraisal-no-print {
+    display: none !important;
+  }
+  body,
+  .appraisal-page {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .appraisal-doc {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .appraisal-doc-total-num {
+    color: #111 !important;
+  }
+  .appraisal-table th,
+  .appraisal-table td,
+  .appraisal-category-header,
+  .appraisal-doc-header,
+  .appraisal-doc-footnote {
+    border-color: #ccc !important;
+  }
+  .appraisal-category {
+    break-inside: avoid;
+  }
+}
+
+/* ---------- Gift list affiliate "buy it" links ---------- */
+/* ROADMAP.md "Affiliate 'buy it' links on wishlist items" — a small link
+   row under each card on the public gift list page only (see
+   app/u/[username]/wishlist/page.js). Hidden below the mobile breakpoint
+   deliberately: that grid forces a dense 4-per-row layout with no room
+   for a second line of text under the card without reintroducing the
+   same "one taller card stretches its whole grid row" bug already fixed
+   once for search-result tiles (see CHANGELOG.md) — every wishlist card
+   already links through to the full item on tap, so nothing is lost,
+   just not shown as its own row on a screen this narrow. */
+.wishlist-card-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.wishlist-buy-links {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.wishlist-buy-links a {
+  flex: 1;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  background: var(--card);
+}
+.wishlist-buy-links a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+@media (max-width: 640px) {
+  .wishlist-buy-links {
+    display: none;
+  }
 }
 
 .trophy-stats-panel {

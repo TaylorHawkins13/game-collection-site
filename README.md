@@ -102,6 +102,14 @@ The same `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` also cover the account-de
 
 If a cron job actually fails (a query error, a fetch failure, missing config), it now emails `ADMIN_EMAIL` directly rather than only logging it — Vercel's runtime log retention on the current plan is 1 hour, too short to reliably catch an overnight failure. See `lib/cronAlert.js`.
 
+## 9. Affiliate links on the gift list (optional)
+
+The public gift list page (`/u/[username]/wishlist`) shows "Buy on eBay" / "Search Amazon" links under each item — real, working search links either way, with optional affiliate tracking on top so a purchase made through one earns a small commission.
+
+1. **eBay**: sign up for eBay Partner Network at [partnernetwork.ebay.com](https://partnernetwork.ebay.com) (free), create a campaign, and copy its Campaign ID into `NEXT_PUBLIC_EBAY_EPN_CAMPAIGN_ID`.
+2. **Amazon**: sign up for Amazon Associates at [affiliate-program.amazon.com](https://affiliate-program.amazon.com) (free), and copy your associate tag (e.g. `yoursite-20`) into `NEXT_PUBLIC_AMAZON_ASSOCIATE_TAG`.
+3. Add both to `.env.local` and your Vercel project's env vars, and redeploy. Leave either blank to skip tracking for that one — the links themselves still work.
+
 ## What's included
 
 - **Accounts**: email/password signup & login (Supabase Auth), auto-creates a public profile with a chosen username. Includes a "Forgot password?" flow (`/forgot-password`, `/reset-password`) using Supabase's own reset-password email, self-service account deletion with a 48-hour grace period (a "Danger zone" section in Profile Settings, with a confirmation email so there's a real record of the request beyond the in-app banner), and an "Account security" section next to it with a "Sign out of all other devices" button — also fires automatically right after a password reset, so recovering a compromised password actually closes out whatever session had it.
@@ -162,6 +170,9 @@ If a cron job actually fails (a query error, a fetch failure, missing config), i
 - **"For sale" flag**: mark any owned item for sale with an asking price, right in the Add/Edit form — shows as a green badge on the card everywhere it renders, including your public profile. Needs `forsale-migration.sql` on existing projects.
 - **Your Wrapped** (`/dashboard/wrapped`, linked from "More actions"): a shareable, end-of-year recap card — items added, busiest month, completions, ratings, and estimated value change, built entirely from data already tracked. No new env vars or migration.
 - **Mobile fix: search-result tiles**: the Search page's collectible tiles now truncate their meta text on mobile instead of wrapping and stretching their whole grid row uneven with neighboring cards. No new env vars or migration.
+- **Collection appraisal export** (`/dashboard/appraisal`, linked from "More actions"): a print-optimized, itemized document of your owned items and their current value, grouped by type with subtotals and a grand total — use your browser's "Save as PDF" for insurance documentation. No new env vars or migration.
+- **Accessibility pass**: arrow-key support for the star rating, a screen-reader announcement for trophy-earned popups, a pausable Undo-delete countdown (hover or focus stops the clock), site-wide `prefers-reduced-motion` support, and a new `/accessibility` page (linked in the footer) documenting what's covered and what's still open. No new env vars or migration.
+- **Affiliate "buy it" links on the gift list**: "Buy on eBay" / "Search Amazon" links under each item on `/u/[username]/wishlist` — real search links either way, with optional eBay Partner Network / Amazon Associates tracking on top. See step 9 for setup.
 
 ## Notes
 
