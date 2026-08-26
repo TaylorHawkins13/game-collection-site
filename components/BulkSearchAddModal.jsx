@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabaseClient';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
 import { currencySymbol } from '@/lib/currency';
+import useModalA11y from '@/lib/useModalA11y';
 
 // "Quick add (search)" — a way to bulk-add items entirely in-app, with no
 // spreadsheet and no barcode scanner needed: search the same auto-fill
@@ -89,6 +90,33 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
   const [adding, setAdding] = useState(false);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState('');
+  // Set instead of closing outright whenever there's anything queued —
+  // reported live: clicking the overlay backdrop (or, previously, pressing
+  // Escape once this modal actually started handling it) closed the modal
+  // immediately with zero warning, silently discarding a whole session's
+  // worth of searched-and-queued items. Nothing queued is saved until
+  // "Add N items" actually runs, so any close path needs to ask first once
+  // there's real progress sitting in the queue.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  // The one real close path everything (the backdrop, Escape, and both
+  // Cancel/Close buttons) should route through — closes immediately when
+  // there's nothing to lose, otherwise hands off to the confirm prompt
+  // instead of calling onClose directly. Also blocks closing outright
+  // while a commit is actually in flight: the buttons already disable
+  // themselves for that, but the backdrop and Escape didn't, and closing
+  // mid-insert would tear the modal down while commitQueue's loop is
+  // still running in the background.
+  function requestClose() {
+    if (adding) return;
+    if (queue.length > 0) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
+  const modalRef = useModalA11y(requestClose);
 
   async function runSearch(e) {
     e?.preventDefault();
@@ -297,9 +325,9 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
   }
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 520 }}>
-        <h2>Quick add (search)</h2>
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && requestClose()}>
+      <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="bulk-search-add-title" style={{ maxWidth: 520 }}>
+        <h2 id="bulk-search-add-title">Quick add (search)</h2>
         <div className="sub">
           {started
             ? 'Search a title, pick the right result, repeat — then add everything at once. No spreadsheet, no barcode needed.'
@@ -319,14 +347,24 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
             <div className="modal-actions">
               <div />
               <div className="right">
-                <button className="btn-ghost" type="button" onClick={onClose}>Cancel</button>
+                <button className="btn-ghost" type="button" onClick={requestClose}>Cancel</button>
                 <button className="btn-primary" type="button" onClick={() => setStarted(true)}>Start searching</button>
               </div>
             </div>
           </>
         ) : (
           <>
-            {platformPick ? (
+            {confirmDiscard ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, textAlign: 'center', border: '1px solid var(--border)', borderRadius: 8 }}>
+                <span className="sub" style={{ margin: 0 }}>
+                  Discard {queue.length} queued item{queue.length === 1 ? '' : 's'}? Nothing queued has been saved yet.
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn-ghost" type="button" onClick={() => setConfirmDiscard(false)} autoFocus>Keep editing</button>
+                  <button className="btn-danger" type="button" onClick={onClose}>Discard</button>
+                </div>
+              </div>
+            ) : platformPick ? (
               <div style={{ padding: 10, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--card)' }}>
                 <div className="sub" style={{ margin: '0 0 8px' }}>
                   Which platform is this copy for? <strong>{platformPick.name}</strong>
@@ -370,11 +408,11 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
               </form>
             )}
 
-            {searchHint && !pendingDuplicate && !platformPick && (
+            {searchHint && !confirmDiscard && !pendingDuplicate && !platformPick && (
               <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
             )}
 
-            {!pendingDuplicate && !platformPick && results.length > 0 && (
+            {!confirmDiscard && !pendingDuplicate && !platformPick && results.length > 0 && (
               <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', background: 'var(--card)' }}>
                 {results.map((r) => (
                   <div
@@ -503,7 +541,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
             )}
 
             <div className="modal-actions">
-              <button className="btn-ghost" type="button" onClick={onClose} disabled={adding}>
+              <button className="btn-ghost" type="button" onClick={requestClose} disabled={adding}>
                 {queue.length > 0 ? 'Cancel (discards batch)' : 'Close'}
               </button>
               <button className="btn-primary" type="button" onClick={commitQueue} disabled={queue.length === 0 || adding}>
