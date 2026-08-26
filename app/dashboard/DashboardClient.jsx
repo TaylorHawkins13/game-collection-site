@@ -1499,6 +1499,23 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setTypesOnboardedAt(new Date().toISOString());
   }
 
+  // Add Item and Quick add both offer every type regardless of Collecting
+  // preferences (requested directly — narrowing what you can newly add
+  // would mean a type you haven't enabled is impossible to ever start
+  // tracking without a trip to Settings first) — see GameModal.jsx's and
+  // BulkSearchAddModal.jsx's own onTypeUsed comments, and ROADMAP.md/
+  // CHANGELOG.md. Called after a successful save/commit with whatever
+  // type was actually used; a no-op if that type's already enabled, so
+  // the common case (adding something you already collect) never writes
+  // to the database at all.
+  async function ensureTypeEnabled(type) {
+    if (!type || enabledItemTypes.includes(type)) return;
+    const next = [...enabledItemTypes, type];
+    setEnabledItemTypes(next);
+    setCollectingSelection(new Set(next));
+    await supabase.from('profiles').update({ enabled_item_types: next }).eq('id', userId);
+  }
+
   // Checked = deliver that notification type, same sense as the bell
   // itself; profiles.muted_notification_types stores the opposite (the
   // types NOT to deliver), so this flips the checkbox state into the
@@ -1662,7 +1679,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           userId={userId}
           currency={currency}
           existingItems={games}
-          enabledTypes={enabledItemTypes}
+          onTypeUsed={ensureTypeEnabled}
           onClose={() => setShowBulkSearchAdd(false)}
           onItemsAdded={handleImported}
         />
@@ -1713,8 +1730,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <div className="field">
               <label>What do you collect?</label>
               <div className="sub" style={{ marginTop: 0 }}>
-                Only checked types show up in Add Item&apos;s Type list, Quick add, and the dashboard Filters panel — nothing you&apos;ve
-                already logged is ever hidden or deleted, this only controls what you can newly pick.
+                Only checked types show up in the dashboard Filters panel and your shelf up top — nothing you&apos;ve already logged
+                is ever hidden or deleted. Add Item and Quick add always let you pick any type; adding one checks it here
+                automatically.
               </div>
               <div
                 style={{
@@ -2057,6 +2075,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           onAddItem={() => setModalGame(null)}
           onQuickAdd={() => setShowBulkSearchAdd(true)}
           onImportCsv={() => setShowImport(true)}
+          enabledTypes={enabledItemTypes}
         />
       ) : (
         <>
@@ -2582,7 +2601,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           userId={userId}
           suggestions={suggestions}
           existingItems={games}
-          enabledTypes={enabledItemTypes}
+          onTypeUsed={ensureTypeEnabled}
           onClose={() => {
             setModalGame(undefined);
             setDuplicateOf(undefined);

@@ -6,7 +6,7 @@ import TrophyCase from '@/components/TrophyCase';
 import SeriesModal from '@/components/SeriesModal';
 import ShelfIdentityHero from '@/components/ShelfIdentityHero';
 import { seriesSupported } from '@/lib/seriesLookup';
-import { TYPE_LABELS } from '@/lib/mosaicData';
+import { TYPE_LABELS, TYPE_NOUNS, dominantType } from '@/lib/mosaicData';
 import CommentSection from './CommentSection';
 
 export default function ProfileTabs({
@@ -64,6 +64,17 @@ export default function ProfileTabs({
 
   const visibleGames = typeFilter ? games.filter((g) => g.item_type === typeFilter) : games;
 
+  // Type-aware microcopy (see ROADMAP.md "Type-aware microcopy and
+  // trophy-badge flavor") — the true-empty Collection tab has no items to
+  // compute a dominant type from yet, so it falls back to whatever single
+  // type this profile has enabled via Collecting preferences, same source
+  // WelcomePanel.jsx uses for the equivalent brand-new-dashboard case.
+  // Trophy flavor text below uses the real dominant type instead, since a
+  // profile with trophies always has items to compute one from.
+  const singleType = enabledTypes && enabledTypes.length === 1 ? enabledTypes[0] : null;
+  const ownerPossessive = isOwnProfile ? 'Your' : `${ownerName}'s`;
+  const dominant = dominantType(games.filter((g) => g.ownership === 'owned'));
+
   return (
     <div>
       <div className="profile-tabs">
@@ -95,7 +106,7 @@ export default function ProfileTabs({
       {tab === 'collection' &&
         (games.length === 0 ? (
           <div className="empty-state">
-            <div>No items on this shelf yet.</div>
+            <div>{singleType ? `${ownerPossessive} ${TYPE_NOUNS[singleType]} is empty.` : 'No items on this shelf yet.'}</div>
           </div>
         ) : (
           <>
@@ -153,7 +164,7 @@ export default function ProfileTabs({
       )}
 
       {tab === 'trophies' && hasTrophies && (
-        <TrophyCase defs={achievementDefs} earnedKeys={earnedKeys} rarity={rarity} />
+        <TrophyCase defs={achievementDefs} earnedKeys={earnedKeys} rarity={rarity} dominantType={dominant} />
       )}
 
       {tab === 'comments' && (

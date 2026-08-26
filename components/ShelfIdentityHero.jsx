@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { titleColor, CATEGORY_ORDER, TYPE_LABELS, TYPE_COLORS, TYPE_ICONS } from '@/lib/mosaicData';
+import { titleColor, CATEGORY_ORDER, TYPE_LABELS, TYPE_COLORS, TYPE_MONOGRAMS } from '@/lib/mosaicData';
 import { attachHorizontalWheelScroll } from '@/lib/useHorizontalWheelScroll';
 
 const TILES_PER_ROW = 14;
@@ -12,7 +12,7 @@ const TILES_PER_ROW = 14;
 // of one generic dashboard shell for every account, this renders one
 // shelf row per collectible type someone actually owns and has enabled
 // (see the Collecting settings tab), each in that type's own accent
-// color/icon (lib/mosaicData.js's TYPE_COLORS/TYPE_ICONS) with real cover
+// color/icon (lib/mosaicData.js's TYPE_COLORS/TYPE_MONOGRAMS) with real cover
 // art from their own collection — a comic-heavy account and a vinyl-heavy
 // account should not look the same. This is the multi-type answer too
 // (see ROADMAP.md): rather than trying to blend several types' colors
@@ -56,7 +56,7 @@ export default function ShelfIdentityHero({ items, enabledTypes, onSelectType, o
           <div className="shelf-hero-row" key={type} style={{ '--tile-color': color }}>
             <button type="button" className="shelf-hero-row-header" onClick={() => onSelectType && onSelectType(type)}>
               <span className="shelf-hero-icon" aria-hidden="true">
-                {TYPE_ICONS[type]}
+                {TYPE_MONOGRAMS[type]}
               </span>
               <span className="shelf-hero-label">{TYPE_LABELS[type]}</span>
               <span className="shelf-hero-count">{typeItems.length}</span>

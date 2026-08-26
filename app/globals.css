@@ -3250,6 +3250,16 @@ button.badge.tag:hover {
   color: var(--text-dim);
   margin-top: 2px;
 }
+/* Type-aware flavor line (components/TrophyCase.jsx's TROPHY_FLAVOR) —
+   see ROADMAP.md "Type-aware microcopy and trophy-badge flavor." Italic
+   and a touch smaller than .trophy-desc so it reads as a bonus aside
+   under the trophy's real description, not a second, competing line. */
+.trophy-flavor {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
 .trophy-tier {
   font-size: 10.5px;
   font-weight: 700;
@@ -4006,8 +4016,26 @@ button.badge.tag:hover {
   font-family: inherit;
   color: var(--text);
 }
+/* Was an emoji per type until this was reworked out (requested directly:
+   "remove emojis from the site and app") — now a small colored monogram
+   chip (lib/mosaicData.js's TYPE_MONOGRAMS), same --tile-color/color-mix()
+   treatment .system-tile already established rather than a solid fill,
+   so a bright accent color (e.g. trading cards' gold) never has to carry
+   white text at a contrast ratio that wouldn't hold up. */
 .shelf-hero-icon {
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--tile-color, var(--border));
+  color: var(--tile-color, var(--text-dim));
+  background: color-mix(in srgb, var(--tile-color, var(--accent)) 12%, var(--card));
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 .shelf-hero-label {
