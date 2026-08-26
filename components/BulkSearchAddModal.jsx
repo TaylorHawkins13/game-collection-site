@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
+import { currencySymbol } from '@/lib/currency';
 
 // "Quick add (search)" — a way to bulk-add items entirely in-app, with no
 // spreadsheet and no barcode scanner needed: search the same auto-fill
@@ -17,7 +18,11 @@ import { searchConsoles } from '@/lib/consoleList';
 // with better coverage than a UPC database (see CHANGELOG.md). Field-
 // mapping per result kind mirrors GameModal.jsx's applySearchResult()
 // exactly, just building a full row object instead of calling set() on
-// live form state.
+// live form state. Each queued row also gets its own inline ownership/
+// condition/price controls — the three fields no search source ever
+// returns, so without them every batch-added item would silently land
+// as "Owned," no condition, no price, with no chance to correct that
+// before it saves.
 const BATCH_SIZE = 100;
 
 const TYPE_OPTIONS = [
@@ -47,7 +52,7 @@ const SEARCH_ENDPOINT = {
   comic: '/api/comic-search',
 };
 
-export default function BulkSearchAddModal({ userId, existingItems, onClose, onItemsAdded }) {
+export default function BulkSearchAddModal({ userId, currency, existingItems, onClose, onItemsAdded }) {
   const supabase = createClient();
   const [itemType, setItemType] = useState('game');
   const [started, setStarted] = useState(false);
@@ -113,7 +118,14 @@ export default function BulkSearchAddModal({ userId, existingItems, onClose, onI
       item_type: itemType,
       title: result.name || query,
       cover: result.cover || result.thumb || '',
+      // These three are never returned by any search source — they're the
+      // fields someone actually wants to set per item before it saves, not
+      // auto-filled ones. Editable per row in the queue below (see
+      // updateQueueField) before committing; not pulled from `result` at
+      // all here since there's nothing to pull.
       ownership: 'owned',
+      condition: '',
+      price: '',
     };
     if (result.kind === 'card') {
       return { ...base, card_set: result.set || '', card_number: result.number || '', publisher: result.publisher || '', player_name: result.player_name || '' };
@@ -188,12 +200,22 @@ export default function BulkSearchAddModal({ userId, existingItems, onClose, onI
     setQueue((q) => q.filter((item) => item.key !== key));
   }
 
+  // Lets ownership/condition/price be corrected per queued item before
+  // commit — same fields GameModal's own form exposes for every type,
+  // just inline here instead of behind a full form per item.
+  function updateQueueField(key, field, value) {
+    setQueue((q) => q.map((item) => (item.key === key ? { ...item, row: { ...item.row, [field]: value } } : item)));
+  }
+
   async function commitQueue() {
     if (queue.length === 0 || adding) return;
     setAdding(true);
     setError('');
     setProgress({ done: 0, total: queue.length });
-    const rows = queue.map((q) => q.row);
+    // Same '' → null convention GameModal's own save uses for price — an
+    // empty numeric-column string fails the insert outright rather than
+    // just meaning "no price set" the way it does for a text column.
+    const rows = queue.map((q) => ({ ...q.row, price: q.row.price === '' ? null : parseFloat(q.row.price) }));
     const inserted = [];
     let hadError = false;
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -309,24 +331,73 @@ export default function BulkSearchAddModal({ userId, existingItems, onClose, onI
                 {queue.length === 0 ? 'Nothing queued yet.' : `${queue.length} item${queue.length === 1 ? '' : 's'} ready to add`}
               </div>
               {queue.length > 0 && (
-                <div style={{ border: '1px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto' }}>
+                <div style={{ border: '1px solid var(--border)', borderRadius: 8, maxHeight: 320, overflowY: 'auto' }}>
                   {queue.map((item) => (
-                    <div key={item.key} style={{ display: 'flex', gap: 10, padding: '6px 10px', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-                      {item.cover && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.cover} alt="" style={{ width: 26, height: 34, objectFit: 'cover', borderRadius: 3 }} />
-                      )}
-                      <div style={{ flex: 1, fontSize: 13 }}>{item.title}</div>
-                      <button
-                        type="button"
-                        className="btn-ghost"
-                        aria-label={`Remove ${item.title} from the batch`}
-                        onClick={() => removeFromQueue(item.key)}
-                        disabled={adding}
-                        style={{ padding: '2px 8px' }}
-                      >
-                        ×
-                      </button>
+                    <div key={item.key} style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        {item.cover && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.cover} alt="" style={{ width: 26, height: 34, objectFit: 'cover', borderRadius: 3 }} />
+                        )}
+                        <div style={{ flex: 1, fontSize: 13 }}>{item.title}</div>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          aria-label={`Remove ${item.title} from the batch`}
+                          onClick={() => removeFromQueue(item.key)}
+                          disabled={adding}
+                          style={{ padding: '2px 8px' }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      {/* Ownership/condition/price — the fields no search source
+                          fills in, so they need a place to be set (or left as
+                          the "Owned"/blank defaults) before this row commits.
+                          Deliberately just these three, not every field the
+                          full Add form has — Platforms already comes back
+                          from search for games, and anything else is still
+                          reachable afterward via Edit on the saved item. */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6, paddingLeft: item.cover ? 36 : 0 }}>
+                        <select
+                          aria-label={`Ownership for ${item.title}`}
+                          value={item.row.ownership}
+                          onChange={(e) => updateQueueField(item.key, 'ownership', e.target.value)}
+                          disabled={adding}
+                          style={{ fontSize: 12, padding: '3px 6px' }}
+                        >
+                          <option value="owned">Owned</option>
+                          <option value="wishlist">Wishlist</option>
+                          <option value="sold">Sold</option>
+                        </select>
+                        {itemType !== 'comic' && (
+                          <select
+                            aria-label={`Condition for ${item.title}`}
+                            value={item.row.condition}
+                            onChange={(e) => updateQueueField(item.key, 'condition', e.target.value)}
+                            disabled={adding}
+                            style={{ fontSize: 12, padding: '3px 6px' }}
+                          >
+                            <option value="">Condition —</option>
+                            <option value="sealed">Sealed</option>
+                            <option value="mint">Mint</option>
+                            <option value="good">Good</option>
+                            <option value="fair">Fair</option>
+                            <option value="poor">Poor</option>
+                          </select>
+                        )}
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          aria-label={`Purchase price for ${item.title}, in ${currencySymbol(currency)}`}
+                          placeholder={`Price (${currencySymbol(currency)})`}
+                          value={item.row.price}
+                          onChange={(e) => updateQueueField(item.key, 'price', e.target.value)}
+                          disabled={adding}
+                          style={{ fontSize: 12, padding: '3px 6px', width: 90 }}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

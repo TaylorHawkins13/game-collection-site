@@ -1593,6 +1593,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       {showBulkSearchAdd && (
         <BulkSearchAddModal
           userId={userId}
+          currency={currency}
           existingItems={games}
           onClose={() => setShowBulkSearchAdd(false)}
           onItemsAdded={handleImported}
