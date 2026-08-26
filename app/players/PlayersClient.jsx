@@ -10,19 +10,40 @@ import CollectibleCard from '@/components/CollectibleCard';
 // items plus the viewer's own) into one tile per distinct title+type,
 // with a count of how many rows matched. Case-insensitive dedupe key so
 // "Zelda" and "zelda" collapse into the same result.
+// Fixed (Aug 2026 — closes the "Aggregate community rating shown per
+// item" item flagged in ROADMAP.md): the collectible detail page already
+// computed an avg rating (lib/collectibleDetail.js), but you had to click
+// into a title to see it — nothing showed a crowd rating at a glance on
+// the browse/search tile itself, the way Backloggd does. Same "only
+// rated (>0) rows count" rule buildCollectibleDetail already uses, so
+// the two don't drift into showing different numbers for the same title.
 function dedupeCollectibles(rows) {
   const byKey = new Map();
   rows.forEach((r) => {
     const key = `${r.item_type}::${r.title.trim().toLowerCase()}`;
+    const rating = Number(r.rating) || 0;
     const existing = byKey.get(key);
     if (existing) {
       existing.count += 1;
       if (!existing.cover && r.cover) existing.cover = r.cover;
+      if (rating > 0) {
+        existing.ratingSum += rating;
+        existing.ratingCount += 1;
+      }
     } else {
-      byKey.set(key, { title: r.title.trim(), item_type: r.item_type, cover: r.cover, count: 1 });
+      byKey.set(key, {
+        title: r.title.trim(),
+        item_type: r.item_type,
+        cover: r.cover,
+        count: 1,
+        ratingSum: rating > 0 ? rating : 0,
+        ratingCount: rating > 0 ? 1 : 0,
+      });
     }
   });
-  return [...byKey.values()].sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
+  return [...byKey.values()]
+    .map((c) => ({ ...c, avgRating: c.ratingCount > 0 ? c.ratingSum / c.ratingCount : null }))
+    .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
 }
 
 export default function PlayersClient() {
@@ -75,7 +96,7 @@ export default function PlayersClient() {
       // search in GameModal.jsx relies on.
       supabase
         .from('games')
-        .select('title, item_type, cover')
+        .select('title, item_type, cover, rating')
         .ilike('title', `%${q}%`)
         .limit(150),
       // Same IGDB auto-fill search GameModal's "Search" button uses when
@@ -92,7 +113,7 @@ export default function PlayersClient() {
     const knownKeys = new Set(localCollectibles.map((c) => `${c.item_type}::${c.title.toLowerCase()}`));
     const uncollected = (igdbRes?.results || [])
       .filter((g) => g.name && !knownKeys.has(`game::${g.name.trim().toLowerCase()}`))
-      .map((g) => ({ title: g.name.trim(), item_type: 'game', cover: g.thumb || g.cover || '', count: 0 }));
+      .map((g) => ({ title: g.name.trim(), item_type: 'game', cover: g.thumb || g.cover || '', count: 0, avgRating: null }));
 
     setResults(profileRows || []);
     setCollectibles([...localCollectibles, ...uncollected].slice(0, 40));

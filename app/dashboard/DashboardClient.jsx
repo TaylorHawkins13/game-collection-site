@@ -9,6 +9,7 @@ import GameCard from '@/components/GameCard';
 import ItemDetailModal from '@/components/ItemDetailModal';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
+import CollectorSuggestionCard from '@/components/CollectorSuggestionCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
@@ -135,6 +136,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [collapsedPanels, setCollapsedPanels] = useState({
     playnext: true,
     recommend: true,
+    collectors: true,
     value: true,
     systemtiles: true,
     // Expanded by default (unlike the others above) — this one only ever
@@ -307,6 +309,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [snapshotSaving, setSnapshotSaving] = useState(false);
   const [recommendations, setRecommendations] = useState(null); // null = still loading
   const [recsError, setRecsError] = useState(false);
+  const [collectors, setCollectors] = useState(null); // null = still loading
+  const [collectorsError, setCollectorsError] = useState(false);
 
   // Load the collection's value history for the "value over time" chart.
   // Owner-only data (RLS-scoped), never shown on the public profile.
@@ -332,6 +336,22 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         return;
       }
       setRecommendations(data || []);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // "Collectors you might like" — same shared-taste signal as
+  // "Recommended for you" above, turned around to suggest people instead
+  // of items (see ROADMAP.md's competitor-pass note, CHANGELOG.md). Safe
+  // to call even if recommend-collectors-migration.sql hasn't run yet,
+  // same fallback-to-error-state pattern as recommend_games.
+  useEffect(() => {
+    supabase.rpc('recommend_collectors', { p_user_id: userId, p_limit: 6 }).then(({ data, error }) => {
+      if (error) {
+        setCollectorsError(true);
+        return;
+      }
+      setCollectors(data || []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -380,8 +400,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       // ignore malformed/missing localStorage value
     }
   }, []);
+  // Collectors you might like feeds the same one-way "seen" flag as
+  // Recommended for you — both are "first appearance" moments the dot is
+  // meant to nudge toward, not two separate dots to track.
   useEffect(() => {
-    if (toolsOpen && !recsSeen && recommendations && recommendations.length > 0) {
+    const hasAnyRecs = (recommendations && recommendations.length > 0) || (collectors && collectors.length > 0);
+    if (toolsOpen && !recsSeen && hasAnyRecs) {
       setRecsSeen(true);
       try {
         localStorage.setItem('gct_recs_seen', 'true');
@@ -389,8 +413,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         // e.g. storage full/disabled — the dot just won't stay dismissed across reloads
       }
     }
-  }, [toolsOpen, recsSeen, recommendations]);
-  const showRecsIndicator = !recsSeen && recommendations && recommendations.length > 0;
+  }, [toolsOpen, recsSeen, recommendations, collectors]);
+  const showRecsIndicator =
+    !recsSeen && ((recommendations && recommendations.length > 0) || (collectors && collectors.length > 0));
 
   // Custom lists (see components/CustomListsModal.jsx, managed from the
   // public profile) previously only ever showed up on the profile page —
@@ -896,7 +921,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       return;
     }
     setGames((gs) => gs.map((g) => (targetIds.includes(g.id) ? { ...g, platforms: [bulkPlatform] } : g)));
-    announceToast(`Set platform to ${bulkPlatform} on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`, 'success');
+    const skipped = selectedIds.size - targetIds.length;
+    announceToast(
+      `Set platform to ${bulkPlatform} on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}` +
+        (skipped > 0 ? `, skipped ${skipped} without a platform field.` : '.'),
+      'success'
+    );
   }
 
   // Gift priority is wishlist-only (same check constraint as the single-
@@ -923,10 +953,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       return;
     }
     setGames((gs) => gs.map((g) => (targetIds.includes(g.id) ? { ...g, wishlist_priority: priorityValue } : g)));
+    const skipped = selectedIds.size - targetIds.length;
+    const skippedNote = skipped > 0 ? `, skipped ${skipped} not on the wishlist.` : '.';
     announceToast(
-      priorityValue === null
-        ? `Cleared gift priority on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`
-        : `Set gift priority on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`,
+      (priorityValue === null
+        ? `Cleared gift priority on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}`
+        : `Set gift priority on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}`) + skippedNote,
       'success'
     );
   }
@@ -2164,6 +2196,27 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                       Rate a few things you own 4-5 stars, and once other public collectors have rated some of the same
                       titles highly, recommendations based on shared taste will show up here.
                     </p>
+                  )}
+                </div>
+              )}
+
+              {!collectorsError && collectors && collectors.length > 0 && (
+                <div className="recommend-panel">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <h3 className="recommend-heading" style={{ margin: 0 }}>Collectors you might like</h3>
+                    <CollapseToggle collapsed={collapsedPanels.collectors} onToggle={() => togglePanel('collectors')} />
+                  </div>
+                  {!collapsedPanels.collectors && (
+                    <>
+                      <p className="sub" style={{ margin: '6px 0 12px' }}>
+                        Public collectors who rated some of the same titles 4-5 stars as you did.
+                      </p>
+                      <div className="recommend-grid">
+                        {collectors.map((c) => (
+                          <CollectorSuggestionCard key={c.user_id} collector={c} />
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}

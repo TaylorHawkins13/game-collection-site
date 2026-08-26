@@ -15,6 +15,7 @@ export default async function sitemap() {
     { url: `${SITE_URL}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${SITE_URL}/players`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/leaderboard`, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${SITE_URL}/lists`, changeFrequency: 'daily', priority: 0.6 },
     { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
     // The dedicated SEO landing pages (lib/landingPages.js) — evergreen
     // content, not something that changes often, but worth a slightly
@@ -29,6 +30,7 @@ export default async function sitemap() {
   ];
 
   let profileRoutes = [];
+  let listRoutes = [];
   try {
     const supabase = anonClient();
     const { data } = await supabase
@@ -46,5 +48,24 @@ export default async function sitemap() {
     // routes rather than failing the whole sitemap.
   }
 
-  return [...staticRoutes, ...profileRoutes];
+  // Individual public lists (public_lists view — public-lists-migration.sql)
+  // — same reasoning as indexing individual profiles above: a browsable
+  // /lists directory only pulls its weight as a competitive discovery
+  // surface (see ROADMAP.md/CHANGELOG.md) if search engines can actually
+  // find the lists themselves, not just the directory page linking to them.
+  try {
+    const supabase = anonClient();
+    const { data } = await supabase.from('public_lists').select('id, created_at').limit(200);
+    listRoutes = (data || []).map((l) => ({
+      url: `${SITE_URL}/lists/${l.id}`,
+      lastModified: l.created_at,
+      changeFrequency: 'weekly',
+      priority: 0.4,
+    }));
+  } catch {
+    // Same fallback as above — the view might not exist yet on a project
+    // that hasn't run public-lists-migration.sql, shouldn't fail the sitemap.
+  }
+
+  return [...staticRoutes, ...profileRoutes, ...listRoutes];
 }

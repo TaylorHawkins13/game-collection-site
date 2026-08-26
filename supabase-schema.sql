@@ -1131,6 +1131,92 @@ grant select on leaderboard_friends_most_valuable to anon, authenticated;
 grant select on leaderboard_friends_most_owned to anon, authenticated;
 grant select on leaderboard_friends_trending to anon, authenticated;
 
+-- ------------------------------------------------------------
+-- public_lists: powers the /lists directory (see ROADMAP.md's
+-- competitor-pass note — Backloggd and Grouvee both make "browse public
+-- lists" a real discovery surface, and Shelf Life's custom_lists already
+-- existed but were only ever visible on their owner's own profile).
+-- Non-empty public lists only, via the inner joins below — nothing
+-- useful to browse in an empty one. security_invoker = true, and the
+-- explicit p.is_public = true filter is kept even though custom_lists'
+-- own RLS already enforces it, matching every leaderboard view above
+-- (defense in depth) — this never touches a `games` row for anyone but
+-- a confirmed-public list owner, so it's safe from the wishlist-RLS
+-- carve-out ROADMAP.md flags elsewhere.
+-- ------------------------------------------------------------
+create or replace view public_lists
+  with (security_invoker = true) as
+select
+  l.id,
+  l.name,
+  l.user_id,
+  p.username,
+  p.display_name,
+  p.avatar_url,
+  l.created_at,
+  count(cli.game_id) as item_count,
+  (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1] as cover
+from custom_lists l
+join profiles p on p.id = l.user_id
+join custom_list_items cli on cli.list_id = l.id
+join games g on g.id = cli.game_id
+where p.is_public = true
+group by l.id, l.name, l.user_id, p.username, p.display_name, p.avatar_url, l.created_at
+order by count(cli.game_id) desc, l.created_at desc
+limit 200;
+
+grant select on public_lists to anon, authenticated;
+
+-- ------------------------------------------------------------
+-- recommend_collectors: "Collectors you might like" on the dashboard —
+-- the same shared-high-rating signal recommend_games already uses to
+-- recommend items, turned around to recommend people instead (see
+-- ROADMAP.md's competitor-pass note). Excludes the caller, anyone
+-- already followed, and non-public profiles. Deliberately NOT security
+-- definer, same reasoning as recommend_games — only ever sees what the
+-- calling user's own RLS already permits (their own ratings, plus
+-- anyone else's if that profile is public).
+-- ------------------------------------------------------------
+create or replace function recommend_collectors(p_user_id uuid, p_limit int default 6)
+returns table (
+  user_id uuid,
+  username text,
+  display_name text,
+  avatar_url text,
+  shared_count bigint
+)
+language sql
+stable
+set search_path = public
+as $$
+  with my_liked as (
+    select distinct lower(title) as title_key
+    from games
+    where user_id = p_user_id and rating >= 4
+  )
+  select
+    g.user_id,
+    p.username,
+    p.display_name,
+    p.avatar_url,
+    count(distinct lower(g.title)) as shared_count
+  from games g
+  join profiles p on p.id = g.user_id
+  where g.user_id <> p_user_id
+    and p.is_public = true
+    and g.rating >= 4
+    and lower(g.title) in (select title_key from my_liked)
+    and not exists (
+      select 1 from follows f
+      where f.follower_id = p_user_id and f.following_id = g.user_id
+    )
+  group by g.user_id, p.username, p.display_name, p.avatar_url
+  order by shared_count desc
+  limit greatest(p_limit, 0);
+$$;
+
+grant execute on function recommend_collectors(uuid, int) to authenticated;
+
 -- ============================================================
 -- Feedback / "contact us", newsletter opt-in, condition photos
 -- (folded into the master schema so fresh installs get them too —

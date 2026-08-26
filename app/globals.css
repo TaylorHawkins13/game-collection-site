@@ -678,6 +678,23 @@ button:disabled {
   transform: translateY(-2px);
   background: var(--card-hover);
 }
+/* "Collectors you might like" tile — same sizing/scroll-snap as .rec-card
+   above (same .recommend-grid it sits inside), but a person row rather
+   than a clickable button: the name/avatar area links to the profile,
+   with its own Follow button alongside rather than the whole card being
+   one big click target. */
+.collector-suggestion-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  width: 220px;
+  scroll-snap-align: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
 .rec-cover {
   width: 42px;
   height: 56px;

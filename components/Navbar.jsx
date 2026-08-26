@@ -100,6 +100,7 @@ export default function Navbar() {
       <div className={`nav-links${menuOpen ? ' open' : ''}`}>
         <Link href="/players" className="nav-link" onClick={() => setMenuOpen(false)}>Search</Link>
         <Link href="/leaderboard" className="nav-link" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
+        <Link href="/lists" className="nav-link" onClick={() => setMenuOpen(false)}>Lists</Link>
         <Link href="/articles" className="nav-link" onClick={() => setMenuOpen(false)}>Articles</Link>
         {!loading && profile && (
           <>
