@@ -296,6 +296,21 @@ textarea {
   font-weight: 600;
 }
 
+/* The Tools button's "there's a new recommendation" nudge — see
+   ROADMAP.md/CHANGELOG.md, closes the item flagged right after Play Next/
+   Recommended for you moved inside this same drawer and collapsed by
+   default. Plain dot rather than .notif-badge's numbered pill; there's
+   nothing to count here, just a "something's here" signal. */
+.dash-tools-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #e0524a;
+}
+
 /* Profile settings' tab strip (Profile/Notifications/Security/Data &
    danger zone) — see ROADMAP.md/CHANGELOG.md, replaces what used to be
    one continuous scroll with no subheadings. */

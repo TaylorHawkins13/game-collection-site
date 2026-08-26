@@ -155,7 +155,7 @@ If a cron job actually fails (a query error, a fetch failure, missing config), i
 - **Profile Settings tabs**: the settings panel is now four tabs (Profile, Notifications, Security, Data & danger zone) instead of one long scroll — same fields, same behavior, just organized.
 - **Notifications empty state explains a mute, and links straight to it**: filtering `/notifications` to a type you've muted now says so directly, with a link straight to the Notifications tab of Settings instead of leaving you to guess why nothing's showing up.
 - **Gift priority**: wishlist items can be marked High/Medium/Low priority, right in the Add/Edit form — shows as a badge on the card and sorts your gift list (`/u/<username>/wishlist`) so "get this one first" items land at the top. Needs `wishlist-priority-migration.sql` on existing projects.
-- **"On this day"**: a dashboard panel surfaces what you added on today's date in a previous year, when there's anything to show. No new env vars or migration.
+- **"On this day"**: a dashboard panel surfaces what you added, finished, or rated on today's date in a previous year, when there's anything to show. No new env vars or migration.
 
 ## Notes
 

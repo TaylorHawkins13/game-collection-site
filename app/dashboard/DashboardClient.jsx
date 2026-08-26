@@ -336,6 +336,62 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Backs the "On this day" panel's completed/rated entries below — see
+  // that useMemo for why this needed a real query rather than staying a
+  // pure client-side filter over `games` (closes the item flagged in
+  // ROADMAP.md). Scoped to this signed-in user's own rows only (RLS
+  // already enforces that regardless), so unlike the crowdsourced-series
+  // "fetches every row of the type" tradeoff flagged elsewhere in
+  // ROADMAP.md, this is bounded by one person's own completed/rated
+  // history, not site-wide data — a genuinely different scale.
+  const [pastEvents, setPastEvents] = useState([]);
+  useEffect(() => {
+    supabase
+      .from('activity_events')
+      .select('game_id, event_type, created_at')
+      .eq('user_id', userId)
+      .in('event_type', ['completed', 'rated'])
+      .then(({ data }) => {
+        if (data) setPastEvents(data);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Closes the "Play Next/Recommended/Browse by system are now collapsed
+  // and one level deeper" item flagged in ROADMAP.md right after those
+  // panels moved inside the Tools drawer: someone who doesn't already know
+  // "Recommended for you" exists may never open Tools to find out it's
+  // started showing something. A small dot on the Tools button the first
+  // time there's an actual recommendation nudges toward it without
+  // bringing back the old always-expanded panel. "First time" specifically
+  // (not "whenever unseen recs exist") — gct_recs_seen is a one-way flag,
+  // set the first time Tools gets opened while a recommendation is
+  // showing, same "remembered per-device" pattern collapsedPanels/
+  // hideDigital already use. Play Next and Browse by system don't get the
+  // same treatment: both are just-in-time utility widgets available to
+  // basically anyone with a backlog, not a "first appearance" moment the
+  // way a recommendation genuinely is (it starts empty and only shows up
+  // once there's enough shared-rating data).
+  const [recsSeen, setRecsSeen] = useState(true);
+  useEffect(() => {
+    try {
+      setRecsSeen(localStorage.getItem('gct_recs_seen') === 'true');
+    } catch {
+      // ignore malformed/missing localStorage value
+    }
+  }, []);
+  useEffect(() => {
+    if (toolsOpen && !recsSeen && recommendations && recommendations.length > 0) {
+      setRecsSeen(true);
+      try {
+        localStorage.setItem('gct_recs_seen', 'true');
+      } catch {
+        // e.g. storage full/disabled — the dot just won't stay dismissed across reloads
+      }
+    }
+  }, [toolsOpen, recsSeen, recommendations]);
+  const showRecsIndicator = !recsSeen && recommendations && recommendations.length > 0;
+
   // Custom lists (see components/CustomListsModal.jsx, managed from the
   // public profile) previously only ever showed up on the profile page —
   // there was no way to use one as a working filter back here on the
@@ -431,31 +487,55 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     document.querySelector('.grid, .empty-state')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  // "On this day" (see ROADMAP.md "Collection memories") — items added on
-  // today's month/day in a previous year. Reads straight off games.created_at
-  // rather than activity_events: created_at has existed on every row since
-  // the very first schema, so this works all the way back to someone's
-  // first-ever item, not just from whenever the activity feed shipped.
-  // Purely a client-side filter over data already loaded for the grid — no
-  // new query, no migration. Grouped by year, most recent first.
+  // "On this day" (see ROADMAP.md "Collection memories") — what happened
+  // on today's month/day in a previous year: an item added (reads straight
+  // off games.created_at, which has existed on every row since the very
+  // first schema, so this half works all the way back to someone's
+  // first-ever item, not just from whenever the activity feed shipped),
+  // plus anything completed or rated that day (from pastEvents above).
+  //
+  // Extended (Aug 2026 — closes the item flagged in ROADMAP.md right after
+  // this shipped add-only): completing or rating something doesn't touch
+  // games.created_at at all, so a real "you finished this a year ago
+  // today" moment was invisible before — only the original add date ever
+  // surfaced. Each entry now carries which kind of moment it was so the
+  // panel can label it, since a game can appear more than once on the
+  // same day across different kinds (added it, then later re-rated it on
+  // the exact same calendar date in a different year, say).
   const onThisDay = useMemo(() => {
     const now = new Date();
     const month = now.getMonth();
     const day = now.getDate();
     const thisYear = now.getFullYear();
-    const matches = games.filter((g) => {
-      if (!g.created_at) return false;
+    const gamesById = new Map(games.map((g) => [g.id, g]));
+
+    const entries = [];
+    for (const g of games) {
+      if (!g.created_at) continue;
       const d = new Date(g.created_at);
-      return d.getMonth() === month && d.getDate() === day && d.getFullYear() !== thisYear;
-    });
+      if (d.getMonth() === month && d.getDate() === day && d.getFullYear() !== thisYear) {
+        entries.push({ year: d.getFullYear(), game: g, kind: 'added' });
+      }
+    }
+    for (const e of pastEvents) {
+      if (!e.created_at) continue;
+      const d = new Date(e.created_at);
+      if (d.getMonth() !== month || d.getDate() !== day || d.getFullYear() === thisYear) continue;
+      const g = gamesById.get(e.game_id);
+      // A completed/rated event survives for a game that's since been
+      // deleted only if the cascade hasn't run yet — practically never,
+      // but skip rather than crash on a missing lookup either way.
+      if (!g) continue;
+      entries.push({ year: d.getFullYear(), game: g, kind: e.event_type });
+    }
+
     const byYear = new Map();
-    for (const g of matches) {
-      const y = new Date(g.created_at).getFullYear();
-      if (!byYear.has(y)) byYear.set(y, []);
-      byYear.get(y).push(g);
+    for (const entry of entries) {
+      if (!byYear.has(entry.year)) byYear.set(entry.year, []);
+      byYear.get(entry.year).push(entry);
     }
     return [...byYear.entries()].sort((a, b) => b[0] - a[0]);
-  }, [games]);
+  }, [games, pastEvents]);
 
   const activeFilterCount = [fType, fOwn, fCopy, fComplete, fPlat, fTag, fList, fPlay, fTrophyPct].filter(Boolean).length;
 
@@ -1820,11 +1900,27 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <option value="completionDesc">Highest Trophy Completion %</option>
             </select>
             <button
-              className={`btn-ghost${activeFilterCount > 0 || selectMode ? ' active' : ''}`}
+              className={`btn-ghost${activeFilterCount > 0 ? ' active' : ''}`}
               type="button"
               onClick={() => setToolsOpen(true)}
+              style={{ position: 'relative' }}
+              aria-label={showRecsIndicator ? 'Tools — new recommendations available' : undefined}
             >
               Tools{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+              {showRecsIndicator && <span className="dash-tools-indicator" aria-hidden="true" />}
+            </button>
+            {/* Restored to an inline toolbar button (Aug 2026 — see
+                ROADMAP.md/CHANGELOG.md): folding this into the Tools panel
+                during the consolidation meant starting a bulk edit cost an
+                extra tap every time — worth watching turned into worth
+                fixing. Select stays out of Tools entirely now rather than
+                living in both places, so there's exactly one control for it. */}
+            <button
+              type="button"
+              className={`btn-ghost${selectMode ? ' active' : ''}`}
+              onClick={toggleSelectMode}
+            >
+              {selectMode ? 'Done selecting' : 'Select items'}
             </button>
           </div>
 
@@ -1941,18 +2037,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </div>
 
             <div className="dash-tools-section">
-              <div className="dash-tools-section-label">Selection &amp; views</div>
-              <button
-                type="button"
-                className={`btn-ghost${selectMode ? ' active' : ''}`}
-                onClick={() => {
-                  toggleSelectMode();
-                  setToolsOpen(false);
-                }}
-                style={{ marginBottom: 12 }}
-              >
-                {selectMode ? 'Done selecting' : 'Select items'}
-              </button>
+              <div className="dash-tools-section-label">Views</div>
               {savedViews.length === 0 ? (
                 <div className="sub" style={{ margin: '0 0 12px' }}>
                   No saved views yet — set the search/filters/sort the way you want, then save it below as a
@@ -2017,14 +2102,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                             today
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            {items.map((g) => (
+                            {items.map((entry, i) => (
                               <button
-                                key={g.id}
+                                key={`${entry.game.id}-${entry.kind}-${i}`}
                                 type="button"
                                 className="btn-ghost"
-                                onClick={() => setDetailGame(g)}
+                                onClick={() => setDetailGame(entry.game)}
                               >
-                                {g.title}
+                                {entry.kind === 'added' ? entry.game.title : `${entry.game.title} (${entry.kind})`}
                               </button>
                             ))}
                           </div>
