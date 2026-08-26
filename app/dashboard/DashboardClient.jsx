@@ -13,6 +13,7 @@ import CollectorSuggestionCard from '@/components/CollectorSuggestionCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
+import ShelfIdentityHero from '@/components/ShelfIdentityHero';
 import ActionMenu from '@/components/ActionMenu';
 // Code-split: these are all either heavy (GameModal, the biggest single
 // contributor to the dashboard's JS bundle) or only ever needed after a
@@ -2059,6 +2060,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         />
       ) : (
         <>
+          <ShelfIdentityHero
+            items={games}
+            enabledTypes={enabledItemTypes}
+            onSelectType={(type) => setFType(type)}
+            onSelectItem={(item) => setDetailGame(item)}
+          />
+
           <div className="stats-bar">
             {stats.map((s) => (
               <div className="stat" key={s.label}>
