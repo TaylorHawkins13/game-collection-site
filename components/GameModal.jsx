@@ -73,6 +73,8 @@ const EMPTY = {
   trophy_completion: null,
   price_alert_threshold: '',
   wishlist_priority: '',
+  for_sale: false,
+  asking_price: '',
 };
 
 export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
@@ -150,6 +152,11 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
         price_alert_threshold: duplicateOf ? '' : source.price_alert_threshold ?? '',
         wishlist_priority: duplicateOf ? '' : source.wishlist_priority ?? '',
+        // Instance-specific, same reasoning as price_alert_threshold/
+        // wishlist_priority above — a duplicated item is a different
+        // physical copy, not automatically also for sale.
+        for_sale: duplicateOf ? false : source.for_sale || false,
+        asking_price: duplicateOf ? '' : source.asking_price ?? '',
       });
     } else {
       // Blank "Add Item" (no item being edited, no duplicateOf source) —
@@ -778,6 +785,17 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       wishlist_priority:
         form.ownership === 'wishlist' && form.wishlist_priority !== ''
           ? parseInt(form.wishlist_priority, 10)
+          : null,
+      // "For sale" is owned-items-only (see ROADMAP.md "'For sale' flag on
+      // owned items, shown on your profile" — distinct from the wishlist-
+      // only gift list above). Cleared if ownership changes away from
+      // Owned, and asking_price is cleared whenever the checkbox itself
+      // is off, same "don't leave a stale value behind" rule as
+      // price_alert_threshold/wishlist_priority.
+      for_sale: form.ownership === 'owned' ? form.for_sale : false,
+      asking_price:
+        form.ownership === 'owned' && form.for_sale && form.asking_price !== ''
+          ? parseFloat(form.asking_price)
           : null,
     });
     setSaving(false);
@@ -1448,6 +1466,38 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               <p className="sub" style={{ margin: '4px 0 0' }}>
                 Shows on your gift list so whoever's shopping knows what to prioritize.
               </p>
+            </div>
+          </div>
+        )}
+
+        {form.ownership === 'owned' && (
+          <div className="row2">
+            <div className="field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.for_sale}
+                  onChange={(e) => set('for_sale', e.target.checked)}
+                  style={{ width: 'auto', marginRight: 8 }}
+                />
+                For sale
+              </label>
+              <p className="sub" style={{ margin: '4px 0 0' }}>
+                Shows a "For sale" badge with your asking price on your public profile.
+              </p>
+            </div>
+            <div className="field">
+              <label htmlFor="gm-asking-price">Asking price ({currencySymbol(currency)})</label>
+              <input
+                id="gm-asking-price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.asking_price}
+                onChange={(e) => set('asking_price', e.target.value)}
+                placeholder="e.g. 40"
+                disabled={!form.for_sale}
+              />
             </div>
           </div>
         )}

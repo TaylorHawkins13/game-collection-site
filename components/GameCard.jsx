@@ -243,7 +243,7 @@ export default function GameCard({
             ))}
           </div>
         </div>
-        {(((isComic || isCard || isFunko) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.tags || []).length > 0) && (
+        {(((isComic || isCard || isFunko) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.ownership === 'owned' && game.for_sale) || (game.tags || []).length > 0) && (
           <div className="badge-row">
             {(isComic || isCard || isFunko) && game.is_variant && (
               <span className="badge tag">{isFunko ? 'Chase' : isCard ? 'Parallel' : 'Variant'}</span>
@@ -260,6 +260,11 @@ export default function GameCard({
             {game.ownership === 'wishlist' && game.wishlist_priority && (
               <span className={`badge tag priority-${game.wishlist_priority}`}>
                 {WISHLIST_PRIORITY_LABELS[game.wishlist_priority]}
+              </span>
+            )}
+            {game.ownership === 'owned' && game.for_sale && (
+              <span className="badge tag for-sale-badge">
+                For sale{game.asking_price != null ? ` · ${currencySymbol(currency)}${game.asking_price}` : ''}
               </span>
             )}
             {(game.tags || []).map((t) =>

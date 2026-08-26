@@ -148,6 +148,11 @@ create table if not exists games (
   -- optional wishlist-only 1/2/3 (High/Medium/Low) gift-list priority
   -- (see wishlist-priority-migration.sql, components/GameModal.jsx)
   wishlist_priority smallint check (wishlist_priority in (1, 2, 3)),
+  -- owned-items-only "For sale" flag + asking price, shown as a badge on
+  -- the card and on the public profile (see forsale-migration.sql,
+  -- ROADMAP.md "'For sale' flag on owned items, shown on your profile")
+  for_sale boolean not null default false,
+  asking_price numeric,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

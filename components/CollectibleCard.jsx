@@ -15,11 +15,9 @@ export default function CollectibleCard({ item }) {
       ) : (
         <div className="cover placeholder">No Cover</div>
       )}
-      <div style={{ padding: '10px 12px' }}>
-        <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {item.title}
-        </div>
-        <div className="sub" style={{ margin: '2px 0 0' }}>
+      <div className="collectible-card-body">
+        <div className="collectible-card-title">{item.title}</div>
+        <div className="sub collectible-card-meta" style={{ margin: '2px 0 0' }}>
           {TYPE_LABELS[item.item_type] || item.item_type}
           {item.count > 0 ? ` · ${item.count} collector${item.count === 1 ? '' : 's'}` : ' · Not yet collected'}
           {item.avgRating != null ? ` · ${item.avgRating.toFixed(1)}★` : ''}

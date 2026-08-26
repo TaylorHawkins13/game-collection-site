@@ -902,6 +902,22 @@ button:disabled {
   letter-spacing: 0.3px;
   color: var(--text-dim);
 }
+/* CollectibleCard (components/CollectibleCard.jsx) — the Search page's
+   result tile. Plain text, not GameCard's colored .card-title/.card-body
+   nameplate, so it gets its own classes rather than reusing those. Base
+   rules here just formalize what used to be inline styles; the mobile
+   @media block below (same breakpoint .card-title/.card-body use) is the
+   actual fix — see the note there. */
+.collectible-card-body {
+  padding: 10px 12px;
+}
+.collectible-card-title {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .card.featured {
   border-color: #d4a017;
   box-shadow: 0 0 0 1px #d4a01755, 0 10px 28px rgba(212, 160, 23, 0.18);
@@ -1187,6 +1203,13 @@ button.badge.tag:hover {
 .badge.priority-3 {
   background: #9aa1c422;
   color: var(--text-dim);
+}
+/* "For sale" badge (see ROADMAP.md "'For sale' flag on owned items,
+   shown on your profile") — a distinct green from .complete-100's teal,
+   money-green reads more clearly as "you can buy this." */
+.badge.for-sale-badge {
+  background: #2ecc7122;
+  color: #2ecc71;
 }
 .empty-state {
   text-align: center;
@@ -2796,6 +2819,51 @@ button.badge.tag:hover {
   white-space: nowrap;
 }
 
+.wrapped-card {
+  margin: 8px 0 0;
+  padding: 32px 28px;
+  border-radius: calc(var(--radius) + 6px);
+  background: linear-gradient(160deg, var(--accent), var(--accent-2) 120%);
+  box-shadow: 0 12px 32px -12px rgba(108, 92, 231, 0.5);
+  color: #fff;
+  text-align: center;
+}
+.wrapped-header {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.wrapped-year {
+  font-size: 40px;
+  font-weight: 800;
+  margin: 2px 0 24px;
+}
+.wrapped-stat {
+  padding: 18px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.wrapped-stat:first-of-type {
+  border-top: none;
+}
+.wrapped-stat-num {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.wrapped-stat-title {
+  font-size: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wrapped-stat-label {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
 .trophy-stats-panel {
   margin-bottom: 32px;
   padding: 20px;
@@ -3470,6 +3538,28 @@ button.badge.tag:hover {
   }
   .card-body {
     display: none;
+  }
+  /* Fixed (Aug 2026 — part of the "mobile layout feels disorganized in
+     places" item in ROADMAP.md): the Search page's collectible tiles
+     share the same forced 4-per-row .grid as the dashboard poster grid
+     above, but had none of GameCard's matching mobile treatment — the
+     meta line (type · collector count · rating) had no truncation, so
+     it wrapped to 2-3 lines on an ~80px-wide card while cards next to it
+     in the same row stayed one line, leaving uneven whitespace under the
+     shorter ones (CSS Grid sizes every row to its tallest card). Same
+     single-line-ellipsis treatment .card-title gets above. */
+  .collectible-card-body {
+    padding: 6px 8px;
+  }
+  .collectible-card-title {
+    font-size: 11px;
+  }
+  .collectible-card-meta {
+    font-size: 9.5px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .card-ownership-flag {
     font-size: 7.5px;

@@ -1542,6 +1542,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <Link href="/dashboard/insights" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Collection insights
             </Link>
+            <Link href="/dashboard/wrapped" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Your Wrapped
+            </Link>
             <button className="btn-ghost" onClick={() => setShowBulkScan(true)} type="button">
               Scan multiple
             </button>
