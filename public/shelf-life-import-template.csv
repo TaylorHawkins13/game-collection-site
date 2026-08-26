@@ -1,11 +1,12 @@
-item_type,title,platforms,region,genre,barcode,tags,cover,ownership,condition,copy_type,completeness,price,purchase_date,play_status,rating,notes,series,issue_number,publisher,writer,artist,grade,is_variant,variant_notes,format,edition,card_set,card_number,player_name,fully_completed
-game,Chrono Trigger,Super Nintendo,NTSC-U/C,RPG,,jrpg;classic,https://example.com/chrono-trigger.jpg,owned,good,physical,cib,45.00,2023-05-01,completed,5,Great game,,,,,,,,,,,,,,true
-comic,Amazing Spider-Man,,,,,key issue;venom,,owned,,physical,,150,2022-01-15,,4,,Amazing Spider-Man,#300,Marvel,David Michelinie,Todd McFarlane,9.8,false,,,,,,,
-trading_card,Rare Holo,,,,,holo,,owned,,physical,,500,,,5,,,,Trading Card Co.,,,PSA 9,false,,,,First Edition,4/102,Rare Holo,
-vinyl,Abbey Road,,,,,,,owned,mint,physical,,30,,,5,,,,Apple Records,,The Beatles,,,,LP,180g reissue,,,,
-book,Dune,,,,,,,owned,good,physical,,12,,,,,,,Ace Books,Frank Herbert,,,,,Paperback,1st Edition,,,,
-dvd,The Matrix,,,,,,,owned,,physical,,20,,,,,,,Warner Bros,Wachowski,,,,,4K,Collector's Edition,,,,
-vhs,Jurassic Park,,,,,,,owned,good,physical,,8,,,,,,,Universal,Spielberg,,,,,VHS,,,,,
-cd,Thriller,,,,,,,owned,,physical,,10,,,,,,,Epic,Michael Jackson,,,,,CD,,,,,
-console,Nintendo Switch OLED,,NTSC-U/C,Home console,,handheld,,owned,mint,physical,cib,300,,,5,,,,Nintendo,,,,,,64GB OLED,White,,,,
-funko_pop,Batman,,,Pop!,,chase,,owned,mint,physical,,15,,,4,,,,Hot Topic,,,,true,Glow in the dark,,,DC,#01,Batman,
+item_type,title,platforms,region,genre,barcode,tags,cover,ownership,condition,copy_type,completeness,price,purchase_date,play_status,rating,notes,series,issue_number,publisher,writer,artist,grade,is_variant,variant_notes,format,edition,card_set,card_number,player_name,fully_completed,wishlist_priority,price_alert_threshold
+game,Chrono Trigger,Super Nintendo,NTSC-U/C,RPG,,jrpg;classic,https://example.com/chrono-trigger.jpg,owned,good,physical,cib,45.00,2023-05-01,completed,5,Great game,,,,,,,,,,,,,,true,,
+comic,Amazing Spider-Man,,,,,key issue;venom,,owned,,physical,,150,2022-01-15,,4,,Amazing Spider-Man,#300,Marvel,David Michelinie,Todd McFarlane,9.8,false,,,,,,,,,
+trading_card,Rare Holo,,,,,holo,,owned,,physical,,500,,,5,,,,Trading Card Co.,,,PSA 9,false,,,,First Edition,4/102,Rare Holo,,,
+vinyl,Abbey Road,,,,,,,owned,mint,physical,,30,,,5,,,,Apple Records,,The Beatles,,,,LP,180g reissue,,,,,,
+book,Dune,,,,,,,owned,good,physical,,12,,,,,,,Ace Books,Frank Herbert,,,,,Paperback,1st Edition,,,,,,
+dvd,The Matrix,,,,,,,owned,,physical,,20,,,,,,,Warner Bros,Wachowski,,,,,4K,Collector's Edition,,,,,,
+vhs,Jurassic Park,,,,,,,owned,good,physical,,8,,,,,,,Universal,Spielberg,,,,,VHS,,,,,,,
+cd,Thriller,,,,,,,owned,,physical,,10,,,,,,,Epic,Michael Jackson,,,,,CD,,,,,,,
+console,Nintendo Switch OLED,,NTSC-U/C,Home console,,handheld,,owned,mint,physical,cib,300,,,5,,,,Nintendo,,,,,,64GB OLED,White,,,,,,
+funko_pop,Batman,,,Pop!,,chase,,owned,mint,physical,,15,,,4,,,,Hot Topic,,,,true,Glow in the dark,,,DC,#01,Batman,,,
+game,Hollow Knight: Silksong,,,,,,,wishlist,,,,30,,,,,,,,,,,,,,,,,,,2,20

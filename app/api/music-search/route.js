@@ -11,9 +11,29 @@ import { NextResponse } from 'next/server';
 // to 8 candidates just to find out most don't have any. Title/artist/
 // label/format is enough to be worth the "Search" button existing;
 // cover art (like console search) stays a manual paste.
+//
+// Fixed (Aug 2026 — same missing-timeout bug already fixed in seven other
+// routes, see CHANGELOG.md): the fetch below had nothing capping how long
+// a slow MusicBrainz response could hang the request, so a slow patch on
+// their end could stall this route until Vercel's platform-level 300s
+// ceiling killed it. Now aborts after 8 seconds, and maxDuration below is
+// an explicit backstop.
+export const maxDuration = 20;
+
+const TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function searchMusicBrainz(q) {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://musicbrainz.org/ws/2/release?query=${encodeURIComponent(q)}&fmt=json&limit=8`,
     { headers: { 'User-Agent': 'ShelfLifeApp/1.0 (https://shelflife.site)', Accept: 'application/json' } }
   );

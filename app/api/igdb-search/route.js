@@ -6,6 +6,11 @@ import { searchIgdb } from '@/lib/igdbSearch';
 // for titles nobody's added yet) — this route is just the thin
 // client-facing wrapper GameModal's "Search" button and the players
 // search page call over HTTP.
+//
+// Backstop against the missing-timeout bug fixed in lib/igdbSearch.js
+// (Aug 2026, see CHANGELOG.md) — the real fetch-abort logic lives there.
+export const maxDuration = 20;
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';

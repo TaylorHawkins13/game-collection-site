@@ -10,6 +10,26 @@ import { currencyForMarketplace } from '@/lib/ebayMarketplace';
 // *current active* listings (mostly Buy It Now asking prices), not
 // confirmed sale prices. It's a real market signal, but treat it as
 // "what people are asking right now" rather than "what it sold for."
+//
+// Fixed (Aug 2026 — same missing-timeout bug already fixed in seven other
+// routes, see CHANGELOG.md): neither fetch below had anything capping how
+// long a slow eBay response could hang the request, so a slow patch on
+// eBay's end could stall this route until Vercel's platform-level 300s
+// ceiling killed it. Both fetches now abort after 8 seconds via
+// fetchWithTimeout, and maxDuration below is an explicit backstop.
+export const maxDuration = 20;
+
+const TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 let cachedToken = null;
 let tokenExpiresAt = 0;
@@ -31,7 +51,7 @@ async function getAccessToken() {
     scope: 'https://api.ebay.com/oauth/api_scope',
   });
 
-  const res = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+  const res = await fetchWithTimeout('https://api.ebay.com/identity/v1/oauth2/token', {
     method: 'POST',
     headers: {
       Authorization: `Basic ${basic}`,
@@ -139,7 +159,7 @@ async function fetchEbayItems(queryStr, marketplace, token) {
   // a single page at 200; 100 is a reasonable buffer without doubling
   // response size for the common case where 50 was already plenty.
   const params = new URLSearchParams({ q: queryStr, limit: '100' });
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.ebay.com/buy/browse/v1/item_summary/search?${params.toString()}`,
     {
       headers: {

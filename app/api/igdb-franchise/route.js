@@ -6,6 +6,14 @@ import { getFranchiseGames } from '@/lib/igdbSearch';
 // the same franchise, so the modal can show what's owned vs. missing.
 // Thin wrapper for the same reason /api/igdb-search is: keeps the Twitch
 // client secret server-side only.
+//
+// Backstop against the missing-timeout bug fixed in lib/igdbSearch.js
+// (Aug 2026, see CHANGELOG.md) — the real fetch-abort logic lives there.
+// This route in particular can fire several fetches per request (the
+// initial search, one per franchise tag, one per collection tag), so the
+// explicit maxDuration matters more here than on a single-fetch route.
+export const maxDuration = 20;
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const title = searchParams.get('title') || '';

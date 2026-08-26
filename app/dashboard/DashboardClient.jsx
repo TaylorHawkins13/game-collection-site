@@ -111,6 +111,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [bulkPlatform, setBulkPlatform] = useState('');
   const [bulkTag, setBulkTag] = useState('');
   const [bulkListId, setBulkListId] = useState('');
+  // Closes the "bulk edit can't set gift priority" item flagged in
+  // ROADMAP.md right after per-item priority shipped — default to 'High'
+  // rather than a blank/disabled state, same pattern bulkOwnership already
+  // uses, so the button is always actionable once something's selected.
+  // '' is still a real, pickable option here (same as GameModal's own
+  // select) — bulk-clearing priority off a batch of items is exactly as
+  // valid an action as bulk-setting one.
+  const [bulkPriority, setBulkPriority] = useState('1');
   const [showSettings, setShowSettings] = useState(false);
   // Which Profile settings tab is active — Profile/Notifications/Security/
   // "Data & danger zone" (see ROADMAP.md/CHANGELOG.md). Only "Profile" and
@@ -809,6 +817,38 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     }
     setGames((gs) => gs.map((g) => (targetIds.includes(g.id) ? { ...g, platforms: [bulkPlatform] } : g)));
     announceToast(`Set platform to ${bulkPlatform} on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`, 'success');
+  }
+
+  // Gift priority is wishlist-only (same check constraint as the single-
+  // item form's "Gift priority" select — see wishlist-priority-
+  // migration.sql), so this silently skips any selected item that isn't
+  // currently on the wishlist rather than erroring on owned/sold items
+  // caught up in the same selection — same "skip what doesn't apply"
+  // pattern handleBulkPlatform already uses above for platform-less types.
+  async function handleBulkPriority() {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    const targetIds = games
+      .filter((g) => selectedIds.has(g.id) && g.ownership === 'wishlist')
+      .map((g) => g.id);
+    if (targetIds.length === 0) {
+      announceToast('None of the selected items are on the wishlist.');
+      return;
+    }
+    const priorityValue = bulkPriority === '' ? null : parseInt(bulkPriority, 10);
+    setBulkBusy(true);
+    const { error } = await supabase.from('games').update({ wishlist_priority: priorityValue }).in('id', targetIds);
+    setBulkBusy(false);
+    if (error) {
+      announceToast("Couldn't update gift priority — try again.");
+      return;
+    }
+    setGames((gs) => gs.map((g) => (targetIds.includes(g.id) ? { ...g, wishlist_priority: priorityValue } : g)));
+    announceToast(
+      priorityValue === null
+        ? `Cleared gift priority on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`
+        : `Set gift priority on ${targetIds.length} item${targetIds.length === 1 ? '' : 's'}.`,
+      'success'
+    );
   }
 
   // Tags differ per item, so this can't be one bulk update — each
@@ -2168,6 +2208,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   </button>
                 </>
               )}
+              <select value={bulkPriority} onChange={(e) => setBulkPriority(e.target.value)} disabled={selectedIds.size === 0}>
+                <option value="">No priority</option>
+                <option value="1">High</option>
+                <option value="2">Medium</option>
+                <option value="3">Low</option>
+              </select>
+              <button type="button" className="btn-ghost" onClick={handleBulkPriority} disabled={selectedIds.size === 0 || bulkBusy}>
+                Set gift priority
+              </button>
               <div style={{ flex: 1 }} />
               <button type="button" className="btn-danger" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkBusy}>
                 Delete selected
