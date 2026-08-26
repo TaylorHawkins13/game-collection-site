@@ -173,6 +173,7 @@ The public gift list page (`/u/[username]/wishlist`) shows "Buy on eBay" / "Sear
 - **Collection appraisal export** (`/dashboard/appraisal`, linked from "More actions"): a print-optimized, itemized document of your owned items and their current value, grouped by type with subtotals and a grand total — use your browser's "Save as PDF" for insurance documentation. No new env vars or migration.
 - **Accessibility pass**: arrow-key support for the star rating, a screen-reader announcement for trophy-earned popups, a pausable Undo-delete countdown (hover or focus stops the clock), site-wide `prefers-reduced-motion` support, and a new `/accessibility` page (linked in the footer) documenting what's covered and what's still open. No new env vars or migration.
 - **Affiliate "buy it" links on the gift list**: "Buy on eBay" / "Search Amazon" links under each item on `/u/[username]/wishlist` — real search links either way, with optional eBay Partner Network / Amazon Associates tracking on top. See step 9 for setup.
+- **"Quick add (search)"** (dashboard "More actions"): bulk-add items with no spreadsheet and no barcode — search a title using the same auto-fill each item type already has, pick the right result, repeat, then add the whole batch at once. Distinct from "Scan multiple," which needs a physical barcode and inserts one at a time as you scan.
 
 ## Notes
 

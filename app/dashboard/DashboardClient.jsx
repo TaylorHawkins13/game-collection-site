@@ -25,6 +25,7 @@ const GameModal = dynamic(() => import('@/components/GameModal'), { ssr: false }
 const ImportCsvModal = dynamic(() => import('@/components/ImportCsvModal'), { ssr: false });
 const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), { ssr: false });
 const BulkScanSession = dynamic(() => import('@/components/BulkScanSession'), { ssr: false });
+const BulkSearchAddModal = dynamic(() => import('@/components/BulkSearchAddModal'), { ssr: false });
 const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
 import { CURRENCIES, formatMoney } from '@/lib/currency';
 import { NOTIFICATION_TYPES } from '@/lib/notificationTypes';
@@ -128,6 +129,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // as before this was split into tabs.
   const [settingsTab, setSettingsTab] = useState('profile');
   const [showBulkScan, setShowBulkScan] = useState(false);
+  const [showBulkSearchAdd, setShowBulkSearchAdd] = useState(false);
   // Collapsed-by-default now (see ROADMAP.md/CHANGELOG.md) — these four
   // used to default to expanded and stack above the toolbar on every
   // visit; now they're accordion rows inside the Tools panel below,
@@ -1572,6 +1574,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <button className="btn-ghost" onClick={() => setShowBulkScan(true)} type="button">
               Scan multiple
             </button>
+            <button className="btn-ghost" onClick={() => setShowBulkSearchAdd(true)} type="button">
+              Quick add (search)
+            </button>
             <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
               Refresh all prices
             </button>
@@ -1588,6 +1593,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           existingItems={games}
           onClose={() => setShowBulkScan(false)}
           onItemAdded={(item) => setGames((gs) => [item, ...gs])}
+        />
+      )}
+
+      {showBulkSearchAdd && (
+        <BulkSearchAddModal
+          userId={userId}
+          existingItems={games}
+          onClose={() => setShowBulkSearchAdd(false)}
+          onItemsAdded={handleImported}
         />
       )}
 
