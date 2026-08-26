@@ -103,6 +103,11 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
   const [searchResults, setSearchResults] = useState([]);
   const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
+  // The IGDB result awaiting a platform choice — set instead of applying
+  // straight away when a clicked game result lists more than one
+  // platform, so a title re-released across hardware generations doesn't
+  // silently tag the item with every platform it was ever released on.
+  const [platformPick, setPlatformPick] = useState(null);
   const [coverBroken, setCoverBroken] = useState(false);
   const [communityResults, setCommunityResults] = useState([]);
   const [communityHint, setCommunityHint] = useState('');
@@ -650,6 +655,31 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     setSearchResults([]);
   }
 
+  // Games are the one type whose IGDB results can carry more than one
+  // platform — clicking a result with just one (or none) applies it
+  // immediately, same as every other type always has; a result with
+  // several instead pauses on a small platform picker (below) so the
+  // item ends up tagged with the one copy actually being added, not
+  // every platform that title was ever released on.
+  function handleResultClick(item) {
+    if (!item.kind && item.platforms && item.platforms.length > 1) {
+      setSearchResults([]);
+      setPlatformPick(item);
+      return;
+    }
+    applySearchResult(item);
+  }
+
+  function pickPlatform(platform) {
+    const item = platformPick;
+    setPlatformPick(null);
+    applySearchResult({ ...item, platforms: [platform] });
+  }
+
+  function cancelPlatformPick() {
+    setPlatformPick(null);
+  }
+
   async function checkEbayPrice() {
     const q = buildPriceQuery(form);
     if (!q) return;
@@ -908,27 +938,43 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               </button>
             )}
           </div>
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchHint && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchHint && !platformPick && (
             <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
           )}
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchResults.length > 0 && (
-            <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
-              {searchResults.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => applySearchResult(r)}
-                  style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
-                >
-                  {(r.thumb || r.cover) && (
-                    <img src={r.thumb || r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
-                  )}
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
-                    <div className="sub" style={{ margin: 0 }}>{resultMeta(r)}</div>
-                  </div>
-                </div>
-              ))}
+          {platformPick ? (
+            <div style={{ marginTop: 8, padding: 10, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--card)' }}>
+              <div className="sub" style={{ margin: '0 0 8px' }}>
+                Which platform is this copy for? <strong>{platformPick.name}</strong>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {platformPick.platforms.map((p) => (
+                  <button key={p} type="button" className="btn-ghost" onClick={() => pickPlatform(p)}>
+                    {p}
+                  </button>
+                ))}
+                <button type="button" className="btn-ghost" onClick={cancelPlatformPick}>Cancel</button>
+              </div>
             </div>
+          ) : (
+            (isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchResults.length > 0 && (
+              <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
+                {searchResults.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => handleResultClick(r)}
+                    style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+                  >
+                    {(r.thumb || r.cover) && (
+                      <img src={r.thumb || r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                    )}
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
+                      <div className="sub" style={{ margin: 0 }}>{resultMeta(r)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
           {communityResults.length > 0 && (
             <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>

@@ -82,6 +82,10 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
   // { title, cover, row, matchTitle } while a picked result looks like
   // something already in the collection OR already sitting in the queue.
   const [pendingDuplicate, setPendingDuplicate] = useState(null);
+  // The search result awaiting a platform choice — set instead of queued
+  // straight away when a clicked game result lists more than one
+  // platform, same reasoning and pattern as GameModal.jsx's own picker.
+  const [platformPick, setPlatformPick] = useState(null);
   const [adding, setAdding] = useState(false);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState('');
@@ -185,7 +189,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
     return { ...base, genre: (result.genres || []).join(', '), platforms: result.platforms || [] };
   }
 
-  async function selectResult(result) {
+  async function finalizeSelect(result) {
     setResults([]);
     setQuery('');
     setSearchHint('Adding…');
@@ -204,8 +208,37 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
     addToQueue(row);
   }
 
+  // Games are the one type whose results can carry more than one
+  // platform — a result with just one (or none) queues immediately, same
+  // as every other type always has; a result with several instead pauses
+  // on a small platform picker so the item ends up tagged with the one
+  // copy actually being added, not every platform that title was ever
+  // released on.
+  function selectResult(result) {
+    if (itemType === 'game' && result.platforms && result.platforms.length > 1) {
+      setResults([]);
+      setPlatformPick(result);
+      return;
+    }
+    finalizeSelect(result);
+  }
+
+  function pickPlatform(platform) {
+    const result = platformPick;
+    setPlatformPick(null);
+    finalizeSelect({ ...result, platforms: [platform] });
+  }
+
+  function cancelPlatformPick() {
+    setPlatformPick(null);
+  }
+
   function addToQueue(row) {
-    setQueue((q) => [...q, { key: `${Date.now()}-${q.length}`, title: row.title, cover: row.cover, row }]);
+    // Newest first — a queue built purely by appending put the item
+    // someone just added at the bottom, below however many were already
+    // there, which is backwards for a list meant to be skimmed/reviewed
+    // as you go.
+    setQueue((q) => [{ key: `${Date.now()}-${q.length}`, title: row.title, cover: row.cover, row }, ...q]);
   }
 
   function confirmAddDuplicate() {
@@ -293,7 +326,21 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
           </>
         ) : (
           <>
-            {pendingDuplicate ? (
+            {platformPick ? (
+              <div style={{ padding: 10, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--card)' }}>
+                <div className="sub" style={{ margin: '0 0 8px' }}>
+                  Which platform is this copy for? <strong>{platformPick.name}</strong>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {platformPick.platforms.map((p) => (
+                    <button key={p} type="button" className="btn-ghost" onClick={() => pickPlatform(p)}>
+                      {p}
+                    </button>
+                  ))}
+                  <button type="button" className="btn-ghost" onClick={cancelPlatformPick}>Cancel</button>
+                </div>
+              </div>
+            ) : pendingDuplicate ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, textAlign: 'center', border: '1px solid var(--border)', borderRadius: 8 }}>
                 <span className="sub" style={{ margin: 0 }}>
                   You might already have this: <strong>{pendingDuplicate.title}</strong> looks like &ldquo;{pendingDuplicate.matchTitle}&rdquo;
@@ -323,11 +370,11 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
               </form>
             )}
 
-            {searchHint && !pendingDuplicate && (
+            {searchHint && !pendingDuplicate && !platformPick && (
               <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
             )}
 
-            {!pendingDuplicate && results.length > 0 && (
+            {!pendingDuplicate && !platformPick && results.length > 0 && (
               <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', background: 'var(--card)' }}>
                 {results.map((r) => (
                   <div
