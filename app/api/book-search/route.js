@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// Book title auto-fill via Open Library's free search API — no key, no
-// signup, same source barcode scanning already uses (openlibrary.org),
-// just extended from ISBN lookup to a plain title search so it works
-// when you don't have the physical barcode in hand.
+// Book title auto-fill via Open Library's free search API (openlibrary.org)
+// — no key, no signup. Plain title search, so it works without needing a
+// physical copy in hand at all.
 
 // Same fix, same reason, as app/api/card-search/route.js's fetchWithTimeout
 // (see that file's comment) — this fetch had no timeout at all, so an

@@ -14,17 +14,15 @@ import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
 import ActionMenu from '@/components/ActionMenu';
-// Code-split: these are all either heavy (GameModal alone pulls in the
-// @zxing barcode-scanning libraries via BarcodeScanner, the single biggest
+// Code-split: these are all either heavy (GameModal, the biggest single
 // contributor to the dashboard's JS bundle) or only ever needed after a
-// deliberate click (import/Steam-import/bulk-scan modals, the passkeys
+// deliberate click (import/Steam-import/quick-add modals, the passkeys
 // settings panel) rather than on first paint. Loading them on demand
 // instead of eagerly keeps them out of the bundle every dashboard visit
 // pays for, even when nobody opens them this session.
 const GameModal = dynamic(() => import('@/components/GameModal'), { ssr: false });
 const ImportCsvModal = dynamic(() => import('@/components/ImportCsvModal'), { ssr: false });
 const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), { ssr: false });
-const BulkScanSession = dynamic(() => import('@/components/BulkScanSession'), { ssr: false });
 const BulkSearchAddModal = dynamic(() => import('@/components/BulkSearchAddModal'), { ssr: false });
 const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
 import { CURRENCIES, formatMoney } from '@/lib/currency';
@@ -128,7 +126,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // the other two tabs already saves immediately on its own button, same
   // as before this was split into tabs.
   const [settingsTab, setSettingsTab] = useState('profile');
-  const [showBulkScan, setShowBulkScan] = useState(false);
   const [showBulkSearchAdd, setShowBulkSearchAdd] = useState(false);
   // Collapsed-by-default now (see ROADMAP.md/CHANGELOG.md) — these four
   // used to default to expanded and stack above the toolbar on every
@@ -1558,9 +1555,21 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               </button>
             </>
           )}
-          <button className="btn-primary" onClick={() => setModalGame(null)} type="button">
-            + Add Item
-          </button>
+          {/* The "+ Add Item" entry point is itself a small chooser now
+              (reusing ActionMenu's dropdown/positioning/click-outside/
+              Escape behavior via its trigger override) rather than a
+              single button that only opened the one-at-a-time form —
+              Quick add (search) used to be one level deeper, inside
+              "More actions", which buried the thing most people reach
+              for right after signing up. */}
+          <ActionMenu label="Add item" trigger="+ Add Item ▾" triggerClassName="btn-primary">
+            <button className="btn-ghost" onClick={() => setModalGame(null)} type="button">
+              Add one item
+            </button>
+            <button className="btn-ghost" onClick={() => setShowBulkSearchAdd(true)} type="button">
+              Quick add (search)
+            </button>
+          </ActionMenu>
           <ActionMenu label="More actions">
             <Link href="/dashboard/insights" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Collection insights
@@ -1571,12 +1580,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <Link href="/dashboard/appraisal" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Collection appraisal
             </Link>
-            <button className="btn-ghost" onClick={() => setShowBulkScan(true)} type="button">
-              Scan multiple
-            </button>
-            <button className="btn-ghost" onClick={() => setShowBulkSearchAdd(true)} type="button">
-              Quick add (search)
-            </button>
             <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
               Refresh all prices
             </button>
@@ -1586,15 +1589,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           </ActionMenu>
         </div>
       </div>
-
-      {showBulkScan && (
-        <BulkScanSession
-          userId={userId}
-          existingItems={games}
-          onClose={() => setShowBulkScan(false)}
-          onItemAdded={(item) => setGames((gs) => [item, ...gs])}
-        />
-      )}
 
       {showBulkSearchAdd && (
         <BulkSearchAddModal
@@ -1944,6 +1938,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         <WelcomePanel
           displayName={profile?.display_name}
           onAddItem={() => setModalGame(null)}
+          onQuickAdd={() => setShowBulkSearchAdd(true)}
           onImportCsv={() => setShowImport(true)}
         />
       ) : (

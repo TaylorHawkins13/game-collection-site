@@ -15,7 +15,13 @@ import { useEffect, useRef, useState } from 'react';
 // which restyle them from standalone pill buttons into a stacked list).
 // Same click-outside-to-close pattern as NotificationBell.jsx, for
 // consistency with the one dropdown that already existed in the app.
-export default function ActionMenu({ children, label = 'More actions' }) {
+//
+// `trigger`/`triggerClassName` are optional overrides for the default
+// icon-only "⋯" button — used by the dashboard's "+ Add Item" control,
+// which needs its own visible label/styling instead of the generic
+// more-actions affordance, while reusing the same dropdown/positioning/
+// click-outside/Escape behavior rather than duplicating it.
+export default function ActionMenu({ children, label = 'More actions', trigger, triggerClassName }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
@@ -48,13 +54,13 @@ export default function ActionMenu({ children, label = 'More actions' }) {
       <button
         type="button"
         ref={triggerRef}
-        className="btn-icon action-menu-trigger"
+        className={triggerClassName || 'btn-icon action-menu-trigger'}
         onClick={() => setOpen((o) => !o)}
-        aria-label={label}
+        aria-label={trigger ? undefined : label}
         aria-haspopup="true"
         aria-expanded={open}
       >
-        ⋯
+        {trigger || '⋯'}
       </button>
       {/* Deliberately does NOT auto-close on click inside — ShareProfileButton
           shows its own "Link copied!" feedback in place for ~2s after a

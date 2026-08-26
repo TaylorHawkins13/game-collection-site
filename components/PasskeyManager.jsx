@@ -109,9 +109,9 @@ export default function PasskeyManager() {
 
   // Nothing to show while still checking support, and nothing to show
   // (not even an explanation) on a browser/device that genuinely can't
-  // do this — same "just don't offer it" pattern as anywhere else on
+  // do this — same "just don't offer it" pattern used anywhere else on
   // the site a feature depends on something the visitor's setup may not
-  // have (e.g. the barcode scanner needing camera access).
+  // have.
   if (supported === null || supported === false) return null;
 
   return (

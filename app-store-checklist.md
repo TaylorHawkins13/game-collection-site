@@ -29,7 +29,7 @@ If the app is iPhone-only (recommended to start — simplest), you can skip iPad
 - **Subtitle** (30 characters max): something like "Track your whole collection"
 - **Promotional text** (170 characters, editable anytime without a new review): short pitch, e.g. "Games, comics, cards, vinyl, books, and more — all in one shelf. Free, no ads to browse your own collection."
 - **Description**: can reuse/adapt the blog/Reddit post already written for the social media push — it already covers every major feature in the right amount of detail.
-- **Keywords** (100 characters, comma-separated, no spaces needed): e.g. `game collection,collectible tracker,comic tracker,vinyl tracker,shelf,collector,barcode scanner`
+- **Keywords** (100 characters, comma-separated, no spaces needed): e.g. `game collection,collectible tracker,comic tracker,vinyl tracker,shelf,collector,inventory app`
 - **Support URL**: `https://shelflife.site/feedback` (or a plain `mailto:` if preferred)
 - **Marketing URL** (optional): `https://shelflife.site`
 - **Copyright**: e.g. "© 2026 [your name/entity]"

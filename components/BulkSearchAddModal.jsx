@@ -6,15 +6,18 @@ import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
 
 // "Quick add (search)" — a way to bulk-add items entirely in-app, with no
-// spreadsheet and no barcode needed: search the same auto-fill databases
-// the single-item Add form already uses (IGDB, TCGdex/Scryfall, Comic
-// Vine, Open Library, iTunes, MusicBrainz, or the local consoles list),
-// pick a result, and it joins a batch instead of saving immediately.
-// Search again for the next title, then add the whole batch at once —
-// distinct from "Scan multiple" (BulkScanSession.jsx), which inserts each
-// barcode straight away one at a time. Field-mapping per result kind
-// mirrors GameModal.jsx's applySearchResult() exactly, just building a
-// full row object instead of calling set() on live form state.
+// spreadsheet and no barcode scanner needed: search the same auto-fill
+// databases the single-item Add form already uses (IGDB, TCGdex/Scryfall,
+// Comic Vine, Open Library, iTunes, MusicBrainz, or the local consoles
+// list), pick a result, and it joins a batch instead of saving immediately.
+// Search again for the next title, then add the whole batch at once. This
+// is now the app's one bulk/quick-add path other than CSV import — it
+// superseded "Scan multiple" (barcode-camera-driven, one insert per scan),
+// which was removed once search-based auto-fill covered the same need
+// with better coverage than a UPC database (see CHANGELOG.md). Field-
+// mapping per result kind mirrors GameModal.jsx's applySearchResult()
+// exactly, just building a full row object instead of calling set() on
+// live form state.
 const BATCH_SIZE = 100;
 
 const TYPE_OPTIONS = [

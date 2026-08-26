@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import ChipInput from './ChipInput';
-import BarcodeScanner from './BarcodeScanner';
 import StarRating from './StarRating';
 import ActionMenu from './ActionMenu';
 import { currencySymbol } from '@/lib/currency';
@@ -86,8 +85,6 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
   const [searchResults, setSearchResults] = useState([]);
   const [searchHint, setSearchHint] = useState('');
   const [searching, setSearching] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [barcodeHint, setBarcodeHint] = useState('');
   const [coverBroken, setCoverBroken] = useState(false);
   const [communityResults, setCommunityResults] = useState([]);
   const [communityHint, setCommunityHint] = useState('');
@@ -177,7 +174,6 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     setSearchResults([]);
     setSearchHint('');
     setSaveError('');
-    setBarcodeHint('');
     setCommunityResults([]);
     setCommunityHint('');
     setPriceCheck(null);
@@ -375,37 +371,29 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     ? 'e.g. Deluxe Edition, Remaster'
     : 'e.g. 2nd Edition, Anniversary Edition';
 
-  async function runGameSearch(query, { silent } = {}) {
+  async function runGameSearch(query) {
     const q = (query || '').trim();
     if (!q) return;
     setSearching(true);
-    if (!silent) setSearchHint('Searching…');
+    setSearchHint('Searching…');
     try {
       const res = await fetch(`/api/igdb-search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (data.error === 'not_configured') {
-        if (!silent) setSearchHint('Auto-fill is not configured on this site (no IGDB credentials set).');
+        setSearchHint('Auto-fill is not configured on this site (no IGDB credentials set).');
         setSearchResults([]);
         return;
       }
       if (data.error) {
-        if (!silent) setSearchHint('Search failed — try again in a moment.');
+        setSearchHint('Search failed — try again in a moment.');
         setSearchResults([]);
         return;
       }
       const list = data.results || [];
-      if (silent && list.length === 1) {
-        // Barcode auto-fill chaining into IGDB: if there's exactly one
-        // match, just apply it rather than making the user click it.
-        applySearchResult(list[0]);
-        return;
-      }
       setSearchResults(list);
-      if (!silent || list.length) {
-        setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No results found.');
-      }
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No results found.');
     } catch {
-      if (!silent) setSearchHint('Search failed — check your connection.');
+      setSearchHint('Search failed — check your connection.');
     } finally {
       setSearching(false);
     }
@@ -626,8 +614,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       setSearchHint(`Filled: ${item.name}`);
     } else if (item.kind === 'music') {
       // Vinyl's "Artist" field is the real artist column; CD reuses the
-      // shared media "writer" field (labeled Artist for CD), same as
-      // handleBarcodeDetected's isVinyl/isMediaLike split below.
+      // shared media "writer" field (labeled Artist for CD).
       if (item.artist) {
         if (isVinyl) set('artist', item.artist);
         else set('writer', item.artist);
@@ -643,50 +630,6 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       setSearchHint(`Filled from IGDB: ${item.name}`);
     }
     setSearchResults([]);
-  }
-
-  async function handleBarcodeDetected(code) {
-    set('barcode', code);
-    setScanning(false);
-    setBarcodeHint('Looking up that barcode…');
-    try {
-      const res = await fetch(`/api/barcode-lookup?code=${encodeURIComponent(code)}&type=${form.item_type}`);
-      const data = await res.json();
-      if (!data.found) {
-        setBarcodeHint(
-          isGame
-            ? "Code filled in, but couldn't find product details for it — type the title in above and hit Search to try IGDB instead."
-            : "Code filled in, but couldn't find product details for it — fill the rest in manually."
-        );
-        return;
-      }
-      if (data.title) set('title', data.title);
-      if (data.cover) set('cover', data.cover);
-      if (data.genre) set('genre', data.genre);
-      if (isMediaLike) {
-        if (data.creator) set('writer', data.creator);
-        if (data.publisher) set('publisher', data.publisher);
-      } else if (isVinyl) {
-        if (data.creator) set('artist', data.creator);
-        if (data.publisher) set('publisher', data.publisher);
-      } else if (isConsole) {
-        // UPC databases file console listings under "publisher" more often
-        // than "creator/brand", but check both since it varies by source.
-        if (data.publisher) set('publisher', data.publisher);
-        else if (data.creator) set('publisher', data.creator);
-      }
-      setBarcodeHint(`Filled from ${data.source === 'openlibrary' ? 'Open Library' : 'a UPC database'}${data.title ? `: ${data.title}` : ''}`);
-
-      // The UPC database doesn't reliably know platforms for games — chain
-      // into an IGDB search on the title we just found so those can fill
-      // in too. Runs quietly; only surfaces results if there's more than
-      // one match to choose from.
-      if (isGame && data.title) {
-        runGameSearch(data.title, { silent: true });
-      }
-    } catch {
-      setBarcodeHint("Code filled in, but the lookup failed — fill the rest in manually.");
-    }
   }
 
   async function checkEbayPrice() {
@@ -1286,28 +1229,14 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           </div>
           <div className="field">
             <label htmlFor="gm-barcode">Barcode / UPC</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                id="gm-barcode"
-                type="text"
-                value={form.barcode}
-                onChange={(e) => set('barcode', e.target.value)}
-                style={{ flex: 1 }}
-              />
-              <button type="button" className="btn-ghost" onClick={() => { setScanning(true); setBarcodeHint(''); }}>
-                Scan
-              </button>
-            </div>
-            {barcodeHint && <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{barcodeHint}</div>}
+            <input
+              id="gm-barcode"
+              type="text"
+              value={form.barcode}
+              onChange={(e) => set('barcode', e.target.value)}
+            />
           </div>
         </div>
-
-        {scanning && (
-          <BarcodeScanner
-            onDetected={handleBarcodeDetected}
-            onClose={() => setScanning(false)}
-          />
-        )}
 
         <div className="field">
           <label htmlFor="gm-tags">Tags</label>

@@ -1636,59 +1636,6 @@ button.badge.tag:hover {
   font-size: 11px;
   line-height: 1;
 }
-.scanner-modal {
-  max-width: 420px;
-}
-.bulk-scan-log {
-  position: fixed;
-  left: 20px;
-  bottom: calc(20px + env(safe-area-inset-bottom));
-  z-index: 70;
-  max-width: 280px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: var(--shadow);
-}
-.bulk-scan-log-row {
-  font-size: 12px;
-  padding: 3px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-dim);
-}
-.bulk-scan-log-added {
-  color: var(--text);
-}
-.bulk-scan-log-error {
-  color: #e5484d;
-}
-.scanner-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-}
-.scanner-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.scanner-guide {
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 42%;
-  height: 16%;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  border-radius: 6px;
-  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-}
 .modal-actions .right {
   display: flex;
   gap: 8px;

@@ -4,7 +4,7 @@ import Link from 'next/link';
 // completely empty — mainly a brand-new signup's very first screen. Points
 // at the three real ways to add something rather than leaving them staring
 // at an empty grid with a lone "+ Add Item" button and no other context.
-export default function WelcomePanel({ displayName, onAddItem, onImportCsv }) {
+export default function WelcomePanel({ displayName, onAddItem, onQuickAdd, onImportCsv }) {
   return (
     <div className="welcome-panel">
       <h2>Welcome to Shelf Life{displayName ? `, ${displayName}` : ''}</h2>
@@ -22,10 +22,10 @@ export default function WelcomePanel({ displayName, onAddItem, onImportCsv }) {
           </button>
         </div>
         <div className="welcome-step">
-          <div className="welcome-step-title">Scan a barcode</div>
-          <div className="sub">Open Add Item, then hit Scan next to the Barcode field to look it up with your phone's camera.</div>
-          <button className="btn-ghost" type="button" onClick={onAddItem}>
-            + Add Item
+          <div className="welcome-step-title">Search and add several at once</div>
+          <div className="sub">Search by title, add each result to a list, then save them all together — quicker than opening the form over and over.</div>
+          <button className="btn-ghost" type="button" onClick={onQuickAdd}>
+            Quick add (search)
           </button>
         </div>
         <div className="welcome-step">

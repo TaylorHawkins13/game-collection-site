@@ -35,10 +35,10 @@ export default function PrivacyPage() {
           <li><strong>Supabase</strong> — hosts our database, authentication, and file storage (avatars).</li>
           <li><strong>Google AdSense</strong> — serves ads, if you've accepted the cookie banner. Google's own privacy policy covers what they do with ad-related data.</li>
           <li>
-            <strong>IGDB / Twitch, eBay, Open Library, UPCitemdb, the Pokémon TCG API, and Scryfall</strong> — used
-            for auto-fill and price-lookup features. When you use Search, Scan, or Check eBay price, the search
-            term or barcode you're looking up is sent to the relevant service to fetch results. No account or
-            personal information is sent along with those requests.
+            <strong>IGDB / Twitch, eBay, Open Library, the Pokémon TCG API, and Scryfall</strong> — used for
+            auto-fill and price-lookup features. When you use Search or Check eBay price, the search term you're
+            looking up is sent to the relevant service to fetch results. No account or personal information is
+            sent along with those requests.
           </li>
         </ul>
       </section>
