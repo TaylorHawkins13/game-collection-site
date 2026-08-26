@@ -24,7 +24,9 @@ export default async function InsightsPage() {
 
   const { data: games } = await supabase
     .from('games')
-    .select('item_type, platforms, genre, price, market_price, market_price_currency, copy_type, ownership, purchase_date, created_at')
+    .select(
+      'item_type, platforms, genre, price, market_price, market_price_currency, copy_type, ownership, purchase_date, created_at, play_status, trophy_completion, grade, card_set, series, publisher, player_name, format'
+    )
     .eq('user_id', user.id);
 
   return <InsightsClient games={games || []} currency={profile?.currency || 'USD'} />;
