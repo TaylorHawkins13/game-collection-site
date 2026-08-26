@@ -137,7 +137,9 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
           Bulk-add items from a CSV file instead of one at a time. Not sure how to format it?{' '}
           <a href="/shelf-life-import-template.csv" download>Download a template</a> with the right columns and an
           example row for each item type — fill it in (or paste your own data into matching columns), then upload
-          it below.
+          it below. The <code>price</code> and <code>price_alert_threshold</code> columns are plain numbers with no
+          currency of their own — both are read in whatever currency your Settings is set to, same as
+          entering them by hand.
         </div>
 
         {!done && (

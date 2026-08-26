@@ -25,7 +25,9 @@ const ImportCsvModal = dynamic(() => import('@/components/ImportCsvModal'), { ss
 const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), { ssr: false });
 const BulkSearchAddModal = dynamic(() => import('@/components/BulkSearchAddModal'), { ssr: false });
 const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
+const CollectingPrompt = dynamic(() => import('@/components/CollectingPrompt'), { ssr: false });
 import { CURRENCIES, formatMoney } from '@/lib/currency';
+import { CATEGORY_ORDER, TYPE_LABELS, availableTypes } from '@/lib/mosaicData';
 import { NOTIFICATION_TYPES } from '@/lib/notificationTypes';
 import { announceTrophies } from '@/lib/trophyToast';
 import { notifyTrophies } from '@/lib/notifyTrophies';
@@ -120,13 +122,33 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // valid an action as bulk-setting one.
   const [bulkPriority, setBulkPriority] = useState('1');
   const [showSettings, setShowSettings] = useState(false);
-  // Which Profile settings tab is active — Profile/Notifications/Security/
-  // "Data & danger zone" (see ROADMAP.md/CHANGELOG.md). Only "Profile" and
-  // "Notifications" write through settingsForm/saveSettings; everything on
-  // the other two tabs already saves immediately on its own button, same
-  // as before this was split into tabs.
+  // Which settings tab is active — Profile/Notifications/Security/
+  // "Data & danger zone"/Collecting (see ROADMAP.md/CHANGELOG.md). Renamed
+  // from "Profile settings" to plain "Settings" once it grew tabs that
+  // aren't really about the profile at all (Notifications, Security, Data,
+  // and now Collecting). Only "Profile" and "Notifications" write through
+  // settingsForm/saveSettings; everything on the other tabs (Security,
+  // Data & danger zone, and Collecting) already saves immediately on its
+  // own button, same pattern as before this was split into tabs.
   const [settingsTab, setSettingsTab] = useState('profile');
   const [showBulkSearchAdd, setShowBulkSearchAdd] = useState(false);
+  // "What do you collect?" preferences — which of the 10 item types are
+  // enabled (everything else hides from the Add Item type list, Quick
+  // add's item type picker, and the Filters "type" dropdown). Seeded from
+  // the profile row; empty/missing means "not customized yet," which every
+  // consumer below treats the same as "everything enabled." types_onboarded_at
+  // null is what gates the one-time CollectingPrompt modal — set the first
+  // time someone answers (or explicitly skips) that prompt, or saves the
+  // Collecting settings tab directly.
+  const [enabledItemTypes, setEnabledItemTypes] = useState(
+    profile?.enabled_item_types && profile.enabled_item_types.length > 0 ? profile.enabled_item_types : CATEGORY_ORDER
+  );
+  const [typesOnboardedAt, setTypesOnboardedAt] = useState(profile?.types_onboarded_at || null);
+  const [collectingSelection, setCollectingSelection] = useState(
+    () => new Set(profile?.enabled_item_types && profile.enabled_item_types.length > 0 ? profile.enabled_item_types : CATEGORY_ORDER)
+  );
+  const [savingTypes, setSavingTypes] = useState(false);
+  const [typesMsg, setTypesMsg] = useState('');
   // Collapsed-by-default now (see ROADMAP.md/CHANGELOG.md) — these four
   // used to default to expanded and stack above the toolbar on every
   // visit; now they're accordion rows inside the Tools panel below,
@@ -208,14 +230,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
   // Arriving from the profile page's "Edit profile" link (?settings=1) opens
   // the settings panel automatically instead of making people find the
-  // button. ?settingsTab=<profile|notifications|security|data> additionally
-  // (or on its own — either param alone opens the panel) jumps straight to
-  // that tab instead of always landing on Profile (see ROADMAP.md/
-  // CHANGELOG.md) — for a future in-app nudge or support reply that should
-  // land somewhere more specific than the first tab.
+  // button. ?settingsTab=<profile|notifications|collecting|security|data>
+  // additionally (or on its own — either param alone opens the panel) jumps
+  // straight to that tab instead of always landing on Profile (see
+  // ROADMAP.md/CHANGELOG.md) — for a future in-app nudge or support reply
+  // that should land somewhere more specific than the first tab.
   useEffect(() => {
     const tab = searchParams.get('settingsTab');
-    const validTab = ['profile', 'notifications', 'security', 'data'].includes(tab) ? tab : null;
+    const validTab = ['profile', 'notifications', 'collecting', 'security', 'data'].includes(tab) ? tab : null;
     if (searchParams.get('settings') === '1' || validTab) {
       setShowSettings(true);
     }
@@ -1432,6 +1454,50 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setSettingsMsg(error ? `Failed to save: ${error.message}` : 'Saved!');
   }
 
+  function toggleCollectingType(value) {
+    setCollectingSelection((s) => {
+      const next = new Set(s);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
+
+  // Collecting tab saves immediately on its own button, same as Security
+  // and Data & danger zone — kept separate from settingsForm/saveSettings
+  // above since toggling this ripples into what several other parts of the
+  // dashboard show, and deserved its own explicit confirmation rather than
+  // being folded into the shared Profile/Notifications save flow.
+  async function saveEnabledTypes() {
+    if (collectingSelection.size === 0) {
+      setTypesMsg('Failed: pick at least one type — you can always add more later.');
+      return;
+    }
+    const types = [...collectingSelection];
+    setSavingTypes(true);
+    setTypesMsg('');
+    const { error } = await supabase
+      .from('profiles')
+      .update({ enabled_item_types: types, types_onboarded_at: typesOnboardedAt || new Date().toISOString() })
+      .eq('id', userId);
+    setSavingTypes(false);
+    if (error) {
+      setTypesMsg(`Failed to save: ${error.message}`);
+      return;
+    }
+    setEnabledItemTypes(types);
+    if (!typesOnboardedAt) setTypesOnboardedAt(new Date().toISOString());
+    setTypesMsg('Saved!');
+  }
+
+  // Fires once the one-time "what do you collect?" prompt has been
+  // answered (or explicitly skipped) — see components/CollectingPrompt.jsx.
+  function handleCollectingPromptDone(types) {
+    setEnabledItemTypes(types);
+    setCollectingSelection(new Set(types));
+    setTypesOnboardedAt(new Date().toISOString());
+  }
+
   // Checked = deliver that notification type, same sense as the bell
   // itself; profiles.muted_notification_types stores the opposite (the
   // types NOT to deliver), so this flips the checkbox state into the
@@ -1584,7 +1650,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Refresh all prices
             </button>
             <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
-              Profile settings
+              Settings
             </button>
           </ActionMenu>
         </div>
@@ -1595,29 +1661,44 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           userId={userId}
           currency={currency}
           existingItems={games}
+          enabledTypes={enabledItemTypes}
           onClose={() => setShowBulkSearchAdd(false)}
           onItemsAdded={handleImported}
         />
       )}
 
+      {!typesOnboardedAt && (
+        <CollectingPrompt
+          userId={userId}
+          hasItems={games.length > 0}
+          initialTypes={games.length > 0 ? availableTypes(games) : CATEGORY_ORDER}
+          onDone={handleCollectingPromptDone}
+        />
+      )}
+
       {showSettings && (
         <div className="form-card" style={{ margin: '0 0 24px', maxWidth: 'none' }}>
-          <h2 style={{ marginTop: 0, fontSize: 16 }}>Profile settings</h2>
+          <h2 style={{ marginTop: 0, fontSize: 16 }}>Settings</h2>
 
           {/* Used to be one continuous scroll of roughly ten unrelated
               concerns with no subheadings at all — see ROADMAP.md/
               CHANGELOG.md. Split into tabs instead; nothing below moved
               or lost any capability, "Profile" and "Notifications" still
               share the one settingsForm/saveSettings flow (Save settings
-              only shows on those two), everything on Security and Data &
-              danger zone already saved/acted immediately on its own
-              button same as before. */}
+              only shows on those two), everything on Security, Data &
+              danger zone, and Collecting already saves/acts immediately
+              on its own button same as before. Renamed from "Profile
+              settings" to plain "Settings" once most of what lived here
+              stopped being about the profile at all. */}
           <div className="settings-tabs">
             <button type="button" className={`settings-tab${settingsTab === 'profile' ? ' active' : ''}`} onClick={() => setSettingsTab('profile')}>
               Profile
             </button>
             <button type="button" className={`settings-tab${settingsTab === 'notifications' ? ' active' : ''}`} onClick={() => setSettingsTab('notifications')}>
               Notifications
+            </button>
+            <button type="button" className={`settings-tab${settingsTab === 'collecting' ? ' active' : ''}`} onClick={() => setSettingsTab('collecting')}>
+              Collecting
             </button>
             <button type="button" className={`settings-tab${settingsTab === 'security' ? ' active' : ''}`} onClick={() => setSettingsTab('security')}>
               Security
@@ -1626,6 +1707,40 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Data &amp; danger zone
             </button>
           </div>
+
+          {settingsTab === 'collecting' && (
+            <div className="field">
+              <label>What do you collect?</label>
+              <div className="sub" style={{ marginTop: 0 }}>
+                Only checked types show up in Add Item&apos;s Type list, Quick add, and the dashboard Filters panel — nothing you&apos;ve
+                already logged is ever hidden or deleted, this only controls what you can newly pick.
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                  gap: 6,
+                  margin: '10px 0',
+                }}
+              >
+                {CATEGORY_ORDER.map((value) => (
+                  <label key={value} style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={collectingSelection.has(value)}
+                      onChange={() => toggleCollectingType(value)}
+                      style={{ width: 'auto', marginRight: 8 }}
+                    />
+                    {TYPE_LABELS[value]}
+                  </label>
+                ))}
+              </div>
+              {typesMsg && <div className={typesMsg.startsWith('Failed') ? 'error-text' : 'success-text'}>{typesMsg}</div>}
+              <button className="btn-primary" onClick={saveEnabledTypes} disabled={savingTypes} type="button">
+                {savingTypes ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          )}
 
           {settingsTab === 'profile' && (
             <>
@@ -2021,16 +2136,13 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               <div className="filters-grid">
                 <select value={fType} onChange={(e) => setFType(e.target.value)}>
                   <option value="">All types</option>
-                  <option value="game">Video Games</option>
-                  <option value="comic">Comics</option>
-                  <option value="trading_card">Trading Cards</option>
-                  <option value="vinyl">Vinyl Records</option>
-                  <option value="book">Books</option>
-                  <option value="dvd">DVDs / Blu-rays</option>
-                  <option value="vhs">VHS</option>
-                  <option value="cd">CDs</option>
-                  <option value="console">Consoles</option>
-                  <option value="funko_pop">Funko Pops</option>
+                  {/* Filtered to Collecting preferences (Settings > Collecting) —
+                      always includes whatever's currently selected even if it's
+                      since been disabled, so switching types off never leaves
+                      this showing a blank/mismatched selection mid-session. */}
+                  {CATEGORY_ORDER.filter((v) => enabledItemTypes.includes(v) || v === fType).map((v) => (
+                    <option key={v} value={v}>{TYPE_LABELS[v]}</option>
+                  ))}
                 </select>
                 <select value={fOwn} onChange={(e) => setFOwn(e.target.value)}>
                   <option value="">All statuses</option>
@@ -2462,6 +2574,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           userId={userId}
           suggestions={suggestions}
           existingItems={games}
+          enabledTypes={enabledItemTypes}
           onClose={() => {
             setModalGame(undefined);
             setDuplicateOf(undefined);

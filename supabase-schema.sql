@@ -1458,3 +1458,26 @@ alter policy "Games readable if profile is public or owner"
       and exists (select 1 from profiles p where p.id = games.user_id and p.wishlist_public = true)
     )
   );
+
+-- ============================================================
+-- "What do you collect?" preferences
+-- (see collection-types-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+-- Which of the 10 item types this collector actually collects — see
+-- ROADMAP.md/CHANGELOG.md and components/CollectingPrompt.jsx. Everything
+-- else hides from the Add Item type list, Quick add (search)'s item type
+-- picker, and the dashboard Filters "type" dropdown, reachable again
+-- anytime from Settings > Collecting. Defaults to every type enabled, so
+-- an existing account sees zero behavior change until it (or its owner)
+-- actually goes through the prompt or narrows things down by hand.
+-- types_onboarded_at stays null until the prompt is answered (or
+-- explicitly skipped) — that's what gates whether CollectingPrompt shows
+-- on the next dashboard visit; skipping still sets it, just without
+-- narrowing enabled_item_types down from the all-enabled default.
+alter table public.profiles
+  add column if not exists enabled_item_types text[] not null default array[
+    'game', 'comic', 'trading_card', 'vinyl', 'book', 'dvd', 'vhs', 'cd', 'console', 'funko_pop'
+  ]::text[],
+  add column if not exists types_onboarded_at timestamptz;

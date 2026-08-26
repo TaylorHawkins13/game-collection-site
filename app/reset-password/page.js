@@ -128,7 +128,7 @@ function ResetPasswordForm() {
     // the same time, not just this one. Failing to reach this shouldn't
     // hold up the redirect below; the new password is already saved
     // either way, and there's also a manual "Sign out of all other
-    // devices" button in Profile Settings for the same thing later.
+    // devices" button in Settings for the same thing later.
     supabase.auth.signOut({ scope: 'others' }).catch(() => {});
 
     setDone(true);

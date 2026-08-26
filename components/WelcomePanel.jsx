@@ -38,7 +38,7 @@ export default function WelcomePanel({ displayName, onAddItem, onQuickAdd, onImp
       </div>
 
       <p className="sub" style={{ marginTop: 20, marginBottom: 0 }}>
-        Once you've added a few things, you can make your profile public in Profile Settings so friends can see
+        Once you've added a few things, you can make your profile public in Settings so friends can see
         your shelf — or keep it private, entirely up to you. Not sure where to start?{' '}
         <Link href="/players">Browse other collectors</Link> for ideas.
       </p>

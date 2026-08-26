@@ -73,7 +73,7 @@ export async function GET() {
     followers: (followers || []).map((f) => ({ since: f.created_at, ...f.follower })),
     activity: activity || [],
     trophies: trophies || [],
-    note: 'Collection items aren\'t included here — use "Export CSV" in Profile settings for those.',
+    note: 'Collection items aren\'t included here — use "Export CSV" in Settings for those.',
   };
 
   return new NextResponse(JSON.stringify(exportData, null, 2), {

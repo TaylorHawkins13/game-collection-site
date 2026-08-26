@@ -7,7 +7,7 @@ import useModalA11y from '@/lib/useModalA11y';
 const BATCH_SIZE = 100;
 
 const ERROR_MESSAGES = {
-  not_connected: 'Connect your Steam account first (Profile settings → Connected accounts).',
+  not_connected: 'Connect your Steam account first (Settings → Connected accounts).',
   not_configured: "Steam import isn't set up on this site yet.",
   fetch_failed: "Couldn't reach Steam — try again in a moment.",
 };

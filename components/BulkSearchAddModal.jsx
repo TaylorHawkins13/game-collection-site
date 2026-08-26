@@ -70,9 +70,16 @@ const SEARCH_ENDPOINT = {
   comic: '/api/comic-search',
 };
 
-export default function BulkSearchAddModal({ userId, currency, existingItems, onClose, onItemsAdded }) {
+export default function BulkSearchAddModal({ userId, currency, existingItems, onClose, onItemsAdded, enabledTypes }) {
   const supabase = createClient();
-  const [itemType, setItemType] = useState('game');
+  // Falls back to the full list if enabledTypes is missing/empty (a
+  // profile row from before the "Collecting" preferences existed, or
+  // someone who hasn't been through the picker yet) — never leaves the
+  // Item type picker with nothing to choose from.
+  const filteredTypeOptions =
+    enabledTypes && enabledTypes.length > 0 ? TYPE_OPTIONS.filter((t) => enabledTypes.includes(t.value)) : TYPE_OPTIONS;
+  const availableTypeOptions = filteredTypeOptions.length > 0 ? filteredTypeOptions : TYPE_OPTIONS;
+  const [itemType, setItemType] = useState(availableTypeOptions[0]?.value || 'game');
   const [started, setStarted] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -339,7 +346,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
             <div className="field">
               <label htmlFor="bulk-search-item-type">Item type</label>
               <select id="bulk-search-item-type" value={itemType} onChange={(e) => setItemType(e.target.value)}>
-                {TYPE_OPTIONS.map((t) => (
+                {availableTypeOptions.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>

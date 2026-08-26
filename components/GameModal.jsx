@@ -17,19 +17,25 @@ import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
 import SeriesGrid from './SeriesGrid';
 
-// Kept in sync with the <option> values in the Type <select> further down.
-const KNOWN_ITEM_TYPES = [
-  'game',
-  'comic',
-  'trading_card',
-  'vinyl',
-  'book',
-  'dvd',
-  'vhs',
-  'cd',
-  'console',
-  'funko_pop',
+// Single source for the Type <select> further down — value/label pairs
+// used to build its <option>s, filtered down to whatever the signed-in
+// collector actually enabled (see the "Collecting" settings tab) before
+// rendering. KNOWN_ITEM_TYPES stays around as the values-only list for the
+// couple of spots (the last-used-type fallback) that just need to check
+// membership.
+const ITEM_TYPE_OPTIONS = [
+  { value: 'game', label: 'Video Game' },
+  { value: 'comic', label: 'Comic' },
+  { value: 'trading_card', label: 'Trading Card' },
+  { value: 'vinyl', label: 'Vinyl Record' },
+  { value: 'book', label: 'Book' },
+  { value: 'dvd', label: 'DVD / Blu-ray' },
+  { value: 'vhs', label: 'VHS' },
+  { value: 'cd', label: 'CD' },
+  { value: 'console', label: 'Console' },
+  { value: 'funko_pop', label: 'Funko Pop' },
 ];
+const KNOWN_ITEM_TYPES = ITEM_TYPE_OPTIONS.map((t) => t.value);
 const LAST_ITEM_TYPE_KEY = 'gct_last_item_type';
 
 // An IGDB game result's `platforms` array is what actually ends up in the
@@ -94,9 +100,14 @@ const EMPTY = {
   asking_price: '',
 };
 
-export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems }) {
+export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems, enabledTypes }) {
   const sg = suggestions || {};
   const supabase = createClient();
+  // Falls back to every known type if enabledTypes is missing/empty (a
+  // profile row from before the "Collecting" preferences existed, or
+  // someone who hasn't been through the picker yet) — never leaves the
+  // Type dropdown with nothing to choose from.
+  const allowedTypes = enabledTypes && enabledTypes.length > 0 ? enabledTypes : KNOWN_ITEM_TYPES;
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -182,13 +193,15 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       // Blank "Add Item" (no item being edited, no duplicateOf source) —
       // default to whatever type was last successfully added instead of
       // always Video Game, so someone mostly logging trading cards isn't
-      // reselecting the dropdown every single time. Falls back to the
-      // original 'game' default the first time, or if storage is
-      // unavailable (private browsing, etc.).
-      let lastType = 'game';
+      // reselecting the dropdown every single time. Falls back to 'game'
+      // (or, if that type's been disabled in Collecting preferences, the
+      // first still-enabled type) the first time, or if storage is
+      // unavailable (private browsing, etc.), or if the last-used type is
+      // itself no longer enabled.
+      let lastType = allowedTypes.includes('game') ? 'game' : allowedTypes[0];
       try {
         const stored = typeof window !== 'undefined' ? localStorage.getItem(LAST_ITEM_TYPE_KEY) : null;
-        if (stored && KNOWN_ITEM_TYPES.includes(stored)) lastType = stored;
+        if (stored && allowedTypes.includes(stored)) lastType = stored;
       } catch {
         // ignore — localStorage can throw in some private-browsing setups
       }
@@ -878,16 +891,12 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         <div className="field">
           <label htmlFor="gm-item-type">Type</label>
           <select id="gm-item-type" value={form.item_type} onChange={(e) => set('item_type', e.target.value)}>
-            <option value="game">Video Game</option>
-            <option value="comic">Comic</option>
-            <option value="trading_card">Trading Card</option>
-            <option value="vinyl">Vinyl Record</option>
-            <option value="book">Book</option>
-            <option value="dvd">DVD / Blu-ray</option>
-            <option value="vhs">VHS</option>
-            <option value="cd">CD</option>
-            <option value="console">Console</option>
-            <option value="funko_pop">Funko Pop</option>
+            {/* Always includes the item's own current type even if it's since
+                been disabled in Collecting preferences — editing an item you
+                already logged should never show a blank/invalid type. */}
+            {ITEM_TYPE_OPTIONS.filter((t) => allowedTypes.includes(t.value) || t.value === form.item_type).map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
           </select>
         </div>
 

@@ -21,7 +21,7 @@ export default function NotificationBell({ userId }) {
   const [loaded, setLoaded] = useState(false);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
-  // Types this user has muted, from Profile settings (lib/notificationTypes.js,
+  // Types this user has muted, from Settings (lib/notificationTypes.js,
   // profiles.muted_notification_types) — a ref rather than state so
   // refreshCount's setInterval closure (created once, below) always reads
   // the current value instead of whatever it was when the interval started.

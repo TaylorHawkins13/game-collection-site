@@ -47,7 +47,7 @@ export default function PrivacyPage() {
         <h2 style={{ fontSize: 17 }}>Public vs. private data</h2>
         <p>
           Your profile defaults to public — your collection, follower/following lists, and comments are visible
-          to anyone. You can switch your profile to private in Profile Settings at any time, which hides your
+          to anyone. You can switch your profile to private in Settings at any time, which hides your
           collection and removes it from the leaderboard (your username and the fact that you have an account
           may still be discoverable).
         </p>
