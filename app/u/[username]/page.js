@@ -346,6 +346,7 @@ export default async function ProfilePage({ params }) {
             currency={profile.currency}
             ownerName={profile.display_name || profile.username}
             isOwnProfile={viewer?.id === profile.id}
+            enabledTypes={profile.enabled_item_types}
           />
         </>
       )}
