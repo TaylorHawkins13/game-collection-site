@@ -31,8 +31,19 @@ body[data-theme='light'] {
   --text-dim: #5c6491;
   --accent: #6c5ce7;
   --accent-2: #00a389;
-  --warn: #c97a12;
+  --warn: #a8660f;
   --danger: #d63f60;
+  /* Status/tier colors below aren't overridden anywhere else in this
+     file — without these, they silently inherit the dark-theme values
+     above, which fall as low as ~1.6:1 against a white card in light
+     mode (WCAG AA needs 4.5:1 for text). These are the same hues,
+     darkened just enough to clear 4.5:1 against #fff — see
+     CHANGELOG.md for the audit. */
+  --owned: #00856a;
+  --sold: #eb002a;
+  --tier-bronze: #a66728;
+  --tier-silver: #6574a0;
+  --tier-gold: #937014;
   --shadow: 0 8px 20px rgba(30, 35, 80, 0.1);
 }
 
@@ -131,6 +142,7 @@ textarea {
   margin: 0 auto;
   padding: 20px 32px 40px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
@@ -143,6 +155,26 @@ textarea {
 }
 .site-footer a:hover {
   color: var(--accent);
+}
+/* Found during a mobile audit (see ROADMAP.md "Mobile layout feels
+   disorganized in places"): the footer never wrapped at all — with no
+   flex-wrap, its 6 items (copyright text + 5 links, including the newer
+   Collectible Database one) just kept shrinking individual link text
+   ("Privacy Policy" wrapping to two lines on its own) until the row ran
+   out of room, at which point the last link overflowed straight past the
+   right edge of the viewport — completely unreachable on a real phone,
+   not just visually clipped, since html/body's site-wide overflow-x:
+   hidden safety net (see its own comment above) rules out reaching it by
+   scrolling sideways either. flex-wrap: wrap on the base rule (harmless
+   at any width — desktop already fits in one row with room to spare, so
+   wrapping never actually triggers there) fixes the cutoff outright; this
+   override just makes the wrapped result look intentional on a narrow
+   screen instead of the default left-aligned ragged wrap. */
+@media (max-width: 640px) {
+  .site-footer {
+    justify-content: center;
+    text-align: center;
+  }
 }
 
 .cookie-banner {
