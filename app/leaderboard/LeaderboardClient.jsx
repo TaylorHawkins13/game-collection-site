@@ -88,6 +88,12 @@ function rowKey(type, row) {
   return type === 'person' ? row.user_id : row.title_key;
 }
 
+// Left-to-right visual position for each rank, 1-indexed — 2nd place shows
+// on the left, 1st in the middle, 3rd on the right. Used to sort the DOM
+// order to match (see the render below); kept as its own lookup so the
+// "podium shape" is defined in exactly one place.
+const PODIUM_VISUAL_ORDER = { 1: 2, 2: 1, 3: 3 };
+
 function PodiumPlace({ place, type, row, metricKey }) {
   const name = type === 'person' ? row.display_name || row.username : row.title;
   const content =
@@ -198,15 +204,25 @@ export default function LeaderboardClient({
         </div>
       ) : (
         <div className="leaderboard-podium">
-          {podiumRows.map((row, i) => (
-            <PodiumPlace
-              key={rowKey(activeType, row)}
-              place={i + 1}
-              type={activeType}
-              row={row}
-              metricKey={isFriends ? friendsMetric : tab}
-            />
-          ))}
+          {/* Rendered left-to-right in the actual visual order (2nd, 1st,
+              3rd — the classic podium arrangement) rather than rank order
+              with a CSS `order` reorder on top. DOM order now matches what's
+              on screen, so keyboard Tab order does too — previously Tab
+              landed on the visually-middle 1st-place card before the
+              visually-left 2nd-place one, out of sync with the layout
+              (WCAG 2.4.3). See CHANGELOG.md. */}
+          {podiumRows
+            .map((row, i) => ({ row, place: i + 1 }))
+            .sort((a, b) => PODIUM_VISUAL_ORDER[a.place] - PODIUM_VISUAL_ORDER[b.place])
+            .map(({ row, place }) => (
+              <PodiumPlace
+                key={rowKey(activeType, row)}
+                place={place}
+                type={activeType}
+                row={row}
+                metricKey={isFriends ? friendsMetric : tab}
+              />
+            ))}
         </div>
       )}
     </div>

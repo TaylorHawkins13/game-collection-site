@@ -1811,15 +1811,10 @@ button.badge.tag:hover {
   align-items: center;
   width: 140px;
 }
-.podium-place.place-1 {
-  order: 2;
-}
-.podium-place.place-2 {
-  order: 1;
-}
-.podium-place.place-3 {
-  order: 3;
-}
+/* Visual left-to-right order (2nd, 1st, 3rd) now comes from DOM order —
+   see app/leaderboard/LeaderboardClient.jsx's PODIUM_VISUAL_ORDER — rather
+   than a CSS `order` reorder here, so keyboard Tab order matches what's on
+   screen. See CHANGELOG.md. */
 .podium-link {
   display: flex;
   flex-direction: column;
@@ -4047,28 +4042,6 @@ button.badge.tag:hover {
   cursor: pointer;
   font-family: inherit;
   color: var(--text);
-}
-/* Was an emoji per type until this was reworked out (requested directly:
-   "remove emojis from the site and app") — now a small colored monogram
-   chip (lib/mosaicData.js's TYPE_MONOGRAMS), same --tile-color/color-mix()
-   treatment .system-tile already established rather than a solid fill,
-   so a bright accent color (e.g. trading cards' gold) never has to carry
-   white text at a contrast ratio that wouldn't hold up. */
-.shelf-hero-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 16px;
-  padding: 0 5px;
-  border-radius: 4px;
-  border: 1px solid var(--tile-color, var(--border));
-  color: var(--tile-color, var(--text-dim));
-  background: color-mix(in srgb, var(--tile-color, var(--accent)) 12%, var(--card));
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
 }
 .shelf-hero-label {
   font-size: 13px;
