@@ -7,19 +7,24 @@ import { CATEGORY_ORDER, TYPE_LABELS } from '@/lib/mosaicData';
 
 // One-time "what do you collect?" prompt — shown once per account, gated
 // on profiles.types_onboarded_at being null, so the app can hide types
-// nobody uses (Add Item's Type dropdown, Quick add's Item type picker,
-// the dashboard Filters "type" list) instead of always showing all 10.
-// Requested directly: "when someone registers I want them to be asked
-// questions to tailor shelf life to them... if someone only collects
-// books and comics, hide anything that isn't relevant to them" — plus a
-// "welcome back" version for every account that already existed before
-// this shipped. Answering or skipping either way sets types_onboarded_at
-// so this never shows again on its own; the same checklist is always
-// reachable afterward from Settings > Collecting for someone who starts
-// collecting something new. Skipping leaves the profile row's existing
-// enabled_item_types untouched (every type, for anyone who hasn't been
-// through this before) — nothing gets hidden until someone actually
-// narrows it down themselves.
+// nobody uses (the dashboard Filters "type" list, the shelf hero) instead
+// of always showing all 10. Requested directly: "when someone registers I
+// want them to be asked questions to tailor shelf life to them... if
+// someone only collects books and comics, hide anything that isn't
+// relevant to them" — plus a "welcome back" version for every account
+// that already existed before this shipped. Deliberately does NOT touch
+// Add Item's Type dropdown or Quick add's Item type picker — both always
+// offer every type regardless of this setting (requested directly, right
+// after this shipped: narrowing what you can newly add would mean a type
+// you haven't picked here is impossible to ever start tracking without a
+// trip to Settings first). Picking one there just re-enables it
+// automatically — see DashboardClient.jsx's ensureTypeEnabled. Answering
+// or skipping either way sets types_onboarded_at so this never shows
+// again on its own; the same checklist is always reachable afterward from
+// Settings > Collecting for someone who starts collecting something new.
+// Skipping leaves the profile row's existing enabled_item_types untouched
+// (every type, for anyone who hasn't been through this before) — nothing
+// gets hidden until someone actually narrows it down themselves.
 export default function CollectingPrompt({ userId, hasItems, initialTypes, onDone }) {
   const supabase = createClient();
   const [selected, setSelected] = useState(
@@ -75,8 +80,9 @@ export default function CollectingPrompt({ userId, hasItems, initialTypes, onDon
       <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="collecting-prompt-title">
         <h2 id="collecting-prompt-title">{hasItems ? 'Welcome back — what do you collect?' : 'What do you collect?'}</h2>
         <div className="sub">
-          Pick everything you collect and Shelf Life will hide the rest — the Add Item type list, Quick add, and the dashboard
-          Filters panel only show what you pick here. Change this anytime from Settings &gt; Collecting.
+          Pick everything you collect and Shelf Life will tidy up around it — your dashboard Filters panel and shelf only show
+          what you pick here. You can still add any type any time from Add Item or Quick add; doing so checks it here
+          automatically. Change this anytime from Settings &gt; Collecting.
         </div>
 
         <div

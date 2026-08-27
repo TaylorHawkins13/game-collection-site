@@ -18,11 +18,12 @@ import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, pr
 import SeriesGrid from './SeriesGrid';
 
 // Single source for the Type <select> further down — value/label pairs
-// used to build its <option>s, filtered down to whatever the signed-in
-// collector actually enabled (see the "Collecting" settings tab) before
-// rendering. KNOWN_ITEM_TYPES stays around as the values-only list for the
-// couple of spots (the last-used-type fallback) that just need to check
-// membership.
+// used to build its <option>s. Every type is always offered here
+// regardless of Collecting preferences (see ROADMAP.md/CHANGELOG.md) —
+// picking one outside the enabled set just re-enables it (see
+// onTypeUsed). KNOWN_ITEM_TYPES stays around as the values-only list for
+// the couple of spots (the last-used-type fallback) that just need to
+// check membership.
 const ITEM_TYPE_OPTIONS = [
   { value: 'game', label: 'Video Game' },
   { value: 'comic', label: 'Comic' },
@@ -100,14 +101,9 @@ const EMPTY = {
   asking_price: '',
 };
 
-export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems, enabledTypes }) {
+export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems, onTypeUsed }) {
   const sg = suggestions || {};
   const supabase = createClient();
-  // Falls back to every known type if enabledTypes is missing/empty (a
-  // profile row from before the "Collecting" preferences existed, or
-  // someone who hasn't been through the picker yet) — never leaves the
-  // Type dropdown with nothing to choose from.
-  const allowedTypes = enabledTypes && enabledTypes.length > 0 ? enabledTypes : KNOWN_ITEM_TYPES;
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -193,15 +189,13 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       // Blank "Add Item" (no item being edited, no duplicateOf source) —
       // default to whatever type was last successfully added instead of
       // always Video Game, so someone mostly logging trading cards isn't
-      // reselecting the dropdown every single time. Falls back to 'game'
-      // (or, if that type's been disabled in Collecting preferences, the
-      // first still-enabled type) the first time, or if storage is
-      // unavailable (private browsing, etc.), or if the last-used type is
-      // itself no longer enabled.
-      let lastType = allowedTypes.includes('game') ? 'game' : allowedTypes[0];
+      // reselecting the dropdown every single time. Falls back to the
+      // original 'game' default the first time, or if storage is
+      // unavailable (private browsing, etc.).
+      let lastType = 'game';
       try {
         const stored = typeof window !== 'undefined' ? localStorage.getItem(LAST_ITEM_TYPE_KEY) : null;
-        if (stored && allowedTypes.includes(stored)) lastType = stored;
+        if (stored && KNOWN_ITEM_TYPES.includes(stored)) lastType = stored;
       } catch {
         // ignore — localStorage can throw in some private-browsing setups
       }
@@ -805,14 +799,24 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     setSaving(false);
     if (result?.error) {
       setSaveError(result.error);
-    } else if (!game?.id) {
-      // Only remember the type for genuinely new items — editing an
-      // existing item's type shouldn't change what the next blank Add
-      // form defaults to.
-      try {
-        if (typeof window !== 'undefined') localStorage.setItem(LAST_ITEM_TYPE_KEY, form.item_type);
-      } catch {
-        // ignore — localStorage can throw in some private-browsing setups
+    } else {
+      // Saving successfully with a type outside Collecting preferences
+      // means that type is back in play — re-enable it rather than
+      // leaving an item logged of a type nothing else on the dashboard
+      // (Filters, the shelf hero) still shows. onTypeUsed is a no-op if
+      // the type's already enabled. Runs for edits too, not just new
+      // items — changing an existing item's type to something disabled
+      // has the same implication.
+      onTypeUsed && onTypeUsed(form.item_type);
+      if (!game?.id) {
+        // Only remember the type for genuinely new items — editing an
+        // existing item's type shouldn't change what the next blank Add
+        // form defaults to.
+        try {
+          if (typeof window !== 'undefined') localStorage.setItem(LAST_ITEM_TYPE_KEY, form.item_type);
+        } catch {
+          // ignore — localStorage can throw in some private-browsing setups
+        }
       }
     }
   }
@@ -890,11 +894,15 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
 
         <div className="field">
           <label htmlFor="gm-item-type">Type</label>
+          {/* Always shows every type, regardless of Collecting preferences
+              (see ROADMAP.md/CHANGELOG.md) — narrowing what you can newly
+              pick was never the point, only decluttering the default view.
+              Picking a type outside your enabled set here re-enables it
+              automatically (see onTypeUsed below), rather than silently
+              adding an item of a type nothing else on the dashboard will
+              then show. */}
           <select id="gm-item-type" value={form.item_type} onChange={(e) => set('item_type', e.target.value)}>
-            {/* Always includes the item's own current type even if it's since
-                been disabled in Collecting preferences — editing an item you
-                already logged should never show a blank/invalid type. */}
-            {ITEM_TYPE_OPTIONS.filter((t) => allowedTypes.includes(t.value) || t.value === form.item_type).map((t) => (
+            {ITEM_TYPE_OPTIONS.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
