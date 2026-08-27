@@ -1481,3 +1481,18 @@ alter table public.profiles
     'game', 'comic', 'trading_card', 'vinyl', 'book', 'dvd', 'vhs', 'cd', 'console', 'funko_pop'
   ]::text[],
   add column if not exists types_onboarded_at timestamptz;
+
+-- ============================================================
+-- Opt-in monthly email data backup
+-- (see email-backup-migration.sql for the standalone version used when
+-- updating an existing project)
+-- ============================================================
+
+-- Whether to email this account a monthly backup (the same CSV + JSON
+-- "Export CSV"/"Download my data" already produce on demand) — see
+-- ROADMAP.md "Opt-in automatic backup of exports" and
+-- app/api/cron/email-data-backup. Defaults to false: this sends an actual
+-- email with attachments once a month, so it's opt-in rather than
+-- something every existing account suddenly starts receiving.
+alter table public.profiles
+  add column if not exists email_backup_enabled boolean not null default false;

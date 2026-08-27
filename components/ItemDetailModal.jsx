@@ -78,7 +78,14 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
           <div className="detail-cover-wrap">
             {game.cover ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="detail-cover" src={game.cover} alt={game.title} />
+              <img
+                className="detail-cover"
+                src={game.cover}
+                alt={game.title}
+                onError={(e) => {
+                  e.currentTarget.outerHTML = '<div class="detail-cover placeholder">No Cover</div>';
+                }}
+              />
             ) : (
               <div className="detail-cover placeholder">No Cover</div>
             )}

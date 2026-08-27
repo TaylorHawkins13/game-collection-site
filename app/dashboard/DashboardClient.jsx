@@ -319,6 +319,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [deleteAccountError, setDeleteAccountError] = useState('');
   const [deletionRequestedAt, setDeletionRequestedAt] = useState(profile?.deletion_requested_at || null);
   const [cancelingDeletion, setCancelingDeletion] = useState(false);
+  const [emailBackupEnabled, setEmailBackupEnabled] = useState(profile?.email_backup_enabled ?? false);
+  const [savingEmailBackup, setSavingEmailBackup] = useState(false);
+  const [emailBackupMsg, setEmailBackupMsg] = useState('');
   const [signingOutOthers, setSigningOutOthers] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
@@ -1346,6 +1349,26 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     window.location.href = '/api/account/export';
   }
 
+  // Whether app/api/cron/email-data-backup emails this account a monthly
+  // backup automatically — the same two files "Export CSV"/"Download my
+  // data" above already produce on demand, see ROADMAP.md/CHANGELOG.md.
+  // Saves immediately on toggle, same as Collecting/Security/the rest of
+  // Data & danger zone (see saveEnabledTypes' comment) — a single
+  // checkbox doesn't need its own Save button.
+  async function toggleEmailBackup(enabled) {
+    setEmailBackupEnabled(enabled);
+    setSavingEmailBackup(true);
+    setEmailBackupMsg('');
+    const { error } = await supabase.from('profiles').update({ email_backup_enabled: enabled }).eq('id', userId);
+    setSavingEmailBackup(false);
+    if (error) {
+      setEmailBackupEnabled(!enabled);
+      setEmailBackupMsg(`Failed to save: ${error.message}`);
+      return;
+    }
+    setEmailBackupMsg('Saved!');
+  }
+
   // Same shape as handleImported — used by SteamImportModal instead of CSV.
   function handleSteamImported(newRows) {
     setGames((gs) => [...gs, ...newRows]);
@@ -2008,6 +2031,28 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     </ActionMenu>
                   )}
                 </div>
+              </div>
+
+              <div className="field" style={{ marginTop: 20 }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={emailBackupEnabled}
+                    onChange={(e) => toggleEmailBackup(e.target.checked)}
+                    disabled={savingEmailBackup}
+                    style={{ width: 'auto', marginRight: 8 }}
+                  />
+                  Email me a monthly backup
+                </label>
+                <p className="sub" style={{ margin: '4px 0 0' }}>
+                  The same two files as Export CSV and Download my data above, sent to your account email on the 1st
+                  of every month — a copy off to the side without needing to remember to click Export.
+                  {emailBackupMsg && (
+                    <span className={emailBackupMsg.startsWith('Failed') ? 'error-text' : 'success-text'} style={{ marginLeft: 6 }}>
+                      {emailBackupMsg}
+                    </span>
+                  )}
+                </p>
               </div>
 
               <div className="field" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>

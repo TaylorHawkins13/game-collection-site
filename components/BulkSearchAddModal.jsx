@@ -70,16 +70,9 @@ const SEARCH_ENDPOINT = {
   comic: '/api/comic-search',
 };
 
-export default function BulkSearchAddModal({ userId, currency, existingItems, onClose, onItemsAdded, enabledTypes }) {
+export default function BulkSearchAddModal({ userId, currency, existingItems, onClose, onItemsAdded, onTypeUsed }) {
   const supabase = createClient();
-  // Falls back to the full list if enabledTypes is missing/empty (a
-  // profile row from before the "Collecting" preferences existed, or
-  // someone who hasn't been through the picker yet) — never leaves the
-  // Item type picker with nothing to choose from.
-  const filteredTypeOptions =
-    enabledTypes && enabledTypes.length > 0 ? TYPE_OPTIONS.filter((t) => enabledTypes.includes(t.value)) : TYPE_OPTIONS;
-  const availableTypeOptions = filteredTypeOptions.length > 0 ? filteredTypeOptions : TYPE_OPTIONS;
-  const [itemType, setItemType] = useState(availableTypeOptions[0]?.value || 'game');
+  const [itemType, setItemType] = useState('game');
   const [started, setStarted] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -322,6 +315,11 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
     setAdding(false);
     if (inserted.length) {
       onItemsAdded(inserted);
+      // Every row in one Quick add session shares the same itemType (the
+      // step-1 picker locks in before searching starts) — re-enable it if
+      // it was outside Collecting preferences, same reasoning as
+      // GameModal's own onTypeUsed call. A no-op if it's already enabled.
+      onTypeUsed && onTypeUsed(itemType);
       // Drop only the ones that actually made it in (insert order matches
       // queue order) so a partial failure leaves the remainder in place
       // to retry, instead of silently losing track of what's still
@@ -345,8 +343,13 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
           <>
             <div className="field">
               <label htmlFor="bulk-search-item-type">Item type</label>
+              {/* Every type this modal can search at all is always offered
+                  here regardless of Collecting preferences (see
+                  ROADMAP.md/CHANGELOG.md) — picking one outside the enabled
+                  set re-enables it automatically once the batch commits
+                  (see onTypeUsed below), same as the single-item Add form. */}
               <select id="bulk-search-item-type" value={itemType} onChange={(e) => setItemType(e.target.value)}>
-                {availableTypeOptions.map((t) => (
+                {TYPE_OPTIONS.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
@@ -429,7 +432,21 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                   >
                     {(r.thumb || r.cover) && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.thumb || r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                      <img
+                        src={r.thumb || r.cover}
+                        alt=""
+                        style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }}
+                        onError={(e) => {
+                          // No adjacent placeholder box to swap to here (a
+                          // small inline-styled row thumbnail, unlike the
+                          // dedicated cover-with-placeholder components
+                          // elsewhere) — the title/meta text next to it
+                          // already carries the real info, so just hide a
+                          // broken image instead of showing the browser's
+                          // default broken-image icon.
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     )}
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
@@ -451,7 +468,14 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                         {item.cover && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.cover} alt="" style={{ width: 26, height: 34, objectFit: 'cover', borderRadius: 3 }} />
+                          <img
+                            src={item.cover}
+                            alt=""
+                            style={{ width: 26, height: 34, objectFit: 'cover', borderRadius: 3 }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         )}
                         <div style={{ flex: 1, fontSize: 13 }}>{item.title}</div>
                         <button

@@ -9,7 +9,14 @@ export default function PublicListCard({ list }) {
     <Link href={`/lists/${list.id}`} className="card clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
       {list.cover ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="cover" src={list.cover} alt="" />
+        <img
+          className="cover"
+          src={list.cover}
+          alt=""
+          onError={(e) => {
+            e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
+          }}
+        />
       ) : (
         <div className="cover placeholder">No Cover</div>
       )}

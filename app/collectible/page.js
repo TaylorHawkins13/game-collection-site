@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabaseServer';
 import { buildCollectibleDetail, buildIgdbDetail } from '@/lib/collectibleDetail';
 import { searchIgdb } from '@/lib/igdbSearch';
 import { TYPE_LABELS } from '@/lib/mosaicData';
+import { CoverThumb } from '@/components/LeaderboardThumb';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,12 +87,12 @@ export default async function CollectiblePage({ searchParams }) {
       </Link>
 
       <div className="collectible-header">
-        {detail.primary.cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="collectible-cover" src={detail.primary.cover} alt={detail.title} />
-        ) : (
-          <div className="collectible-cover placeholder">No Cover</div>
-        )}
+        {/* CoverThumb, not a raw <img> — this page is a Server Component,
+            and an onError handler can't be attached to an element rendered
+            directly inside one (see LeaderboardThumb.jsx's header comment).
+            CoverThumb is already its own small 'use client' component for
+            exactly this reason. */}
+        <CoverThumb cover={detail.primary.cover} title={detail.title} className="collectible-cover" />
         <div style={{ minWidth: 0 }}>
           <h1 className="collectible-title">{detail.title}</h1>
           <div className="collectible-type">{TYPE_LABELS[detail.itemType] || detail.itemType}</div>

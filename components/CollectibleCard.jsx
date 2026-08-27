@@ -11,7 +11,14 @@ export default function CollectibleCard({ item }) {
     <Link href={href} className="card clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
       {item.cover ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="cover" src={item.cover} alt={item.title} />
+        <img
+          className="cover"
+          src={item.cover}
+          alt={item.title}
+          onError={(e) => {
+            e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
+          }}
+        />
       ) : (
         <div className="cover placeholder">No Cover</div>
       )}
