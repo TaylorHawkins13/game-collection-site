@@ -1190,11 +1190,19 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     } catch {
       // ignore — localStorage can throw in some private-browsing setups
     }
+    // A platform or completeness mention ("on ps2", "CIB") is a strong,
+    // game-specific signal — worth overriding whatever item type was
+    // last used (which could easily be "trading_card" from the last
+    // thing added), since GameModal only shows the Platforms/Completeness
+    // fields at all when the item type is a game (or console).
+    if (parsed.itemTypeHint) itemType = parsed.itemTypeHint;
     setDuplicateOf({
       title: parsed.title,
       item_type: itemType,
       price: parsed.price != null ? String(parsed.price) : '',
       purchase_date: parsed.purchase_date || '',
+      platforms: parsed.platform ? [parsed.platform] : [],
+      completeness: parsed.completeness || '',
     });
     setDuplicateSource('quick-add-text');
     setModalGame(null);

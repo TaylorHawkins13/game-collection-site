@@ -4,6 +4,15 @@ import { useMemo, useState } from 'react';
 import useModalA11y from '@/lib/useModalA11y';
 import { parseQuickAddText } from '@/lib/quickAddParse';
 
+// Mirrors GameModal.jsx's Completeness <select> option labels, short form —
+// just enough to confirm in the preview line what got picked up.
+const COMPLETENESS_LABELS = {
+  loose: 'Loose',
+  no_manual: 'CIB minus manual',
+  cib: 'CIB',
+  box_only: 'Box only',
+};
+
 // "Chat-style quick add" — ROADMAP.md: "parse a short typed sentence into
 // a pre-filled Add form instead of picking fields one at a time, for fast
 // bulk logging right after a store run." Parses live as you type (cheap,
@@ -30,8 +39,8 @@ export default function QuickAddTextModal({ onClose, onParsed }) {
       <div className="modal" ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="quick-add-text-modal-title">
         <h2 id="quick-add-text-modal-title">Quick add (type it)</h2>
         <div className="sub">
-          Type it like you'd tell a friend — "logged a Chrono Trigger for $40 today" — and it'll pre-fill the Add
-          form. Best effort: always worth a glance before you save.
+          Type it like you'd tell a friend — "fifa 06 on ps2 CIB $8 today" — and it'll pre-fill the Add form,
+          platform and completeness included for games. Best effort: always worth a glance before you save.
         </div>
 
         <div className="field" style={{ marginTop: 12 }}>
@@ -42,7 +51,7 @@ export default function QuickAddTextModal({ onClose, onParsed }) {
             autoFocus
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="e.g. got Elden Ring for $60 today"
+            placeholder="e.g. got Elden Ring for ps5 $60 today"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && parsed.title) handleContinue();
             }}
@@ -54,6 +63,8 @@ export default function QuickAddTextModal({ onClose, onParsed }) {
             {parsed.title ? (
               <>
                 Picked up: <strong>{parsed.title}</strong>
+                {parsed.platform ? ` — ${parsed.platform}` : ''}
+                {parsed.completeness ? ` (${COMPLETENESS_LABELS[parsed.completeness]})` : ''}
                 {parsed.price != null ? ` — $${parsed.price.toFixed(2)}` : ''}
                 {parsed.purchase_date ? ` — ${parsed.purchase_date}` : ''}. You'll be able to fix any of this on the
                 next screen.
