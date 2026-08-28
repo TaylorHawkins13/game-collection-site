@@ -36,8 +36,14 @@ const ITEM_TYPE_OPTIONS = [
   { value: 'console', label: 'Console' },
   { value: 'funko_pop', label: 'Funko Pop' },
 ];
-const KNOWN_ITEM_TYPES = ITEM_TYPE_OPTIONS.map((t) => t.value);
-const LAST_ITEM_TYPE_KEY = 'gct_last_item_type';
+export const KNOWN_ITEM_TYPES = ITEM_TYPE_OPTIONS.map((t) => t.value);
+// Exported so components/QuickAddTextModal.jsx can default its prefill's
+// item_type to the same "last successfully added" type this modal's own
+// blank-Add-Item case already applies below — otherwise a duplicateOf
+// with no item_type at all falls back to a hardcoded 'game' (see the
+// prefill effect further down), which would undo that fallback for a
+// quick-add-text sentence that never mentions the type at all.
+export const LAST_ITEM_TYPE_KEY = 'gct_last_item_type';
 
 // An IGDB game result's `platforms` array is what actually ends up in the
 // saved item's Platforms field if you click it, but showing only a title

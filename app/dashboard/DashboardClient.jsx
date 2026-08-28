@@ -25,6 +25,7 @@ const GameModal = dynamic(() => import('@/components/GameModal'), { ssr: false }
 const ImportCsvModal = dynamic(() => import('@/components/ImportCsvModal'), { ssr: false });
 const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), { ssr: false });
 const BulkSearchAddModal = dynamic(() => import('@/components/BulkSearchAddModal'), { ssr: false });
+const QuickAddTextModal = dynamic(() => import('@/components/QuickAddTextModal'), { ssr: false });
 const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
 const CollectingPrompt = dynamic(() => import('@/components/CollectingPrompt'), { ssr: false });
 import { CURRENCIES, formatMoney } from '@/lib/currency';
@@ -133,6 +134,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // own button, same pattern as before this was split into tabs.
   const [settingsTab, setSettingsTab] = useState('profile');
   const [showBulkSearchAdd, setShowBulkSearchAdd] = useState(false);
+  const [showQuickAddText, setShowQuickAddText] = useState(false);
   // "What do you collect?" preferences — which of the 10 item types are
   // enabled (everything else hides from the Add Item type list, Quick
   // add's item type picker, and the Filters "type" dropdown). Seeded from
@@ -1167,6 +1169,38 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setModalGame(null);
   }
 
+  // "Chat-style quick add" (see ROADMAP.md and components/
+  // QuickAddTextModal.jsx/lib/quickAddParse.js) — same duplicateOf-prefill
+  // mechanism as handleAddFromRecommendation above, just sourced from a
+  // parsed sentence instead of a recommendation card. `parsed` never
+  // includes item_type (a sentence like "logged a Chrono Trigger for $40
+  // today" doesn't name one) — read the same "last successfully added
+  // type" localStorage key GameModal.jsx's own blank-Add-Item case
+  // defaults to (see that file's LAST_ITEM_TYPE_KEY), so this lands on a
+  // sensible type instead of GameModal's harder-coded 'game' fallback for
+  // a duplicateOf with no item_type at all. Validated against
+  // CATEGORY_ORDER (already imported here, same full type list
+  // GameModal's own KNOWN_ITEM_TYPES represents) rather than trusting
+  // whatever's in storage outright.
+  function handleQuickAddFromText(parsed) {
+    let itemType = 'game';
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('gct_last_item_type') : null;
+      if (stored && CATEGORY_ORDER.includes(stored)) itemType = stored;
+    } catch {
+      // ignore — localStorage can throw in some private-browsing setups
+    }
+    setDuplicateOf({
+      title: parsed.title,
+      item_type: itemType,
+      price: parsed.price != null ? String(parsed.price) : '',
+      purchase_date: parsed.purchase_date || '',
+    });
+    setDuplicateSource('quick-add-text');
+    setModalGame(null);
+    setShowQuickAddText(false);
+  }
+
   // Loops through the whole collection (skipping sold items — you no
   // longer own those) and checks eBay's current price for each, one at a
   // time with a short pause between requests so this doesn't hammer the
@@ -1676,6 +1710,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <button className="btn-ghost" onClick={() => setShowBulkSearchAdd(true)} type="button">
               Quick add (search)
             </button>
+            <button className="btn-ghost" onClick={() => setShowQuickAddText(true)} type="button">
+              Quick add (type it)
+            </button>
           </ActionMenu>
           <ActionMenu label="More actions">
             <Link href="/dashboard/insights" className="btn-ghost" style={{ textDecoration: 'none' }}>
@@ -1706,6 +1743,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           onClose={() => setShowBulkSearchAdd(false)}
           onItemsAdded={handleImported}
         />
+      )}
+
+      {showQuickAddText && (
+        <QuickAddTextModal onClose={() => setShowQuickAddText(false)} onParsed={handleQuickAddFromText} />
       )}
 
       {!typesOnboardedAt && (
