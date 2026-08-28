@@ -1496,3 +1496,34 @@ alter table public.profiles
 -- something every existing account suddenly starts receiving.
 alter table public.profiles
   add column if not exists email_backup_enabled boolean not null default false;
+
+-- ============================================================
+-- Pokémon master-set variant cache
+-- (see master-set-cache-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+-- Precomputed, real per-card TCGdex variant data for a Pokémon set —
+-- closes ROADMAP.md's "Pokémon master sets: show variants you don't own
+-- yet." See lib/tcgdexSetLookup.js's module comment for the full
+-- reasoning: fetching full detail for every card in a 100-250+ card set
+-- on every live "See master set" click isn't viable (Vercel timeout risk,
+-- bad-citizen load on a free community API), so a background cron
+-- (app/api/cron/refresh-master-sets) pre-fetches it instead, only for
+-- sets someone here has actually logged a trading card from. `entries` is
+-- a plain { [tcgdexCardId]: { variants: {...} } } object — just the
+-- variants flag object each card needs, not the full TCGdex card detail,
+-- to keep the row small. Same reasoning as cron_runs above for no RLS
+-- policies at all: only ever touched by the service-role client (the
+-- refresh cron writes it, /api/pokemon-master-set reads it) — public
+-- TCGdex catalog data, not user data, but still no reason to expose it
+-- to anon/authenticated directly.
+create table if not exists master_set_cache (
+  set_id text primary key,
+  set_name text not null,
+  entries jsonb not null,
+  refreshed_at timestamptz not null default now()
+);
+
+alter table master_set_cache enable row level security;
+revoke all on master_set_cache from anon, authenticated;
