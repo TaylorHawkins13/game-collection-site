@@ -202,9 +202,24 @@ export default async function ProfilePage({ params }) {
         )
       : null;
 
+  // Faint decorative mosaic behind the profile header (brief section 5,
+  // Public Profile Header) — only ever this collector's own real cover
+  // art, never placeholders or other people's items, and only when
+  // `games` was actually fetched (canView above) so a private profile
+  // never leaks cover art through this.
+  const mosaicCovers = (games || []).map((g) => g.cover).filter(Boolean).slice(0, 8);
+
   return (
     <main className="container">
       <div className="profile-header" style={{ marginTop: 20 }}>
+        {mosaicCovers.length > 0 && (
+          <div className="profile-header-mosaic" aria-hidden="true">
+            {mosaicCovers.map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={src} alt="" />
+            ))}
+          </div>
+        )}
         <div className="avatar">
           {profile.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -214,7 +229,14 @@ export default async function ProfilePage({ params }) {
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <div className="profile-name">{profile.display_name || profile.username}</div>
+          <div className="profile-name">
+            {profile.display_name || profile.username}
+            {canView && (
+              <span className={`profile-visibility-badge${profile.is_public ? '' : ' private'}`}>
+                {profile.is_public ? 'Public shelf' : 'Private'}
+              </span>
+            )}
+          </div>
           <div className="profile-username">
             @{profile.username} ·{' '}
             <Link href={`/u/${profile.username}/followers`} style={{ color: 'inherit' }}>

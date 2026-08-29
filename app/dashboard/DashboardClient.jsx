@@ -14,6 +14,7 @@ import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
 import ShelfIdentityHero from '@/components/ShelfIdentityHero';
+import CategoryRail from '@/components/CategoryRail';
 import ActionMenu from '@/components/ActionMenu';
 // Code-split: these are all either heavy (GameModal, the biggest single
 // contributor to the dashboard's JS bundle) or only ever needed after a
@@ -2173,6 +2174,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         />
       ) : (
         <>
+          <CategoryRail
+            types={CATEGORY_ORDER.filter((v) => enabledItemTypes.includes(v) || v === fType)}
+            value={fType}
+            onChange={setFType}
+          />
+
           <ShelfIdentityHero
             items={games}
             enabledTypes={enabledItemTypes}

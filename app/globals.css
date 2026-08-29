@@ -1,23 +1,37 @@
 :root {
+  /* Shelf Life brand palette (Aug 2026 visual pass — see CHANGELOG.md):
+     navy/near-black base, warm gold as the primary accent (buttons,
+     links, "owned" status, trophies), mint as the secondary accent
+     (success/completed). --accent/--accent-2 keep their existing names
+     since 100+ rules below reference them directly — only the values
+     moved, so the whole site re-themes just from this block. */
   --bg: #0f1220;
-  --bg-alt: #171b2e;
-  --card: #1c2138;
-  --card-hover: #242a48;
-  --border: #2c3357;
-  --text: #e8eaf5;
-  --text-dim: #9aa1c4;
-  --accent: #6c5ce7;
-  --accent-2: #00d2a8;
+  --bg-alt: #1e2440;
+  --card: #171b2e;
+  --card-hover: #262c4d;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #f4f1ea;
+  --text-dim: #9aa3b8;
+  --accent-gold: #d4af37;
+  --accent-mint: #7dffb3;
+  --accent: var(--accent-gold);
+  --accent-2: var(--accent-mint);
   --warn: #ffb84d;
-  --danger: #ff5d7a;
-  --owned: #00d2a8;
-  --wishlist: #6c5ce7;
-  --sold: #ff5d7a;
+  --danger: #ff6b6b;
+  --owned: var(--accent-gold);
+  --wishlist: #8c9eff;
+  --sold: #ff6b6b;
   --tier-bronze: #cd7f32;
   --tier-silver: #b9c0d4;
-  --tier-gold: #e8c15a;
+  --tier-gold: #d4af37;
   --tier-platinum: #cfe8ff;
-  --radius: 12px;
+  /* Near-black text for sitting on solid gold/mint fills (buttons,
+     card nameplates, avatar initials) — white text on these lighter
+     accent colors doesn't clear WCAG contrast (gold+white lands around
+     2:1), dark text clears it easily (gold+ink lands around 9:1). */
+  --ink: #06070f;
+  --radius: 16px;
+  --radius-pill: 999px;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
@@ -26,24 +40,28 @@ body[data-theme='light'] {
   --bg-alt: #ffffff;
   --card: #ffffff;
   --card-hover: #eef0fb;
-  --border: #dde1f5;
+  --border: rgba(20, 24, 50, 0.1);
   --text: #1c2138;
   --text-dim: #5c6491;
-  --accent: #6c5ce7;
-  --accent-2: #00a389;
+  --accent-gold: #8a6a1a;
+  --accent-mint: #00a389;
+  --accent: var(--accent-gold);
+  --accent-2: var(--accent-mint);
   --warn: #a8660f;
-  --danger: #d63f60;
+  --danger: #c23a3a;
   /* Status/tier colors below aren't overridden anywhere else in this
      file — without these, they silently inherit the dark-theme values
      above, which fall as low as ~1.6:1 against a white card in light
      mode (WCAG AA needs 4.5:1 for text). These are the same hues,
      darkened just enough to clear 4.5:1 against #fff — see
      CHANGELOG.md for the audit. */
-  --owned: #00856a;
-  --sold: #eb002a;
+  --owned: #8a6a1a;
+  --wishlist: #4a5bc9;
+  --sold: #c23a3a;
   --tier-bronze: #a66728;
   --tier-silver: #6574a0;
-  --tier-gold: #937014;
+  --tier-gold: #8a6a1a;
+  --ink: #06070f;
   --shadow: 0 8px 20px rgba(30, 35, 80, 0.1);
 }
 
@@ -73,8 +91,8 @@ body {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: radial-gradient(1200px 600px at 10% -10%, #23285080, transparent),
-    radial-gradient(1000px 500px at 100% 0%, #1a2d4a80, transparent), var(--bg);
+  background: radial-gradient(1200px 600px at 10% -10%, #2e260f80, transparent),
+    radial-gradient(1000px 500px at 100% 0%, #0f2a2280, transparent), var(--bg);
   color: var(--text);
   min-height: 100vh;
   transition: background 0.2s ease, color 0.2s ease;
@@ -87,7 +105,7 @@ body {
 }
 
 body[data-theme='light'] {
-  background: radial-gradient(1200px 600px at 10% -10%, #6c5ce714, transparent),
+  background: radial-gradient(1200px 600px at 10% -10%, #d4af3714, transparent),
     radial-gradient(1000px 500px at 100% 0%, #00a38914, transparent), var(--bg);
 }
 
@@ -106,7 +124,7 @@ a {
   left: 8px;
   z-index: 1000;
   background: var(--accent);
-  color: #fff;
+  color: var(--ink);
   padding: 10px 18px;
   border-radius: 8px;
   text-decoration: none;
@@ -210,7 +228,11 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 32px;
+  /* Pairs with viewportFit: 'cover' in layout.js (see the body rule's
+     own comment above) — without this the navbar sits flush under the
+     notch/status bar once wrapped as a standalone/installed app. Zero
+     on a normal browser tab. */
+  padding: calc(20px + env(safe-area-inset-top)) 32px 20px;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -518,8 +540,8 @@ button:disabled {
    to real <button>s using the same class right beside them. Found in a
    button-shape consistency pass. */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), #8a7bff);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-mint));
+  color: var(--ink);
   padding: 10px 18px;
   font-weight: 600;
   border-radius: 8px;
@@ -606,8 +628,8 @@ button:disabled {
   margin-bottom: 20px;
   padding: 16px 20px;
   border-radius: var(--radius);
-  background: linear-gradient(160deg, #6c5ce71a, transparent 60%), var(--card);
-  border: 1px solid #6c5ce744;
+  background: linear-gradient(160deg, #d4af371a, transparent 60%), var(--card);
+  border: 1px solid #d4af3744;
 }
 .playnext-heading {
   font-size: 13px;
@@ -670,8 +692,8 @@ button:disabled {
   margin-bottom: 20px;
   padding: 16px 20px;
   border-radius: var(--radius);
-  background: linear-gradient(160deg, #00d2a81a, transparent 60%), var(--card);
-  border: 1px solid #00d2a844;
+  background: linear-gradient(160deg, #7dffb31a, transparent 60%), var(--card);
+  border: 1px solid #7dffb344;
 }
 .recommend-heading {
   font-size: 13px;
@@ -916,6 +938,7 @@ button:disabled {
 .card.clickable:hover {
   transform: translateY(-3px);
   background: var(--card-hover);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
 /* Fixed-size, fill-and-crop cover so every tile stays the same size. */
 .card .cover {
@@ -927,11 +950,30 @@ button:disabled {
 }
 .card .cover.placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  color: var(--text-dim);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, var(--bg-alt)), var(--bg-alt));
+}
+/* Category-aware "elegant placeholder" (brief section 2, Item Card) —
+   used anywhere a cover image is missing or fails to load: GameCard's
+   grid tile, ItemDetailModal's detail view (.detail-cover.placeholder
+   below reuses these same two classes), search results, and public
+   profile lists. Never a browser broken-image icon. */
+.cover-placeholder-icon {
+  color: color-mix(in srgb, var(--accent) 55%, var(--text-dim));
+  opacity: 0.85;
+}
+.cover-placeholder-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
   color: var(--text-dim);
 }
 /* CollectibleCard (components/CollectibleCard.jsx) — the Search page's
@@ -1071,7 +1113,7 @@ button:disabled {
   line-height: 1.3;
   padding: 10px 12px;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+  color: var(--ink);
 }
 .card-body {
   padding: 10px 12px 14px;
@@ -1171,15 +1213,15 @@ button:disabled {
   letter-spacing: 0.2px;
 }
 .badge.owned {
-  background: #00d2a822;
+  background: #d4af3722;
   color: var(--owned);
 }
 .badge.wishlist {
-  background: #6c5ce722;
-  color: #a79bff;
+  background: #8c9eff22;
+  color: var(--wishlist);
 }
 .badge.sold {
-  background: #ff5d7a22;
+  background: #ff6b6b22;
   color: var(--sold);
 }
 .badge.play {
@@ -1187,7 +1229,7 @@ button:disabled {
   color: var(--text-dim);
 }
 .badge.tag {
-  background: #00d2a81a;
+  background: #7dffb31a;
   color: var(--accent-2);
 }
 /* Tags render as real <button>s (not <span>s) on the owner's own
@@ -1206,16 +1248,16 @@ button.badge.tag:hover {
   filter: brightness(1.35);
 }
 .badge.copy-digital {
-  background: #6c5ce722;
-  color: #a29bfe;
+  background: #cfe8ff22;
+  color: var(--tier-platinum);
 }
 .badge.copy-physical {
   background: #fdcb6e22;
   color: #fdcb6e;
 }
 .badge.complete-100 {
-  background: #00b89422;
-  color: #00d9ac;
+  background: #7dffb322;
+  color: var(--accent-mint);
 }
 .badge.showcase-badge {
   background: #ffd15c22;
@@ -1263,6 +1305,13 @@ button.badge.tag:hover {
 .welcome-panel h2 {
   margin: 0 0 8px;
   font-size: 22px;
+}
+/* Empty-state walnut-shelf illustration (brief section 6) — a small
+   plain line-art hook above the existing type-aware welcome copy,
+   which is kept exactly as-is; this is purely decorative. */
+.welcome-shelf-illustration {
+  display: block;
+  margin-bottom: 14px;
 }
 .welcome-steps {
   display: grid;
@@ -1591,11 +1640,14 @@ button.badge.tag:hover {
 }
 .detail-cover.placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, var(--bg-alt)), var(--bg-alt));
 }
 .detail-stat-rows {
   flex: 1;
@@ -1720,11 +1772,58 @@ button.badge.tag:hover {
 
 /* ---------- Profile / social ---------- */
 .profile-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 18px;
   margin-bottom: 24px;
+  padding: 16px;
+  border-radius: var(--radius);
+  overflow: hidden;
   flex-wrap: wrap;
+}
+/* Every direct child except the mosaic itself needs to sit above it —
+   simplest way to guarantee that without touching each existing child
+   (avatar, name block, actions cluster) is one structural selector
+   here rather than adding a new wrapper class to app/u/[username]/page.js. */
+.profile-header > :not(.profile-header-mosaic) {
+  position: relative;
+  z-index: 1;
+}
+/* Faint mosaic of the collector's own real cover art (brief section 5,
+   Public Profile Header) — decorative background only (aria-hidden in
+   the page), never covers/misrepresents anything since it only ever
+   uses covers that already belong to this collector. */
+.profile-header-mosaic {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  opacity: 0.2;
+  pointer-events: none;
+}
+.profile-header-mosaic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.3);
+}
+.profile-visibility-badge {
+  display: inline-block;
+  margin-left: 10px;
+  vertical-align: middle;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent-mint) 18%, transparent);
+  color: var(--accent-mint);
+}
+.profile-visibility-badge.private {
+  background: color-mix(in srgb, var(--text-dim) 20%, transparent);
+  color: var(--text-dim);
 }
 .avatar {
   width: 72px;
@@ -1736,7 +1835,7 @@ button.badge.tag:hover {
   justify-content: center;
   font-size: 26px;
   font-weight: 700;
-  color: white;
+  color: var(--ink);
   overflow: hidden;
 }
 .avatar img {
@@ -2157,6 +2256,44 @@ button.badge.tag:hover {
   padding: 5px 12px;
 }
 
+/* ---------- Category rail (components/CategoryRail.jsx) ----------
+   Dashboard's horizontal scrolling row of category filter chips — see
+   brief "Category Rail": slightly tinted pills rather than the rainbow
+   TYPE_COLORS palette ShelfIdentityHero uses, with the active chip
+   picked out by a gold underline + brighter text rather than a solid
+   fill, so a long row of chips doesn't read as a rainbow. */
+.category-rail {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 10px;
+  margin-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.category-chip {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 7px 14px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.category-chip:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, var(--card));
+}
+.category-chip.active {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
 /* Real GameCard components, not a redrawn mockup — this is literally
    what your own dashboard grid looks like. Always exactly 3 in a row
    (flex-wrap is intentionally NOT set): they shrink together to fit
@@ -2186,6 +2323,19 @@ button.badge.tag:hover {
 .hero-showcase-item {
   flex: 0 1 170px;
   min-width: 0;
+  scroll-snap-align: center;
+}
+/* Hero Shelf Mosaic tiles (brief section 1) — real GameCard .card
+   markup already handles the cover/placeholder/hover states; this just
+   tightens the radius to the mosaic's 8px tile spec and gives the
+   whole tile a gold-tinted lift on hover instead of the dashboard
+   grid's neutral lift, since these are meant to read as a showcase. */
+.hero-showcase-item .card {
+  border-radius: 8px;
+}
+.hero-showcase-item .card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--accent) 35%, transparent), var(--shadow);
 }
 .hero-showcase-item:nth-child(1) {
   transform: rotate(-4deg);
@@ -2265,7 +2415,7 @@ button.badge.tag:hover {
 .cta-band {
   text-align: center;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, #6c5ce714, #00d2a814);
+  background: linear-gradient(135deg, #d4af3714, #7dffb314);
   border-radius: 20px;
   padding: 44px 24px;
   margin: 56px 0 40px;
@@ -2308,7 +2458,7 @@ button.badge.tag:hover {
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 .quick-action-tile:hover {
-  border-color: var(--accent, #6c5ce7);
+  border-color: var(--accent, #d4af37);
   transform: translateY(-1px);
 }
 .home-section-heading {
@@ -2491,7 +2641,7 @@ button.badge.tag:hover {
   transition: border-color 0.15s ease;
 }
 .home-rating-card:hover {
-  border-color: var(--accent, #6c5ce7);
+  border-color: var(--accent, #d4af37);
 }
 .home-rating-cover {
   width: 48px;
@@ -2574,7 +2724,7 @@ button.badge.tag:hover {
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 .article-card:hover {
-  border-color: var(--accent, #6c5ce7);
+  border-color: var(--accent, #d4af37);
   transform: translateY(-1px);
 }
 .article-card-meta {
@@ -2606,8 +2756,8 @@ button.badge.tag:hover {
    category-pill in .article-card-meta — same pill shape, different (accent)
    color so it reads as a distinct signal rather than a second category. */
 .article-community-pill {
-  color: var(--accent, #6c5ce7);
-  border-color: var(--accent, #6c5ce7);
+  color: var(--accent, #d4af37);
+  border-color: var(--accent, #d4af37);
 }
 
 /* Status labels on /admin/articles' "Already decided" list. */
@@ -2819,8 +2969,8 @@ button.badge.tag:hover {
   padding: 32px 28px;
   border-radius: calc(var(--radius) + 6px);
   background: linear-gradient(160deg, var(--accent), var(--accent-2) 120%);
-  box-shadow: 0 12px 32px -12px rgba(108, 92, 231, 0.5);
-  color: #fff;
+  box-shadow: 0 12px 32px -12px rgba(212, 175, 55, 0.5);
+  color: var(--ink);
   text-align: center;
 }
 .wrapped-header {
@@ -3208,17 +3358,38 @@ button.badge.tag:hover {
 }
 
 /* ---------- Trophy case ---------- */
+/* PSN-style "trophy case" restyle (Aug 2026 visual pass, see
+   CHANGELOG.md) — a dark velvet panel behind the whole grid instead of
+   trophies floating loose on the page background, and each tier icon
+   became an actual medallion (bigger, beveled with layered inset
+   shadows for a coin-like edge) instead of a flat gradient dot. */
+.trophy-case-panel {
+  background: radial-gradient(circle at 30% 20%, #23283f 0%, #14172a 70%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px 24px;
+  margin-bottom: 40px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+}
+.trophy-case-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trophy-case-title {
+  font-size: 16px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.trophy-case-substats {
+  margin: 3px 0 0;
+}
 .trophy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
-  margin-bottom: 40px;
-}
-.collector-level-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  margin-top: 16px;
 }
 .collector-level-badge {
   display: inline-flex;
@@ -3228,7 +3399,7 @@ button.badge.tag:hover {
   letter-spacing: 0.3px;
   padding: 3px 9px;
   border-radius: 999px;
-  color: white;
+  color: var(--ink);
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 .trophy-rarity {
@@ -3239,18 +3410,31 @@ button.badge.tag:hover {
 .trophy {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  background: var(--card);
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.trophy-earned:hover {
+  background: rgba(255, 255, 255, 0.055);
+  transform: translateY(-1px);
 }
 .trophy-icon {
+  position: relative;
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Layered inset highlight/shadow so the flat radial-gradient fill
+     below reads as a beveled medallion rather than a flat dot. */
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.4), inset 0 -3px 4px rgba(0, 0, 0, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.45);
 }
 .trophy-bronze .trophy-icon {
   background: radial-gradient(circle at 35% 30%, #f0c090, var(--tier-bronze));
@@ -3263,7 +3447,8 @@ button.badge.tag:hover {
 }
 .trophy-platinum .trophy-icon {
   background: radial-gradient(circle at 35% 30%, #ffffff, var(--tier-platinum));
-  box-shadow: 0 0 0 2px var(--tier-platinum) inset;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.6), inset 0 -3px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 2px var(--tier-platinum), 0 2px 8px rgba(207, 232, 255, 0.35);
 }
 .trophy-body {
   min-width: 0;
@@ -3296,11 +3481,17 @@ button.badge.tag:hover {
   color: var(--text-dim);
 }
 .trophy-locked {
-  opacity: 0.45;
+  opacity: 0.55;
 }
 .trophy-locked .trophy-icon {
-  background: var(--border) !important;
-  box-shadow: none !important;
+  background: linear-gradient(160deg, #3a3f5c, #23273f) !important;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.08), inset 0 -3px 4px rgba(0, 0, 0, 0.4) !important;
+  filter: grayscale(1);
+}
+.trophy-lock {
+  font-size: 15px;
+  opacity: 0.8;
+  filter: grayscale(1) brightness(1.6);
 }
 .trophy-earned .trophy-tier {
   color: var(--text);
@@ -3466,6 +3657,9 @@ button.badge.tag:hover {
     overflow-x: auto;
     padding: 4px 4px 10px;
     -webkit-overflow-scrolling: touch;
+    /* 2-col snap-scroll per the brief — mandatory so a swipe always
+       settles on a tile instead of stopping mid-card. */
+    scroll-snap-type: x mandatory;
   }
   .hero-showcase-item {
     flex: 0 0 140px;

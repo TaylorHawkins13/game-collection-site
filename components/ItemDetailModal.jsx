@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
@@ -7,6 +8,7 @@ import { openBestListingTab } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 import { getStatRows } from './GameCard';
 import { currencySymbol } from '@/lib/currency';
+import CategoryIcon from './CategoryIcon';
 
 function cap(s) {
   if (!s) return '';
@@ -39,6 +41,7 @@ function cap(s) {
 export default function ItemDetailModal({ game, currency, existingItems, onClose, onEdit }) {
   const modalRef = useModalA11y(onClose);
   const series = useSeriesLookup();
+  const [coverFailed, setCoverFailed] = useState(false);
   const statRows = getStatRows(game, currency);
   const isComic = game.item_type === 'comic';
   const isCard = game.item_type === 'trading_card';
@@ -76,18 +79,19 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
 
         <div className="detail-layout">
           <div className="detail-cover-wrap">
-            {game.cover ? (
+            {game.cover && !coverFailed ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 className="detail-cover"
                 src={game.cover}
                 alt={game.title}
-                onError={(e) => {
-                  e.currentTarget.outerHTML = '<div class="detail-cover placeholder">No Cover</div>';
-                }}
+                onError={() => setCoverFailed(true)}
               />
             ) : (
-              <div className="detail-cover placeholder">No Cover</div>
+              <div className="detail-cover placeholder">
+                <CategoryIcon type={game.item_type} size={34} className="cover-placeholder-icon" />
+                <span className="cover-placeholder-label">No Cover</span>
+              </div>
             )}
           </div>
           <div className="stat-rows detail-stat-rows">

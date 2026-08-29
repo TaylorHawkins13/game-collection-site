@@ -22,6 +22,15 @@ export default function WelcomePanel({ displayName, onAddItem, onQuickAdd, onImp
 
   return (
     <div className="welcome-panel">
+      {/* Purely decorative walnut-shelf-with-gold-hook line art (brief
+          section 6, Empty States) — the type-aware copy/CTAs below are
+          kept exactly as they were; this just gives the empty state a
+          bit of shelf identity above the text instead of a bare heading. */}
+      <svg className="welcome-shelf-illustration" width="120" height="46" viewBox="0 0 120 46" fill="none" aria-hidden="true">
+        <rect x="4" y="32" width="112" height="7" rx="3" fill="#5c3f2e" />
+        <path d="M56 32V17a6 6 0 0 1 6-6h3" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="65" cy="11" r="2.5" fill="#D4AF37" />
+      </svg>
       <h2>Welcome to Shelf Life{displayName ? `, ${displayName}` : ''}</h2>
       <p className="sub" style={{ marginBottom: 20 }}>
         {intro}

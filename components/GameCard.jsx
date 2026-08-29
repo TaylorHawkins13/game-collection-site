@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getCoverColor, colorToCss, shadeColor, readableTextColor } from '@/lib/coverColor';
 import { currencySymbol } from '@/lib/currency';
 import StarRating from './StarRating';
+import CategoryIcon from './CategoryIcon';
 
 function cap(s) {
   if (!s) return '';
@@ -144,12 +145,14 @@ export default function GameCard({
 }) {
   const isComic = game.item_type === 'comic';
   const [artColor, setArtColor] = useState(null);
+  const [coverFailed, setCoverFailed] = useState(false);
 
   // Pull a dominant color from the cover art (when the image host allows
   // it) so the slab strip and nameplate feel tied to the artwork instead
   // of always using the same fixed accent color.
   useEffect(() => {
     let active = true;
+    setCoverFailed(false);
     if (game.cover) {
       getCoverColor(game.cover).then((c) => {
         if (active) setArtColor(c);
@@ -193,18 +196,19 @@ export default function GameCard({
       {featured && <div className="card-featured-flag">Featured</div>}
       <div className={`card-ownership-flag ${game.ownership}`}>{game.ownership}</div>
       <div className="card-cover-wrap">
-        {game.cover ? (
+        {game.cover && !coverFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className="cover"
             src={game.cover}
             alt={game.title}
-            onError={(e) => {
-              e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
-            }}
+            onError={() => setCoverFailed(true)}
           />
         ) : (
-          <div className="cover placeholder">No Cover</div>
+          <div className="cover placeholder">
+            <CategoryIcon type={game.item_type} size={26} className="cover-placeholder-icon" />
+            <span className="cover-placeholder-label">No Cover</span>
+          </div>
         )}
         {/* Explicit, separate path into editing — the default click on
             the card itself now opens the read-only detail view instead

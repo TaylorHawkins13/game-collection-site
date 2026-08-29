@@ -69,19 +69,16 @@ export default function TrophyCase({ defs, earnedKeys, rarity, dominantType }) {
   const level = Math.floor(points / 100) + 1;
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <h2 style={{ fontSize: 16, margin: 0 }}>Trophy Case</h2>
-        <div className="sub">
-          {earnedCount} / {sorted.length} earned
-          {hasPlatinum ? ' · Platinum' : ''}
-        </div>
-      </div>
-      <div className="collector-level-row">
+    <div className="trophy-case-panel">
+      <div className="trophy-case-header">
+        <h2 className="trophy-case-title">Trophy Case</h2>
         <span className="collector-level-badge">Level {level}</span>
-        <span className="sub" style={{ margin: 0 }}>{points} trophy points</span>
       </div>
-      <div className="trophy-grid" style={{ marginTop: 12 }}>
+      <div className="sub trophy-case-substats">
+        {earnedCount} / {sorted.length} earned · {points} pts
+        {hasPlatinum ? ' · Platinum' : ''}
+      </div>
+      <div className="trophy-grid">
         {sorted.map((d) => {
           const isEarned = earned.has(d.key);
           const pct = rarityByKey[d.key];
@@ -92,7 +89,9 @@ export default function TrophyCase({ defs, earnedKeys, rarity, dominantType }) {
               className={`trophy${isEarned ? ' trophy-earned' : ' trophy-locked'} trophy-${d.tier}`}
               title={d.description}
             >
-              <div className="trophy-icon" aria-hidden="true" />
+              <div className="trophy-icon" aria-hidden="true">
+                {!isEarned && <span className="trophy-lock">🔒</span>}
+              </div>
               <div className="trophy-body">
                 <div className="trophy-name">{d.name}</div>
                 <div className="trophy-desc">{d.description}</div>
