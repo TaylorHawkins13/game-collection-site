@@ -18,6 +18,17 @@ export default async function LeaderboardPage() {
   // view itself (join follows on follower_id = auth.uid()) — fetching
   // them for a signed-out visitor just comes back empty, no separate
   // branch needed.
+  //
+  // The "Most valuable" podium's secondary figure (see
+  // LeaderboardClient.jsx's statFor) converts into the viewer's own
+  // preferred currency, not a fixed USD — so this also needs the
+  // viewer's profile.currency (the same field Settings > Currency
+  // writes) and the same currency_rates_to_usd table the ranking itself
+  // already uses, converting through total_value_usd rather than a fresh
+  // currency-to-currency lookup so it can never disagree with the rate
+  // data that decided the rank. A signed-out visitor, or one who hasn't
+  // set a currency, falls back to USD — same default profiles.currency
+  // itself uses.
   const [
     { data: mostOwned },
     { data: biggest },
@@ -29,6 +40,8 @@ export default async function LeaderboardPage() {
     { data: friendsMostValuable },
     { data: friendsMostOwned },
     { data: friendsTrending },
+    { data: viewerProfile },
+    { data: rateRows },
   ] = await Promise.all([
     supabase.from('leaderboard_most_owned').select('*').limit(3),
     supabase.from('leaderboard_biggest_collections').select('*').limit(3),
@@ -40,7 +53,14 @@ export default async function LeaderboardPage() {
     supabase.from('leaderboard_friends_most_valuable').select('*').limit(3),
     supabase.from('leaderboard_friends_most_owned').select('*').limit(3),
     supabase.from('leaderboard_friends_trending').select('*').limit(3),
+    viewer
+      ? supabase.from('profiles').select('currency').eq('id', viewer.id).single()
+      : Promise.resolve({ data: null }),
+    supabase.from('currency_rates_to_usd').select('code, rate_to_usd'),
   ]);
+
+  const viewerCurrency = viewerProfile?.currency || 'USD';
+  const rates = Object.fromEntries((rateRows || []).map((r) => [r.code, r.rate_to_usd]));
 
   return (
     <main className="container">
@@ -60,6 +80,8 @@ export default async function LeaderboardPage() {
         friendsMostOwned={friendsMostOwned || []}
         friendsTrending={friendsTrending || []}
         viewerLoggedIn={!!viewer}
+        viewerCurrency={viewerCurrency}
+        rates={rates}
       />
     </main>
   );

@@ -17,7 +17,7 @@ const TABS = [
     key: 'mostValuable',
     label: 'Most valuable',
     type: 'person',
-    sub: "Public collectors ranked by estimated collection value, converted to USD behind the scenes so the ranking is fair across currencies. Shown in each collector's own currency, with the USD equivalent alongside when it isn't already USD.",
+    sub: "Public collectors ranked by estimated collection value, converted behind the scenes so the ranking is fair across currencies. Shown in each collector's own currency, with the equivalent in your own currency alongside when it's different.",
     empty: 'No priced public collections yet — check a price on an item to start showing up here.',
   },
   {
@@ -71,7 +71,7 @@ function friendsEmptyText(metric, viewerLoggedIn) {
   return text[metric] || 'Nothing here yet.';
 }
 
-function statFor(metricKey, row) {
+function statFor(metricKey, row, viewerCurrency, rates) {
   if (metricKey === 'trophies') {
     return `${row.trophy_count} ${row.trophy_count === 1 ? 'trophy' : 'trophies'}${
       row.platinum_count > 0 ? ` · ${row.platinum_count} platinum` : ''
@@ -85,16 +85,28 @@ function statFor(metricKey, row) {
     // total_value_usd comes straight off leaderboard_most_valuable /
     // leaderboard_friends_most_valuable (see
     // currency-aware-valuable-leaderboard-migration.sql) — the exact
-    // figure the ranking itself already sorts on, just never shown
-    // before now. Closes ROADMAP.md's "Live currency conversion": the
-    // ranking was already fair across currencies, but nothing on the
-    // page let you see *why* a €5,000 collection outranks a $6,000 one.
-    // Only shown when it says something the primary figure doesn't —
-    // a USD collector's own total already is the USD total.
-    if (row.currency !== 'USD' && row.total_value_usd != null) {
+    // figure the ranking itself already sorts on. Closes ROADMAP.md's
+    // "Live currency conversion": the ranking was already fair across
+    // currencies, but nothing on the page let you see *why* a €5,000
+    // collection outranks a $6,000 one. The secondary figure converts
+    // into the *viewer's own* preferred currency (Settings > Currency;
+    // signed-out visitors and anyone without one set fall back to USD —
+    // see app/leaderboard/page.js), not a fixed USD, so a EUR-preferring
+    // visitor sees "€4,200 (≈ €3,850)" against a GBP collector instead of
+    // having to do their own USD-to-EUR math on top. Converting through
+    // total_value_usd / rates[viewerCurrency] — rather than a fresh
+    // currency-to-currency rate — means this can never disagree with the
+    // rate data that decided the rank in the first place. Only shown
+    // when it says something the primary figure doesn't, and only when
+    // the viewer's currency actually has a rate on file.
+    const targetCurrency = viewerCurrency || 'USD';
+    const targetRate = rates?.[targetCurrency];
+    if (targetCurrency !== row.currency && row.total_value_usd != null && targetRate) {
+      const converted = row.total_value_usd / targetRate;
       return (
         <>
-          {primary} <span className="podium-stat-secondary">(≈ {formatMoney(row.total_value_usd, 'USD')})</span>
+          {primary}{' '}
+          <span className="podium-stat-secondary">(≈ {formatMoney(converted, targetCurrency)})</span>
         </>
       );
     }
@@ -113,7 +125,7 @@ function rowKey(type, row) {
 // "podium shape" is defined in exactly one place.
 const PODIUM_VISUAL_ORDER = { 1: 2, 2: 1, 3: 3 };
 
-function PodiumPlace({ place, type, row, metricKey }) {
+function PodiumPlace({ place, type, row, metricKey, viewerCurrency, rates }) {
   const name = type === 'person' ? row.display_name || row.username : row.title;
   const content =
     type === 'person' ? (
@@ -131,7 +143,7 @@ function PodiumPlace({ place, type, row, metricKey }) {
       <div className="podium-medal">{place === 1 ? '1st' : place === 2 ? '2nd' : '3rd'}</div>
       {content}
       <div className="podium-name">{name}</div>
-      <div className="podium-stat">{statFor(metricKey, row)}</div>
+      <div className="podium-stat">{statFor(metricKey, row, viewerCurrency, rates)}</div>
       <div className="podium-step" aria-hidden="true" />
     </>
   );
@@ -161,6 +173,8 @@ export default function LeaderboardClient({
   friendsMostOwned,
   friendsTrending,
   viewerLoggedIn,
+  viewerCurrency,
+  rates,
 }) {
   const [tab, setTab] = useState('trophies');
   const [friendsMetric, setFriendsMetric] = useState('trophies');
@@ -240,6 +254,8 @@ export default function LeaderboardClient({
                 type={activeType}
                 row={row}
                 metricKey={isFriends ? friendsMetric : tab}
+                viewerCurrency={viewerCurrency}
+                rates={rates}
               />
             ))}
         </div>
