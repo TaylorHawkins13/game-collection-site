@@ -1617,6 +1617,15 @@ button.badge.tag:hover {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+/* app/dashboard/catalogue's full platform-release grid reuses every
+   .franchise-* rule above wholesale (same "greyed out unless owned" cover
+   grid SeriesGrid already established) — this just lifts the small
+   in-modal 260px scroll-box height cap, since here the grid is the whole
+   page's content, not one panel inside a bigger modal. */
+.franchise-grid.catalogue-grid {
+  max-height: none;
+  overflow-y: visible;
+}
 
 /* ---------- Item detail view (ItemDetailModal) ---------- */
 .detail-layout {

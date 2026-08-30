@@ -1733,6 +1733,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <Link href="/dashboard/appraisal" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Collection appraisal
             </Link>
+            <Link href="/dashboard/catalogue" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Full release catalogue
+            </Link>
             <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
               Refresh all prices
             </button>
@@ -2540,7 +2543,16 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                     <h3 style={{ margin: 0, fontSize: 15 }}>Browse by system</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       {fPlat && !collapsedPanels.systemtiles && (
-                        <button className="btn-ghost" type="button" onClick={() => setFPlat('')}>Clear</button>
+                        <>
+                          <Link
+                            href={`/dashboard/catalogue?platform=${encodeURIComponent(fPlat)}`}
+                            className="btn-ghost"
+                            style={{ textDecoration: 'none' }}
+                          >
+                            See full release list →
+                          </Link>
+                          <button className="btn-ghost" type="button" onClick={() => setFPlat('')}>Clear</button>
+                        </>
                       )}
                       <CollapseToggle collapsed={collapsedPanels.systemtiles} onToggle={() => togglePanel('systemtiles')} />
                     </div>
