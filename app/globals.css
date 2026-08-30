@@ -3140,6 +3140,102 @@ button.badge.tag:hover {
   }
 }
 
+/* ---------- Printable QR labels ---------- */
+/* ROADMAP.md "Printable QR/barcode labels per item" — see
+   app/dashboard/labels/LabelsClient.jsx. Sized for Avery 5160-compatible
+   sheets: 3 columns x 10 rows of 2.625in x 1in labels on US Letter,
+   0.5in top/bottom and 0.1875in left/right margins, 0.125in gap between
+   columns — the arithmetic: 3*2.625in + 2*0.125in + 2*0.1875in = 8.5in
+   wide, 10*1in + 2*0.5in = 11in tall, both exactly Letter size. Real,
+   published Avery measurements, but not visually verified against an
+   actual printer from this environment — check the first sheet against
+   a blank page before committing to real label stock, since printer
+   margins/scaling can drift the alignment slightly.
+   .label-sheet renders identically on screen (a plain white "page"
+   preview, in .labels-sheets-wrap's own horizontal scroller so it
+   doesn't force the whole page wider on a narrow viewport) and in
+   print — @media print below only strips the surrounding site chrome
+   and enforces one physical page per sheet, rather than letting the
+   browser's own pagination cut a sheet mid-row if it ever ran long. */
+.labels-sheets-wrap {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.label-sheet {
+  display: grid;
+  grid-template-columns: repeat(3, 2.625in);
+  grid-auto-rows: 1in;
+  column-gap: 0.125in;
+  row-gap: 0;
+  width: 8.5in;
+  padding: 0.5in 0.1875in;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
+  margin: 0 auto 24px;
+  border: 1px solid var(--border);
+}
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.08in;
+  padding: 0.05in 0.08in;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.label-qr {
+  width: 0.85in;
+  height: 0.85in;
+  flex: none;
+}
+.label-qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.label-text {
+  min-width: 0;
+  overflow: hidden;
+}
+.label-title {
+  font-size: 8pt;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.label-subtitle {
+  font-size: 6.5pt;
+  color: #555;
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media print {
+  .navbar,
+  .site-footer,
+  .labels-no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .labels-sheets-wrap {
+    overflow: visible;
+  }
+  .label-sheet {
+    border: none;
+    margin: 0;
+    break-after: page;
+  }
+  .label-sheet:last-child {
+    break-after: auto;
+  }
+}
+
 /* ---------- Gift list affiliate "buy it" links ---------- */
 /* ROADMAP.md "Affiliate 'buy it' links on wishlist items" — a small link
    row under each card on the public gift list page only (see
