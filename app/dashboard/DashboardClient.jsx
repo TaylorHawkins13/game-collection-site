@@ -10,6 +10,7 @@ import ItemDetailModal from '@/components/ItemDetailModal';
 import ValueChart from '@/components/ValueChart';
 import RecommendationCard from '@/components/RecommendationCard';
 import CollectorSuggestionCard from '@/components/CollectorSuggestionCard';
+import WantlistMatchCard from '@/components/WantlistMatchCard';
 import PlayNextWidget from '@/components/PlayNextWidget';
 import CollapseToggle from '@/components/CollapseToggle';
 import WelcomePanel from '@/components/WelcomePanel';
@@ -162,6 +163,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     playnext: true,
     recommend: true,
     collectors: true,
+    wantlist: true,
     value: true,
     systemtiles: true,
     // Expanded by default (unlike the others above) — this one only ever
@@ -342,6 +344,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [recsError, setRecsError] = useState(false);
   const [collectors, setCollectors] = useState(null); // null = still loading
   const [collectorsError, setCollectorsError] = useState(false);
+  const [wantlistMatches, setWantlistMatches] = useState(null); // null = still loading
+  const [wantlistError, setWantlistError] = useState(false);
 
   // Load the collection's value history for the "value over time" chart.
   // Owner-only data (RLS-scoped), never shown on the public profile.
@@ -383,6 +387,23 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         return;
       }
       setCollectors(data || []);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // "Wishlist matches" — closes ROADMAP.md's "Wantlist matching /
+  // trading": public collectors you follow who already own something on
+  // your wishlist, with a nudge when they own more than one copy (a
+  // possible spare to ask about). Safe to call even if
+  // wantlist-matches-migration.sql hasn't run yet, same
+  // fallback-to-error-state pattern as recommend_games/recommend_collectors.
+  useEffect(() => {
+    supabase.rpc('find_wantlist_matches', { p_user_id: userId, p_limit: 20 }).then(({ data, error }) => {
+      if (error) {
+        setWantlistError(true);
+        return;
+      }
+      setWantlistMatches(data || []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -431,11 +452,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       // ignore malformed/missing localStorage value
     }
   }, []);
-  // Collectors you might like feeds the same one-way "seen" flag as
-  // Recommended for you — both are "first appearance" moments the dot is
-  // meant to nudge toward, not two separate dots to track.
+  // Collectors you might like, and now Wishlist matches too, feed the
+  // same one-way "seen" flag as Recommended for you — all three are
+  // "first appearance" moments the dot is meant to nudge toward, not
+  // three separate dots to track.
   useEffect(() => {
-    const hasAnyRecs = (recommendations && recommendations.length > 0) || (collectors && collectors.length > 0);
+    const hasAnyRecs =
+      (recommendations && recommendations.length > 0) ||
+      (collectors && collectors.length > 0) ||
+      (wantlistMatches && wantlistMatches.length > 0);
     if (toolsOpen && !recsSeen && hasAnyRecs) {
       setRecsSeen(true);
       try {
@@ -444,9 +469,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
         // e.g. storage full/disabled — the dot just won't stay dismissed across reloads
       }
     }
-  }, [toolsOpen, recsSeen, recommendations, collectors]);
+  }, [toolsOpen, recsSeen, recommendations, collectors, wantlistMatches]);
   const showRecsIndicator =
-    !recsSeen && ((recommendations && recommendations.length > 0) || (collectors && collectors.length > 0));
+    !recsSeen &&
+    ((recommendations && recommendations.length > 0) ||
+      (collectors && collectors.length > 0) ||
+      (wantlistMatches && wantlistMatches.length > 0));
 
   // Custom lists (see components/CustomListsModal.jsx, managed from the
   // public profile) previously only ever showed up on the profile page —
@@ -2539,6 +2567,28 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                       <div className="recommend-grid">
                         {collectors.map((c) => (
                           <CollectorSuggestionCard key={c.user_id} collector={c} />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {!wantlistError && wantlistMatches && wantlistMatches.length > 0 && (
+                <div className="recommend-panel">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <h3 className="recommend-heading" style={{ margin: 0 }}>Wishlist matches</h3>
+                    <CollapseToggle collapsed={collapsedPanels.wantlist} onToggle={() => togglePanel('wantlist')} />
+                  </div>
+                  {!collapsedPanels.wantlist && (
+                    <>
+                      <p className="sub" style={{ margin: '6px 0 12px' }}>
+                        Public collectors you follow who already own something on your wishlist — click one to see
+                        their shelf.
+                      </p>
+                      <div className="recommend-grid">
+                        {wantlistMatches.map((m) => (
+                          <WantlistMatchCard key={`${m.wishlist_game_id}-${m.owner_user_id}`} match={m} />
                         ))}
                       </div>
                     </>

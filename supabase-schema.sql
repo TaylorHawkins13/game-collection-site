@@ -404,7 +404,15 @@ insert into achievement_defs (key, name, description, tier, sort_order) values
   ('comments-received-10',   'Popular Shelf',       'Get 10 comments on your profile.',                  'silver', 25),
   ('platforms-10',           'Platform Hopper',     'Own games across 10 different platforms.',          'gold',   26),
   ('items-500',              'Half a Thousand',     'Own 500 items.',                                    'gold',   27),
-  ('first-platinum',         'First Platinum',      'Mark your first game fully Platinum''d.',           'gold',   28)
+  ('first-platinum',         'First Platinum',      'Mark your first game fully Platinum''d.',           'gold',   28),
+  ('platform-depth-20',      'Platform Loyalist',   'Own 20 items for the same platform.',               'silver', 29),
+  ('genres-10',              'Genre Connoisseur',   'Own items across 10 different genres.',             'gold',   30),
+  ('types-10',               'Jack of All Trades',  'Own at least one item of every collectible type.',  'gold',   31),
+  ('tagged-10',              'Well Tagged',         'Add a tag to 10 items.',                            'bronze', 32),
+  ('notes-10',               'Archivist',           'Write notes on 10 items.',                          'silver', 33),
+  ('condition-photos-5',     'Detail Oriented',     'Attach condition photos to 5 items.',               'silver', 34),
+  ('forsale-5',              'Yard Sale',           'Mark 5 owned items for sale.',                      'bronze', 35),
+  ('sold-10',                'Downsizer',           'Mark 10 items as sold.',                            'silver', 36)
 on conflict (key) do nothing;
 
 create table if not exists user_achievements (
@@ -477,6 +485,12 @@ declare
   v_showcase int;
   v_comments_received int;
   v_real_platinums int;
+  v_platform_depth int;
+  v_tagged int;
+  v_noted int;
+  v_condition_photos int;
+  v_forsale int;
+  v_sold int;
   v_earned_count int;
   v_total_defs int;
   v_new_keys text[];
@@ -505,6 +519,24 @@ begin
   select count(*) into v_showcase from games where user_id = p_user_id and showcase_order is not null;
   select count(*) into v_comments_received from comments where profile_id = p_user_id;
   select count(*) into v_real_platinums from games where user_id = p_user_id and trophy_platinum = true;
+  -- Depth on a single platform, not breadth across many (platforms-5/10
+  -- above already cover breadth) — the largest group of items sharing
+  -- one platform value, same unnest-and-count approach as v_platforms.
+  select coalesce(max(cnt), 0) into v_platform_depth
+    from (
+      select count(*) as cnt
+      from games g, unnest(g.platforms) as platform
+      where g.user_id = p_user_id
+      group by platform
+    ) t;
+  -- array_length() returns null (not 0) for an empty array, so these
+  -- three deliberately don't need a coalesce/nullif guard — "null > 0"
+  -- is false, which already excludes untagged/photo-less/note-less rows.
+  select count(*) into v_tagged from games where user_id = p_user_id and array_length(tags, 1) > 0;
+  select count(*) into v_noted from games where user_id = p_user_id and notes is not null and notes <> '';
+  select count(*) into v_condition_photos from games where user_id = p_user_id and array_length(condition_photos, 1) > 0;
+  select count(*) into v_forsale from games where user_id = p_user_id and for_sale = true;
+  select count(*) into v_sold from games where user_id = p_user_id and ownership = 'sold';
 
   with ins as (
     insert into user_achievements (user_id, key)
@@ -536,7 +568,15 @@ begin
       ('comments-received-10',   v_comments_received  >= 10),
       ('platforms-10',           v_platforms          >= 10),
       ('items-500',              v_total_items        >= 500),
-      ('first-platinum',         v_real_platinums     >= 1)
+      ('first-platinum',         v_real_platinums     >= 1),
+      ('platform-depth-20',      v_platform_depth     >= 20),
+      ('genres-10',              v_genres             >= 10),
+      ('types-10',               v_types              >= 10),
+      ('tagged-10',              v_tagged             >= 10),
+      ('notes-10',               v_noted              >= 10),
+      ('condition-photos-5',     v_condition_photos   >= 5),
+      ('forsale-5',              v_forsale            >= 5),
+      ('sold-10',                v_sold               >= 10)
     ) as t(k, cond)
     where t.cond
     on conflict do nothing
@@ -1221,6 +1261,66 @@ as $$
 $$;
 
 grant execute on function recommend_collectors(uuid, int) to authenticated;
+
+-- ------------------------------------------------------------
+-- find_wantlist_matches: "Wishlist matches" on the dashboard — closes
+-- ROADMAP.md's "Wantlist matching / trading" ("surface when someone you
+-- follow has something on your wishlist, or a duplicate they might
+-- trade"). Both signals fold into one query: for each of the caller's
+-- own wishlist items, find public collectors they follow who own it,
+-- with a count of how many copies — 2+ is the "maybe a spare" signal,
+-- same tile rather than a second feature. See
+-- wantlist-matches-migration.sql for the standalone version used when
+-- updating an existing project. Deliberately NOT security definer, same
+-- reasoning as recommend_games/recommend_collectors above — only ever
+-- sees what the calling user's own RLS already permits (their own
+-- wishlist, plus a followed profile's owned items if that profile is
+-- public); the explicit `p.is_public = true` below is belt-and-suspenders
+-- on top of that RLS backstop.
+-- ------------------------------------------------------------
+create or replace function find_wantlist_matches(p_user_id uuid, p_limit int default 30)
+returns table (
+  wishlist_game_id uuid,
+  title text,
+  item_type text,
+  cover text,
+  owner_user_id uuid,
+  owner_username text,
+  owner_display_name text,
+  owned_copies bigint
+)
+language sql
+stable
+set search_path = public
+as $$
+  select
+    w.id as wishlist_game_id,
+    w.title,
+    w.item_type,
+    coalesce(
+      nullif(w.cover, ''),
+      (array_agg(g.cover) filter (where g.cover is not null and g.cover <> ''))[1]
+    ) as cover,
+    g.user_id as owner_user_id,
+    p.username as owner_username,
+    p.display_name as owner_display_name,
+    count(g.id) as owned_copies
+  from games w
+  join follows f on f.follower_id = p_user_id
+  join games g
+    on g.user_id = f.following_id
+    and g.item_type = w.item_type
+    and lower(g.title) = lower(w.title)
+    and g.ownership = 'owned'
+  join profiles p on p.id = g.user_id and p.is_public = true
+  where w.user_id = p_user_id
+    and w.ownership = 'wishlist'
+  group by w.id, w.title, w.item_type, w.cover, g.user_id, p.username, p.display_name
+  order by w.title
+  limit greatest(p_limit, 0);
+$$;
+
+grant execute on function find_wantlist_matches(uuid, int) to authenticated;
 
 -- ============================================================
 -- Feedback / "contact us", newsletter opt-in, condition photos
