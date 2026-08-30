@@ -17,7 +17,7 @@ const TABS = [
     key: 'mostValuable',
     label: 'Most valuable',
     type: 'person',
-    sub: "Public collectors ranked by estimated collection value. Shown in each collector's own currency — totals aren't converted, so this only ranks fairly within the same currency.",
+    sub: "Public collectors ranked by estimated collection value, converted to USD behind the scenes so the ranking is fair across currencies. Shown in each collector's own currency, with the USD equivalent alongside when it isn't already USD.",
     empty: 'No priced public collections yet — check a price on an item to start showing up here.',
   },
   {
@@ -80,7 +80,26 @@ function statFor(metricKey, row) {
   if (metricKey === 'biggest') return `${row.game_count} item${row.game_count === 1 ? '' : 's'}`;
   if (metricKey === 'mostOwned') return `${row.owner_count} owner${row.owner_count === 1 ? '' : 's'}`;
   if (metricKey === 'trending') return `+${row.recent_adds} added`;
-  if (metricKey === 'mostValuable') return formatMoney(row.total_value, row.currency);
+  if (metricKey === 'mostValuable') {
+    const primary = formatMoney(row.total_value, row.currency);
+    // total_value_usd comes straight off leaderboard_most_valuable /
+    // leaderboard_friends_most_valuable (see
+    // currency-aware-valuable-leaderboard-migration.sql) — the exact
+    // figure the ranking itself already sorts on, just never shown
+    // before now. Closes ROADMAP.md's "Live currency conversion": the
+    // ranking was already fair across currencies, but nothing on the
+    // page let you see *why* a €5,000 collection outranks a $6,000 one.
+    // Only shown when it says something the primary figure doesn't —
+    // a USD collector's own total already is the USD total.
+    if (row.currency !== 'USD' && row.total_value_usd != null) {
+      return (
+        <>
+          {primary} <span className="podium-stat-secondary">(≈ {formatMoney(row.total_value_usd, 'USD')})</span>
+        </>
+      );
+    }
+    return primary;
+  }
   return '';
 }
 

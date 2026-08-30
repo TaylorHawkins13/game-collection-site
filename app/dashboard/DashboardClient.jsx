@@ -325,6 +325,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [emailBackupEnabled, setEmailBackupEnabled] = useState(profile?.email_backup_enabled ?? false);
   const [savingEmailBackup, setSavingEmailBackup] = useState(false);
   const [emailBackupMsg, setEmailBackupMsg] = useState('');
+  const [activityDigestEnabled, setActivityDigestEnabled] = useState(profile?.email_activity_digest_enabled ?? false);
+  const [savingActivityDigest, setSavingActivityDigest] = useState(false);
+  const [activityDigestMsg, setActivityDigestMsg] = useState('');
   const [signingOutOthers, setSigningOutOthers] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState({ done: 0, total: 0 });
@@ -1412,6 +1415,25 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     setEmailBackupMsg('Saved!');
   }
 
+  // Whether app/api/cron/email-activity-digest emails this account a
+  // weekly summary automatically — your own week (adds/completions/
+  // ratings/trophies) plus what the public collectors you follow have
+  // been up to, see ROADMAP.md/CHANGELOG.md. Same instant-save pattern as
+  // toggleEmailBackup right above.
+  async function toggleActivityDigest(enabled) {
+    setActivityDigestEnabled(enabled);
+    setSavingActivityDigest(true);
+    setActivityDigestMsg('');
+    const { error } = await supabase.from('profiles').update({ email_activity_digest_enabled: enabled }).eq('id', userId);
+    setSavingActivityDigest(false);
+    if (error) {
+      setActivityDigestEnabled(!enabled);
+      setActivityDigestMsg(`Failed to save: ${error.message}`);
+      return;
+    }
+    setActivityDigestMsg('Saved!');
+  }
+
   // Same shape as handleImported — used by SteamImportModal instead of CSV.
   function handleSteamImported(newRows) {
     setGames((gs) => [...gs, ...newRows]);
@@ -2103,6 +2125,29 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   {emailBackupMsg && (
                     <span className={emailBackupMsg.startsWith('Failed') ? 'error-text' : 'success-text'} style={{ marginLeft: 6 }}>
                       {emailBackupMsg}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="field" style={{ marginTop: 16 }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={activityDigestEnabled}
+                    onChange={(e) => toggleActivityDigest(e.target.checked)}
+                    disabled={savingActivityDigest}
+                    style={{ width: 'auto', marginRight: 8 }}
+                  />
+                  Email me a weekly activity digest
+                </label>
+                <p className="sub" style={{ margin: '4px 0 0' }}>
+                  A weekly summary — what you added, completed, rated, or earned a trophy for, plus what the public
+                  collectors you follow have been up to. Skips the email entirely on a quiet week with nothing to
+                  report.
+                  {activityDigestMsg && (
+                    <span className={activityDigestMsg.startsWith('Failed') ? 'error-text' : 'success-text'} style={{ marginLeft: 6 }}>
+                      {activityDigestMsg}
                     </span>
                   )}
                 </p>

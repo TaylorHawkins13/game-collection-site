@@ -1527,3 +1527,19 @@ create table if not exists master_set_cache (
 
 alter table master_set_cache enable row level security;
 revoke all on master_set_cache from anon, authenticated;
+
+-- ============================================================
+-- Opt-in weekly activity digest
+-- (see activity-digest-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+-- Whether to email this account a weekly digest (your own week's
+-- adds/completions/ratings/trophies, plus a summary of what the public
+-- collectors you follow have been up to) — see ROADMAP.md "Notification
+-- digest emails" and app/api/cron/email-activity-digest. Defaults to
+-- false, same reasoning as email_backup_enabled above: this sends an
+-- actual weekly email, so it's opt-in rather than something every
+-- existing account suddenly starts receiving.
+alter table public.profiles
+  add column if not exists email_activity_digest_enabled boolean not null default false;

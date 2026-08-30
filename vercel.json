@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/refresh-master-sets",
       "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/email-activity-digest",
+      "schedule": "0 12 * * 0"
     }
   ]
 }

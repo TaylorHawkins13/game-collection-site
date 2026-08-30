@@ -1989,6 +1989,13 @@ button.badge.tag:hover {
   color: var(--text-dim);
   margin-top: 2px;
 }
+/* The "Most valuable" podium's converted-to-USD figure (see
+   LeaderboardClient.jsx's statFor) — sits inline after the primary
+   own-currency amount, just faded a touch further so it still reads as
+   the primary number at a glance. */
+.podium-stat-secondary {
+  opacity: 0.72;
+}
 .podium-step {
   width: 100%;
   border-radius: 8px 8px 0 0;
