@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import ThemeToggle from './ThemeToggle';
+import TextSizeControl from './TextSizeControl';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
@@ -127,6 +128,7 @@ export default function Navbar() {
           </>
         )}
         <ThemeToggle />
+        <TextSizeControl />
       </div>
     </nav>
   );

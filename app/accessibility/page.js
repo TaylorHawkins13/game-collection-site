@@ -37,6 +37,11 @@ export default function AccessibilityPage() {
           <li>The star rating supports arrow keys to adjust a rating half a star at a time, in addition to clicking or tabbing to Enter/Space.</li>
           <li>Deleting an item shows an Undo toast that pauses its countdown while you&apos;re hovering or focused on it, instead of a fixed window that can run out while you&apos;re still reading it.</li>
           <li>Motion respects your system&apos;s &quot;reduce motion&quot; setting — animations and hover transitions shorten to effectively nothing if you have that turned on.</li>
+          <li>A WCAG AA contrast pass across muted text and every badge/pill color combination, in both light and dark themes.</li>
+          <li>Ownership badges, podium medals, and trophy tiers all render their status as literal text, not color alone.</li>
+          <li>A verified tab order across the dashboard grid, leaderboard, and search results (fixed one real mismatch found on the leaderboard podium along the way).</li>
+          <li>A manual text-size control (Text, top right) — three steps (Normal/Large/Larger) that scale the whole page, not just body text, since iOS&apos;s system-level &quot;Larger Text&quot; doesn&apos;t reach web content inside the wrapped app.</li>
+          <li>Pinch-to-zoom is never disabled.</li>
         </ul>
       </section>
 
@@ -44,11 +49,8 @@ export default function AccessibilityPage() {
         <h2 style={{ fontSize: 17 }}>Known gaps</h2>
         <p>Still open, tracked in the project&apos;s own roadmap:</p>
         <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
-          <li>No formal WCAG AA contrast audit yet (muted text, badge/pill color combinations, both light and dark themes).</li>
-          <li>Some status indicators (ownership badges, podium medals, trophy tiers) currently rely on color alone rather than also using shape/text/icon.</li>
-          <li>No full, verified tab-order pass across the dashboard grid, leaderboard, and search results yet.</li>
-          <li>No manual text-size control in Settings — iOS&apos;s system-level &quot;Larger Text&quot; doesn&apos;t reach web content inside the wrapped app.</li>
-          <li>Pinch-to-zoom hasn&apos;t been explicitly re-confirmed as unblocked since the most recent mobile viewport fix.</li>
+          <li>No text-based &quot;view as a list&quot; alternative to the shelf mosaic yet.</li>
+          <li>No fully clean, non-skipping heading hierarchy and landmark region (<code>nav</code>/<code>main</code>/<code>aside</code>) pass site-wide.</li>
         </ul>
       </section>
 

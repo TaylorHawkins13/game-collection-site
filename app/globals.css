@@ -136,6 +136,21 @@ a {
   top: 8px;
 }
 
+/* Manual text-size control (ROADMAP.md "Rest of the Accessibility
+   checklist", components/TextSizeControl.jsx) — `zoom` scales the whole
+   rendered box (fonts, spacing, layout) of everything under <html>
+   uniformly, the same way a browser's own page zoom would, rather than
+   needing every one of this file's hardcoded font-size declarations to
+   be rewritten onto a root rem/em scale. Values chosen to visually land
+   close to a browser's own "125%"/"150%" zoom steps without needing the
+   page to be laid out any differently at 100%. */
+html.text-size-large {
+  zoom: 1.15;
+}
+html.text-size-larger {
+  zoom: 1.3;
+}
+
 button,
 input,
 select,
@@ -267,6 +282,24 @@ textarea {
   text-decoration: none;
   padding: 8px 10px;
   border-radius: 8px;
+}
+
+.text-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.text-size-control select {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 44px;
+  font-size: 13px;
+  flex: 1;
 }
 
 .nav-link:hover {
