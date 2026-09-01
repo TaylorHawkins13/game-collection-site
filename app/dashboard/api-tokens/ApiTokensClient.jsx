@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
 import { announceToast } from '@/lib/toast';
 import { SITE_URL } from '@/lib/siteUrl';
@@ -79,9 +78,6 @@ export default function ApiTokensClient({ initialTokens }) {
             read-only mirror of what you can already see about your own items, nothing new.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-          Back to dashboard
-        </Link>
       </div>
 
       {justCreated && (

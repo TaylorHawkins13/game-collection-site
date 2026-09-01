@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { computeSpendTotals } from '@/lib/upcomingReleases';
 import { currencySymbol, formatMoney } from '@/lib/currency';
 
@@ -94,9 +93,6 @@ export default function UpcomingReleasesClient({ groups, currency }) {
             expected price to track what&apos;s coming up in your budget.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-          Back to dashboard
-        </Link>
       </div>
 
       <div className="form-card" style={{ marginTop: 16, display: 'flex', gap: 24, flexWrap: 'wrap' }}>

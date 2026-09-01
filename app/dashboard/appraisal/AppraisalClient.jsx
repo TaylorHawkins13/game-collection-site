@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo } from 'react';
 import { formatMoney } from '@/lib/currency';
 import { TYPE_LABELS, CATEGORY_ORDER } from '@/lib/mosaicData';
@@ -71,9 +70,6 @@ export default function AppraisalClient({ games, currency, collectorName }) {
           <button type="button" className="btn-primary" onClick={() => window.print()}>
             Print / Save as PDF
           </button>
-          <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-            Back to dashboard
-          </Link>
         </div>
       </div>
 

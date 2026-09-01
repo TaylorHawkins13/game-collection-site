@@ -88,9 +88,6 @@ export default function WrappedClient({ games, events, snapshots, currency, year
             Built entirely from what you already track — nothing new to enter.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-          Back to dashboard
-        </Link>
       </div>
 
       <div className="toolbar" style={{ margin: '16px 0' }}>

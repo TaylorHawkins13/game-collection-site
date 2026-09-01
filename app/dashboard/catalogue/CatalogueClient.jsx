@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CONSOLES } from '@/lib/consoleList';
 import { normalizeTitle } from '@/lib/duplicateCheck';
@@ -153,9 +152,6 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds }) {
             that system — useful for spotting real gaps in a platform you're actively completing.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-          Back to dashboard
-        </Link>
       </div>
 
       <div className="form-card" style={{ marginTop: 16 }}>

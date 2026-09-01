@@ -1773,35 +1773,22 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Quick add (type it)
             </button>
           </ActionMenu>
-          <ActionMenu label="More actions">
-            <Link href="/dashboard/insights" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Collection insights
-            </Link>
-            <Link href="/dashboard/wrapped" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Your Wrapped
-            </Link>
-            <Link href="/dashboard/appraisal" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Collection appraisal
-            </Link>
-            <Link href="/dashboard/catalogue" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Full release catalogue
-            </Link>
-            <Link href="/dashboard/upcoming-releases" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Upcoming releases
-            </Link>
-            <Link href="/dashboard/labels" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Print labels
-            </Link>
-            <Link href="/dashboard/api-tokens" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              API access
-            </Link>
-            <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
-              Refresh all prices
-            </button>
-            <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
-              Settings
-            </button>
-          </ActionMenu>
+          {/* The 7 page links that used to live in a "More actions"
+              dropdown here now live in the persistent dashboard sidebar
+              (see app/dashboard/layout.js/components/DashboardSidebar.jsx)
+              instead — nothing here linked back to that menu once you'd
+              actually navigated to one of its destinations, which was
+              the whole "features hidden away" complaint. Refresh all
+              prices and Settings stay as plain toolbar buttons rather
+              than moving into the sidebar: both are actions tied to this
+              page's own loaded `games` state / inline settings panel,
+              not separate destinations to navigate to. */}
+          <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
+            Refresh all prices
+          </button>
+          <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
+            Settings
+          </button>
         </div>
       </div>
 

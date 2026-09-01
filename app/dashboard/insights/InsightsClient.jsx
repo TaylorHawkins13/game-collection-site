@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
 import { formatMoney } from '@/lib/currency';
 import { TYPE_LABELS, CATEGORY_ORDER } from '@/lib/mosaicData';
 
@@ -211,9 +210,6 @@ export default function InsightsClient({ games, currency }) {
             already in your collection.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-          Back to dashboard
-        </Link>
       </div>
 
       {owned.length === 0 ? (

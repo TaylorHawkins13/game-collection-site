@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import QRCode from 'qrcode';
 import { CATEGORY_ORDER, TYPE_LABELS } from '@/lib/mosaicData';
 import { SITE_URL } from '@/lib/siteUrl';
@@ -126,9 +125,6 @@ export default function LabelsClient({ games }) {
             back up.
           </p>
         </div>
-        <Link href="/dashboard" className="btn-ghost" style={{ textDecoration: 'none' }}>
-          Back to dashboard
-        </Link>
       </div>
 
       {games.length === 0 ? (

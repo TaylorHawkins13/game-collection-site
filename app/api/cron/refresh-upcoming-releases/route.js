@@ -40,7 +40,22 @@ export const maxDuration = 60;
 // that series until then, which is a reasonable gap for a feature
 // that's inherently "here's what's coming," not something anyone
 // depends on being instantly live the moment they log a new item.
-const MAX_SERIES_PER_RUN = 8;
+//
+// Set at 25, not 5 like refresh-master-sets' MAX_SETS_PER_RUN — fixed
+// Sep 2026 after the page shipped genuinely empty for an account with
+// 238 distinct tracked game titles and 3 comic series (real data,
+// confirmed against production — the cron just hadn't fired yet, since
+// the feature deployed after that week's Tuesday cron window; see
+// CHANGELOG.md). A master-set refresh does one per-card detail fetch for
+// every card in a 100-250+ card set (genuinely expensive); this only
+// does a handful of lightweight lookups per series (an IGDB franchise/
+// collection resolution, or one Comic Vine volume + issues page), so a
+// much higher per-run cap still comfortably fits maxDuration. Even at
+// 25/run this still takes several runs to fully backfill a large
+// existing collection's first cache — see README.md's note on manually
+// triggering a run (`vercel crons run`) to speed that up rather than
+// waiting on the weekly schedule alone.
+const MAX_SERIES_PER_RUN = 25;
 const STALE_AFTER_DAYS = 7;
 
 export async function GET(request) {
