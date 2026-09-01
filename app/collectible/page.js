@@ -4,6 +4,7 @@ import { buildCollectibleDetail, buildIgdbDetail } from '@/lib/collectibleDetail
 import { searchIgdb } from '@/lib/igdbSearch';
 import { TYPE_LABELS } from '@/lib/mosaicData';
 import { CoverThumb } from '@/components/LeaderboardThumb';
+import ItemReviews from './ItemReviews';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ async function loadDetail(type, title) {
       .from('profiles')
       .select('id, username, display_name, avatar_url')
       .in('id', ownerIds);
-    return { detail, owners: owners || [] };
+    return { detail, owners: owners || [], rows };
   }
 
   // Nobody's logged this one yet. For games, fall back to the same IGDB
@@ -42,10 +43,27 @@ async function loadDetail(type, title) {
       (igdb.results || [])[0] ||
       null;
     const detail = buildIgdbDetail(match);
-    if (detail) return { detail, owners: [] };
+    if (detail) return { detail, owners: [], rows: [] };
   }
 
   return null;
+}
+
+// Reviews (ROADMAP.md "Per-item reviews (separate from personal
+// rating)") — same item_type + case-insensitive title match the games
+// query above uses, scoped by item_reviews' own RLS (readable if the
+// reviewer is public, or it's the viewer's own).
+async function loadReviews(type, title) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('item_reviews')
+    .select(
+      'id, user_id, rating, body, created_at, updated_at, author:profiles!item_reviews_user_id_fkey(username, display_name, avatar_url)'
+    )
+    .eq('item_type', type)
+    .ilike('title', title)
+    .order('created_at', { ascending: false });
+  return data || [];
 }
 
 export async function generateMetadata({ searchParams }) {
@@ -77,8 +95,17 @@ export default async function CollectiblePage({ searchParams }) {
     );
   }
 
-  const { detail, owners } = result;
+  const { detail, owners, rows } = result;
   const encodedTitle = encodeURIComponent(detail.title);
+
+  const supabase = createClient();
+  const [
+    {
+      data: { user: viewer },
+    },
+    reviews,
+  ] = await Promise.all([supabase.auth.getUser(), loadReviews(type, detail.title)]);
+  const canReview = !!viewer && rows.some((r) => r.user_id === viewer.id && r.ownership === 'owned');
 
   return (
     <main className="container" style={{ maxWidth: 720, marginTop: 20 }}>
@@ -165,6 +192,14 @@ export default async function CollectiblePage({ searchParams }) {
           </div>
         </>
       )}
+
+      <ItemReviews
+        itemType={type}
+        title={detail.title}
+        initialReviews={reviews}
+        viewerId={viewer?.id || null}
+        canReview={canReview}
+      />
 
       {owners.length > 0 && (
         <>
