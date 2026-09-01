@@ -1789,6 +1789,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <Link href="/dashboard/labels" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Print labels
             </Link>
+            <Link href="/dashboard/api-tokens" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              API access
+            </Link>
             <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
               Refresh all prices
             </button>
