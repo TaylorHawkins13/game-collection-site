@@ -103,7 +103,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default async function HomePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

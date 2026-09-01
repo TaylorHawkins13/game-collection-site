@@ -39,7 +39,7 @@ import { SITE_URL } from '@/lib/siteUrl';
 // actually finishes the job and the account, its items, and its
 // Storage files are all really gone afterward.
 export async function POST() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

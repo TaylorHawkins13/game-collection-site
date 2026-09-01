@@ -36,7 +36,8 @@ export async function generateMetadata() {
 // to, say, just comments. Plain links (?type=...), not a client-side
 // dropdown, consistent with "Load more" already being a plain link here.
 export default async function NotificationsPage({ searchParams }) {
-  const supabase = createClient();
+  const sp = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,8 +50,8 @@ export default async function NotificationsPage({ searchParams }) {
     .single();
 
   const muted = profile?.muted_notification_types || [];
-  const before = searchParams?.before || null;
-  const typeParam = searchParams?.type || '';
+  const before = sp?.before || null;
+  const typeParam = sp?.type || '';
   const activeType = NOTIFICATION_TYPES.some((t) => t.key === typeParam) ? typeParam : '';
 
   let query = supabase

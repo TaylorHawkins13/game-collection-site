@@ -3,7 +3,13 @@ import { NextResponse } from 'next/server';
 
 // Refreshes the Supabase auth session on every request so server components
 // always see an up-to-date logged-in/logged-out state.
-export async function middleware(request) {
+//
+// Renamed from middleware.js/middleware() to proxy.js/proxy() for the
+// Next.js 16 upgrade — the `middleware` filename/export are deprecated in
+// favor of `proxy` (same file, same job, new name/location in the request
+// lifecycle terminology). Nothing here used the edge runtime, so the
+// rename is the whole change; see CHANGELOG.md for the full upgrade notes.
+export async function proxy(request) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

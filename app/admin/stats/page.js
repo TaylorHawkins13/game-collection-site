@@ -19,7 +19,7 @@ export const metadata = {
 // though this is a real launched product now, not friends and family
 // checking in casually.
 export default async function AdminStatsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

@@ -20,7 +20,7 @@ function verb(eventType) {
 }
 
 export default async function FeedPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 

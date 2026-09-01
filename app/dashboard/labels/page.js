@@ -15,7 +15,7 @@ export const metadata = {
 // why that's a client-side, selection-time step instead of an
 // every-owned-item server computation.
 export default async function LabelsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

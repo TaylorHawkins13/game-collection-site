@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 // profile it pointed at, so this resolves each target defensively and
 // falls back to "no longer exists" rather than crashing.
 export default async function AdminReportsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

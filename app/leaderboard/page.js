@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function LeaderboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

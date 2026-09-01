@@ -12,7 +12,7 @@ const SELECT_COLS =
   'title, item_type, cover, ownership, rating, platforms, genre, series, issue_number, publisher, writer, artist, card_set, card_number, player_name, format, user_id';
 
 async function loadDetail(type, title) {
-  const supabase = createClient();
+  const supabase = await createClient();
   // RLS on `games` already scopes this to public collectors' items plus
   // the viewer's own — same implicit-scoping pattern as the players
   // search, no explicit is_public join needed here.
@@ -54,7 +54,7 @@ async function loadDetail(type, title) {
 // query above uses, scoped by item_reviews' own RLS (readable if the
 // reviewer is public, or it's the viewer's own).
 async function loadReviews(type, title) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from('item_reviews')
     .select(
@@ -67,13 +67,15 @@ async function loadReviews(type, title) {
 }
 
 export async function generateMetadata({ searchParams }) {
-  const title = searchParams?.title || 'Collectible';
+  const sp = await searchParams;
+  const title = sp?.title || 'Collectible';
   return { title: `${title} — Shelf Life` };
 }
 
 export default async function CollectiblePage({ searchParams }) {
-  const type = searchParams?.type || '';
-  const title = searchParams?.title || '';
+  const sp = await searchParams;
+  const type = sp?.type || '';
+  const title = sp?.title || '';
 
   if (!type || !title) {
     return (
@@ -98,7 +100,7 @@ export default async function CollectiblePage({ searchParams }) {
   const { detail, owners, rows } = result;
   const encodedTitle = encodeURIComponent(detail.title);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const [
     {
       data: { user: viewer },

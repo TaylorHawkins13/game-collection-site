@@ -9,7 +9,7 @@ import { sendEmail } from '@/lib/resend';
 // like the page at app/admin/newsletter/page.js does, since a route
 // handler is a separate request with no shared React state to lean on.
 export async function POST(request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

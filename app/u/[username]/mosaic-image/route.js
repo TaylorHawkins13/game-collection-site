@@ -43,7 +43,7 @@ async function verifyCovers(urls) {
 }
 
 export async function GET(request, { params }) {
-  const { username } = params;
+  const { username } = await params;
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get('mode') || 'all';
   const type = searchParams.get('type') || '';
@@ -51,7 +51,7 @@ export async function GET(request, { params }) {
   const idsParam = searchParams.get('ids') || '';
   const selectedIds = idsParam ? idsParam.split(',').filter(Boolean) : [];
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, username, display_name, currency, is_public')

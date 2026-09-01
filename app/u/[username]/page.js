@@ -15,8 +15,8 @@ import { estimateCollectionValue } from '@/lib/valueSnapshot';
 import { formatMoney } from '@/lib/currency';
 
 export async function generateMetadata({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, username, display_name, bio, avatar_url, is_public')
@@ -62,8 +62,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProfilePage({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
 
   const { data: { user: viewer } } = await supabase.auth.getUser();
 

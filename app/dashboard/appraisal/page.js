@@ -13,7 +13,7 @@ export const metadata = {
 // rather than a PDF-generation library — "Save as PDF" from the browser's
 // own print dialog produces a real PDF with zero extra moving parts.
 export default async function AppraisalPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

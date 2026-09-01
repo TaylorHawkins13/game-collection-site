@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabaseServer';
 import ProfileCard from '@/components/ProfileCard';
 
 export async function generateMetadata({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from('profiles')
     .select('username, display_name')
@@ -17,8 +17,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function FollowersPage({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
 
   const { data: profile } = await supabase
     .from('profiles')

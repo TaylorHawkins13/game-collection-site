@@ -24,7 +24,7 @@ export async function POST(req) {
     userVerification: 'required',
   });
 
-  cookies().set('webauthn_challenge', options.challenge, {
+  (await cookies()).set('webauthn_challenge', options.challenge, {
     httpOnly: true,
     secure: true,
     sameSite: 'lax',

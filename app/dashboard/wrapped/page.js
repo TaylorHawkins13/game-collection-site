@@ -11,7 +11,8 @@ export const metadata = {
 // activity_events, value_snapshots), same "nothing new to enter" spirit as
 // Collection Insights right next to it in the "More actions" menu.
 export default async function WrappedPage({ searchParams }) {
-  const supabase = createClient();
+  const sp = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -38,7 +39,7 @@ export default async function WrappedPage({ searchParams }) {
       .order('taken_at', { ascending: true }),
   ]);
 
-  const requestedYear = parseInt(searchParams?.year, 10);
+  const requestedYear = parseInt(sp?.year, 10);
   const year = Number.isFinite(requestedYear) ? requestedYear : new Date().getFullYear();
 
   return (

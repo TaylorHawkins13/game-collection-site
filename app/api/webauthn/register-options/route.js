@@ -23,7 +23,7 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Too many attempts — wait a few minutes and try again.' }, { status: 429 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
     return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
@@ -63,7 +63,7 @@ export async function POST(req) {
   // signed, so it's stashed in a short-lived httpOnly cookie between
   // this request and register-verify — never sent to the client as
   // readable data, never stored server-side beyond this one round trip.
-  cookies().set('webauthn_challenge', options.challenge, {
+  (await cookies()).set('webauthn_challenge', options.challenge, {
     httpOnly: true,
     secure: true,
     sameSite: 'lax',

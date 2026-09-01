@@ -7,7 +7,7 @@ import { getAllArticles } from '@/lib/articles';
 // Dynamic rather than statically generated — approved community
 // submissions can appear at any time, not just at build/deploy time.
 async function loadArticle(slug) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: approved } = await supabase
     .from('article_submissions')
     .select('id, type, title, dek, body, rating, created_at, reviewed_at, profile:profiles(username, display_name)')
@@ -16,12 +16,14 @@ async function loadArticle(slug) {
 }
 
 export async function generateMetadata({ params }) {
-  const article = await loadArticle(params.slug);
+  const { slug } = await params;
+  const article = await loadArticle(slug);
   return { title: article ? `${article.title} — Shelf Life` : 'Shelf Life' };
 }
 
 export default async function ArticlePage({ params }) {
-  const article = await loadArticle(params.slug);
+  const { slug } = await params;
+  const article = await loadArticle(slug);
   if (!article) notFound();
 
   return (

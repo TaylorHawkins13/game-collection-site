@@ -32,7 +32,7 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Too many attempts — wait a few minutes and try again.' }, { status: 429 });
   }
 
-  const expectedChallenge = cookies().get('webauthn_challenge')?.value;
+  const expectedChallenge = (await cookies()).get('webauthn_challenge')?.value;
   if (!expectedChallenge) {
     return NextResponse.json({ error: 'Sign-in expired — try again.' }, { status: 400 });
   }
@@ -51,7 +51,7 @@ export async function POST(req) {
     .maybeSingle();
 
   if (lookupError || !stored) {
-    cookies().delete('webauthn_challenge');
+    (await cookies()).delete('webauthn_challenge');
     return NextResponse.json({ error: 'Passkey not recognized.' }, { status: 400 });
   }
 
@@ -70,11 +70,11 @@ export async function POST(req) {
       },
     });
   } catch (err) {
-    cookies().delete('webauthn_challenge');
+    (await cookies()).delete('webauthn_challenge');
     return NextResponse.json({ error: err.message || 'Verification failed.' }, { status: 400 });
   }
 
-  cookies().delete('webauthn_challenge');
+  (await cookies()).delete('webauthn_challenge');
 
   if (!verification.verified) {
     return NextResponse.json({ error: 'Could not verify passkey.' }, { status: 400 });

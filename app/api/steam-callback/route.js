@@ -43,7 +43,7 @@ export async function GET(request) {
   }
   const steamId = match[1];
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.redirect(`${SITE_URL}/login`);

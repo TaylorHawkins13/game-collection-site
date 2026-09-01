@@ -13,7 +13,7 @@ const TARGET_TYPES = ['comment', 'profile'];
 // report-migration.sql), and requiring sign-in also raises the bar for
 // abusing the report system itself.
 export async function POST(request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

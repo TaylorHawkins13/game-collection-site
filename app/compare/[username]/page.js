@@ -5,7 +5,7 @@ import { buildComparison, trophyStats } from '@/lib/collectionCompare';
 import CompareClient from './CompareClient';
 
 export async function generateMetadata({ params }) {
-  const { username } = params;
+  const { username } = await params;
   return {
     title: `Compare with @${username}`,
     robots: { index: false }, // a signed-in-only comparison view, nothing worth indexing
@@ -13,8 +13,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ComparePage({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
 
   const { data: { user: viewer } } = await supabase.auth.getUser();
   if (!viewer) {

@@ -5,7 +5,7 @@ import { isAdminViewer } from '@/lib/adminAuth';
 import AdminArticlesClient from './AdminArticlesClient';
 
 export default async function AdminArticlesPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

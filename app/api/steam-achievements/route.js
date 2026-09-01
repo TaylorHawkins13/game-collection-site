@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabaseServer';
 // Same privacy constraint as GetOwnedGames: the account's "Game details"
 // privacy setting has to be Public, or this comes back empty.
 export async function GET(request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });

@@ -9,7 +9,7 @@ const TYPES = ['review', 'article'];
 // rejected by RLS anyway; checking here first just gives a clean 401
 // instead of a raw database error.
 export async function POST(request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

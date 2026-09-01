@@ -19,13 +19,13 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Too many attempts — wait a few minutes and try again.' }, { status: 429 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
     return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   }
 
-  const expectedChallenge = cookies().get('webauthn_challenge')?.value;
+  const expectedChallenge = (await cookies()).get('webauthn_challenge')?.value;
   if (!expectedChallenge) {
     return NextResponse.json({ error: 'Registration expired — try again.' }, { status: 400 });
   }
@@ -45,7 +45,7 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message || 'Verification failed.' }, { status: 400 });
   }
 
-  cookies().delete('webauthn_challenge');
+  (await cookies()).delete('webauthn_challenge');
 
   if (!verification.verified || !verification.registrationInfo) {
     return NextResponse.json({ error: 'Could not verify passkey.' }, { status: 400 });

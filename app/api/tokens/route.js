@@ -10,7 +10,7 @@ import { generateApiToken } from '@/lib/apiTokens';
 // response, and the requester's own copy of it — never in anything that
 // could later be replayed to forge a hash client-side.
 export async function POST(req) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

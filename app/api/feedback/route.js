@@ -41,7 +41,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Message is too long (2000 characters max).' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

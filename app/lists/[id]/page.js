@@ -4,8 +4,9 @@ import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 
 export async function generateMetadata({ params }) {
-  const supabase = createClient();
-  const { data: list } = await supabase.from('custom_lists').select('name, user_id').eq('id', params.id).single();
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: list } = await supabase.from('custom_lists').select('name, user_id').eq('id', id).single();
   if (!list) return { title: 'List not found' };
   const { data: owner } = await supabase.from('profiles').select('username, display_name').eq('id', list.user_id).single();
   const ownerName = owner?.display_name || owner?.username || 'a collector';
@@ -22,12 +23,13 @@ export async function generateMetadata({ params }) {
 // embed name for custom_lists -> profiles isn't worth the risk of a
 // silent wrong-column mismatch.
 export default async function ListDetailPage({ params }) {
-  const supabase = createClient();
+  const { id } = await params;
+  const supabase = await createClient();
 
   const { data: list } = await supabase
     .from('custom_lists')
     .select('id, name, user_id, created_at')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (!list) notFound();

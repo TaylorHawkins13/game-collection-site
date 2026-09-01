@@ -14,7 +14,7 @@ export const metadata = {
 // instead of a direct client-side Supabase call the way this list/the
 // revoke button do.
 export default async function ApiTokensPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

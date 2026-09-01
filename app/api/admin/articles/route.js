@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabaseAdmin';
 import { isAdminViewer } from '@/lib/adminAuth';
 
 export async function POST(request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

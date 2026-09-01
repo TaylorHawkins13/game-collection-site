@@ -21,8 +21,8 @@ import { ebayBuyLink, amazonBuyLink } from '@/lib/affiliateLinks';
 // in supabase-schema.sql — this page's own canView check is a UI
 // convenience, not the actual security boundary.
 export async function generateMetadata({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from('profiles')
     .select('username, display_name, is_public, wishlist_public')
@@ -52,8 +52,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function WishlistPage({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
 
   const { data: { user: viewer } } = await supabase.auth.getUser();
 

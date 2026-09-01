@@ -11,8 +11,8 @@ import MosaicClient from './MosaicClient';
 // then happens client-side against that same array with no refetch —
 // see lib/mosaicData.js's shapeMosaic().
 export async function generateMetadata({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from('profiles')
     .select('username, display_name, is_public')
@@ -37,8 +37,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function MosaicPage({ params }) {
-  const { username } = params;
-  const supabase = createClient();
+  const { username } = await params;
+  const supabase = await createClient();
 
   const {
     data: { user: viewer },

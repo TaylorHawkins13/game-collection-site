@@ -14,7 +14,7 @@ export const metadata = {
 // filter work; this page just renders it. Static-ish top-N browse, same
 // "top 50, no pagination yet" scope the leaderboard views started with.
 export default async function ListsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: lists } = await supabase.from('public_lists').select('*').limit(60);
 
   return (

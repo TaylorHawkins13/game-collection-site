@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabaseServer';
 // list comes back empty (Steam doesn't distinguish "no games" from
 // "hidden" in the response), which the client treats as the same case.
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });

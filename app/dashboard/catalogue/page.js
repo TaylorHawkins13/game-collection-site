@@ -12,7 +12,7 @@ export const metadata = {
 // platforms), not the whole `games` row, since a big collection has no
 // reason to ship every other column down for this one comparison.
 export default async function CataloguePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -5,7 +5,7 @@ import { isAdminViewer } from '@/lib/adminAuth';
 import NewsletterForm from './NewsletterForm';
 
 export default async function AdminNewsletterPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

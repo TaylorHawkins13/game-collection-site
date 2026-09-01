@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabaseServer';
 // admin/service-role client needed, unlike most of the site's other
 // admin-ish routes.
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();

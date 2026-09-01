@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function ArticlesIndexPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: approved } = await supabase
     .from('article_submissions')
     .select('id, type, title, dek, body, rating, created_at, reviewed_at, profile:profiles(username, display_name)')
