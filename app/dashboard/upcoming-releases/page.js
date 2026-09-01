@@ -2,10 +2,10 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabaseServer';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { distinctTrackedSeries, flattenUpcomingEntries, groupEntriesByMonth } from '@/lib/upcomingReleases';
-import PullListClient from './PullListClient';
+import UpcomingReleasesClient from './UpcomingReleasesClient';
 
 export const metadata = {
-  title: 'Pull List — Shelf Life',
+  title: 'Upcoming Releases — Shelf Life',
 };
 
 // ROADMAP.md "Pull list / upcoming-release calendar with spend
@@ -14,14 +14,18 @@ export const metadata = {
 // from, sourced from upcoming_release_cache (see supabase-schema.sql and
 // app/api/cron/refresh-upcoming-releases), plus a running this-week/
 // this-month spend total from prices the viewer types in themselves —
-// see PullListClient.jsx for why that has to be manual (neither IGDB nor
-// Comic Vine expose real price/MSRP data for something that hasn't
-// released yet).
+// see UpcomingReleasesClient.jsx for why that has to be manual (neither
+// IGDB nor Comic Vine expose real price/MSRP data for something that
+// hasn't released yet). Named/labeled "Upcoming Releases" in the UI
+// (Sep 2026) rather than "Pull List" — clearer to anyone not already
+// familiar with comic-shop pull-list terminology, though the underlying
+// ROADMAP.md line, DB table, and cron job name all still use "pull
+// list"/"upcoming release" interchangeably from when this was built.
 //
 // Server/client split mirrors app/dashboard/catalogue/page.js: this does
-// the narrow data fetch + resolution server-side, PullListClient handles
-// all the interactive display.
-export default async function PullListPage() {
+// the narrow data fetch + resolution server-side, UpcomingReleasesClient
+// handles all the interactive display.
+export default async function UpcomingReleasesPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,7 +43,7 @@ export default async function PullListPage() {
   const series = distinctTrackedSeries(games || []);
   const groups = await loadUpcomingGroups(series);
 
-  return <PullListClient groups={groups} currency={profile?.currency || 'USD'} />;
+  return <UpcomingReleasesClient groups={groups} currency={profile?.currency || 'USD'} />;
 }
 
 // Best-effort read of upcoming_release_cache, same pattern

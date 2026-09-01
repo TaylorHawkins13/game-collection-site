@@ -16,10 +16,10 @@ export const maxDuration = 60;
 // lib/upcomingReleases.js's module comment for the full reasoning.
 // Closes ROADMAP.md's "Pull list / upcoming-release calendar with spend
 // forecasting": once a series has a fresh cache row,
-// /dashboard/pull-list can show real upcoming dates for it without
-// hitting either external API on a live page load. Modeled closely on
-// refresh-master-sets/route.js — same shape, same tradeoffs, applied to
-// a different cache table.
+// /dashboard/upcoming-releases can show real upcoming dates for it
+// without hitting either external API on a live page load. Modeled
+// closely on refresh-master-sets/route.js — same shape, same tradeoffs,
+// applied to a different cache table.
 //
 // Only refreshes series someone here has actually logged an item from
 // (distinct game titles / comic series values across ALL users, not
@@ -36,10 +36,10 @@ export const maxDuration = 60;
 // across-multiple-runs tradeoff refresh-master-sets already makes, for
 // the same reason (real external-API calls, real per-request time). A
 // newly-tracked series might take a couple of weekly runs to get its
-// first cache row; the pull-list page just shows nothing for that series
-// until then, which is a reasonable gap for a feature that's inherently
-// "here's what's coming," not something anyone depends on being
-// instantly live the moment they log a new item.
+// first cache row; the upcoming-releases page just shows nothing for
+// that series until then, which is a reasonable gap for a feature
+// that's inherently "here's what's coming," not something anyone
+// depends on being instantly live the moment they log a new item.
 const MAX_SERIES_PER_RUN = 8;
 const STALE_AFTER_DAYS = 7;
 

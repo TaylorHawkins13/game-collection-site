@@ -17,7 +17,7 @@ import { currencySymbol, formatMoney } from '@/lib/currency';
 // needs to see, and it means it works the same way on every device
 // without a new sync-across-devices table for what's a low-stakes,
 // easily-retyped number.
-const STORAGE_KEY = 'shelf-life-pull-list-prices';
+const STORAGE_KEY = 'shelf-life-upcoming-releases-prices';
 
 function getStoredPrices() {
   if (typeof window === 'undefined') return {};
@@ -52,7 +52,10 @@ function entryLabel(entry) {
   return [issueLabel, entry.title].filter(Boolean).join(': ') || entry.seriesName;
 }
 
-export default function PullListClient({ groups, currency }) {
+// Named/labeled "Upcoming Releases" in the UI (Sep 2026) — see page.js's
+// header comment for why (clearer than the earlier "Pull List" name to
+// anyone not already familiar with comic-shop pull-list terminology).
+export default function UpcomingReleasesClient({ groups, currency }) {
   // Loaded on mount, not during the initial render, so the server-
   // rendered markup and the first client render match (same "brief flash
   // from a default to the stored value" trade-off ThemeToggle.jsx/
@@ -85,7 +88,7 @@ export default function PullListClient({ groups, currency }) {
     <main className="container" style={{ maxWidth: 820 }}>
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Pull list</h1>
+          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Upcoming releases</h1>
           <p className="sub" style={{ margin: 0 }}>
             Upcoming releases for the game franchises and comic series you already own something from — type in an
             expected price to track what&apos;s coming up in your budget.

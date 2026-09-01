@@ -1791,8 +1791,8 @@ create trigger item_reviews_rate_limit
   for each row execute function enforce_review_rate_limit();
 
 -- ============================================================
--- Pull List upcoming-release cache
--- (see pull-list-migration.sql for the standalone version used
+-- Upcoming Releases cache
+-- (see upcoming-releases-migration.sql for the standalone version used
 -- when updating an existing project)
 -- ============================================================
 
@@ -1815,9 +1815,9 @@ create trigger item_reviews_rate_limit
 -- (and why a stale past-dated entry left in here by a missed refresh
 -- still can't leak into the calendar). No RLS policies, same reasoning as
 -- master_set_cache and cron_runs: only ever touched by the service-role
--- client (the refresh cron writes it, app/dashboard/pull-list reads it) —
--- public catalog data, not user data, but still no reason to expose it to
--- anon/authenticated directly.
+-- client (the refresh cron writes it, app/dashboard/upcoming-releases
+-- reads it) — public catalog data, not user data, but still no reason
+-- to expose it to anon/authenticated directly.
 create table if not exists upcoming_release_cache (
   series_key text primary key,
   item_type text not null check (item_type in ('game', 'comic')),

@@ -1786,8 +1786,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <Link href="/dashboard/catalogue" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Full release catalogue
             </Link>
-            <Link href="/dashboard/pull-list" className="btn-ghost" style={{ textDecoration: 'none' }}>
-              Pull list
+            <Link href="/dashboard/upcoming-releases" className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Upcoming releases
             </Link>
             <Link href="/dashboard/labels" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Print labels
