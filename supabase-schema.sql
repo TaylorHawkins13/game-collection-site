@@ -1789,3 +1789,42 @@ drop trigger if exists item_reviews_rate_limit on item_reviews;
 create trigger item_reviews_rate_limit
   before insert on item_reviews
   for each row execute function enforce_review_rate_limit();
+
+-- ============================================================
+-- Pull List upcoming-release cache
+-- (see pull-list-migration.sql for the standalone version used
+-- when updating an existing project)
+-- ============================================================
+
+-- Precomputed upcoming (not-yet-released) entries for a game
+-- franchise/collection or comic series someone here actually owns an
+-- item from — closes ROADMAP.md's "Pull list / upcoming-release calendar
+-- with spend forecasting." Same reasoning as master_set_cache above:
+-- resolving a franchise's/series's upcoming releases from IGDB/Comic
+-- Vine on every live page load doesn't scale (2 external API calls per
+-- distinct series, per viewer, per visit), so a background cron
+-- (app/api/cron/refresh-upcoming-releases) pre-fetches it instead, once
+-- per distinct series across all users, on the shared cron schedule.
+-- `series_key` is the same "game:"/"comic:"-prefixed normalized key
+-- lib/upcomingReleases.js's buildSeriesKey() produces, so a lookup here
+-- never needs a second normalization pass. `entries` is a plain array of
+-- { id, name/title, cover, releaseDate, ... } objects shaped by
+-- lib/igdbSearch.js's getFranchiseGames() / lib/comicVineSeriesLookup.js's
+-- getUpcomingComicIssues() — see lib/upcomingReleases.js's
+-- flattenUpcomingEntries for how a viewer's page reads this back out
+-- (and why a stale past-dated entry left in here by a missed refresh
+-- still can't leak into the calendar). No RLS policies, same reasoning as
+-- master_set_cache and cron_runs: only ever touched by the service-role
+-- client (the refresh cron writes it, app/dashboard/pull-list reads it) —
+-- public catalog data, not user data, but still no reason to expose it to
+-- anon/authenticated directly.
+create table if not exists upcoming_release_cache (
+  series_key text primary key,
+  item_type text not null check (item_type in ('game', 'comic')),
+  series_name text not null,
+  entries jsonb not null default '[]',
+  refreshed_at timestamptz not null default now()
+);
+
+alter table upcoming_release_cache enable row level security;
+revoke all on upcoming_release_cache from anon, authenticated;
