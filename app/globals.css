@@ -315,6 +315,41 @@ textarea {
   display: none;
 }
 
+/* Phone-only persistent bottom tab bar (MobileBottomNav.jsx) — a Spotify-
+   style always-visible primary nav instead of needing the hamburger open
+   for the handful of things actually reached daily. Hidden by default;
+   the @media (max-width: 640px) block far below (same breakpoint the
+   hamburger menu itself switches on at) turns it on, hides Navbar.jsx's
+   now-duplicate `.nav-link-primary` copies of the same 4 destinations,
+   and gives the page body room at the bottom so this bar never covers
+   the last bit of real content. */
+.mobile-bottom-nav {
+  display: none;
+}
+.mobile-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  padding: 6px 4px 4px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 11px;
+  min-height: 44px;
+}
+.mobile-bottom-nav-item.active {
+  color: var(--accent-gold);
+}
+.mobile-bottom-nav-text {
+  font-size: 13px;
+  font-weight: 600;
+}
+.mobile-bottom-nav-signup {
+  color: var(--accent-gold);
+}
+
 /* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
    Next/Recommended/value-chart/Browse-by-system insights all live here
    now instead of four separate toggles and three panels stacked above
@@ -3984,6 +4019,40 @@ button.badge.tag:hover {
     width: min(300px, calc(100vw - 48px));
     right: auto;
     left: 0;
+  }
+
+  /* Phone bottom tab bar takes over primary nav from here down — hide
+     Navbar.jsx's now-duplicate copies of the same 4 links (still the
+     only way to reach them above this breakpoint, where there's no
+     bottom bar), show the bar itself, and give the page body clearance
+     at the bottom so it never sits under the bar. 60px bar height (44px
+     tap target + top/bottom padding) plus the safe-area inset covers an
+     iPhone's home-indicator strip. */
+  .nav-link-primary {
+    display: none;
+  }
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 160;
+    background: var(--bg-alt);
+    border-top: 1px solid var(--border);
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+  }
+  body {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  /* The 3 other fixed-to-the-bottom elements (toasts, the undo-delete
+     bar, the cookie banner) would otherwise land partly or fully behind
+     the new bar — bumped up to clear it instead of overlapping. */
+  .cookie-banner,
+  .toast-stack,
+  .undo-toast,
+  .trophy-toast-stack {
+    bottom: calc(64px + env(safe-area-inset-bottom));
   }
 
   /* Tap targets: buttons and form controls were sized for a mouse

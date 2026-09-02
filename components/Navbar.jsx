@@ -3,14 +3,13 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import useCurrentProfile from '@/lib/useCurrentProfile';
 import ThemeToggle from './ThemeToggle';
 import TextSizeControl from './TextSizeControl';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
-  const [profile, setProfile] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { profile, userId, loading } = useCurrentProfile();
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
 
@@ -39,44 +38,6 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!active) return;
-      if (!user) {
-        setProfile(null);
-        setUserId(null);
-        setLoading(false);
-        return;
-      }
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('username, display_name')
-        .eq('id', user.id)
-        .single();
-      if (!active) return;
-      setProfile(prof || { username: null });
-      setUserId(user.id);
-      setLoading(false);
-    }
-    load();
-
-    // Supabase auth methods can hang if called synchronously from inside
-    // this callback (it can fire while a sign-in/sign-out is still wrapping
-    // up internally). Deferring with setTimeout lets that finish first.
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      setTimeout(() => {
-        if (active) load();
-      }, 0);
-    });
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
   async function logout() {
     await supabase.auth.signOut();
     window.location.href = '/';
@@ -99,16 +60,21 @@ export default function Navbar() {
       </button>
       <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
       <div className={`nav-links${menuOpen ? ' open' : ''}`}>
-        <Link href="/players" className="nav-link" onClick={() => setMenuOpen(false)}>Search</Link>
+        {/* nav-link-primary: also has its own icon+label slot in the phone
+            bottom bar (see MobileBottomNav.jsx) once a phone gets one at
+            all — hidden here under that breakpoint so the same
+            destination isn't listed twice. Still the only way to reach it
+            on a wider screen, where there's no bottom bar. */}
+        <Link href="/players" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>Search</Link>
         <Link href="/leaderboard" className="nav-link" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
         <Link href="/lists" className="nav-link" onClick={() => setMenuOpen(false)}>Lists</Link>
         <Link href="/articles" className="nav-link" onClick={() => setMenuOpen(false)}>Articles</Link>
         {!loading && profile && (
           <>
-            <Link href="/feed" className="nav-link" onClick={() => setMenuOpen(false)}>Feed</Link>
-            <Link href="/dashboard" className="nav-link" onClick={() => setMenuOpen(false)}>My Collection</Link>
+            <Link href="/feed" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>Feed</Link>
+            <Link href="/dashboard" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>My Collection</Link>
             {profile.username && (
-              <Link href={`/u/${profile.username}`} className="nav-link" onClick={() => setMenuOpen(false)}>My Profile</Link>
+              <Link href={`/u/${profile.username}`} className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>My Profile</Link>
             )}
             <NotificationBell userId={userId} />
             <button className="btn-ghost" onClick={() => { setMenuOpen(false); logout(); }} type="button">Log out</button>
@@ -116,10 +82,10 @@ export default function Navbar() {
         )}
         {!loading && !profile && (
           <>
-            <Link href="/login" className="nav-link" onClick={() => setMenuOpen(false)}>Log in</Link>
+            <Link href="/login" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>Log in</Link>
             <Link
               href="/signup"
-              className="btn-primary"
+              className="btn-primary nav-link-primary"
               style={{ textDecoration: 'none', display: 'inline-block' }}
               onClick={() => setMenuOpen(false)}
             >

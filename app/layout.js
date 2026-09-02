@@ -1,5 +1,6 @@
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import Footer from '@/components/Footer';
 import TrophyToastListener from '@/components/TrophyToastListener';
 import ToastListener from '@/components/ToastListener';
@@ -72,6 +73,7 @@ export default function RootLayout({ children }) {
         <Navbar />
         <div id="main-content">{children}</div>
         <Footer />
+        <MobileBottomNav />
         <TrophyToastListener />
         <ToastListener />
         <AdsGate />
