@@ -9,8 +9,9 @@ export const metadata = {
 
 // Server-gated the same way app/dashboard/insights/page.js is — fetches
 // only what CatalogueClient's ownership matching actually needs (title +
-// platforms), not the whole `games` row, since a big collection has no
-// reason to ship every other column down for this one comparison.
+// platforms + ownership), not the whole `games` row, since a big
+// collection has no reason to ship every other column down for this one
+// comparison.
 export default async function CataloguePage() {
   const supabase = await createClient();
   const {
@@ -22,7 +23,7 @@ export default async function CataloguePage() {
   }
 
   const [{ data: games }, { data: profile }] = await Promise.all([
-    supabase.from('games').select('title, platforms').eq('user_id', user.id).eq('item_type', 'game'),
+    supabase.from('games').select('title, platforms, ownership').eq('user_id', user.id).eq('item_type', 'game'),
     supabase.from('profiles').select('currency').eq('id', user.id).single(),
   ]);
 
