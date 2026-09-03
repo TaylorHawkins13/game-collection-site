@@ -21,11 +21,10 @@ export default async function CataloguePage() {
     redirect('/login');
   }
 
-  const { data: games } = await supabase
-    .from('games')
-    .select('title, platforms')
-    .eq('user_id', user.id)
-    .eq('item_type', 'game');
+  const [{ data: games }, { data: profile }] = await Promise.all([
+    supabase.from('games').select('title, platforms').eq('user_id', user.id).eq('item_type', 'game'),
+    supabase.from('profiles').select('currency').eq('id', user.id).single(),
+  ]);
 
   const ownedGames = games || [];
 
@@ -40,5 +39,11 @@ export default async function CataloguePage() {
   const distinctPlatforms = [...new Set(ownedGames.flatMap((g) => g.platforms || []))];
   const ownedPlatformIds = await resolvePlatformIds(distinctPlatforms);
 
-  return <CatalogueClient ownedGames={ownedGames} ownedPlatformIds={ownedPlatformIds} />;
+  return (
+    <CatalogueClient
+      ownedGames={ownedGames}
+      ownedPlatformIds={ownedPlatformIds}
+      currency={profile?.currency || 'USD'}
+    />
+  );
 }

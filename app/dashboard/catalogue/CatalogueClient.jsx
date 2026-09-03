@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CONSOLES } from '@/lib/consoleList';
 import { normalizeTitle } from '@/lib/duplicateCheck';
 import { ownedTitleKeysForPlatform } from '@/lib/platformCatalogueMatch';
+import { openBestListingTab } from '@/lib/externalListings';
 
 const PAGE_SIZE = 100;
 
@@ -17,12 +18,20 @@ const PAGE_SIZE = 100;
 // app/globals.css's `.catalogue-grid` modifier, which just lifts the
 // height cap SeriesGrid's small in-modal version needs.
 //
+// Also reuses SeriesGrid's `missing-clickable`/`onSelectMissing` pattern
+// directly (not the component itself — this has its own real
+// offset/limit pagination against the API, not a fetched-up-front
+// `entries` array): a not-owned entry is a real `<button>` that opens the
+// same "eBay if it has listings, CeX otherwise" tab GameModal/
+// ItemDetailModal/SeriesModal already open for a missing series entry.
+// Owned entries stay plain, inert `<div>`s — nothing to act on.
+//
 // Unlike SeriesGrid, this doesn't fetch everything up front — a real
 // platform's catalog (even restricted to main-game releases) can run
 // into the thousands, and IGDB itself caps a single request at 500 rows —
 // so pagination here is real offset/limit paging against the API on
 // every "Show more", not a client-side slice of one big fetched array.
-export default function CatalogueClient({ ownedGames, ownedPlatformIds }) {
+export default function CatalogueClient({ ownedGames, ownedPlatformIds, currency }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialPlatform = searchParams.get('platform') || '';
@@ -143,18 +152,23 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds }) {
   );
 
   return (
-    <main className="container" style={{ maxWidth: 820 }}>
+    <main className="container">
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Full release catalogue</h1>
           <p className="sub" style={{ margin: 0 }}>
             Pick a platform to see every main-release game IGDB has for it, greyed out except what you've logged for
-            that system — useful for spotting real gaps in a platform you're actively completing.
+            that system — useful for spotting real gaps in a platform you're actively completing. Click anything
+            greyed out to check eBay for it.
           </p>
         </div>
       </div>
 
-      <div className="form-card" style={{ marginTop: 16 }}>
+      {/* maxWidth: 'none' overrides .form-card's normal 440px cap (meant for
+          actual narrow forms) — this card also holds the results grid, which
+          needs the full container width on desktop, same override every
+          other wide .form-card panel in the dashboard already uses. */}
+      <div className="form-card" style={{ marginTop: 16, maxWidth: 'none' }}>
         <form onSubmit={handlePlatformSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input
             type="text"
@@ -206,8 +220,8 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds }) {
             <div className="franchise-grid catalogue-grid" style={{ marginTop: 12 }}>
               {games.map((g) => {
                 const owned = ownedKeys.has(normalizeTitle(g.name));
-                return (
-                  <div key={g.id} className={`franchise-item${owned ? ' owned' : ''}`} title={g.name}>
+                const content = (
+                  <>
                     {g.cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -227,7 +241,30 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds }) {
                       {g.name}
                       {g.year ? ` (${g.year})` : ''}
                     </div>
-                  </div>
+                  </>
+                );
+                if (owned) {
+                  return (
+                    <div key={g.id} className="franchise-item owned" title={g.name}>
+                      {content}
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className="franchise-item missing-clickable"
+                    title={`${g.name} — not in your collection yet. Checks eBay, opens CeX if there's nothing there.`}
+                    onClick={() =>
+                      openBestListingTab(
+                        { item_type: 'game', title: g.name, platforms: [resolvedName || activePlatform] },
+                        currency
+                      )
+                    }
+                  >
+                    {content}
+                  </button>
                 );
               })}
             </div>
