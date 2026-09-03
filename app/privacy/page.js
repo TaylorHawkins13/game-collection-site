@@ -5,11 +5,11 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <main className="container" style={{ maxWidth: 720, padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 26, marginBottom: 4 }}>Privacy Policy</h1>
+      <h1 style={{ fontSize: 'var(--fs-5xl)', marginBottom: 4 }}>Privacy Policy</h1>
       <p className="sub" style={{ marginBottom: 28 }}>Last updated: {new Date().toLocaleDateString()}</p>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>What we collect</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>What we collect</h2>
         <p>
           When you create an account, we store the email and password you sign up with (handled by our
           authentication provider, Supabase — we never see or store your password in plain text), plus whatever
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>Cookies</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>Cookies</h2>
         <p>
           We use a session cookie to keep you signed in — that one's required for the site to work and isn't
           optional. If you accept the ads cookie banner, Google AdSense also sets cookies to serve and
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>Third-party services</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>Third-party services</h2>
         <p>This site relies on a few external services to work:</p>
         <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
           <li><strong>Supabase</strong> — hosts our database, authentication, and file storage (avatars).</li>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>Public vs. private data</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>Public vs. private data</h2>
         <p>
           Your profile defaults to public — your collection, follower/following lists, and comments are visible
           to anyone. You can switch your profile to private in Settings at any time, which hides your
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>Your data, your choice</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>Your data, your choice</h2>
         <p>
           Want your account or data deleted, or have any other privacy question? Reach out at{' '}
           <a href="mailto:taylorbobbysaunders@outlook.com">taylorbobbysaunders@outlook.com</a> and we'll take care

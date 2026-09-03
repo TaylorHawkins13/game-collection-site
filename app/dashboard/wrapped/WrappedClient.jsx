@@ -83,7 +83,7 @@ export default function WrappedClient({ games, events, snapshots, currency, year
     <main className="container" style={{ maxWidth: 640 }}>
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Your {year} Wrapped</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Your {year} Wrapped</h1>
           <p className="sub" style={{ margin: 0 }}>
             Built entirely from what you already track — nothing new to enter.
           </p>

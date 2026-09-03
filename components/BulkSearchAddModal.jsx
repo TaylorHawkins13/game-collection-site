@@ -449,7 +449,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                       />
                     )}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
+                      <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600 }}>{r.name}</div>
                       <div className="sub" style={{ margin: 0 }}>{resultMeta(r)}</div>
                     </div>
                   </div>
@@ -477,7 +477,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                             }}
                           />
                         )}
-                        <div style={{ flex: 1, fontSize: 13 }}>{item.title}</div>
+                        <div style={{ flex: 1, fontSize: 'var(--fs-base)' }}>{item.title}</div>
                         <button
                           type="button"
                           className="btn-ghost"
@@ -508,7 +508,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                           value={item.row.ownership}
                           onChange={(e) => updateQueueField(item.key, 'ownership', e.target.value)}
                           disabled={adding}
-                          style={{ fontSize: 12, padding: '3px 6px' }}
+                          style={{ fontSize: 'var(--fs-sm)', padding: '3px 6px' }}
                         >
                           <option value="owned">Owned</option>
                           <option value="wishlist">Wishlist</option>
@@ -520,7 +520,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                             value={item.row.condition}
                             onChange={(e) => updateQueueField(item.key, 'condition', e.target.value)}
                             disabled={adding}
-                            style={{ fontSize: 12, padding: '3px 6px' }}
+                            style={{ fontSize: 'var(--fs-sm)', padding: '3px 6px' }}
                           >
                             <option value="">Condition —</option>
                             <option value="sealed">Sealed</option>
@@ -536,7 +536,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                             value={item.row.completeness}
                             onChange={(e) => updateQueueField(item.key, 'completeness', e.target.value)}
                             disabled={adding}
-                            style={{ fontSize: 12, padding: '3px 6px' }}
+                            style={{ fontSize: 'var(--fs-sm)', padding: '3px 6px' }}
                           >
                             <option value="">Completeness —</option>
                             <option value="loose">{itemType === 'console' ? 'Loose (unit only)' : 'Loose (cart/disc only)'}</option>
@@ -554,7 +554,7 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                             value={item.row.price}
                             onChange={(e) => updateQueueField(item.key, 'price', e.target.value)}
                             disabled={adding}
-                            style={{ fontSize: 12, padding: '3px 6px', width: 90 }}
+                            style={{ fontSize: 'var(--fs-sm)', padding: '3px 6px', width: 90 }}
                           />
                         )}
                       </div>

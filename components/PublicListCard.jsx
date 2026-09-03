@@ -21,7 +21,7 @@ export default function PublicListCard({ list }) {
         <div className="cover placeholder">No Cover</div>
       )}
       <div style={{ padding: '10px 12px' }}>
-        <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontWeight: 600, fontSize: 'var(--fs-md)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {list.name}
         </div>
         <div className="sub" style={{ margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>

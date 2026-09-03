@@ -284,7 +284,7 @@ export default async function HomePage() {
               <div className="leaderboard-row" style={i === leaderboardRows.length - 1 ? { marginBottom: 0 } : undefined} key={row.rank}>
                 <div className="leaderboard-rank">{row.rank}</div>
                 <CoverThumb cover={row.cover} title={row.title} />
-                <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{row.title}</div>
+                <div style={{ flex: 1, fontSize: 'var(--fs-base)', fontWeight: 600 }}>{row.title}</div>
                 <div className="sub" style={{ margin: 0 }}>{row.sub}</div>
               </div>
             ))}

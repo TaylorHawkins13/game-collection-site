@@ -14,7 +14,7 @@ export const metadata = {
 export default function AccessibilityPage() {
   return (
     <main className="container" style={{ maxWidth: 720, padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 26, marginBottom: 4 }}>Accessibility</h1>
+      <h1 style={{ fontSize: 'var(--fs-5xl)', marginBottom: 4 }}>Accessibility</h1>
       <p className="sub" style={{ marginBottom: 28 }}>Last updated: {new Date().toLocaleDateString()}</p>
 
       <section style={{ marginBottom: 24 }}>
@@ -26,7 +26,7 @@ export default function AccessibilityPage() {
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>What&apos;s in place today</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>What&apos;s in place today</h2>
         <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
           <li>A skip-to-content link for keyboard users, jumping past the navbar on every page.</li>
           <li>Toasts, trophy-earned popups, and long-running progress (CSV/Steam import, achievement sync) are announced to screen readers as they happen, not just visible to sighted use.</li>
@@ -46,7 +46,7 @@ export default function AccessibilityPage() {
       </section>
 
       <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17 }}>Known gaps</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>Known gaps</h2>
         <p>Still open, tracked in the project&apos;s own roadmap:</p>
         <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
           <li>No text-based &quot;view as a list&quot; alternative to the shelf mosaic yet.</li>
@@ -55,7 +55,7 @@ export default function AccessibilityPage() {
       </section>
 
       <section>
-        <h2 style={{ fontSize: 17 }}>Something not working for you?</h2>
+        <h2 style={{ fontSize: 'var(--fs-2xl)' }}>Something not working for you?</h2>
         <p>
           Reach out at <a href="mailto:taylorbobbysaunders@outlook.com">taylorbobbysaunders@outlook.com</a> or through{' '}
           <a href="/feedback">the feedback form</a> — a specific report (what you were trying to do, what assistive

@@ -16,7 +16,7 @@ export const metadata = {
 export default function WhatsNewPage() {
   return (
     <main className="container" style={{ maxWidth: 720, padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 26, marginBottom: 4 }}>What's new</h1>
+      <h1 style={{ fontSize: 'var(--fs-5xl)', marginBottom: 4 }}>What's new</h1>
       <p className="sub" style={{ marginBottom: 28 }}>
         Recent updates on Shelf Life. Click an entry for a bit more detail on what actually shipped.{' '}
         <Link href="/signup">Sign up</Link> to start your own collection.

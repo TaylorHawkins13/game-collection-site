@@ -24,10 +24,10 @@ export default function CollectorSuggestionCard({ collector }) {
           )}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontWeight: 600, fontSize: 'var(--fs-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {collector.display_name || collector.username}
           </div>
-          <div className="sub" style={{ margin: 0, fontSize: 12 }}>
+          <div className="sub" style={{ margin: 0, fontSize: 'var(--fs-sm)' }}>
             {collector.shared_count} shared favorite{Number(collector.shared_count) === 1 ? '' : 's'}
           </div>
         </div>

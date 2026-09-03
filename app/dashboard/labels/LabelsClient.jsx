@@ -118,7 +118,7 @@ export default function LabelsClient({ games }) {
     <main className="container">
       <div className="profile-header labels-no-print" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Print Labels</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Print Labels</h1>
           <p className="sub" style={{ margin: 0 }}>
             A small QR sticker per item, sized for Avery 5160 (or compatible) address label sheets — 30 per page.
             Scanning one opens that item's own page here, signed in on your phone — a fast way to look a boxed item
@@ -164,7 +164,7 @@ export default function LabelsClient({ games }) {
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '4px 12px' }}>
                     {cat.items.map((g) => (
-                      <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                      <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-base)' }}>
                         <input
                           type="checkbox"
                           checked={selected.has(g.id)}

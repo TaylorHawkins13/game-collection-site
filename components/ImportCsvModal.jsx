@@ -165,12 +165,12 @@ export default function ImportCsvModal({ userId, existingItems, onClose, onImpor
             </div>
             <div style={{ border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', marginTop: 8 }}>
               {rows.slice(0, 8).map((r, i) => (
-                <div key={i} style={{ padding: '6px 10px', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                <div key={i} style={{ padding: '6px 10px', borderBottom: '1px solid var(--border)', fontSize: 'var(--fs-base)' }}>
                   <strong>{r.title}</strong> <span className="sub" style={{ margin: 0 }}>({r.item_type})</span>
                 </div>
               ))}
               {rows.length > 8 && (
-                <div style={{ padding: '6px 10px', fontSize: 13 }} className="sub">…and {rows.length - 8} more</div>
+                <div style={{ padding: '6px 10px', fontSize: 'var(--fs-base)' }} className="sub">…and {rows.length - 8} more</div>
               )}
             </div>
             {warnings.length > 0 && (

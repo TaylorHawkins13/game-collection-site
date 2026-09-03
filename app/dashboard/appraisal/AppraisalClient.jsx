@@ -60,7 +60,7 @@ export default function AppraisalClient({ games, currency, collectorName }) {
     <main className="container appraisal-page" style={{ maxWidth: 820 }}>
       <div className="profile-header appraisal-no-print" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Collection Appraisal</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Collection Appraisal</h1>
           <p className="sub" style={{ margin: 0 }}>
             An itemized, printable export of your owned items and their current estimated value — for insurance
             documentation or your own records.

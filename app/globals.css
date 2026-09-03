@@ -33,6 +33,39 @@
   --radius: 16px;
   --radius-pill: 999px;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  /* Site-wide type scale (added while fixing a font-size consistency
+     pass — flagged directly: "make sure theres consistency with font
+     and text across the whole app and size, if some text is gonna be a
+     different size it has to make sense"). Before this, font-size was
+     hardcoded per rule with no shared reference — 196 declarations used
+     31 distinct pixel values, including near-duplicates half a pixel
+     apart (12.5px vs. 13px vs. 13.5px, etc.) with no discernible reason
+     for the difference. Consolidated onto these 14 steps: every
+     fractional value rounded to its nearest whole step, and a handful of
+     one-off whole-number outliers (17, 19, 21, 26, 28, 38px) folded into
+     the nearest established step rather than kept as their own tier.
+     Every text-hierarchy font-size in the file below now references one
+     of these — so reaching for a new size means picking from this list,
+     not typing a fresh number. A few component-intrinsic sizes were
+     deliberately left out of this scale and still hardcode their own
+     px value — an avatar's fallback-initial letter, a placeholder box's
+     icon glyph, a podium medal, a corner flag badge — because those
+     scale with their own component's dimensions (a 72px avatar circle,
+     a rank-1 vs. rank-2 podium tile), not with the surrounding text. */
+  --fs-3xs: 9px;
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 15px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 20px;
+  --fs-4xl: 22px;
+  --fs-5xl: 24px;
+  --fs-6xl: 30px;
+  --fs-7xl: 40px;
 }
 
 body[data-theme='light'] {
@@ -129,7 +162,7 @@ a {
   border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--fs-md);
   transition: top 0.15s ease;
 }
 .skip-link:focus {
@@ -179,7 +212,7 @@ textarea {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--text-dim);
   border-top: 1px solid var(--border);
 }
@@ -228,7 +261,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 .cookie-banner a {
   color: var(--accent);
@@ -257,7 +290,7 @@ textarea {
   align-items: center;
   gap: 10px;
   font-weight: 700;
-  font-size: 18px;
+  font-size: var(--fs-2xl);
   text-decoration: none;
 }
 
@@ -277,7 +310,7 @@ textarea {
 }
 
 .nav-link {
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-dim);
   text-decoration: none;
   padding: 8px 10px;
@@ -288,7 +321,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--text-dim);
 }
 .text-size-control select {
@@ -298,7 +331,7 @@ textarea {
   border-radius: 8px;
   padding: 8px 10px;
   min-height: 44px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   flex: 1;
 }
 
@@ -336,14 +369,14 @@ textarea {
   padding: 6px 4px 4px;
   color: var(--text-dim);
   text-decoration: none;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   min-height: 44px;
 }
 .mobile-bottom-nav-item.active {
   color: var(--accent-gold);
 }
 .mobile-bottom-nav-text {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
 }
 .mobile-bottom-nav-signup {
@@ -416,7 +449,7 @@ textarea {
 }
 .dash-tools-header h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-lg);
 }
 /* Tighter padding for panels specifically inside the 380px-wide drawer —
    doesn't touch .form-card/.playnext-panel/.recommend-panel anywhere
@@ -434,7 +467,7 @@ textarea {
   margin-bottom: 0;
 }
 .dash-tools-section-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-dim);
@@ -473,7 +506,7 @@ textarea {
   border-bottom: 2px solid transparent;
   color: var(--text-dim);
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 600;
   padding: 8px 4px 10px;
   margin-right: 18px;
@@ -527,7 +560,7 @@ textarea {
 .notif-row {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  font-size: var(--fs-base);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -612,7 +645,7 @@ button {
   cursor: pointer;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-md);
   transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
 }
 button:active {
@@ -684,11 +717,11 @@ button:disabled {
   padding: 14px 16px;
 }
 .stat .num {
-  font-size: 22px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
 }
 .stat .label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -702,7 +735,7 @@ button:disabled {
   border: none;
   color: var(--text-dim);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   font-weight: 600;
   cursor: pointer;
   padding: 4px 2px;
@@ -712,7 +745,7 @@ button:disabled {
 }
 .panel-collapse-chevron {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
 }
 
 /* ---------- Play next ---------- */
@@ -724,7 +757,7 @@ button:disabled {
   border: 1px solid #d4af3744;
 }
 .playnext-heading {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   color: var(--accent);
   text-transform: uppercase;
@@ -765,14 +798,14 @@ button:disabled {
   min-width: 0;
 }
 .playnext-suggestion-title {
-  font-size: 14.5px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .playnext-suggestion-meta {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   margin-top: 2px;
   white-space: nowrap;
@@ -788,7 +821,7 @@ button:disabled {
   border: 1px solid #7dffb344;
 }
 .recommend-heading {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   color: var(--accent-2);
   text-transform: uppercase;
@@ -863,14 +896,14 @@ button:disabled {
   min-width: 0;
 }
 .rec-title {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .rec-meta {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-dim);
   margin-top: 2px;
   white-space: nowrap;
@@ -888,7 +921,7 @@ button:disabled {
   margin-bottom: 10px;
 }
 .system-tiles-heading h3 {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -896,7 +929,7 @@ button:disabled {
   margin: 0;
 }
 .system-tiles-heading button {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--accent);
   background: none;
   border: none;
@@ -930,13 +963,13 @@ button:disabled {
   box-shadow: 0 0 0 1px var(--tile-color, var(--accent)) inset;
 }
 .system-tile .sys-name {
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 600;
   display: block;
   margin-bottom: 4px;
 }
 .system-tile .sys-count {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
 }
 .toolbar {
@@ -953,7 +986,7 @@ button:disabled {
   color: var(--text);
   padding: 10px 12px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .toolbar input[type='text'] {
   flex: 1;
@@ -984,7 +1017,7 @@ button:disabled {
   color: var(--text);
   padding: 10px 12px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .filters-grid {
   display: grid;
@@ -998,7 +1031,7 @@ button:disabled {
   color: var(--text);
   padding: 10px 12px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 
 .grid {
@@ -1062,7 +1095,7 @@ button:disabled {
   opacity: 0.85;
 }
 .cover-placeholder-label {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -1079,7 +1112,7 @@ button:disabled {
 }
 .collectible-card-title {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--fs-md);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1170,7 +1203,7 @@ button:disabled {
   border-color: rgba(255, 255, 255, 0.15);
   color: #fff;
   padding: 6px 8px;
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 .card-edit-btn:hover {
   background: rgba(6, 7, 15, 0.85);
@@ -1190,7 +1223,7 @@ button:disabled {
   margin-bottom: 14px;
 }
 .bulk-bar .count {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -1200,7 +1233,7 @@ button:disabled {
   background: var(--border);
 }
 .card-title {
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 800;
   line-height: 1.3;
   padding: 10px 12px;
@@ -1253,7 +1286,7 @@ button:disabled {
   align-items: flex-start;
   gap: 8px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   background: var(--card);
   border-bottom: 1px solid var(--border);
 }
@@ -1267,7 +1300,7 @@ button:disabled {
   color: var(--text-dim);
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.3px;
   /* Was `flex: none`, which locks the label at its full single-line
      width no matter how narrow the card is. On the grid's minimum
@@ -1298,7 +1331,7 @@ button:disabled {
   flex-wrap: wrap;
 }
 .badge {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   padding: 3px 8px;
   border-radius: 999px;
   font-weight: 600;
@@ -1396,7 +1429,7 @@ button.badge.tag:hover {
 }
 .welcome-panel h2 {
   margin: 0 0 8px;
-  font-size: 22px;
+  font-size: var(--fs-4xl);
 }
 /* Empty-state walnut-shelf illustration (brief section 6) — a small
    plain line-art hook above the existing type-aware welcome copy,
@@ -1421,7 +1454,7 @@ button.badge.tag:hover {
 }
 .welcome-step-title {
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--fs-lg);
 }
 .welcome-step .sub {
   flex: 1;
@@ -1449,12 +1482,12 @@ button.badge.tag:hover {
   margin: 60px auto;
 }
 .form-card h1 {
-  font-size: 20px;
+  font-size: var(--fs-3xl);
   margin: 0 0 4px;
 }
 .form-card .sub {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--fs-base);
   margin-bottom: 20px;
 }
 .field {
@@ -1462,7 +1495,7 @@ button.badge.tag:hover {
 }
 .field label {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   margin-bottom: 5px;
   font-weight: 600;
@@ -1481,7 +1514,7 @@ button.badge.tag:hover {
   color: var(--text);
   padding: 10px 12px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-family: inherit;
 }
 .field textarea {
@@ -1495,12 +1528,12 @@ button.badge.tag:hover {
 }
 .error-text {
   color: var(--danger);
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   margin-top: 6px;
 }
 .success-text {
   color: var(--accent-2);
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   margin-top: 6px;
 }
 .duplicate-warning {
@@ -1509,7 +1542,7 @@ button.badge.tag:hover {
   border-radius: 8px;
   background: color-mix(in srgb, var(--warn) 14%, var(--card));
   border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   line-height: 1.5;
 }
 /* Shown at the top of the dashboard when a signed-in visitor's own
@@ -1559,7 +1592,7 @@ button.badge.tag:hover {
   outline: none;
   color: var(--text);
   padding: 5px 4px;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .chip {
   display: flex;
@@ -1570,14 +1603,14 @@ button.badge.tag:hover {
   color: var(--text);
   padding: 3px 4px 3px 10px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   white-space: nowrap;
 }
 .chip button {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 15px;
+  font-size: var(--fs-lg);
   line-height: 1;
   padding: 2px 5px;
   border-radius: 50%;
@@ -1617,11 +1650,11 @@ button.badge.tag:hover {
 }
 .modal h2 {
   margin: 0 0 4px;
-  font-size: 18px;
+  font-size: var(--fs-2xl);
 }
 .modal .sub {
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   margin-bottom: 18px;
 }
 .modal-actions {
@@ -1679,7 +1712,7 @@ button.badge.tag:hover {
   color: var(--text-dim);
 }
 .franchise-item-name {
-  font-size: 9.5px;
+  font-size: var(--fs-2xs);
   text-align: center;
   line-height: 1.2;
   color: var(--text-dim);
@@ -1784,7 +1817,7 @@ button.badge.tag:hover {
   object-fit: cover;
 }
 .cover-preview span {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-dim);
   text-align: center;
   padding: 0 4px;
@@ -1818,7 +1851,7 @@ button.badge.tag:hover {
   padding: 0;
   background: rgba(6, 7, 15, 0.75);
   border-radius: 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   line-height: 1;
 }
 .modal-actions .right {
@@ -1886,7 +1919,13 @@ button.badge.tag:hover {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* No `overflow: hidden` here (removed — flagged directly as a bug: the
+     "Manage"/"More" dropdown menu is position:absolute and needs to
+     extend below this box, and a parent with overflow:hidden clips that
+     regardless of the dropdown's own z-index, so the menu was rendering
+     invisible/cut off. Corner-clipping the mosaic — the actual reason
+     this was here — now happens on `.profile-header-mosaic` itself, see
+     below, so nothing else needs the header itself to hide overflow. */
   flex-wrap: wrap;
 }
 /* Every direct child except the mosaic itself needs to sit above it —
@@ -1913,6 +1952,12 @@ button.badge.tag:hover {
 .profile-header-mosaic {
   position: absolute;
   inset: 0;
+  /* Clips its own <img> children to the header's rounded corners —
+     moved here from `.profile-header` itself (see that rule) so hiding
+     the mosaic's square image corners doesn't also clip the "Manage"/
+     "More" dropdown that needs to render below the header's box. */
+  border-radius: inherit;
+  overflow: hidden;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(2, 1fr);
@@ -1949,7 +1994,7 @@ button.badge.tag:hover {
   display: inline-block;
   margin-left: 10px;
   vertical-align: middle;
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -1981,16 +2026,16 @@ button.badge.tag:hover {
   object-fit: cover;
 }
 .profile-name {
-  font-size: 22px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
 }
 .profile-username {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 .profile-bio {
   margin-top: 6px;
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--text-dim);
   max-width: 480px;
 }
@@ -2003,7 +2048,7 @@ button.badge.tag:hover {
   margin-bottom: 10px;
 }
 .comment .comment-meta {
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   margin-bottom: 4px;
 }
@@ -2028,7 +2073,7 @@ button.badge.tag:hover {
 .leaderboard-avatar {
   width: 34px;
   height: 34px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   flex-shrink: 0;
 }
 
@@ -2104,7 +2149,7 @@ button.badge.tag:hover {
 }
 .podium-name {
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   margin-top: 10px;
   max-width: 130px;
   overflow: hidden;
@@ -2113,7 +2158,7 @@ button.badge.tag:hover {
   text-align: center;
 }
 .podium-stat {
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -2163,13 +2208,13 @@ button.badge.tag:hover {
 .feed-item-avatar {
   width: 40px;
   height: 40px;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   flex-shrink: 0;
 }
 .feed-item-body {
   min-width: 0;
   flex: 1;
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.5;
 }
 .reaction-btn {
@@ -2188,7 +2233,7 @@ button.badge.tag:hover {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
 }
@@ -2206,7 +2251,7 @@ button.badge.tag:hover {
 }
 .feed-item-time {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .feed-trophy-dot {
   display: inline-block;
@@ -2300,7 +2345,7 @@ button.badge.tag:hover {
   margin-bottom: 0;
 }
 .dashboard-sidebar-heading {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -2313,7 +2358,7 @@ button.badge.tag:hover {
   border-radius: 8px;
   color: var(--text);
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.3;
 }
 .dashboard-sidebar-link:hover {
@@ -2368,7 +2413,7 @@ button.badge.tag:hover {
 }
 
 .feed-sidebar-heading {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2384,19 +2429,19 @@ button.badge.tag:hover {
   padding-top: 0;
 }
 .whats-new-date {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .whats-new-title {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   margin: 3px 0 3px;
 }
 .whats-new-body {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   line-height: 1.45;
 }
 /* Entries with a `detail` field (see lib/whatsNew.js) render their title
@@ -2423,7 +2468,7 @@ button.badge.tag:hover {
 }
 .whats-new-chevron {
   flex: none;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-dim);
   transition: transform 0.15s ease;
 }
@@ -2437,7 +2482,7 @@ button.badge.tag:hover {
   margin: 6px 0 0;
   padding-top: 6px;
   border-top: 1px dashed var(--border);
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   line-height: 1.45;
 }
 /* The standalone /whats-new page reuses the same .whats-new-item rows
@@ -2463,7 +2508,7 @@ button.badge.tag:hover {
   padding: 64px 0 20px;
 }
 .hero-copy h1 {
-  font-size: 38px;
+  font-size: var(--fs-7xl);
   line-height: 1.15;
   margin: 0 0 16px;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -2473,7 +2518,7 @@ button.badge.tag:hover {
 }
 .hero-copy p {
   color: var(--text-dim);
-  font-size: 15.5px;
+  font-size: var(--fs-xl);
   line-height: 1.6;
   max-width: 440px;
   margin: 0 0 26px;
@@ -2489,11 +2534,11 @@ button.badge.tag:hover {
   margin-top: 22px;
 }
 .hero-stat {
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   color: var(--text-dim);
 }
 .hero-stat-num {
-  font-size: 17px;
+  font-size: var(--fs-2xl);
   font-weight: 800;
   color: var(--text);
   margin-right: 4px;
@@ -2505,7 +2550,7 @@ button.badge.tag:hover {
   margin-top: 24px;
 }
 .category-pill {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--text-dim);
   background: var(--card);
@@ -2530,7 +2575,7 @@ button.badge.tag:hover {
 }
 .category-chip {
   flex: none;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--text-dim);
   background: color-mix(in srgb, var(--accent) 8%, var(--card));
@@ -2623,13 +2668,13 @@ button.badge.tag:hover {
   order: 2;
 }
 .value-title {
-  font-size: 19px;
+  font-size: var(--fs-3xl);
   font-weight: 700;
   margin-bottom: 10px;
 }
 .value-body {
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.6;
   max-width: 380px;
 }
@@ -2664,7 +2709,7 @@ button.badge.tag:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 800;
   color: var(--text-dim);
   flex-shrink: 0;
@@ -2679,13 +2724,13 @@ button.badge.tag:hover {
   margin: 56px 0 40px;
 }
 .cta-band-title {
-  font-size: 21px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
   margin-bottom: 8px;
 }
 .cta-band-text {
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: var(--fs-md);
   max-width: 420px;
   margin: 0 auto 20px;
 }
@@ -2709,7 +2754,7 @@ button.badge.tag:hover {
   border-radius: var(--radius);
   padding: 18px 16px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 600;
   color: var(--text);
   text-decoration: none;
@@ -2720,7 +2765,7 @@ button.badge.tag:hover {
   transform: translateY(-1px);
 }
 .home-section-heading {
-  font-size: 16px;
+  font-size: var(--fs-xl);
   margin: 0 0 14px;
 }
 
@@ -2728,7 +2773,7 @@ button.badge.tag:hover {
   text-decoration: none;
   display: inline-block;
   margin-top: 10px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   padding: 7px 14px;
 }
 
@@ -2739,13 +2784,13 @@ button.badge.tag:hover {
   }
   .quick-action-tile {
     padding: 12px 8px;
-    font-size: 12.5px;
+    font-size: var(--fs-base);
   }
 }
 
 @media (max-width: 640px) {
   .home-hub-greeting h1 {
-    font-size: 26px;
+    font-size: var(--fs-5xl);
     line-height: 1.25;
   }
 }
@@ -2926,7 +2971,7 @@ button.badge.tag:hover {
   margin-bottom: 4px;
 }
 .home-rating-title {
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   font-weight: 700;
   margin-bottom: 4px;
   overflow: hidden;
@@ -2934,7 +2979,7 @@ button.badge.tag:hover {
   white-space: nowrap;
 }
 .home-rating-notes {
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   line-height: 1.5;
   color: var(--text-dim);
   margin: 6px 0 4px;
@@ -2992,12 +3037,12 @@ button.badge.tag:hover {
   margin-bottom: 8px;
 }
 .article-card-title {
-  font-size: 17px;
+  font-size: var(--fs-2xl);
   line-height: 1.35;
   margin: 0 0 6px;
 }
 .article-card-dek {
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   line-height: 1.5;
   color: var(--text-dim);
   margin: 0;
@@ -3020,7 +3065,7 @@ button.badge.tag:hover {
 
 /* Status labels on /admin/articles' "Already decided" list. */
 .submission-status {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 999px;
@@ -3044,18 +3089,18 @@ button.badge.tag:hover {
   margin: 0 auto 60px;
 }
 .article-detail-title {
-  font-size: 30px;
+  font-size: var(--fs-6xl);
   line-height: 1.25;
   margin: 14px 0 10px;
 }
 .article-detail-dek {
-  font-size: 16px;
+  font-size: var(--fs-xl);
   line-height: 1.5;
   color: var(--text-dim);
   margin: 0 0 18px;
 }
 .article-body {
-  font-size: 16px;
+  font-size: var(--fs-xl);
   line-height: 1.75;
 }
 .article-body p {
@@ -3070,7 +3115,7 @@ button.badge.tag:hover {
     grid-template-columns: 1fr;
   }
   .article-detail-title {
-    font-size: 24px;
+    font-size: var(--fs-5xl);
   }
 }
 
@@ -3083,7 +3128,7 @@ button.badge.tag:hover {
   border: 1px solid #d4a01755;
 }
 .profile-showcase-heading {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   color: #e0ac2b;
   text-transform: uppercase;
@@ -3121,13 +3166,13 @@ button.badge.tag:hover {
   text-align: center;
 }
 .collectible-title {
-  font-size: 22px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
   margin: 0 0 6px;
 }
 .collectible-type {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--fs-base);
   margin: 0 0 14px;
 }
 .detail-panel {
@@ -3143,7 +3188,7 @@ button.badge.tag:hover {
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .detail-field-row:last-child {
   border-bottom: none;
@@ -3163,7 +3208,7 @@ button.badge.tag:hover {
   margin-bottom: 32px;
 }
 .profile-list-heading {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -3184,7 +3229,7 @@ button.badge.tag:hover {
   border: 1px solid var(--border);
 }
 .insights-panel h3 {
-  font-size: 14px;
+  font-size: var(--fs-md);
   margin: 0 0 12px;
 }
 .insights-barlist {
@@ -3199,7 +3244,7 @@ button.badge.tag:hover {
   gap: 8px;
 }
 .insights-bar-label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3217,7 +3262,7 @@ button.badge.tag:hover {
   border-radius: 4px;
 }
 .insights-bar-value {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -3232,14 +3277,14 @@ button.badge.tag:hover {
   text-align: center;
 }
 .wrapped-header {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   opacity: 0.75;
 }
 .wrapped-year {
-  font-size: 40px;
+  font-size: var(--fs-7xl);
   font-weight: 800;
   margin: 2px 0 24px;
 }
@@ -3251,18 +3296,18 @@ button.badge.tag:hover {
   border-top: none;
 }
 .wrapped-stat-num {
-  font-size: 30px;
+  font-size: var(--fs-6xl);
   font-weight: 800;
   line-height: 1.15;
 }
 .wrapped-stat-title {
-  font-size: 22px;
+  font-size: var(--fs-4xl);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .wrapped-stat-label {
-  font-size: 13px;
+  font-size: var(--fs-base);
   opacity: 0.8;
   margin-top: 4px;
 }
@@ -3291,14 +3336,14 @@ button.badge.tag:hover {
   border-bottom: 2px solid var(--border);
 }
 .appraisal-doc-title {
-  font-size: 19px;
+  font-size: var(--fs-3xl);
   font-weight: 700;
 }
 .appraisal-doc-total {
   text-align: right;
 }
 .appraisal-doc-total-num {
-  font-size: 24px;
+  font-size: var(--fs-5xl);
   font-weight: 800;
   color: var(--accent);
 }
@@ -3314,21 +3359,21 @@ button.badge.tag:hover {
   margin-bottom: 8px;
 }
 .appraisal-category-header h2 {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   margin: 0;
 }
 .appraisal-category-subtotal {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 .appraisal-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 .appraisal-table th {
   text-align: left;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-dim);
@@ -3500,7 +3545,7 @@ button.badge.tag:hover {
 .wishlist-buy-links a {
   flex: 1;
   text-align: center;
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   padding: 6px 8px;
   border-radius: 8px;
@@ -3544,7 +3589,7 @@ button.badge.tag:hover {
   background: transparent;
   border: none;
   color: var(--text);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   text-align: left;
   cursor: pointer;
   padding: 0;
@@ -3560,7 +3605,7 @@ button.badge.tag:hover {
 }
 .custom-list-row-actions .btn-icon {
   padding: 3px 6px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .custom-lists-main {
   min-width: 0;
@@ -3590,7 +3635,7 @@ button.badge.tag:hover {
   border: 1px solid var(--border);
 }
 .compare-stat-name {
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 700;
   margin-bottom: 10px;
 }
@@ -3613,7 +3658,7 @@ button.badge.tag:hover {
   border-bottom: none;
 }
 .showcase-row-title {
-  font-size: 14px;
+  font-size: var(--fs-md);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3625,7 +3670,7 @@ button.badge.tag:hover {
 }
 .showcase-row-actions .btn-icon {
   padding: 6px 8px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .showcase-picker {
   border: 1px solid var(--border);
@@ -3643,7 +3688,7 @@ button.badge.tag:hover {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   padding: 8px 10px;
-  font-size: 14px;
+  font-size: var(--fs-md);
   cursor: pointer;
 }
 .showcase-picker-row:last-child {
@@ -3665,7 +3710,7 @@ button.badge.tag:hover {
   border: none;
   color: var(--text-dim);
   padding: 10px 16px;
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 600;
   border-bottom: 2px solid transparent;
   border-radius: 0;
@@ -3699,7 +3744,7 @@ button.badge.tag:hover {
   flex-wrap: wrap;
 }
 .trophy-case-title {
-  font-size: 16px;
+  font-size: var(--fs-xl);
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -3715,7 +3760,7 @@ button.badge.tag:hover {
 .collector-level-badge {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.3px;
   padding: 3px 9px;
@@ -3775,11 +3820,11 @@ button.badge.tag:hover {
   min-width: 0;
 }
 .trophy-name {
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   font-weight: 700;
 }
 .trophy-desc {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -3788,13 +3833,13 @@ button.badge.tag:hover {
    and a touch smaller than .trophy-desc so it reads as a bonus aside
    under the trophy's real description, not a second, competing line. */
 .trophy-flavor {
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   font-style: italic;
   color: var(--text-dim);
   margin-top: 3px;
 }
 .trophy-tier {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -3810,7 +3855,7 @@ button.badge.tag:hover {
   filter: grayscale(1);
 }
 .trophy-lock {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   opacity: 0.8;
   filter: grayscale(1) brightness(1.6);
 }
@@ -3837,7 +3882,7 @@ button.badge.tag:hover {
   box-shadow: var(--shadow);
   cursor: pointer;
   max-width: 320px;
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   line-height: 1.4;
 }
 .toast-error {
@@ -3867,7 +3912,7 @@ button.badge.tag:hover {
   border-radius: 10px;
   padding: 10px 12px 10px 16px;
   box-shadow: var(--shadow);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
 }
 
 .trophy-toast-stack {
@@ -3914,14 +3959,14 @@ button.badge.tag:hover {
   box-shadow: 0 0 0 2px var(--tier-platinum) inset;
 }
 .trophy-toast-label {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--text-dim);
 }
 .trophy-toast-name {
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 700;
   margin-top: 2px;
 }
@@ -4000,7 +4045,7 @@ button.badge.tag:hover {
   }
   .podium-name {
     max-width: 104px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
   }
   .podium-cover-wrap .leaderboard-thumb,
   .podium-avatar-wrap .leaderboard-avatar {
@@ -4178,12 +4223,12 @@ button.badge.tag:hover {
     padding: 10px 12px 10px 12px;
   }
   .system-tile .sys-name {
-    font-size: 13px;
+    font-size: var(--fs-base);
     margin-bottom: 2px;
     white-space: nowrap;
   }
   .system-tile .sys-count {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     white-space: nowrap;
   }
 
@@ -4197,10 +4242,10 @@ button.badge.tag:hover {
     padding: 10px 12px;
   }
   .stat .num {
-    font-size: 18px;
+    font-size: var(--fs-2xl);
   }
   .stat .label {
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
   }
 
   /* .dash-tools-overlay/.dash-tools and friends used to be redefined
@@ -4224,7 +4269,7 @@ button.badge.tag:hover {
     grid-template-columns: repeat(4, 1fr);
   }
   .card-title {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     padding: 5px 6px;
     line-height: 1.25;
     /* Two rounds of picking a line-clamp count (2, then 3) both turned
@@ -4263,10 +4308,10 @@ button.badge.tag:hover {
     padding: 6px 8px;
   }
   .collectible-card-title {
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
   .collectible-card-meta {
-    font-size: 9.5px;
+    font-size: var(--fs-2xs);
     display: block;
     white-space: nowrap;
     overflow: hidden;
@@ -4301,13 +4346,13 @@ button.badge.tag:hover {
   }
   .stat-row {
     padding: 6px 9px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
   .stat-label {
-    font-size: 9px;
+    font-size: var(--fs-3xs);
   }
   .badge {
-    font-size: 9.5px;
+    font-size: var(--fs-2xs);
     padding: 2px 7px;
   }
 
@@ -4315,10 +4360,10 @@ button.badge.tag:hover {
     padding: 56px 16px 40px;
   }
   .hero h1 {
-    font-size: 28px;
+    font-size: var(--fs-6xl);
   }
   .hero p {
-    font-size: 14px;
+    font-size: var(--fs-md);
   }
 
   .modal {
@@ -4329,21 +4374,21 @@ button.badge.tag:hover {
   }
 
   .profile-name {
-    font-size: 19px;
+    font-size: var(--fs-3xl);
   }
 
   .section-block {
     margin: 44px 0;
   }
   .section-heading {
-    font-size: 19px;
+    font-size: var(--fs-3xl);
   }
   .cta-band {
     padding: 32px 18px;
     margin: 44px 0 24px;
   }
   .cta-band-title {
-    font-size: 18px;
+    font-size: var(--fs-2xl);
   }
 }
 
@@ -4372,11 +4417,11 @@ button.badge.tag:hover {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 .mosaic-sub {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--fs-base);
   margin: 4px 0 18px;
 }
 .mosaic-hover-info {
@@ -4391,7 +4436,7 @@ button.badge.tag:hover {
   border-radius: 10px;
   padding: 8px 14px;
   margin-bottom: 14px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--text-dim);
   width: fit-content;
 }
@@ -4432,7 +4477,7 @@ button.badge.tag:hover {
 }
 .mosaic-row-label {
   display: inline-block;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -4516,7 +4561,7 @@ button.badge.tag:hover {
 }
 .mosaic-badge {
   position: absolute;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   border-radius: 5px;
   padding: 2px 5px;
@@ -4547,7 +4592,7 @@ button.badge.tag:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--fs-xl);
   font-weight: 700;
   color: rgba(232, 226, 212, 0.6);
 }
@@ -4594,14 +4639,14 @@ button.badge.tag:hover {
   color: var(--text);
 }
 .shelf-hero-label {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--tile-color, var(--text-dim));
 }
 .shelf-hero-count {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-dim);
 }
 .shelf-hero-row-header:hover .shelf-hero-label {
@@ -4652,7 +4697,7 @@ button.badge.tag:hover {
   align-items: center;
   justify-content: center;
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   border-style: dashed;
 }

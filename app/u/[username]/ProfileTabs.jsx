@@ -118,7 +118,7 @@ export default function ProfileTabs({
             />
 
             {typeFilter && (
-              <div style={{ marginBottom: 12, fontSize: 14, color: 'var(--text-dim)' }}>
+              <div style={{ marginBottom: 12, fontSize: 'var(--fs-md)', color: 'var(--text-dim)' }}>
                 Showing {TYPE_LABELS[typeFilter] || typeFilter}
                 {' · '}
                 <button

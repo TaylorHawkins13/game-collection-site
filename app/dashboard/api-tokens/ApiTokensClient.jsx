@@ -72,7 +72,7 @@ export default function ApiTokensClient({ initialTokens }) {
     <main className="container">
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>API Access</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>API Access</h1>
           <p className="sub" style={{ margin: 0 }}>
             Personal access tokens let a script, spreadsheet, or your own dashboard pull your collection directly — a
             read-only mirror of what you can already see about your own items, nothing new.
@@ -96,7 +96,7 @@ export default function ApiTokensClient({ initialTokens }) {
                 background: 'var(--bg)',
                 border: '1px solid var(--border)',
                 borderRadius: 8,
-                fontSize: 13,
+                fontSize: 'var(--fs-base)',
                 overflowX: 'auto',
                 whiteSpace: 'nowrap',
               }}
@@ -111,7 +111,7 @@ export default function ApiTokensClient({ initialTokens }) {
       )}
 
       <div className="form-card" style={{ margin: '20px 0', maxWidth: 'none' }}>
-        <h2 style={{ fontSize: 16, margin: '0 0 12px' }}>Your tokens</h2>
+        <h2 style={{ fontSize: 'var(--fs-xl)', margin: '0 0 12px' }}>Your tokens</h2>
         {tokens.length === 0 ? (
           <p className="sub" style={{ margin: '0 0 12px' }}>No tokens yet — create one below to get started.</p>
         ) : (
@@ -129,7 +129,7 @@ export default function ApiTokensClient({ initialTokens }) {
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 13.5 }}>{t.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--fs-md)' }}>{t.name}</div>
                   <div className="sub" style={{ margin: 0 }}>
                     <code>{t.token_prefix}…</code> · created {new Date(t.created_at).toLocaleDateString()}
                     {t.last_used_at ? ` · last used ${new Date(t.last_used_at).toLocaleDateString()}` : ' · never used yet'}
@@ -164,7 +164,7 @@ export default function ApiTokensClient({ initialTokens }) {
       </div>
 
       <div className="form-card" style={{ margin: '20px 0', maxWidth: 'none' }}>
-        <h2 style={{ fontSize: 16, margin: '0 0 12px' }}>How to use it</h2>
+        <h2 style={{ fontSize: 'var(--fs-xl)', margin: '0 0 12px' }}>How to use it</h2>
         <p className="sub" style={{ margin: '0 0 10px' }}>
           Send the token as a bearer token in the Authorization header. Two read-only endpoints, both scoped to
           whichever account the token belongs to:
@@ -175,7 +175,7 @@ export default function ApiTokensClient({ initialTokens }) {
             border: '1px solid var(--border)',
             borderRadius: 8,
             padding: '12px 14px',
-            fontSize: 12.5,
+            fontSize: 'var(--fs-base)',
             overflowX: 'auto',
             margin: '0 0 10px',
           }}

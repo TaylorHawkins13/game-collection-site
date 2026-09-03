@@ -1737,7 +1737,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24 }}>My Collection</h1>
+          <h1 style={{ margin: 0, fontSize: 'var(--fs-5xl)' }}>My Collection</h1>
           {profile?.username && (
             <div className="sub" style={{ margin: '4px 0 0' }}>
               Public profile: <Link href={`/u/${profile.username}`}>/u/{profile.username}</Link>
@@ -1818,7 +1818,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
       {showSettings && (
         <div className="form-card" style={{ margin: '0 0 24px', maxWidth: 'none' }}>
-          <h2 style={{ marginTop: 0, fontSize: 16 }}>Settings</h2>
+          <h2 style={{ marginTop: 0, fontSize: 'var(--fs-xl)' }}>Settings</h2>
 
           {/* Used to be one continuous scroll of roughly ten unrelated
               concerns with no subheadings at all — see ROADMAP.md/
@@ -2398,7 +2398,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <option value="untracked">Not tracked yet</option>
                 </select>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 14 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 'var(--fs-md)' }}>
                 <input
                   type="checkbox"
                   checked={hideDigital}
@@ -2471,7 +2471,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               {onThisDay.length > 0 && (
                 <div className="form-card" style={{ margin: '0 0 16px', maxWidth: 'none' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                    <h3 style={{ margin: 0, fontSize: 15 }}>On this day</h3>
+                    <h3 style={{ margin: 0, fontSize: 'var(--fs-lg)' }}>On this day</h3>
                     <CollapseToggle collapsed={collapsedPanels.onthisday} onToggle={() => togglePanel('onthisday')} />
                   </div>
                   {!collapsedPanels.onthisday && (
@@ -2594,7 +2594,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
               <div className="form-card" style={{ margin: '0 0 16px', maxWidth: 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <h3 style={{ margin: 0, fontSize: 15 }}>Collection value over time</h3>
+                  <h3 style={{ margin: 0, fontSize: 'var(--fs-lg)' }}>Collection value over time</h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     {!collapsedPanels.value && (
                       <button className="btn-ghost" type="button" onClick={() => recordSnapshot()} disabled={snapshotSaving}>
@@ -2631,7 +2631,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               {platformCounts.length > 0 && (
                 <div className="form-card" style={{ margin: '0 0 4px', maxWidth: 'none' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                    <h3 style={{ margin: 0, fontSize: 15 }}>Browse by system</h3>
+                    <h3 style={{ margin: 0, fontSize: 'var(--fs-lg)' }}>Browse by system</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       {fPlat && !collapsedPanels.systemtiles && (
                         <>

@@ -162,7 +162,7 @@ export default function SteamImportModal({ userId, existingAppIds, onClose, onIm
                     style={{ width: 'auto' }}
                     disabled={importing}
                   />
-                  <span style={{ flex: 1, fontSize: 13.5 }}>{g.name}</span>
+                  <span style={{ flex: 1, fontSize: 'var(--fs-md)' }}>{g.name}</span>
                   {g.playtime_forever > 0 && (
                     <span className="sub" style={{ margin: 0 }}>{Math.round(g.playtime_forever / 60)} hrs</span>
                   )}

@@ -204,7 +204,7 @@ export default function InsightsClient({ games, currency }) {
     <main className="container">
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Collection Insights</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Collection Insights</h1>
           <p className="sub" style={{ margin: 0 }}>
             Breakdown of your {owned.length} owned item{owned.length === 1 ? '' : 's'} — derived entirely from what's
             already in your collection.
@@ -267,7 +267,7 @@ export default function InsightsClient({ games, currency }) {
         screenOwned.length > 0 ||
         funkoOwned.length > 0) && (
         <>
-          <h2 style={{ fontSize: 18, margin: '28px 0 12px' }}>Made for what you collect</h2>
+          <h2 style={{ fontSize: 'var(--fs-2xl)', margin: '28px 0 12px' }}>Made for what you collect</h2>
           <div className="insights-grid">
             {gamesOwned.length > 0 && (
               <div className="insights-panel">
@@ -281,7 +281,7 @@ export default function InsightsClient({ games, currency }) {
                 <h3>Trophy completion</h3>
                 {trophyCompletion ? (
                   <>
-                    <div style={{ fontSize: 32, fontWeight: 700 }}>{Math.round(trophyCompletion.avg)}%</div>
+                    <div style={{ fontSize: 'var(--fs-6xl)', fontWeight: 700 }}>{Math.round(trophyCompletion.avg)}%</div>
                     <div className="sub" style={{ margin: '4px 0 0' }}>
                       average across {trophyCompletion.count} game{trophyCompletion.count === 1 ? '' : 's'} with completion tracked
                     </div>

@@ -146,7 +146,7 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds }) {
     <main className="container" style={{ maxWidth: 820 }}>
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Full release catalogue</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Full release catalogue</h1>
           <p className="sub" style={{ margin: 0 }}>
             Pick a platform to see every main-release game IGDB has for it, greyed out except what you've logged for
             that system — useful for spotting real gaps in a platform you're actively completing.

@@ -17,7 +17,7 @@ export default function ProfileCard({ profile }) {
         )}
       </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontWeight: 600, fontSize: 'var(--fs-md)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {profile.display_name || profile.username}
         </div>
         <div className="sub" style={{ margin: 0 }}>@{profile.username}</div>

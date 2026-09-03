@@ -842,7 +842,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             <button
               type="button"
               className="btn-ghost"
-              style={{ flexShrink: 0, fontSize: 12, padding: '6px 10px', whiteSpace: 'nowrap' }}
+              style={{ flexShrink: 0, fontSize: 'var(--fs-sm)', padding: '6px 10px', whiteSpace: 'nowrap' }}
               onClick={() =>
                 series.data
                   ? series.reset()
@@ -991,7 +991,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                       <img src={r.thumb || r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
                     )}
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
+                      <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600 }}>{r.name}</div>
                       <div className="sub" style={{ margin: 0 }}>{resultMeta(r)}</div>
                     </div>
                   </div>
@@ -1012,7 +1012,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                     <img src={r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
                   )}
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{r.title}</div>
+                    <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600 }}>{r.title}</div>
                     <div className="sub" style={{ margin: 0 }}>
                       {[r.publisher, r.card_set, (r.platforms || []).join(', ')].filter(Boolean)[0] || '—'}
                     </div>

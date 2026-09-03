@@ -87,7 +87,7 @@ export default function UpcomingReleasesClient({ groups, currency }) {
     <main className="container" style={{ maxWidth: 820 }}>
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>Upcoming releases</h1>
+          <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Upcoming releases</h1>
           <p className="sub" style={{ margin: 0 }}>
             Upcoming releases for the game franchises and comic series you already own something from — type in an
             expected price to track what&apos;s coming up in your budget.
@@ -100,13 +100,13 @@ export default function UpcomingReleasesClient({ groups, currency }) {
           <div className="sub" style={{ margin: 0 }}>
             This week
           </div>
-          <div style={{ fontSize: 22, fontWeight: 600 }}>{formatMoney(totals.thisWeek, currency)}</div>
+          <div style={{ fontSize: 'var(--fs-4xl)', fontWeight: 600 }}>{formatMoney(totals.thisWeek, currency)}</div>
         </div>
         <div>
           <div className="sub" style={{ margin: 0 }}>
             This month
           </div>
-          <div style={{ fontSize: 22, fontWeight: 600 }}>{formatMoney(totals.thisMonth, currency)}</div>
+          <div style={{ fontSize: 'var(--fs-4xl)', fontWeight: 600 }}>{formatMoney(totals.thisMonth, currency)}</div>
         </div>
       </div>
 
@@ -122,7 +122,7 @@ export default function UpcomingReleasesClient({ groups, currency }) {
 
       {groups.map((group) => (
         <div key={group.monthKey} className="form-card" style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 18, margin: '0 0 12px' }}>{group.monthLabel}</h2>
+          <h2 style={{ fontSize: 'var(--fs-2xl)', margin: '0 0 12px' }}>{group.monthLabel}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {group.entries.map((entry) => (
               <div

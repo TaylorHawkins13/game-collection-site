@@ -222,7 +222,7 @@ export default async function CollectiblePage({ searchParams }) {
                     (o.display_name || o.username || '?').slice(0, 1).toUpperCase()
                   )}
                 </div>
-                <div style={{ minWidth: 0, fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ minWidth: 0, fontSize: 'var(--fs-base)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {o.display_name || o.username}
                 </div>
               </Link>

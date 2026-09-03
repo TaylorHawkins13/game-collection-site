@@ -137,7 +137,7 @@ export default function PasskeyManager() {
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{p.nickname || 'Passkey'}</div>
+                <div style={{ fontWeight: 600, fontSize: 'var(--fs-md)' }}>{p.nickname || 'Passkey'}</div>
                 <div className="sub" style={{ margin: 0 }}>
                   Added {new Date(p.created_at).toLocaleDateString()}
                   {p.last_used_at ? ` · last used ${new Date(p.last_used_at).toLocaleDateString()}` : ' · never used yet'}

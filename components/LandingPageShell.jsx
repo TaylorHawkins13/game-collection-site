@@ -57,7 +57,7 @@ export default function LandingPageShell({ data }) {
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', marginBottom: 40 }}>
         {data.features.map((f) => (
           <div className="card" key={f.title} style={{ padding: 18 }}>
-            <div className="value-title" style={{ fontSize: 16 }}>{f.title}</div>
+            <div className="value-title" style={{ fontSize: 'var(--fs-xl)' }}>{f.title}</div>
             <p className="sub" style={{ margin: 0 }}>{f.body}</p>
           </div>
         ))}
