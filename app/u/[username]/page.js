@@ -236,21 +236,38 @@ export default async function ProfilePage({ params }) {
         {viewer && !isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <FollowButton profileId={profile.id} initialFollowing={alreadyFollowing} />
-            <ActionMenu label="More actions">
-              <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                Compare collections
+            {/* Compare/Shelf mosaic/Gift list/Refresh prices used to all
+                sit inside one "More actions" menu regardless of whether
+                they applied right now — the same hidden-features pattern
+                the dashboard sidebar fixed, one size down (ROADMAP.md,
+                flagged with a screenshot of a profile whose menu opened
+                to show just "Shelf mosaic," which turned out to be every
+                other item's own real visibility condition, not a
+                near-empty menu). Each one already has a real relevance
+                check (owned>0, a wishlist that isn't empty, canView) —
+                showing it directly when that's true surfaces it instead
+                of requiring a click to discover something that's already
+                known to apply. Report profile is the one deliberate
+                exception, kept behind "More actions": unlike the others
+                it's not something a visitor is ever looking FOR, and a
+                report/flag action sitting in the primary row next to
+                Follow reads as more prominent than a low-frequency,
+                easy-to-misclick action should. */}
+            <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Compare collections
+            </Link>
+            {canView && owned > 0 && (
+              <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Shelf mosaic
               </Link>
-              {canView && owned > 0 && (
-                <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                  Shelf mosaic
-                </Link>
-              )}
-              {canViewWishlist && wishlistCount > 0 && (
-                <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                  Gift list
-                </Link>
-              )}
-              {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
+            )}
+            {canViewWishlist && wishlistCount > 0 && (
+              <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Gift list
+              </Link>
+            )}
+            {canView && <RefreshPricesButton games={games || []} currency={profile.currency} />}
+            <ActionMenu label="More actions">
               <ReportProfileButton profileId={profile.id} />
             </ActionMenu>
           </div>
@@ -261,18 +278,23 @@ export default async function ProfilePage({ params }) {
             <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
               Edit profile
             </Link>
-            <ActionMenu label="More actions">
-              {owned > 0 && (
-                <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                  Shelf mosaic
-                </Link>
-              )}
-              <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
-                Gift list
+            {/* Manage showcase/Manage lists/Gift list used to be tucked
+                behind "More actions" too — see the comment on the
+                visitor branch above for the full reasoning. Every one of
+                these was actually unconditional here already (only Shelf
+                mosaic has a real gate, owned>0), so there's no longer a
+                genuinely conditional item left to justify keeping a menu
+                around at all on this branch. */}
+            {owned > 0 && (
+              <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                Shelf mosaic
               </Link>
-              <ShowcaseButton userId={profile.id} />
-              <CustomListsButton userId={profile.id} />
-            </ActionMenu>
+            )}
+            <Link href={`/u/${profile.username}/wishlist`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+              Gift list
+            </Link>
+            <ShowcaseButton userId={profile.id} />
+            <CustomListsButton userId={profile.id} />
           </div>
         )}
       </div>
