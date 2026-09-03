@@ -84,7 +84,7 @@ export default function UpcomingReleasesClient({ groups, currency }) {
   }
 
   return (
-    <main className="container" style={{ maxWidth: 820 }}>
+    <main className="container">
       <div className="profile-header" style={{ marginTop: 20, marginBottom: 0 }}>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Upcoming releases</h1>
@@ -95,7 +95,7 @@ export default function UpcomingReleasesClient({ groups, currency }) {
         </div>
       </div>
 
-      <div className="form-card" style={{ marginTop: 16, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+      <div className="form-card" style={{ marginTop: 16, maxWidth: 'none', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
         <div>
           <div className="sub" style={{ margin: 0 }}>
             This week
@@ -111,7 +111,7 @@ export default function UpcomingReleasesClient({ groups, currency }) {
       </div>
 
       {groups.length === 0 && (
-        <div className="form-card" style={{ marginTop: 16 }}>
+        <div className="form-card" style={{ marginTop: 16, maxWidth: 'none' }}>
           <div className="sub" style={{ margin: 0 }}>
             Nothing upcoming yet. Games and comic series get added to this calendar automatically once you own an
             item from them and the weekly refresh has had a chance to check for future releases — a newly-logged
@@ -121,9 +121,9 @@ export default function UpcomingReleasesClient({ groups, currency }) {
       )}
 
       {groups.map((group) => (
-        <div key={group.monthKey} className="form-card" style={{ marginTop: 16 }}>
+        <div key={group.monthKey} className="form-card" style={{ marginTop: 16, maxWidth: 'none' }}>
           <h2 style={{ fontSize: 'var(--fs-2xl)', margin: '0 0 12px' }}>{group.monthLabel}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
             {group.entries.map((entry) => (
               <div
                 key={entry.entryKey}
