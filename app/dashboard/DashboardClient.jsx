@@ -100,6 +100,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [fList, setFList] = useState('');
   const [fPlay, setFPlay] = useState('');
   const [fType, setFType] = useState('');
+  // Scroll target for the item grid — see the effect below `filtered`'s
+  // useMemo for why.
+  const gridSectionRef = useRef(null);
   const [fCopy, setFCopy] = useState('');
   const [fComplete, setFComplete] = useState('');
   const [fTrophyPct, setFTrophyPct] = useState('');
@@ -817,6 +820,26 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     });
     return list;
   }, [games, search, fOwn, fPlat, fTag, fList, listItemsByList, fPlay, fType, fCopy, fComplete, fTrophyPct, sortBy, hideDigital]);
+
+  // Picking a type from CategoryRail (or the segmented shelf hero right
+  // below it, or the Type dropdown in the Filters drawer — all three set
+  // this same fType) visibly moves the active pill, but the thing that
+  // actually changes — the item grid — sits below the stats bar and
+  // toolbar, off-screen on most viewports. Flagged directly: without a
+  // scroll, the filter genuinely works but reads as broken ("the gold
+  // outline moves but nothing happens"), since nobody scrolls down just
+  // to check. Scrolls the grid into view on every fType change so the
+  // effect is visible right where the click happened — skips the initial
+  // mount (fType starts `''` and hasn't been touched yet, so there's
+  // nothing to reveal) via the ref below.
+  const skipNextScrollRef = useRef(true);
+  useEffect(() => {
+    if (skipNextScrollRef.current) {
+      skipNextScrollRef.current = false;
+      return;
+    }
+    gridSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [fType]);
 
   async function handleSave(formData) {
     if (modalGame && modalGame.id) {
@@ -2743,11 +2766,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           )}
 
           {filtered.length === 0 ? (
-            <div className="empty-state">
+            <div className="empty-state" ref={gridSectionRef}>
               <div>No items match your filters.</div>
             </div>
           ) : (
-            <div className="grid">
+            <div className="grid" ref={gridSectionRef}>
               {filtered.map((g) => (
                 <GameCard
                   key={g.id}
