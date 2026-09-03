@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabaseServer';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import GameCard from '@/components/GameCard';
 import { ebayBuyLink, amazonBuyLink } from '@/lib/affiliateLinks';
+import { goUrl } from '@/lib/externalListings';
 
 // A separate, lightweight link that shows only the wishlist — not the
 // whole collection — for sending to family/friends around birthdays or
@@ -141,12 +142,12 @@ export default async function WishlistPage({ params }) {
                 {(ebayLink || amazonLink) && (
                   <div className="wishlist-buy-links">
                     {ebayLink && (
-                      <a href={ebayLink} target="_blank" rel="noopener noreferrer sponsored">
+                      <a href={goUrl(ebayLink, 'eBay')} target="_blank" rel="noopener noreferrer sponsored">
                         Buy on eBay
                       </a>
                     )}
                     {amazonLink && (
-                      <a href={amazonLink} target="_blank" rel="noopener noreferrer sponsored">
+                      <a href={goUrl(amazonLink, 'Amazon')} target="_blank" rel="noopener noreferrer sponsored">
                         Search Amazon
                       </a>
                     )}
