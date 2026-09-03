@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getPlatformCatalogue } from '@/lib/igdbPlatformCatalogue';
+import { getPlatformCatalogue, debugCatalogueQueries } from '@/lib/igdbPlatformCatalogue';
+
+// TEMPORARY — a long, specific value so this can't be hit by accident;
+// gates lib/igdbPlatformCatalogue.js's debugCatalogueQueries, used to
+// confirm the real cause of ROADMAP.md's "full release catalogue always
+// empty" bug against IGDB's live API without another deploy-and-wait
+// round trip. Remove alongside that function once the real fix ships.
+const DEBUG_KEY = 'shelf-life-catalogue-debug-2026-09';
 
 // Backs the "Full physical-release catalogue" page
 // (app/dashboard/catalogue) — a thin client-facing wrapper over
@@ -18,6 +25,11 @@ export async function GET(request) {
   const search = searchParams.get('search') || '';
   const offset = parseInt(searchParams.get('offset'), 10) || 0;
   const limit = parseInt(searchParams.get('limit'), 10) || undefined;
+
+  if (searchParams.get('debug') === DEBUG_KEY) {
+    const debugResult = await debugCatalogueQueries(platform);
+    return NextResponse.json(debugResult);
+  }
 
   const result = await getPlatformCatalogue({ platform, offset, limit, search });
 
