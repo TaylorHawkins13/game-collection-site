@@ -4,44 +4,38 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseClient';
 import { describeNotification } from '@/lib/notificationTypes';
-
-const POLL_MS = 60000;
+import useUnreadNotifications from '@/lib/useUnreadNotifications';
 
 // Bell/inbox for follows, comments, and trophies — lives in the navbar so
 // these moments don't only exist as an in-the-moment toast (which you'd
 // miss entirely if you weren't looking at the screen when it fired).
-// Opening the dropdown marks everything as read; a light poll keeps the
-// unread count roughly current without needing realtime subscriptions.
+// Opening the dropdown marks everything as read; a light poll (shared
+// with the phone bottom bar's own Alerts badge via
+// lib/useUnreadNotifications.js — same real-second-call-site pattern
+// lib/useCurrentProfile.js already established) keeps the unread count
+// roughly current without needing realtime subscriptions.
 export default function NotificationBell({ userId }) {
   const supabase = createClient();
-  const [ownUsername, setOwnUsername] = useState(null);
+  const { unreadCount, setUnreadCount, ownUsername } = useUnreadNotifications(userId);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
   // Types this user has muted, from Settings (lib/notificationTypes.js,
-  // profiles.muted_notification_types) — a ref rather than state so
-  // refreshCount's setInterval closure (created once, below) always reads
-  // the current value instead of whatever it was when the interval started.
-  // Muting is enforced entirely here, at read time: both refreshCount's
-  // unread badge and handleToggle's dropdown list exclude muted types.
-  // Rows for a muted type still get inserted (every notifyX call site is
-  // unchanged) — they're just never surfaced, so un-muting later doesn't
-  // lose anything that happened while muted.
+  // profiles.muted_notification_types) — fetched here too (the hook keeps
+  // its own private copy for the unread count) since handleToggle's
+  // dropdown list needs to exclude muted types the same way. Rows for a
+  // muted type still get inserted (every notifyX call site is unchanged)
+  // — they're just never surfaced, so un-muting later doesn't lose
+  // anything that happened while muted.
   const mutedRef = useRef([]);
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from('profiles').select('username, muted_notification_types').eq('id', userId).single().then(({ data }) => {
-      setOwnUsername(data?.username || null);
+    supabase.from('profiles').select('muted_notification_types').eq('id', userId).single().then(({ data }) => {
       mutedRef.current = data?.muted_notification_types || [];
-      refreshCount();
     });
-    const interval = setInterval(refreshCount, POLL_MS);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   useEffect(() => {
@@ -65,16 +59,6 @@ export default function NotificationBell({ userId }) {
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [open]);
-
-  function refreshCount() {
-    let query = supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('read', false);
-    if (mutedRef.current.length) query = query.not('type', 'in', `(${mutedRef.current.join(',')})`);
-    query.then(({ count }) => setUnreadCount(count || 0));
-  }
 
   async function handleToggle() {
     const next = !open;

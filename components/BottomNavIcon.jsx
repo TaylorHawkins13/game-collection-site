@@ -13,6 +13,10 @@ const ICONS = {
   feed: 'M3 12h4l2 6 4-16 2 10 2-4h4',
   // Head + shoulders.
   profile: 'M12 12a4 4 0 1 0 .001 0Z M4.5 20c1.3-4.2 4.8-6.5 7.5-6.5s6.2 2.3 7.5 6.5',
+  // Same bell shape as NotificationBell.jsx's own SVG (kept identical on
+  // purpose — the phone bottom bar's Alerts item and the navbar's bell
+  // button are the same feature, just two entry points into it).
+  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0',
 };
 
 export default function BottomNavIcon({ type, size = 22, className }) {

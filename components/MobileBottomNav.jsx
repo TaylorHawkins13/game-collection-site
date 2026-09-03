@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import useCurrentProfile from '@/lib/useCurrentProfile';
+import useUnreadNotifications from '@/lib/useUnreadNotifications';
 import BottomNavIcon from './BottomNavIcon';
 
 // A persistent bottom tab bar on phones, the way most native/mobile apps
@@ -13,14 +14,25 @@ import BottomNavIcon from './BottomNavIcon';
 // there's room for the real top navbar, and a bottom bar stapled onto a
 // desktop layout is an unfamiliar pattern with nothing to fix there.
 //
-// The 4 signed-in destinations are the ones actually reached daily
-// (confirmed directly): My Collection, Search, Feed, My Profile. Every
-// other top-nav destination (Leaderboard, Lists, Articles) stays reachable
-// from the hamburger menu, unchanged — this bar isn't a full replacement
-// for it, just pulls the handful of daily-use links out of a menu you'd
-// otherwise have to open every single time. Navbar.jsx's own copies of
-// these 4 links get a `nav-link-primary` class and are CSS-hidden at the
-// same breakpoint this bar appears at, so nothing's listed twice.
+// 5 signed-in destinations: the original 4 actually reached daily
+// (confirmed directly) — My Collection, Search, Feed, My Profile — plus
+// Alerts, added to close ROADMAP.md's "notification bell isn't reachable
+// from the phone bottom bar" follow-up (noticed while building the first
+// 4: the bell only lived in the hamburger menu, so checking it on a phone
+// took an extra tap the other daily-use links didn't). Every other
+// top-nav destination (Leaderboard, Lists, Articles) stays reachable from
+// the hamburger menu, unchanged — this bar isn't a full replacement for
+// it. Navbar.jsx's own copies of these links get a `nav-link-primary`
+// class and are CSS-hidden at the same breakpoint this bar appears at,
+// so nothing's listed twice.
+//
+// Alerts links to the existing /notifications page rather than trying to
+// reproduce NotificationBell.jsx's dropdown inline — a dropdown anchored
+// to the very bottom of the screen has nowhere sensible to open toward,
+// and the full page already exists as exactly this bar's own "See all
+// notifications" escape hatch. The unread badge itself (and the muted-
+// types-aware count feeding it) comes from lib/useUnreadNotifications.js,
+// shared with NotificationBell's own badge rather than a second poll.
 //
 // Deliberately always rendered (not conditionally mounted only under
 // 640px) and hidden via CSS, same pattern Navbar.jsx's own mobile drawer
@@ -31,11 +43,13 @@ const SIGNED_IN_ITEMS = (username) => [
   { href: '/players', label: 'Search', icon: 'search', match: '/players' },
   { href: '/feed', label: 'Feed', icon: 'feed', match: '/feed' },
   { href: username ? `/u/${username}` : '/dashboard', label: 'Profile', icon: 'profile', match: username ? `/u/${username}` : '__none__' },
+  { href: '/notifications', label: 'Alerts', icon: 'bell', match: '/notifications' },
 ];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { profile, loading } = useCurrentProfile();
+  const { profile, userId, loading } = useCurrentProfile();
+  const { unreadCount } = useUnreadNotifications(userId);
 
   // Nothing to show yet — rather than flash a signed-out bar for half a
   // second on every load while the auth check resolves, the bar simply
@@ -71,7 +85,12 @@ export default function MobileBottomNav() {
           href={item.href}
           className={`mobile-bottom-nav-item${pathname.startsWith(item.match) ? ' active' : ''}`}
         >
-          <BottomNavIcon type={item.icon} />
+          <span className="mobile-bottom-nav-icon-wrap">
+            <BottomNavIcon type={item.icon} />
+            {item.icon === 'bell' && unreadCount > 0 && (
+              <span className="mobile-bottom-nav-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            )}
+          </span>
           <span>{item.label}</span>
         </Link>
       ))}

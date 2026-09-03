@@ -349,6 +349,30 @@ textarea {
 .mobile-bottom-nav-signup {
   color: var(--accent-gold);
 }
+/* Wraps just the icon (not the whole flex-column item) so the unread
+   badge on the Alerts item anchors to the icon itself rather than
+   floating somewhere in the middle of a much wider flex-1 tap target —
+   same idea as .notif-wrap/.notif-bell's own relative/absolute pairing
+   for the navbar's bell button. */
+.mobile-bottom-nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.mobile-bottom-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #e0524a;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
 
 /* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
    Next/Recommended/value-chart/Browse-by-system insights all live here
@@ -4022,15 +4046,6 @@ button.badge.tag:hover {
     text-align: center;
     box-sizing: border-box;
   }
-  .notif-wrap {
-    align-self: flex-start;
-  }
-  .notif-dropdown {
-    width: min(300px, calc(100vw - 48px));
-    right: auto;
-    left: 0;
-  }
-
   /* Phone bottom tab bar takes over primary nav from here down — hide
      Navbar.jsx's now-duplicate copies of the same 4 links (still the
      only way to reach them above this breakpoint, where there's no
@@ -4039,6 +4054,16 @@ button.badge.tag:hover {
      tap target + top/bottom padding) plus the safe-area inset covers an
      iPhone's home-indicator strip. */
   .nav-link-primary {
+    display: none;
+  }
+  /* The navbar's bell (.notif-wrap, components/NotificationBell.jsx)
+     isn't a plain .nav-link so it doesn't pick up .nav-link-primary —
+     hidden here directly for the same reason: it's now the bottom bar's
+     Alerts item instead (closes ROADMAP.md's "notification bell isn't
+     reachable from the phone bottom bar"). Replaces this same selector's
+     old `align-self: flex-start` rule from when it still rendered in the
+     hamburger drawer — moot now that it doesn't render here at all. */
+  .notif-wrap {
     display: none;
   }
   .mobile-bottom-nav {
