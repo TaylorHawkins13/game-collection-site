@@ -1870,12 +1870,22 @@ button.badge.tag:hover {
 /* Faint mosaic of the collector's own real cover art (brief section 5,
    Public Profile Header) — decorative background only (aria-hidden in
    the page), never covers/misrepresents anything since it only ever
-   uses covers that already belong to this collector. */
+   uses covers that already belong to this collector.
+   4 columns x 2 rows (not a single row of 8) — a single row divides the
+   header's *width* into 8 slices while each slice still stretches to
+   the header's full *height*, so on a narrow phone screen (where the
+   header is naturally tall — avatar/name/stats/buttons all stack
+   instead of sitting in one row like desktop) each cover became an
+   extreme, cropped-beyond-recognition vertical strip. That's what read
+   as "a load of squeezed together photos" (reported directly). A grid
+   keeps every cell close to square/landscape regardless of how tall or
+   wide the header ends up being. */
 .profile-header-mosaic {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   opacity: 0.2;
   pointer-events: none;
 }
