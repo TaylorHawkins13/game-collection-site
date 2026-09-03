@@ -26,6 +26,7 @@ import ActionMenu from '@/components/ActionMenu';
 const GameModal = dynamic(() => import('@/components/GameModal'), { ssr: false });
 const ImportCsvModal = dynamic(() => import('@/components/ImportCsvModal'), { ssr: false });
 const SteamImportModal = dynamic(() => import('@/components/SteamImportModal'), { ssr: false });
+const DiscogsImportModal = dynamic(() => import('@/components/DiscogsImportModal'), { ssr: false });
 const BulkSearchAddModal = dynamic(() => import('@/components/BulkSearchAddModal'), { ssr: false });
 const QuickAddTextModal = dynamic(() => import('@/components/QuickAddTextModal'), { ssr: false });
 const PasskeyManager = dynamic(() => import('@/components/PasskeyManager'), { ssr: false });
@@ -319,6 +320,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   const [steamId, setSteamId] = useState(profile?.steam_id || null);
   const [steamDisconnecting, setSteamDisconnecting] = useState(false);
   const [showSteamImport, setShowSteamImport] = useState(false);
+  const [showDiscogsImport, setShowDiscogsImport] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -552,6 +554,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
   // originally added — manually, CSV, or an earlier Steam import).
   const steamAppIds = useMemo(
     () => new Set(games.filter((g) => g.steam_appid != null).map((g) => g.steam_appid)),
+    [games]
+  );
+
+  // Same idea as steamAppIds above, for DiscogsImportModal — Discogs
+  // release ids already in the collection, so re-running the import (or
+  // running it against a second Discogs username) doesn't create
+  // duplicates.
+  const discogsReleaseIds = useMemo(
+    () => new Set(games.filter((g) => g.discogs_release_id != null).map((g) => g.discogs_release_id)),
     [games]
   );
 
@@ -2117,6 +2128,9 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
                     Import CSV
                   </button>
+                  <button className="btn-ghost" onClick={() => setShowDiscogsImport(true)} type="button">
+                    Import from Discogs
+                  </button>
                   <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
                     Export CSV
                   </button>
@@ -2855,6 +2869,15 @@ export default function DashboardClient({ userId, profile, initialGames }) {
           existingAppIds={steamAppIds}
           onClose={() => setShowSteamImport(false)}
           onImported={handleSteamImported}
+        />
+      )}
+
+      {showDiscogsImport && (
+        <DiscogsImportModal
+          userId={userId}
+          existingReleaseIds={discogsReleaseIds}
+          onClose={() => setShowDiscogsImport(false)}
+          onImported={handleImported}
         />
       )}
 

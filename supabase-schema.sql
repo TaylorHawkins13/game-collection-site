@@ -137,6 +137,10 @@ create table if not exists games (
   showcase_order integer,
   -- set when this row was imported from Steam, so re-importing skips it
   steam_appid integer,
+  -- set when this row was imported from Discogs (Vinyl/CD only — see
+  -- discogs-import-migration.sql), same re-import-dedup role as
+  -- steam_appid above
+  discogs_release_id integer,
   -- real Xbox/PlayStation trophy or achievement completion for this game —
   -- separate from Shelf Life's own collection-milestone trophies
   trophy_platinum boolean not null default false,
