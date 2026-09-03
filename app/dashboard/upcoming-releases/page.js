@@ -9,9 +9,8 @@ export const metadata = {
 };
 
 // ROADMAP.md "Pull list / upcoming-release calendar with spend
-// forecasting" — a calendar of what's still coming for the game
-// franchises and comic series the signed-in user already owns something
-// from, sourced from upcoming_release_cache (see supabase-schema.sql and
+// forecasting" — a calendar of what's still coming, sourced from
+// upcoming_release_cache (see supabase-schema.sql and
 // app/api/cron/refresh-upcoming-releases), plus a running this-week/
 // this-month spend total from prices the viewer types in themselves —
 // see UpcomingReleasesClient.jsx for why that has to be manual (neither
@@ -21,6 +20,15 @@ export const metadata = {
 // familiar with comic-shop pull-list terminology, though the underlying
 // ROADMAP.md line, DB table, and cron job name all still use "pull
 // list"/"upcoming release" interchangeably from when this was built.
+//
+// What decides what shows up differs by type (Sep 2026 redesign — see
+// CHANGELOG.md, "Upcoming Releases now recommends by genre/platform, not
+// just exact franchise matches," and lib/upcomingReleases.js's module
+// comment for the full reasoning): a comic still has to match an exact
+// series the signed-in user owns something from. A game no longer does —
+// it shows up if it's an upcoming, currently-hyped release on a platform
+// or in a genre this user's own collection already touches, whether or
+// not it has anything to do with a specific franchise they own.
 //
 // Server/client split mirrors app/dashboard/catalogue/page.js: this does
 // the narrow data fetch + resolution server-side, UpcomingReleasesClient
@@ -37,7 +45,11 @@ export default async function UpcomingReleasesPage() {
 
   const [{ data: profile }, { data: games }] = await Promise.all([
     supabase.from('profiles').select('currency').eq('id', user.id).single(),
-    supabase.from('games').select('item_type, title, series').eq('user_id', user.id).in('item_type', ['game', 'comic']),
+    supabase
+      .from('games')
+      .select('item_type, series, platforms, genre')
+      .eq('user_id', user.id)
+      .in('item_type', ['game', 'comic']),
   ]);
 
   const series = distinctTrackedSeries(games || []);
@@ -55,17 +67,21 @@ export default async function UpcomingReleasesPage() {
 //
 // Fixed (Sep 2026 — this page still showed nothing for a real account
 // even after the separate CRON_SECRET-never-set incident was fixed, see
-// CHANGELOG.md): a cache row is keyed by the *resolved* franchise/series
-// name the cron got back from IGDB/Comic Vine, not by whatever title the
-// owner actually typed in — owning "Super Mario Land" tracks as
-// `game:super mario land`, but its cache row is `game:mario`. Those
-// essentially never match directly, so this used to come back empty for
-// almost every real title. Now resolves each of the viewer's raw keys
-// through upcoming_release_aliases first (built up by the cron as it
-// processes titles — see that table's migration comment and the cron
-// route), then still checks the raw keys directly too, which covers a
-// title that happens to already equal its own franchise/series name and
-// any cache row written before this fix shipped.
+// CHANGELOG.md): a cache row is keyed by whatever actually *resolved* on
+// IGDB/Comic Vine's side, not by the raw value a signed-in user's own
+// collection produced — a comic series typed as "Batman" tracks as
+// `comic:batman` but its cache row might be keyed by a slightly different
+// resolved series name; a platform typed as "PS5" (see
+// lib/upcomingReleases.js's module comment for why games resolve by
+// platform/genre, not title, since the redesign below) tracks as
+// `game_platform_name:ps5` but its cache row is the resolved
+// `game_platform:167`. Those essentially never match directly, so this
+// used to come back empty for almost every real value. Now resolves each
+// of the viewer's raw keys through upcoming_release_aliases first (built
+// up by the cron as it processes them — see that table's migration
+// comment and the cron route), then still checks the raw keys directly
+// too, which covers a raw value that happens to already equal its own
+// resolved key and any cache row written before this fix shipped.
 async function loadUpcomingGroups(series) {
   if (series.length === 0) return [];
 

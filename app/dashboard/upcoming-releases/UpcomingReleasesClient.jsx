@@ -89,8 +89,9 @@ export default function UpcomingReleasesClient({ groups, currency }) {
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 'var(--fs-5xl)', margin: '0 0 4px' }}>Upcoming releases</h1>
           <p className="sub" style={{ margin: 0 }}>
-            Upcoming releases for the game franchises and comic series you already own something from — type in an
-            expected price to track what&apos;s coming up in your budget.
+            Upcoming games in the genres and on the platforms you already collect, plus upcoming issues for the
+            comic series you already own something from — type in an expected price to track what&apos;s coming up
+            in your budget.
           </p>
         </div>
       </div>
@@ -113,9 +114,9 @@ export default function UpcomingReleasesClient({ groups, currency }) {
       {groups.length === 0 && (
         <div className="form-card" style={{ marginTop: 16, maxWidth: 'none' }}>
           <div className="sub" style={{ margin: 0 }}>
-            Nothing upcoming yet. Games and comic series get added to this calendar automatically once you own an
-            item from them and the weekly refresh has had a chance to check for future releases — a newly-logged
-            series can take up to a week to show up here for the first time.
+            Nothing upcoming yet. This fills in automatically once you&apos;ve logged a game or two (so we know which
+            genres and platforms to check) or a comic series, and the weekly refresh has had a chance to run — can
+            take up to a week to show up here the first time.
           </div>
         </div>
       )}
