@@ -1806,8 +1806,13 @@ create trigger item_reviews_rate_limit
 -- (app/api/cron/refresh-upcoming-releases) pre-fetches it instead, once
 -- per distinct series across all users, on the shared cron schedule.
 -- `series_key` is the same "game:"/"comic:"-prefixed normalized key
--- lib/upcomingReleases.js's buildSeriesKey() produces, so a lookup here
--- never needs a second normalization pass. `entries` is a plain array of
+-- lib/upcomingReleases.js's buildSeriesKey() produces, but built from the
+-- *resolved* franchise/series name the cron gets back from IGDB/Comic
+-- Vine (e.g. owning "Super Mario Land" resolves to the "Mario" franchise,
+-- cached as `game:mario`), not from whatever title the owner actually
+-- typed in — see upcoming_release_aliases just below for why a lookup
+-- here does need a second step after all (a real bug this fixed, Sep
+-- 2026 — see CHANGELOG.md). `entries` is a plain array of
 -- { id, name/title, cover, releaseDate, ... } objects shaped by
 -- lib/igdbSearch.js's getFranchiseGames() / lib/comicVineSeriesLookup.js's
 -- getUpcomingComicIssues() — see lib/upcomingReleases.js's
@@ -1828,3 +1833,23 @@ create table if not exists upcoming_release_cache (
 
 alter table upcoming_release_cache enable row level security;
 revoke all on upcoming_release_cache from anon, authenticated;
+
+-- Maps a raw, as-typed title/series key (what a signed-in user's own
+-- item is actually stored as, e.g. `game:super mario land`) to the
+-- resolved cache row it belongs to (`game:mario`) — see the long comment
+-- on upcoming_release_cache above for the bug this exists to fix. The
+-- cron populates a row here every time it successfully resolves a title,
+-- and both the cron's own freshness check and
+-- app/dashboard/upcoming-releases/page.js's read now go through this
+-- table first instead of assuming a raw title's key already equals its
+-- resolved franchise's key. Same "server-only, no RLS policies needed
+-- beyond enabling it and revoking direct grants" reasoning as
+-- upcoming_release_cache.
+create table if not exists upcoming_release_aliases (
+  raw_key text primary key,
+  resolved_key text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table upcoming_release_aliases enable row level security;
+revoke all on upcoming_release_aliases from anon, authenticated;

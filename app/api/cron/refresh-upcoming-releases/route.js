@@ -105,14 +105,35 @@ export async function GET(request) {
   for (const { itemType, value, key } of series) {
     if (processed >= MAX_SERIES_PER_RUN) break;
 
-    const { data: existing } = await admin
-      .from('upcoming_release_cache')
-      .select('refreshed_at')
-      .eq('series_key', key)
+    // Fixed (Sep 2026 — found while investigating why real cached data
+    // still wasn't showing up for a real account even after the
+    // separate CRON_SECRET-never-set incident was fixed, see
+    // CHANGELOG.md): `key` is built straight from this raw, as-typed
+    // title/series ("Super Mario Land"), but a cache row is keyed by the
+    // *resolved* franchise/series name ("Mario") — those are almost
+    // never the same string, so checking `key` directly against
+    // upcoming_release_cache here always missed, and every run re-hit
+    // IGDB/Comic Vine for every raw title even when its franchise had
+    // just been refreshed a moment earlier via a different title. Go
+    // through upcoming_release_aliases (raw_key -> resolved_key,
+    // populated below every time a title resolves successfully) first —
+    // a title with no alias yet has never resolved before, so there's
+    // nothing to skip.
+    const { data: existingAlias } = await admin
+      .from('upcoming_release_aliases')
+      .select('resolved_key')
+      .eq('raw_key', key)
       .maybeSingle();
-    if (existing?.refreshed_at && existing.refreshed_at > staleBefore) {
-      skippedFresh += 1;
-      continue;
+    if (existingAlias?.resolved_key) {
+      const { data: existing } = await admin
+        .from('upcoming_release_cache')
+        .select('refreshed_at')
+        .eq('series_key', existingAlias.resolved_key)
+        .maybeSingle();
+      if (existing?.refreshed_at && existing.refreshed_at > staleBefore) {
+        skippedFresh += 1;
+        continue;
+      }
     }
 
     processed += 1;
@@ -159,6 +180,19 @@ export async function GET(request) {
         failed += 1;
       } else {
         refreshed += 1;
+        // Record which resolved cache row this raw title actually
+        // belongs to — see the alias comment above and CHANGELOG.md.
+        // Best-effort: a failure here doesn't touch the cache row itself
+        // (still correct), it just means this exact raw title gets
+        // looked up (and possibly re-fetched from scratch) again next
+        // time instead of resolving instantly through the alias.
+        const { error: aliasError } = await admin.from('upcoming_release_aliases').upsert(
+          { raw_key: key, resolved_key: resolvedKey, updated_at: new Date().toISOString() },
+          { onConflict: 'raw_key' }
+        );
+        if (aliasError) {
+          console.error(`refresh-upcoming-releases: failed to record alias ${key} -> ${resolvedKey}`, aliasError);
+        }
       }
     } catch (e) {
       console.error(`refresh-upcoming-releases: failed to build cache for ${key}`, e);

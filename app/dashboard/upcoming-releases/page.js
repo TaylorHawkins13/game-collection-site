@@ -52,6 +52,20 @@ export default async function UpcomingReleasesPage() {
 // means an empty calendar rather than a broken page — the cron
 // populating this cache is a background optimization, not something this
 // page can hard-depend on being fully warm.
+//
+// Fixed (Sep 2026 — this page still showed nothing for a real account
+// even after the separate CRON_SECRET-never-set incident was fixed, see
+// CHANGELOG.md): a cache row is keyed by the *resolved* franchise/series
+// name the cron got back from IGDB/Comic Vine, not by whatever title the
+// owner actually typed in — owning "Super Mario Land" tracks as
+// `game:super mario land`, but its cache row is `game:mario`. Those
+// essentially never match directly, so this used to come back empty for
+// almost every real title. Now resolves each of the viewer's raw keys
+// through upcoming_release_aliases first (built up by the cron as it
+// processes titles — see that table's migration comment and the cron
+// route), then still checks the raw keys directly too, which covers a
+// title that happens to already equal its own franchise/series name and
+// any cache row written before this fix shipped.
 async function loadUpcomingGroups(series) {
   if (series.length === 0) return [];
 
@@ -63,10 +77,17 @@ async function loadUpcomingGroups(series) {
   }
 
   const keys = series.map((s) => s.key);
+  const { data: aliasRows } = await admin
+    .from('upcoming_release_aliases')
+    .select('resolved_key')
+    .in('raw_key', keys);
+
+  const lookupKeys = Array.from(new Set([...keys, ...(aliasRows || []).map((a) => a.resolved_key)]));
+
   const { data: cacheRows, error } = await admin
     .from('upcoming_release_cache')
     .select('item_type, series_name, entries')
-    .in('series_key', keys);
+    .in('series_key', lookupKeys);
   if (error || !cacheRows) return [];
 
   return groupEntriesByMonth(flattenUpcomingEntries(cacheRows));
