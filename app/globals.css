@@ -3698,6 +3698,87 @@ button.badge.tag:hover {
   background: var(--card-hover);
 }
 
+/* ROADMAP.md "Public profile still visually reads as a copy of the
+   dashboard" — a compact "Recent activity" strip above the collection
+   grid (ProfileTabs.jsx) so every profile with real comment activity
+   shows a genuine social signal above the fold, not just ones the owner
+   happened to also curate a Showcase for. Deliberately a plain bordered
+   card, not the gold Showcase treatment (.profile-showcase below) — that
+   gold accent is Showcase's own signature, reusing it here would blur
+   the two apart instead of adding a second distinct signal. */
+.profile-activity {
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.profile-activity-heading {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+}
+.profile-activity-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+.profile-activity-item + .profile-activity-item {
+  border-top: 1px solid var(--border);
+}
+.profile-activity-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  flex: none;
+}
+.profile-activity-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-activity-body {
+  min-width: 0;
+  flex: 1;
+}
+.profile-activity-meta {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.profile-activity-text {
+  font-size: var(--fs-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.profile-activity-seeall {
+  background: none;
+  border: none;
+  padding: 10px 0 0;
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.profile-activity-seeall:hover {
+  text-decoration: underline;
+}
+
 .profile-tabs {
   display: flex;
   gap: 4px;

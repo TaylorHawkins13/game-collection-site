@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import SeriesModal from '@/components/SeriesModal';
@@ -8,6 +9,17 @@ import ShelfIdentityHero from '@/components/ShelfIdentityHero';
 import { seriesSupported } from '@/lib/seriesLookup';
 import { TYPE_LABELS, TYPE_NOUNS, dominantType } from '@/lib/mosaicData';
 import CommentSection from './CommentSection';
+
+// Truncates a comment body for the "Recent activity" preview below —
+// plain character slice (comments are plain text, no markup to worry
+// about cutting mid-tag), long enough to give real context without the
+// preview strip growing tall enough to push the collection grid back
+// down the page — the exact thing it exists to avoid.
+function truncateComment(text, max) {
+  const t = (text || '').trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max).trimEnd()}…`;
+}
 
 export default function ProfileTabs({
   games,
@@ -75,8 +87,56 @@ export default function ProfileTabs({
   const ownerPossessive = isOwnProfile ? 'Your' : `${ownerName}'s`;
   const dominant = dominantType(games.filter((g) => g.ownership === 'owned'));
 
+  // ROADMAP.md "Public profile still visually reads as a copy of the
+  // dashboard" — the dashboard and a public profile both lead with a
+  // stats bar then straight into a collection grid, which is the real
+  // reason they read as near-duplicates of each other (Dashboard =
+  // editing/management, Profile = public/social, but nothing above the
+  // fold said so unless the owner had also curated a Showcase — see
+  // ShowcaseSection.jsx, which renders nothing at all when empty). This
+  // strip gives every profile with any real comment activity a genuine
+  // social signal above the grid, not just profiles someone has
+  // deliberately curated a Showcase for — reuses `comments` already
+  // fetched server-side (page.js), no extra query. Hidden while the
+  // Comments tab itself is open, since showing the same 3 comments again
+  // right above the full list would just be noise, not a signal.
+  const recentComments = comments.slice(0, 3);
+
   return (
     <div>
+      {recentComments.length > 0 && tab !== 'comments' && (
+        <div className="profile-activity">
+          <h3 className="profile-activity-heading">Recent activity</h3>
+          {recentComments.map((c) => (
+            <div className="profile-activity-item" key={c.id}>
+              <div className="profile-activity-avatar">
+                {c.author?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.author.avatar_url} alt="" />
+                ) : (
+                  (c.author?.display_name || c.author?.username || '?').slice(0, 1).toUpperCase()
+                )}
+              </div>
+              <div className="profile-activity-body">
+                <div className="profile-activity-meta">
+                  {c.author?.username ? (
+                    <Link href={`/u/${c.author.username}`}>{c.author.display_name || c.author.username}</Link>
+                  ) : (
+                    'Someone'
+                  )}
+                  {' commented · '}
+                  {new Date(c.created_at).toLocaleDateString()}
+                </div>
+                <div className="profile-activity-text">{truncateComment(c.body, 140)}</div>
+              </div>
+            </div>
+          ))}
+          <button type="button" className="profile-activity-seeall" onClick={() => setTab('comments')}>
+            See all {comments.length} comment{comments.length === 1 ? '' : 's'} →
+          </button>
+        </div>
+      )}
+
       <div className="profile-tabs">
         <button
           type="button"
