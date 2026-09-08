@@ -1,14 +1,17 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import SeriesModal from '@/components/SeriesModal';
 import ShelfIdentityHero from '@/components/ShelfIdentityHero';
+import StarRating from '@/components/StarRating';
 import { seriesSupported } from '@/lib/seriesLookup';
 import { TYPE_LABELS, TYPE_NOUNS, dominantType } from '@/lib/mosaicData';
 import CommentSection from './CommentSection';
+
+const MAX_ACTIVITY_PREVIEW = 5;
 
 // Truncates a comment body for the "Recent activity" preview below —
 // plain character slice (comments are plain text, no markup to worry
@@ -21,18 +24,34 @@ function truncateComment(text, max) {
   return `${t.slice(0, max).trimEnd()}…`;
 }
 
+// Plain-verb phrasing for an activity_events row, same verbs /feed.js
+// already uses — deliberately no "You"/possessive-name prefix (unlike the
+// comment rows right above these in the merged list, which do name who
+// commented): this whole section already sits directly under this
+// person's own header/avatar, so restating whose activity it is on every
+// single row would be pure noise, not a signal.
+function activityVerb(eventType) {
+  if (eventType === 'added') return 'Added';
+  if (eventType === 'completed') return 'Completed';
+  if (eventType === 'rated') return 'Rated';
+  if (eventType === 'trophy') return 'Earned the trophy';
+  return eventType;
+}
+
 export default function ProfileTabs({
   games,
   achievementDefs,
   earnedKeys,
   rarity,
   comments,
+  ownActivity,
   canComment,
   profileId,
   currency,
   ownerName,
   isOwnProfile,
   enabledTypes,
+  children,
 }) {
   const hasTrophies = achievementDefs && achievementDefs.length > 0;
   const [tab, setTab] = useState('collection');
@@ -87,55 +106,125 @@ export default function ProfileTabs({
   const ownerPossessive = isOwnProfile ? 'Your' : `${ownerName}'s`;
   const dominant = dominantType(games.filter((g) => g.ownership === 'owned'));
 
-  // ROADMAP.md "Public profile still visually reads as a copy of the
+  // ROADMAP.md "Public profile still partly reads as a copy of the
   // dashboard" — the dashboard and a public profile both lead with a
   // stats bar then straight into a collection grid, which is the real
   // reason they read as near-duplicates of each other (Dashboard =
   // editing/management, Profile = public/social, but nothing above the
   // fold said so unless the owner had also curated a Showcase — see
-  // ShowcaseSection.jsx, which renders nothing at all when empty). This
-  // strip gives every profile with any real comment activity a genuine
-  // social signal above the grid, not just profiles someone has
-  // deliberately curated a Showcase for — reuses `comments` already
-  // fetched server-side (page.js), no extra query. Hidden while the
-  // Comments tab itself is open, since showing the same 3 comments again
-  // right above the full list would just be noise, not a signal.
-  const recentComments = comments.slice(0, 3);
+  // ShowcaseSection.jsx, which renders nothing at all when empty). A
+  // first pass (Sep 2026) added a comments-only preview strip here; this
+  // round is the "lead with social content, push the grid down further"
+  // follow-up the same ROADMAP line flagged as still open: `ownActivity`
+  // (this person's own recent add/complete/rate/trophy events, from the
+  // same activity_events table /feed already reads for people you follow
+  // — see page.js) is merged in alongside comments received, sorted into
+  // one real reverse-chronological activity trail instead of only ever
+  // showing what other people said on this profile's wall. `children`
+  // (ShowcaseSection + custom lists, passed down from page.js) renders
+  // right after this block and before the tab bar/grid below, so curated
+  // highlights and the raw collection are both now genuinely secondary,
+  // scroll-to-browse content rather than the first thing on the page.
+  // Hidden while the Comments tab itself is open, since re-showing the
+  // same few comments right above the full list would be noise, not a
+  // signal — the non-comment rows disappear too in that case, for the
+  // same "don't show a second, partial feed right above a full one"
+  // reason, even though they're not literally duplicated on that tab.
+  const mergedActivity = useMemo(() => {
+    const fromComments = (comments || []).map((c) => ({
+      kind: 'comment',
+      key: `comment-${c.id}`,
+      created_at: c.created_at,
+      comment: c,
+    }));
+    const fromEvents = (ownActivity || []).map((e) => ({
+      kind: 'activity',
+      key: `activity-${e.id}`,
+      created_at: e.created_at,
+      event: e,
+    }));
+    return [...fromComments, ...fromEvents]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, MAX_ACTIVITY_PREVIEW);
+  }, [comments, ownActivity]);
 
   return (
     <div>
-      {recentComments.length > 0 && tab !== 'comments' && (
+      {mergedActivity.length > 0 && tab !== 'comments' && (
         <div className="profile-activity">
           <h3 className="profile-activity-heading">Recent activity</h3>
-          {recentComments.map((c) => (
-            <div className="profile-activity-item" key={c.id}>
-              <div className="profile-activity-avatar">
-                {c.author?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.author.avatar_url} alt="" />
-                ) : (
-                  (c.author?.display_name || c.author?.username || '?').slice(0, 1).toUpperCase()
-                )}
-              </div>
-              <div className="profile-activity-body">
-                <div className="profile-activity-meta">
-                  {c.author?.username ? (
-                    <Link href={`/u/${c.author.username}`}>{c.author.display_name || c.author.username}</Link>
-                  ) : (
-                    'Someone'
-                  )}
-                  {' commented · '}
-                  {new Date(c.created_at).toLocaleDateString()}
+          {mergedActivity.map((row) => {
+            if (row.kind === 'comment') {
+              const c = row.comment;
+              return (
+                <div className="profile-activity-item" key={row.key}>
+                  <div className="profile-activity-avatar">
+                    {c.author?.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.author.avatar_url} alt="" />
+                    ) : (
+                      (c.author?.display_name || c.author?.username || '?').slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <div className="profile-activity-body">
+                    <div className="profile-activity-meta">
+                      {c.author?.username ? (
+                        <Link href={`/u/${c.author.username}`}>{c.author.display_name || c.author.username}</Link>
+                      ) : (
+                        'Someone'
+                      )}
+                      {' commented · '}
+                      {new Date(c.created_at).toLocaleDateString()}
+                    </div>
+                    <div className="profile-activity-text">{truncateComment(c.body, 140)}</div>
+                  </div>
                 </div>
-                <div className="profile-activity-text">{truncateComment(c.body, 140)}</div>
+              );
+            }
+
+            const e = row.event;
+            const isTrophy = e.event_type === 'trophy' && e.trophy;
+            return (
+              <div className="profile-activity-item" key={row.key}>
+                {isTrophy ? (
+                  <div className="profile-activity-avatar profile-activity-avatar-trophy">
+                    <span className={`feed-trophy-dot tier-${e.trophy.tier}`} aria-hidden="true" />
+                  </div>
+                ) : e.game?.cover ? (
+                  <div className="profile-activity-avatar profile-activity-avatar-cover">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={e.game.cover} alt="" />
+                  </div>
+                ) : (
+                  <div className="profile-activity-avatar profile-activity-avatar-cover">
+                    {(e.game?.title || '?').slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div className="profile-activity-body">
+                  <div className="profile-activity-meta">
+                    {activityVerb(e.event_type)}{' '}
+                    <strong>{isTrophy ? e.trophy.name : e.game?.title}</strong>
+                    {e.event_type === 'rated' && Number(e.game?.rating) > 0 ? (
+                      <span style={{ marginLeft: 6, display: 'inline-block', verticalAlign: 'middle' }}>
+                        <StarRating value={Number(e.game.rating)} size={12} />
+                      </span>
+                    ) : null}
+                    {' · '}
+                    {new Date(e.created_at).toLocaleDateString()}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-          <button type="button" className="profile-activity-seeall" onClick={() => setTab('comments')}>
-            See all {comments.length} comment{comments.length === 1 ? '' : 's'} →
-          </button>
+            );
+          })}
+          {comments.length > 0 && (
+            <button type="button" className="profile-activity-seeall" onClick={() => setTab('comments')}>
+              See all {comments.length} comment{comments.length === 1 ? '' : 's'} →
+            </button>
+          )}
         </div>
       )}
+
+      {children}
 
       <div className="profile-tabs">
         <button

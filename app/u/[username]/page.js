@@ -95,6 +95,7 @@ export default async function ProfilePage({ params }) {
     { data: earnedAchievements },
     { data: customLists },
     { data: rarityRows },
+    { data: ownActivityRaw },
   ] = await Promise.all([
     canView
       ? supabase.from('games').select('*').eq('user_id', profile.id).order('title', { ascending: true })
@@ -115,7 +116,33 @@ export default async function ProfilePage({ params }) {
       ? supabase.from('custom_lists').select('*').eq('user_id', profile.id).order('sort_order', { ascending: true })
       : Promise.resolve({ data: [] }),
     supabase.rpc('trophy_rarity'),
+    // This collector's own recent add/complete/rate/trophy events — same
+    // activity_events table /feed already reads for people you follow,
+    // just scoped to this one profile instead. activity_events' own RLS
+    // policy already allows anyone to read a public profile's events (not
+    // just followers — see supabase-schema.sql), so this is a genuinely
+    // new, real signal for the "lead with social content" half of
+    // ROADMAP.md's "Public profile still partly reads as a copy of the
+    // dashboard," not just a UI reshuffle. Fetched regardless of canView
+    // gating below (RLS already enforces is_public itself; a private,
+    // non-owner viewer never reaches the point in this file that renders
+    // it anyway).
+    canView
+      ? supabase
+          .from('activity_events')
+          .select('id, event_type, created_at, game:games(title, cover, item_type, rating), trophy:achievement_defs(name, tier)')
+          .eq('user_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: [] }),
   ]);
+
+  // Same shape-guard /feed's own query applies: an event whose game or
+  // trophy row no longer resolves (deleted item, since-removed trophy
+  // def) is dropped rather than rendered with missing data.
+  const ownActivity = (ownActivityRaw || []).filter(
+    (e) => e.game || (e.event_type === 'trophy' && e.trophy)
+  );
 
   const rarity = (rarityRows || []).reduce((acc, r) => {
     acc[r.key] = Number(r.pct);
@@ -337,38 +364,51 @@ export default async function ProfilePage({ params }) {
             </div>
           </div>
 
-          <ShowcaseSection
-            showcaseGames={showcaseGames}
-            allGames={games || []}
-            currency={profile.currency}
-            isOwner={isOwner}
-            ownerName={profile.display_name || profile.username}
-          />
-
-          {listsWithItems.map((list) => (
-            <div className="profile-list-block" key={list.id}>
-              <h3 className="profile-list-heading">{list.name}</h3>
-              <div className="grid">
-                {list.items.map((g) => (
-                  <GameCard key={g.id} game={g} currency={profile.currency} />
-                ))}
-              </div>
-            </div>
-          ))}
-
+          {/* ShowcaseSection and the custom-list blocks below are passed as
+              children rather than rendered directly here, so ProfileTabs can
+              place them AFTER its own leading "Recent activity" feed instead
+              of before it — see ProfileTabs.jsx for why: the whole point of
+              this reshuffle (ROADMAP.md "Public profile still partly reads
+              as a copy of the dashboard," the full-restyle half) is that
+              genuine social content leads the page, with curated showcases
+              and the raw collection grid both pushed further down as
+              secondary, "browse when you want to" content. Both are already
+              self-contained client components with their own state, so
+              reparenting them like this changes nothing about how either
+              one works. */}
           <ProfileTabs
             games={games || []}
             achievementDefs={achievementDefs || []}
             earnedKeys={(earnedAchievements || []).map((r) => r.key)}
             rarity={rarity}
             comments={comments || []}
+            ownActivity={ownActivity}
             canComment={!!viewer}
             profileId={profile.id}
             currency={profile.currency}
             ownerName={profile.display_name || profile.username}
             isOwnProfile={viewer?.id === profile.id}
             enabledTypes={profile.enabled_item_types}
-          />
+          >
+            <ShowcaseSection
+              showcaseGames={showcaseGames}
+              allGames={games || []}
+              currency={profile.currency}
+              isOwner={isOwner}
+              ownerName={profile.display_name || profile.username}
+            />
+
+            {listsWithItems.map((list) => (
+              <div className="profile-list-block" key={list.id}>
+                <h3 className="profile-list-heading">{list.name}</h3>
+                <div className="grid">
+                  {list.items.map((g) => (
+                    <GameCard key={g.id} game={g} currency={profile.currency} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </ProfileTabs>
         </>
       )}
     </main>

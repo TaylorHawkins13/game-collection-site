@@ -3749,6 +3749,23 @@ button.badge.tag:hover {
   height: 100%;
   object-fit: cover;
 }
+/* Modifiers for the two non-comment row kinds the merged "Recent
+   activity" feed can show (see ProfileTabs.jsx) — an own-collection
+   event's cover art or a trophy dot, instead of a person's avatar. Square
+   corners (not the plain avatar's circle) are deliberate: it reads as "a
+   thing," not "a person," at a glance, same distinction GameCard's own
+   cover art vs. an avatar already makes elsewhere on the site. */
+.profile-activity-avatar-cover {
+  border-radius: 6px;
+  background: var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.profile-activity-avatar-trophy {
+  background: var(--card-2, var(--card));
+  border: 1px solid var(--border);
+}
 .profile-activity-body {
   min-width: 0;
   flex: 1;
