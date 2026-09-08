@@ -16,6 +16,12 @@ export default async function sitemap() {
     { url: `${SITE_URL}/players`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/leaderboard`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/lists`, changeFrequency: 'daily', priority: 0.6 },
+    // Just the search page, not individual /creator/comics/[id] pages —
+    // those are only reachable by first searching a creator's name (no
+    // "browse every creator" directory exists to enumerate ids from), so
+    // there's no reasonable static list to build here the way profiles
+    // and lists have real id columns to query below.
+    { url: `${SITE_URL}/creator/comics`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
     // The dedicated SEO landing pages (lib/landingPages.js) — evergreen
     // content, not something that changes often, but worth a slightly
