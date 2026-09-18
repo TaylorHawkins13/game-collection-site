@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabaseServer';
 import InsightsClient from './InsightsClient';
 
 export const metadata = {
-  title: 'Collection Insights — Shelf Life',
+  title: 'Collection Insights',
 };
 
 export default async function InsightsPage() {

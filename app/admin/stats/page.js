@@ -7,7 +7,7 @@ import { isAdminViewer } from '@/lib/adminAuth';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Site stats — Shelf Life',
+  title: 'Site stats',
 };
 
 // Private, unlinked admin page — same gating pattern as /admin/articles

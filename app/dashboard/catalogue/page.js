@@ -4,7 +4,7 @@ import { resolvePlatformIds } from '@/lib/igdbPlatformCatalogue';
 import CatalogueClient from './CatalogueClient';
 
 export const metadata = {
-  title: 'Full Release Catalogue — Shelf Life',
+  title: 'Full Release Catalogue',
 };
 
 // Server-gated the same way app/dashboard/insights/page.js is — fetches

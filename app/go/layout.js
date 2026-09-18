@@ -3,7 +3,7 @@
 // for the redirect), and a 'use client' file can't export `metadata`
 // directly.
 export const metadata = {
-  title: 'Redirecting — Shelf Life',
+  title: 'Redirecting',
   robots: { index: false, follow: false },
 };
 

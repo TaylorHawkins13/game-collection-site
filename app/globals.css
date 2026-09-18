@@ -1307,11 +1307,24 @@ button:disabled {
      180px-wide tiles, longer labels ("Storage / variant", "Special
      edition", "Market value") ate the whole row, leaving the value
      zero pixels to render in — not truncated, just gone. Letting the
-     label shrink and wrap onto a second line keeps both halves of the
-     row actually visible. */
+     label shrink keeps both halves of the row actually visible. */
   flex: 0 1 auto;
   max-width: 50%;
-  overflow-wrap: break-word;
+  /* Was `overflow-wrap: break-word` — meant to wrap a long multi-word
+     label ("Storage / variant") onto a second line instead of
+     overflowing, but for a single-word label ("Publisher") with nowhere
+     to break at a space, break-word's fallback is to split the word
+     itself mid-character once the 50% column gets narrow enough —
+     flagged directly via a site audit screenshot of the homepage hero
+     cards rendering "PUBLISHE" / "R" on two lines (Sep 2026, see
+     CHANGELOG.md). Single-line + ellipsis truncation instead — same
+     pattern .stat-value already uses just above — never breaks a word
+     apart, at the cost of a long label reading "Storage / va…" instead
+     of wrapping onto a second line; the full label is still on the
+     `title` attribute (see GameCard.jsx) for a hover/long-press tooltip. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .stat-value {
   font-weight: 700;
@@ -2670,7 +2683,14 @@ button.badge.tag:hover {
 .value-title {
   font-size: var(--fs-3xl);
   font-weight: 700;
-  margin-bottom: 10px;
+  /* `margin: 0 0 10px` rather than just `margin-bottom` — these render as
+     real <h2>s now (see app/page.js, site audit Sep 2026: "visually-
+     prominent section titles... aren't marked up as headings at all"),
+     and a bare browser UA stylesheet gives every heading its own
+     margin-top too; without the explicit 0 here that reappears as
+     unwanted extra space above each one that wasn't there when this was
+     a plain, unstyled-by-default <div>. */
+  margin: 0 0 10px;
 }
 .value-body {
   color: var(--text-dim);

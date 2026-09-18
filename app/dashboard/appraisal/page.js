@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabaseServer';
 import AppraisalClient from './AppraisalClient';
 
 export const metadata = {
-  title: 'Collection Appraisal — Shelf Life',
+  title: 'Collection Appraisal',
 };
 
 // ROADMAP.md "Collection appraisal / insurance-ready PDF export" — a

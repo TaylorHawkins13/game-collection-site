@@ -3,7 +3,7 @@ import { WHATS_NEW } from '@/lib/whatsNew';
 import WhatsNewList from '@/components/WhatsNewList';
 
 export const metadata = {
-  title: "What's New — Shelf Life",
+  title: "What's New",
   description: 'Recent updates and features shipped on Shelf Life.',
 };
 

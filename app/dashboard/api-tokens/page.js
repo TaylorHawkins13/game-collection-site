@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabaseServer';
 import ApiTokensClient from './ApiTokensClient';
 
 export const metadata = {
-  title: 'API Access — Shelf Life',
+  title: 'API Access',
 };
 
 // ROADMAP.md "Public read-only API / personal access tokens." Only

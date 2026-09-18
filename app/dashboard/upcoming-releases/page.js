@@ -5,7 +5,7 @@ import { distinctTrackedSeries, flattenUpcomingEntries, groupEntriesByMonth } fr
 import UpcomingReleasesClient from './UpcomingReleasesClient';
 
 export const metadata = {
-  title: 'Upcoming Releases — Shelf Life',
+  title: 'Upcoming Releases',
 };
 
 // ROADMAP.md "Pull list / upcoming-release calendar with spend

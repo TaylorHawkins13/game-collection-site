@@ -1,7 +1,7 @@
 import FeedbackForm from './FeedbackForm';
 
 export const metadata = {
-  title: 'Feedback — Shelf Life',
+  title: 'Feedback',
   description: 'Report a bug, flag an issue, or suggest a feature for Shelf Life.',
 };
 

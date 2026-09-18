@@ -97,7 +97,7 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
           <div className="stat-rows detail-stat-rows">
             {statRows.map((row) => (
               <div className={`stat-row${row.className ? ` ${row.className}` : ''}`} key={row.label}>
-                <span className="stat-label">{row.label}</span>
+                <span className="stat-label" title={row.label}>{row.label}</span>
                 <span className="stat-value">{row.value}</span>
               </div>
             ))}

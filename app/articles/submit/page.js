@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabaseServer';
 import SubmitArticleForm from './SubmitArticleForm';
 
 export const metadata = {
-  title: 'Submit an Article — Shelf Life',
+  title: 'Submit an Article',
 };
 
 export default async function SubmitArticlePage() {

@@ -8,7 +8,7 @@
 // section gets closed out or newly opened.
 
 export const metadata = {
-  title: 'Accessibility — Shelf Life',
+  title: 'Accessibility',
 };
 
 export default function AccessibilityPage() {

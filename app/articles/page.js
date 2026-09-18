@@ -4,7 +4,7 @@ import StarRating from '@/components/StarRating';
 import { getAllArticles } from '@/lib/articles';
 
 export const metadata = {
-  title: 'Reviews & Articles — Shelf Life',
+  title: 'Reviews & Articles',
 };
 
 export default async function ArticlesIndexPage() {

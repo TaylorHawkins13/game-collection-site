@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabaseServer';
 import LabelsClient from './LabelsClient';
 
 export const metadata = {
-  title: 'Print Labels — Shelf Life',
+  title: 'Print Labels',
 };
 
 // ROADMAP.md "Printable QR/barcode labels per item" — a small sticker

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabaseServer';
 import WrappedClient from './WrappedClient';
 
 export const metadata = {
-  title: 'Your Wrapped — Shelf Life',
+  title: 'Your Wrapped',
 };
 
 // See ROADMAP.md "Yearly 'Wrapped'-style recap" — a shareable end-of-year
