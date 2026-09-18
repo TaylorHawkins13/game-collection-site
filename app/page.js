@@ -9,6 +9,36 @@ import { WHATS_NEW } from '@/lib/whatsNew';
 import WhatsNewList from '@/components/WhatsNewList';
 import { getAllArticles } from '@/lib/articles';
 import { TYPE_LABELS } from '@/lib/mosaicData';
+import { SITE_URL } from '@/lib/siteUrl';
+
+// SoftwareApplication structured data (JSON-LD) for the signed-out
+// marketing homepage — this is the version search engines actually
+// crawl (a signed-in visitor gets <LoggedInHome> instead, below), and
+// the one place on the site that describes the app itself rather than
+// a specific page/feature. Flagged in a Sep 2026 site audit (see
+// ROADMAP.md/CHANGELOG.md) as the one piece of schema.org markup still
+// missing — the 4 SEO landing pages already emit real `FAQPage`
+// structured data (see LandingPageShell.jsx), this fills the other
+// half the audit called out. Deliberately omits `aggregateRating` —
+// there's no real, verifiable rating of the app itself to report
+// (per-item ratings on the site are a different thing entirely), and
+// Google's own guidelines treat a fabricated one as a policy violation,
+// not just bad practice.
+const APP_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Shelf Life',
+  url: SITE_URL,
+  description:
+    'Track your games, comics, cards, vinyl, and more — share your shelf, and see how it stacks up.',
+  applicationCategory: 'LifestyleApplication',
+  operatingSystem: 'Web, iOS',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+};
 
 const CATEGORIES = [
   'Video Games',
@@ -168,6 +198,9 @@ export default async function HomePage() {
 
   return (
     <main className="container">
+      {/* eslint-disable-next-line react/no-danger */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_JSON_LD) }} />
+
       <div className="hero-split">
         <div className="hero-copy">
           <h1>Track your collection. Show it off.</h1>
@@ -231,7 +264,7 @@ export default async function HomePage() {
       <div className="value-rows">
         <div className="value-row">
           <div className="value-text">
-            <div className="value-title">Every kind of collection, one shelf</div>
+            <h2 className="value-title">Every kind of collection, one shelf</h2>
             <div className="value-body">
               Video games, comics, trading cards, vinyl, books, DVDs, VHS, CDs, consoles and
               Funko Pops — each with its own tailored fields (platforms, issue numbers, grades,
@@ -252,7 +285,7 @@ export default async function HomePage() {
 
         <div className="value-row reverse">
           <div className="value-text">
-            <div className="value-title">Earn real trophies</div>
+            <h2 className="value-title">Earn real trophies</h2>
             <div className="value-body">
               A PlayStation Trophies-style system awards bronze-to-platinum badges automatically
               for real milestones — first item, 100 owned, 25 completed, and more — shown right
@@ -266,10 +299,10 @@ export default async function HomePage() {
 
         <div className="value-row">
           <div className="value-text">
-            <div className="value-title">
+            <h2 className="value-title">
               Public profiles &amp; leaderboards
               {!realLeaderboard && <span className="category-pill" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Example</span>}
-            </div>
+            </h2>
             <div className="value-body">
               Share a link to your shelf, follow other collectors, and see the most-owned items,
               the biggest public collections, and what's trending — or keep everything private,

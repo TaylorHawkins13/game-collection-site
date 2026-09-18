@@ -75,7 +75,7 @@ Worth knowing: the cookie banner defaults to **not** loading ads until a visitor
 
 ## 6. Get found in search (optional but recommended)
 
-The site already generates `sitemap.xml` and `robots.txt` automatically (home, Find Collectors, Leaderboard, and every public profile — private profiles are excluded), plus a branded image that shows up when a link gets shared on Discord/Reddit/iMessage/etc. None of that requires any setup. What actually gets Google/Bing to crawl and index the site is submitting it to their tools directly:
+The site already generates `sitemap.xml` and `robots.txt` automatically (home, Find Collectors, Leaderboard, and every public profile — private profiles are excluded), plus a branded image that shows up when a link gets shared on Discord/Reddit/iMessage/etc. It also carries real schema.org structured data (JSON-LD) — a `SoftwareApplication` block on the homepage, and `FAQPage` markup on each of the 4 SEO landing pages — giving Google a shot at an FAQ/app rich result for free, from content that's already written and shown either way. None of that requires any setup. What actually gets Google/Bing to crawl and index the site is submitting it to their tools directly:
 
 1. Go to [Google Search Console](https://search.google.com/search-console), add `https://shelflife.site` as a property, verify ownership (the easiest method is usually the DNS TXT record through whoever you registered the domain with), then under **Sitemaps** submit `https://shelflife.site/sitemap.xml`.
 2. Same idea at [Bing Webmaster Tools](https://www.bing.com/webmasters) — Bing also actually lets you import directly from a verified Google Search Console property, which skips the separate verification step.
