@@ -91,7 +91,6 @@ Everything Shelf Life does today is free, and there's no payment processor wired
 
 ## Not building (decisions, not build items)
 
-- **Promotion channels** (TikTok, Reddit, YouTube, Discord, Product Hunt) — generic startup-marketing playbook from the outside review, not specific to Shelf Life. Worth doing eventually, just not a build item for me.
 - **Domain name — staying on `shelflife.site` for now, decided directly after checking real availability/pricing (Sep 2026).** Checked live against Vercel's domain registrar rather than guessing: `shelflife.com`, `.net`, `.co`, `.io`, `.app`, and `.games` are all already taken; `getshelflife.com`, `myshelflife.com`, and `shelflifeapp.com` are too. The one available option from the original note, `shelflife.gg`, is real but priced like a premium TLD — $129.99/year, auto-renewing at that rate — a genuine ongoing cost jump versus whatever the current `.site` domain costs. Decided not worth it right now rather than defaulting to buying it just because it was the one option available. Revisit if a cheaper on-brand variant ever opens up, or if the budget math changes.
 
 ---
