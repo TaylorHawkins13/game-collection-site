@@ -79,12 +79,24 @@ Strongly recommended before Production, same reasoning as iOS's TestFlight step:
 3. Confirm the app opens with no browser address bar visible (this is the direct, visible confirmation that step 3's Digital Asset Links file is working correctly — if you still see an address bar at the top, the assetlinks.json file may not be picked up yet; can take a little while to propagate, or flag it back to me if it's still showing after a day).
 4. If you find anything wrong, fix it in this repo, re-run PWABuilder (step 1), or fix directly in the generated Android Studio project if it's genuinely Android-config-only, then repeat steps 6-7 with a bumped version code.
 
-## 8. Promote to Production and submit for review
+## 8. Closed testing — the mandatory 12-testers/14-days gate (checked directly, Sep 2026, not in earlier drafts of this file)
 
-1. Once you're satisfied from internal testing, in Play Console go to **Production** → **Create new release** → promote the same tested build (or upload a fresh one if you made changes).
+This is different from step 7's Internal testing, and it's not optional: Google requires any developer account created after Nov 13, 2023 (yours will be) to run a genuine **Closed testing** track — a separate track from Internal testing, one step further along in Play Console's Testing section — with **at least 12 testers opted in continuously for 14 straight days** before the Production track unlocks at all. Internal testing has no such requirement and is fine to skip straight past if you want, but it does not count toward this gate.
+
+1. In Play Console, go to **Testing** → **Closed testing** → create a new track (e.g. "Closed testing - Track 1") → upload the same `.aab` from step 6 (or promote the build from Internal testing).
+2. Add at least 12 tester email addresses to the track's tester list, and share the generated opt-in link with them — friends, family, anyone with an Android phone willing to install it and leave it installed. They need to actually opt in via that link, not just be listed.
+3. The 14-day clock starts once 12+ testers are opted in, and it has to be continuous — if someone opts out before day 14, they stop counting, and opting back in later doesn't stitch the days together. Worth padding slightly above exactly 12 in case one or two people drop off.
+4. Testers don't need to use the app daily, just stay opted in — but Google's own guidance suggests having them actually click around rather than just install and ignore it, for whatever feedback quality it's worth.
+5. Once 12+ testers have been continuously opted in for 14 days, a **"Production access"** application becomes available in Play Console — a short questionnaire about the closed test, app details, and readiness. Google reviews it, typically within about a week.
+
+Practically: this means the realistic timeline from "app built" to "eligible to submit for Production" is at least 2 weeks, not the same-day turnaround the review step itself might suggest — plan the 12 testers around your Reddit/community outreach work if that timing helps (see the "bigger lever" backlink conversation), or just ask around directly.
+
+## 9. Promote to Production and submit for review
+
+1. Once the Closed testing gate above is cleared and Production access is approved, in Play Console go to **Production** → **Create new release** → promote the same tested build (or upload a fresh one if you made changes).
 2. Double-check every field from step 5 is filled in — Play Console will flag anything missing before it lets you submit.
 3. Click **Save** → **Review release** → **Start rollout to Production**.
-4. Google's review is typically faster than Apple's for a first submission — often same-day to a few days, though it varies and Google doesn't publish a firm SLA. You'll get an email either way — approved (goes live) or rejected with a specific reason.
+4. This final review (on top of the Production-access review above) is typically fast — often same-day to a few days — though Google doesn't publish a firm SLA. You'll get an email either way — approved (goes live) or rejected with a specific reason.
 
 ## If it gets rejected
 

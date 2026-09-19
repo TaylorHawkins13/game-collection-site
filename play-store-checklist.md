@@ -2,6 +2,10 @@
 
 Everything needed to get Shelf Life submitted to the Google Play Store, gathered ahead of time so the actual Android Studio/Play Console session goes smoothly. Mirrors `app-store-checklist.md`'s structure — same PWABuilder-based approach, this time generating an Android TWA (Trusted Web Activity) wrapper instead of an iOS Xcode project. See `play-store-pwabuilder-walkthrough.md` for the actual step-by-step.
 
+## Timeline heads-up: this isn't a one-session submission (checked directly, Sep 2026)
+
+Unlike the iOS side, Google requires any Play Developer account created after Nov 13, 2023 (yours will be) to run a **Closed testing** track — 12 testers opted in continuously for 14 straight days — before Production access even unlocks, on top of the Production review itself. That's a minimum ~2-week gate baked into the middle of this process, not something that can be rushed by doing everything else perfectly. It doesn't block starting: account signup, the PWABuilder/Android Studio build, and Internal testing can all happen first, and it's worth lining up your 12 testers early so the clock starts as soon as there's a build to test. Full detail on the requirement and how to run the tester track is in `play-store-pwabuilder-walkthrough.md`'s step 8 — everything below this point is unaffected and still accurate, this is just the timeline expectation to have going in.
+
 ## Already done (in this repo)
 
 - **App icon, 512×512** — `app/icon.png`, same file PWABuilder's Android packager reads. Recently fixed (see `CHANGELOG.md`) to remove a baked-in transparent margin around the artwork that was causing a visible white border once any platform applied its own corner/mask treatment on top — should look clean now on Android's icon shapes too (circle, squircle, rounded-square all vary by device/launcher).
