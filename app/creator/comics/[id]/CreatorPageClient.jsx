@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import SeriesGrid from '@/components/SeriesGrid';
-import { openBestListingTab } from '@/lib/externalListings';
+import { goToBestListing } from '@/lib/externalListings';
 
 // Client half of a creator page (app/creator/comics/[id]/page.js does the
 // real Comic Vine + Supabase lookups server-side and hands the results
@@ -30,7 +30,7 @@ export default function CreatorPageClient({ name, image, entries, ownedKeys, tru
   // one directly per-entry here is simpler than trying to bend the
   // shared-series helper to fit.
   function handleSelectMissing(entry) {
-    openBestListingTab({ item_type: 'comic', title: entry.series, issue_number: entry.number }, currency);
+    goToBestListing({ item_type: 'comic', title: entry.series, issue_number: entry.number }, currency);
   }
 
   return (
