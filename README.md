@@ -107,6 +107,22 @@ The same `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` also cover the account-de
 
 If a cron job actually fails (a query error, a fetch failure, missing config), it now emails `ADMIN_EMAIL` directly rather than only logging it — Vercel's runtime log retention on the current plan is 1 hour, too short to reliably catch an overnight failure. See `lib/cronAlert.js`.
 
+None of the above catches a cron that stops firing *entirely* — a `vercel.json` misconfiguration, a broken build, a Vercel Cron outage — since nothing runs to report the silence. Closing that needs a free external dead-man's-switch service (healthchecks.io or Cronitor both work, no cost):
+
+1. Sign up, then create one check per job below, using the exact cron expression shown (these come straight from `vercel.json` and are in UTC, same as Vercel Cron itself — both services default to UTC too, so paste them in as-is rather than converting to local time).
+   - `price-drop-check` — `0 13 * * *` (daily, 13:00 UTC)
+   - `process-account-deletions` — `0 14 * * *` (daily, 14:00 UTC)
+   - `refresh-currency-rates` — `0 6 * * 1` (weekly, Monday 06:00 UTC)
+   - `weekly-stats-digest` — `0 13 * * 0` (weekly, Sunday 13:00 UTC)
+   - `email-data-backup` — `0 11 1 * *` (monthly, 1st at 11:00 UTC)
+   - `refresh-master-sets` — `0 8 * * 1` (weekly, Monday 08:00 UTC)
+   - `email-activity-digest` — `0 12 * * 0` (weekly, Sunday 12:00 UTC)
+   - `refresh-upcoming-releases` — `0 8 * * 2` (weekly, Tuesday 08:00 UTC)
+2. Each check gives you a ping URL (e.g. `https://hc-ping.com/<uuid>`). Collect all 8 into one JSON object, keyed by the job names above exactly as spelled — e.g. `{"price-drop-check": "https://hc-ping.com/...", "process-account-deletions": "https://hc-ping.com/...", ...}` — and add that whole object as a single Vercel env var, `CRON_WATCHDOG_URLS`. Doesn't need the `NEXT_PUBLIC_` prefix (it's server-only), so add it as a Sensitive/Secret-type var, not Config.
+3. Redeploy so the new env var takes effect. From then on, every cron run pings its check on success, or pings `<url>/fail` on a real failure (`lib/cronWatchdog.js`) — if a job ever goes silent instead, the watchdog service itself emails you once the check's grace period passes, the piece nothing inside Vercel can do on its own.
+
+Safe to skip entirely — every cron already works and already emails `ADMIN_EMAIL` on a real failure via `lib/cronAlert.js`; this only adds coverage for the much rarer "didn't run at all" case.
+
 ## 9. Affiliate links on the gift list (optional)
 
 The public gift list page (`/u/[username]/wishlist`) shows "Buy on eBay" / "Search Amazon" links under each item — real, working search links either way, with optional affiliate tracking on top so a purchase made through one earns a small commission.
@@ -150,6 +166,7 @@ The public gift list page (`/u/[username]/wishlist`) shows "Buy on eBay" / "Sear
 - **Currency rates auto-refresh**: the "Most valuable" leaderboard's USD conversion table used to be a one-time hand-typed snapshot with no way to know it had gone stale; a weekly Vercel Cron job now refreshes it from a free, no-key rates API (frankfurter.app). See step 8 for setup (reuses the same `CRON_SECRET`/`SUPABASE_SERVICE_ROLE_KEY` the price-drop cron already needs).
 - **Weekly stats digest**: the same numbers `/admin/stats` shows on demand now also land in `ADMIN_EMAIL`'s inbox automatically every Sunday morning, via a Vercel Cron job — turns it from something you have to remember to check into something that just shows up. See step 8 for setup.
 - **Cron failure alerts**: every scheduled job (price-drop checks, account deletions, currency refresh, the stats digest) now emails `ADMIN_EMAIL` if it actually fails, instead of the failure only existing in Vercel's 1-hour runtime logs. See step 8.
+- **External cron watchdog (optional)**: every cron job can also ping a free outside dead-man's-switch service (healthchecks.io or Cronitor) after each run, closing the one gap the cron heartbeat and failure-alert features above can't — a job that stops firing entirely instead of running and failing. See step 8 for setup.
 - **Public trust stats**: the logged-out home page's stat strip ("X items catalogued," "Y public collectors") now also shows a live count of trophies earned site-wide, once there are enough to be worth showing — a little more social proof for a first-time visitor deciding whether to sign up.
 - **Report a comment or a profile**: a "Report" link on every comment and a "Report profile" option (in the "More actions" menu) on public profiles, for signed-in users. Files into a private moderation queue (`/admin/reports`, only visible to `ADMIN_EMAIL`) and emails a notification the same way feedback does. Rate-limited server-side (5 per 5 minutes per person), same shape as comments. Needs `report-migration.sql` on existing projects; no new env vars.
 - **"Download my data"**: a "Download my data" button next to Export CSV in Profile settings downloads a full JSON export of everything about your account beyond the collection itself — profile, comments written and received, follows, activity feed entries, and trophies. Runs entirely through your own signed-in session (no admin access involved), so there's nothing new to configure.
