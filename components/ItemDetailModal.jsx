@@ -15,11 +15,15 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Read-only "view" state for a card in your own collection grid — the
-// new default click target now that clicking a card no longer jumps
-// straight into editing (see ROADMAP.md "Collection/profile cards": "a
+// Read-only "view" state for a card — the default click target for both
+// your own dashboard grid (see ROADMAP.md "Collection/profile cards": "a
 // real view/detail state as the default click target with Edit as its
-// own separate, explicit action instead"). Shows the same stat rows the
+// own separate, explicit action instead") and, since Sep 2026, every
+// public profile's collection/Showcase grids too (`ProfileTabs.jsx`,
+// `ShowcaseSection.jsx` — see CHANGELOG.md: those used to jump straight
+// into the series-only `SeriesModal` on tap, which is the wrong default
+// for the same reason skipping straight to Edit was wrong on the
+// dashboard — you lose the card itself). Shows the same stat rows the
 // card itself does (via GameCard's exported getStatRows, so the two never
 // drift apart), plus the handful of fields that only ever lived inside
 // the edit form before this — notes, purchase price/date, variant
@@ -29,16 +33,24 @@ function cap(s) {
 // Also carries its own "See full series" toggle, same as GameModal's —
 // requested directly: checking series completion from the card you
 // clicked was buried behind Edit, when it's a read-only look that has
-// nothing to do with editing anything. `existingItems` is always your
-// own full collection here (this modal only ever appears from the
-// dashboard grid), so unlike SeriesModal there's no "whose collection is
-// this comparing against" ambiguity — missing entries are always
-// actionable, same as GameModal's edit-mode version. Clicking one opens
+// nothing to do with editing anything. `existingItems` is whichever
+// collection this card lives in — your own on the dashboard, or
+// whichever profile's collection is being viewed elsewhere — used to
+// compute series completion against. `isOwnProfile` (defaults to `true`,
+// matching the dashboard's own always-your-own-collection assumption)
+// gates whether a missing series entry is clickable: only makes sense
+// when `existingItems` really is the viewer's own collection, same
+// reasoning `SeriesModal` already applies — on someone else's profile,
+// "missing from their collection" says nothing about whether the viewer
+// already has it. When it is actionable, clicking a missing entry opens
 // a real listing in a new tab (see lib/externalListings.js — eBay if it
 // has any, CeX otherwise) rather than routing through this app's own Add
 // Item form first — reported back directly that the extra form click
-// wasn't wanted, just the listing itself.
-export default function ItemDetailModal({ game, currency, existingItems, onClose, onEdit }) {
+// wasn't wanted, just the listing itself. `onEdit`, when passed, adds an
+// Edit button that hands the game off to the real edit form — omitted
+// entirely on a public profile, since there's nothing to edit there even
+// on your own profile (that's what the dashboard is for).
+export default function ItemDetailModal({ game, currency, existingItems, onClose, onEdit, isOwnProfile = true, ownerLabel }) {
   const modalRef = useModalA11y(onClose);
   const series = useSeriesLookup();
   const [coverFailed, setCoverFailed] = useState(false);
@@ -73,7 +85,14 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
           <div className="field">
             {series.loading && <div className="sub" style={{ marginTop: 0 }}>Looking up the series…</div>}
             {series.error && <div className="sub" style={{ marginTop: 0 }}>{series.error}</div>}
-            {series.data && <SeriesGrid data={series.data} ownedKeys={ownedKeys} onSelectMissing={handleSelectMissing} />}
+            {series.data && (
+              <SeriesGrid
+                data={series.data}
+                ownedKeys={ownedKeys}
+                ownerLabel={isOwnProfile ? null : ownerLabel}
+                onSelectMissing={isOwnProfile ? handleSelectMissing : undefined}
+              />
+            )}
           </div>
         )}
 
@@ -179,9 +198,11 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
                     : (isMasterSetType(game.item_type) ? 'See master set' : 'See full series')}
               </button>
             )}
-            <button type="button" className="btn-primary" onClick={() => onEdit(game)}>
-              Edit
-            </button>
+            {onEdit && (
+              <button type="button" className="btn-primary" onClick={() => onEdit(game)}>
+                Edit
+              </button>
+            )}
           </div>
         </div>
       </div>

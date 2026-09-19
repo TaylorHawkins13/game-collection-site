@@ -132,7 +132,7 @@ export default async function WishlistPage({ params }) {
           <div>{isOwner ? "Nothing on your wishlist yet — mark an item as \"Wishlist\" and it'll show up here." : `${name} doesn't have anything on their wishlist right now.`}</div>
         </div>
       ) : (
-        <div className="grid" style={{ marginTop: 8, marginBottom: 40 }}>
+        <div className="wishlist-grid" style={{ marginTop: 8, marginBottom: 40 }}>
           {(wishlistItems || []).map((g) => {
             const ebayLink = ebayBuyLink(g, profile.currency);
             const amazonLink = amazonBuyLink(g);

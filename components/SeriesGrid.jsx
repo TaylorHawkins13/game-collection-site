@@ -5,16 +5,17 @@ import { useEffect, useState } from 'react';
 // Pure display component for the "Series" feature — a small cover grid,
 // greyed out unless the entry's normalized key is in `ownedKeys`. Reused
 // by GameModal (your own item, comparing against your collection) and
-// SeriesModal (read-only, comparing against whichever profile you're
-// looking at). `data` is the normalizeSeriesResponse() shape from
+// ItemDetailModal (read-only, comparing against whichever profile you're
+// looking at — your own dashboard, or anyone's public profile, see
+// CHANGELOG.md). `data` is the normalizeSeriesResponse() shape from
 // lib/seriesLookup.js: { seriesName, entries: [{id, cover, label,
 // matchKey}] }.
 //
 // `onSelectMissing`, when passed, makes every not-owned entry clickable —
-// GameModal, ItemDetailModal, and SeriesModal (when `isOwnProfile`) all
-// wire this to open one real listing tab for that entry: eBay if it has
-// any, CeX otherwise (see lib/externalListings.js). Callers that don't
-// pass it leave those grids exactly as before — greyed-out but inert.
+// GameModal and ItemDetailModal (when `isOwnProfile`) both wire this to
+// open one real listing tab for that entry: eBay if it has any, CeX
+// otherwise (see lib/externalListings.js). Callers that don't pass it
+// leave those grids exactly as before — greyed-out but inert.
 //
 // Renders in batches instead of the full entries array at once — see
 // ROADMAP.md "SeriesGrid has no pagination/windowing for very large

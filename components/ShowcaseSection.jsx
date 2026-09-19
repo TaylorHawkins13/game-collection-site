@@ -4,23 +4,24 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GameCard from './GameCard';
 import ShowcaseManagerModal from './ShowcaseManagerModal';
-import SeriesModal from './SeriesModal';
-import { seriesSupported } from '@/lib/seriesLookup';
+import ItemDetailModal from './ItemDetailModal';
 
 // Renders the profile's pinned "Showcase" grid, and makes each tile
 // clickable: the owner clicks straight into the same picker used by the
 // "Manage showcase" button (no extra fetch needed — the full collection
 // is already sitting in `allGames`, passed down from the server), while
-// a visitor clicks into the read-only series view for anything that
-// supports it, same behavior as the collection grid below it. The
-// existing "Manage showcase" action-menu button stays as-is (it's still
-// the only way in when the showcase is empty and there's nothing to
-// click yet); this is an additional, more direct path for the common
-// case of "I want to swap that one out."
+// a visitor clicks into the same read-only detail view the collection
+// grid below it uses (`ItemDetailModal`, not the series-only
+// `SeriesModal` — see CHANGELOG.md: this used to skip straight to the
+// series view for anyone else, the same bug the collection grid below it
+// had). The existing "Manage showcase" action-menu button stays as-is
+// (it's still the only way in when the showcase is empty and there's
+// nothing to click yet); this is an additional, more direct path for the
+// common case of "I want to swap that one out."
 export default function ShowcaseSection({ showcaseGames, allGames, currency, isOwner, ownerName }) {
   const router = useRouter();
   const [managing, setManaging] = useState(false);
-  const [seriesItem, setSeriesItem] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
 
   if (!showcaseGames || showcaseGames.length === 0) return null;
 
@@ -32,8 +33,8 @@ export default function ShowcaseSection({ showcaseGames, allGames, currency, isO
   function handleClick(g) {
     if (isOwner) {
       setManaging(true);
-    } else if (seriesSupported(g.item_type)) {
-      setSeriesItem(g);
+    } else {
+      setDetailItem(g);
     }
   }
 
@@ -47,7 +48,7 @@ export default function ShowcaseSection({ showcaseGames, allGames, currency, isO
             game={g}
             featured
             currency={currency}
-            onClick={isOwner || seriesSupported(g.item_type) ? () => handleClick(g) : undefined}
+            onClick={() => handleClick(g)}
           />
         ))}
       </div>
@@ -56,13 +57,15 @@ export default function ShowcaseSection({ showcaseGames, allGames, currency, isO
         <ShowcaseManagerModal games={allGames} onClose={() => setManaging(false)} onSaved={handleSaved} />
       )}
 
-      {seriesItem && (
-        <SeriesModal
-          key={seriesItem.id}
-          item={seriesItem}
-          items={allGames}
-          ownerLabel={isOwner ? null : ownerName}
-          onClose={() => setSeriesItem(null)}
+      {detailItem && (
+        <ItemDetailModal
+          key={detailItem.id}
+          game={detailItem}
+          currency={currency}
+          existingItems={allGames}
+          isOwnProfile={false}
+          ownerLabel={ownerName}
+          onClose={() => setDetailItem(null)}
         />
       )}
     </div>

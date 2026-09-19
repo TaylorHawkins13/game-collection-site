@@ -132,7 +132,6 @@ export function getStatRows(game, currency) {
 export default function GameCard({
   game,
   onClick,
-  onEdit,
   featured = false,
   currency,
   selectMode = false,
@@ -209,25 +208,6 @@ export default function GameCard({
             <CategoryIcon type={game.item_type} size={26} className="cover-placeholder-icon" />
             <span className="cover-placeholder-label">No Cover</span>
           </div>
-        )}
-        {/* Explicit, separate path into editing — the default click on
-            the card itself now opens the read-only detail view instead
-            (see ROADMAP.md "Collection/profile cards"). Only rendered
-            when the parent actually wants edit access from this grid
-            (the dashboard's own collection), not on public/read-only
-            views of someone else's cards. */}
-        {onEdit && !selectMode && (
-          <button
-            type="button"
-            className="btn-icon card-edit-btn"
-            aria-label={`Edit ${game.title}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(game);
-            }}
-          >
-            ✎
-          </button>
         )}
       </div>
       <div className="card-title" style={titleStyle}>{game.title}</div>

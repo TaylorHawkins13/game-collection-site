@@ -23,7 +23,7 @@ const PAGE_SIZE = 100;
 // offset/limit pagination against the API, not a fetched-up-front
 // `entries` array): a not-owned entry is a real `<button>` that opens the
 // same "eBay if it has listings, CeX otherwise" tab GameModal/
-// ItemDetailModal/SeriesModal already open for a missing series entry.
+// ItemDetailModal already opens for a missing series entry.
 // Owned entries stay plain, inert `<div>`s — nothing to act on.
 //
 // Unlike SeriesGrid, this doesn't fetch everything up front — a real

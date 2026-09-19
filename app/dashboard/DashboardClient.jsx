@@ -2790,7 +2790,6 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                   key={g.id}
                   game={g}
                   onClick={() => setDetailGame(g)}
-                  onEdit={(item) => setModalGame(item)}
                   currency={currency}
                   selectMode={selectMode}
                   selected={selectedIds.has(g.id)}

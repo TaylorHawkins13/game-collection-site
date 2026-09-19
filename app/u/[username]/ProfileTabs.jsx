@@ -4,10 +4,9 @@ import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
-import SeriesModal from '@/components/SeriesModal';
+import ItemDetailModal from '@/components/ItemDetailModal';
 import ShelfIdentityHero from '@/components/ShelfIdentityHero';
 import StarRating from '@/components/StarRating';
-import { seriesSupported } from '@/lib/seriesLookup';
 import { TYPE_LABELS, TYPE_NOUNS, dominantType } from '@/lib/mosaicData';
 import CommentSection from './CommentSection';
 
@@ -55,7 +54,7 @@ export default function ProfileTabs({
 }) {
   const hasTrophies = achievementDefs && achievementDefs.length > 0;
   const [tab, setTab] = useState('collection');
-  const [seriesItem, setSeriesItem] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
   // Extends the dashboard's segmented-shelf visual identity
   // (components/ShelfIdentityHero.jsx) to public profiles — see
   // ROADMAP.md "Extend the type-driven identity to public profiles."
@@ -78,19 +77,15 @@ export default function ProfileTabs({
   }
 
   function handleSelectItem(item) {
-    // Series-supported types (games, comics, trading cards, Funko Pops)
-    // already open a real detail view on click from the grid below —
-    // reuse that exact same modal so a hero tile jumps straight to the
-    // item, same as clicking its card would. Other types have no
-    // dedicated detail view on a public profile (only the dashboard's
-    // ItemDetailModal does), so the best available fallback is filtering
-    // the grid down to that item's type and scrolling to it.
-    if (seriesSupported(item.item_type)) {
-      setSeriesItem(item);
-    } else {
-      setTypeFilter(item.item_type);
-      scrollToGrid();
-    }
+    // Opens the same read-only detail view the grid below uses on click
+    // (see the `ItemDetailModal` render below) — used to only do this for
+    // series-supported types and fall back to filtering the grid down to
+    // that item's type for everything else, back when the series-only
+    // `SeriesModal` was the only detail view a public profile had. Now
+    // that `ItemDetailModal` itself works for any item type (Sep 2026 —
+    // see CHANGELOG.md), every type gets the real thing instead of a
+    // fallback.
+    setDetailItem(item);
   }
 
   const visibleGames = typeFilter ? games.filter((g) => g.item_type === typeFilter) : games;
@@ -292,7 +287,7 @@ export default function ProfileTabs({
                       key={g.id}
                       game={g}
                       currency={currency}
-                      onClick={seriesSupported(g.item_type) ? () => setSeriesItem(g) : undefined}
+                      onClick={() => setDetailItem(g)}
                     />
                   ))}
                 </div>
@@ -301,14 +296,15 @@ export default function ProfileTabs({
           </>
         ))}
 
-      {seriesItem && (
-        <SeriesModal
-          key={seriesItem.id}
-          item={seriesItem}
-          items={games}
-          ownerLabel={isOwnProfile ? null : ownerName}
+      {detailItem && (
+        <ItemDetailModal
+          key={detailItem.id}
+          game={detailItem}
+          currency={currency}
+          existingItems={games}
           isOwnProfile={isOwnProfile}
-          onClose={() => setSeriesItem(null)}
+          ownerLabel={isOwnProfile ? null : ownerName}
+          onClose={() => setDetailItem(null)}
         />
       )}
 

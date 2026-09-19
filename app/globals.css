@@ -1194,20 +1194,6 @@ button:disabled {
 .card-cover-wrap {
   position: relative;
 }
-.card-edit-btn {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  z-index: 2;
-  background: rgba(6, 7, 15, 0.65);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  padding: 6px 8px;
-  font-size: var(--fs-base);
-}
-.card-edit-btn:hover {
-  background: rgba(6, 7, 15, 0.85);
-}
 .bulk-bar {
   position: sticky;
   top: 0;
@@ -3546,13 +3532,23 @@ button.badge.tag:hover {
 /* ---------- Gift list affiliate "buy it" links ---------- */
 /* ROADMAP.md "Affiliate 'buy it' links on wishlist items" — a small link
    row under each card on the public gift list page only (see
-   app/u/[username]/wishlist/page.js). Hidden below the mobile breakpoint
-   deliberately: that grid forces a dense 4-per-row layout with no room
-   for a second line of text under the card without reintroducing the
-   same "one taller card stretches its whole grid row" bug already fixed
-   once for search-result tiles (see CHANGELOG.md) — every wishlist card
-   already links through to the full item on tap, so nothing is lost,
-   just not shown as its own row on a screen this narrow. */
+   app/u/[username]/wishlist/page.js). Used to be hidden below the mobile
+   breakpoint entirely, on the reasoning that the dashboard/profile grids'
+   shared `.grid` class forces a dense 4-per-row poster layout on mobile
+   with no room for a second line under the card. That reasoning backfired
+   in practice: it made the buy links — the entire point of this page —
+   invisible on a phone, which is exactly how a family member or friend
+   is most likely to open a shared gift-list link (found directly: "the
+   buy on ebay or amazon buttons dont exist," Sep 2026). Fixed properly
+   instead of just deleting the display:none — this page now uses its own
+   `.wishlist-grid` (below), not the shared `.grid`, so it never gets
+   pulled into that mobile 4-per-row override in the first place and the
+   buy links always have room underneath. */
+.wishlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
 .wishlist-card-wrap {
   display: flex;
   flex-direction: column;
@@ -3577,11 +3573,6 @@ button.badge.tag:hover {
 .wishlist-buy-links a:hover {
   border-color: var(--accent);
   color: var(--accent);
-}
-@media (max-width: 640px) {
-  .wishlist-buy-links {
-    display: none;
-  }
 }
 
 .custom-lists-body {
