@@ -1,8 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ALLOWED_REDIRECT_HOSTS } from '@/lib/externalListings';
 
 // `metadata` can't be exported from a 'use client' file — see
@@ -33,6 +32,7 @@ function isAllowedDestination(url) {
 // this page doesn't fail Next's static-render check (same pattern as
 // app/reset-password/page.js).
 function GoContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const to = searchParams.get('to') || '';
   const label = searchParams.get('label') || 'the listing';
@@ -76,11 +76,31 @@ function GoContent() {
           </p>
         </>
       )}
-      {/* "/" rather than "/dashboard" deliberately — this page is also
-          reached from the public wishlist link (app/u/[username]/wishlist),
-          which a signed-out visitor can open, and /dashboard would just
-          bounce them to a login page. */}
-      <Link href="/" className="btn-ghost">← Back to Shelf Life</Link>
+      {/* Real browser-history back, not a fixed destination — flagged
+          directly: this used to be a plain `<Link href="/">`, which always
+          landed on the home screen no matter where the person actually
+          came from (their dashboard, a specific collection page, someone's
+          public profile). This page's own history entry is always
+          immediately behind whatever page sent someone here (see this
+          component's own history note above), so router.back() genuinely
+          returns them there — the actual page they were on, not a fixed
+          "/" every time. `window.history.length > 1` guards the
+          vanishingly unlikely case of landing directly on /go with
+          nothing behind it in this tab's history (a bookmarked/shared
+          /go link, say) — falls back to home rather than a no-op back(). */}
+      <button
+        type="button"
+        className="btn-ghost"
+        onClick={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            router.back();
+          } else {
+            router.push('/');
+          }
+        }}
+      >
+        ← Back to Shelf Life
+      </button>
     </main>
   );
 }
