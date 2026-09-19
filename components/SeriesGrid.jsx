@@ -13,9 +13,9 @@ import { useEffect, useState } from 'react';
 //
 // `onSelectMissing`, when passed, makes every not-owned entry clickable —
 // GameModal and ItemDetailModal (when `isOwnProfile`) both wire this to
-// open one real listing tab for that entry: eBay if it has any, CeX
-// otherwise (see lib/externalListings.js). Callers that don't pass it
-// leave those grids exactly as before — greyed-out but inert.
+// navigate to a CeX search for that entry (see lib/externalListings.js).
+// Callers that don't pass it leave those grids exactly as before —
+// greyed-out but inert.
 //
 // Renders in batches instead of the full entries array at once — see
 // ROADMAP.md "SeriesGrid has no pagination/windowing for very large
@@ -87,7 +87,7 @@ export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissin
                 key={e.id}
                 type="button"
                 className="franchise-item missing-clickable"
-                title={`${e.label} — not in the collection yet. Checks eBay, opens CeX if there's nothing there.`}
+                title={`${e.label} — not in the collection yet. Opens a CeX search for it.`}
                 onClick={() => onSelectMissing(e)}
               >
                 {content}

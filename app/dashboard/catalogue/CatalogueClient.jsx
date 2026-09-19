@@ -22,9 +22,9 @@ const PAGE_SIZE = 100;
 // directly (not the component itself — this has its own real
 // offset/limit pagination against the API, not a fetched-up-front
 // `entries` array): a not-owned entry is a real `<button>` that opens the
-// same "eBay if it has listings, CeX otherwise" tab GameModal/
-// ItemDetailModal already opens for a missing series entry.
-// Owned entries stay plain, inert `<div>`s — nothing to act on.
+// same CeX search GameModal/ItemDetailModal already open for a missing
+// series entry. Owned entries stay plain, inert `<div>`s — nothing to
+// act on.
 //
 // Unlike SeriesGrid, this doesn't fetch everything up front — a real
 // platform's catalog (even restricted to main-game releases) can run
@@ -159,7 +159,7 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds, currency
           <p className="sub" style={{ margin: 0 }}>
             Pick a platform to see every main-release game IGDB has for it, greyed out except what you've logged for
             that system — useful for spotting real gaps in a platform you're actively completing. Click anything
-            greyed out to check eBay for it.
+            greyed out to search CeX for it.
           </p>
         </div>
       </div>
@@ -255,7 +255,7 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds, currency
                     key={g.id}
                     type="button"
                     className="franchise-item missing-clickable"
-                    title={`${g.name} — not in your collection yet. Checks eBay, opens CeX if there's nothing there.`}
+                    title={`${g.name} — not in your collection yet. Opens a CeX search for it.`}
                     onClick={() =>
                       goToBestListing(
                         { item_type: 'game', title: g.name, platforms: [resolvedName || activePlatform] },

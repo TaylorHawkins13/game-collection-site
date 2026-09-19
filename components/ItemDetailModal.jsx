@@ -43,10 +43,10 @@ function cap(s) {
 // reasoning `SeriesModal` already applies — on someone else's profile,
 // "missing from their collection" says nothing about whether the viewer
 // already has it. When it is actionable, clicking a missing entry
-// navigates to a real listing (see lib/externalListings.js — eBay if it
-// has any, CeX otherwise) rather than routing through this app's own Add
-// Item form first — reported back directly that the extra form click
-// wasn't wanted, just the listing itself. `onEdit`, when passed, adds an
+// navigates to a CeX search (see lib/externalListings.js) rather than
+// routing through this app's own Add Item form first — reported back
+// directly that the extra form click wasn't wanted, just the listing
+// itself. `onEdit`, when passed, adds an
 // Edit button that hands the game off to the real edit form — omitted
 // entirely on a public profile, since there's nothing to edit there even
 // on your own profile (that's what the dashboard is for).
