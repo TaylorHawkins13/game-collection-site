@@ -3529,50 +3529,122 @@ button.badge.tag:hover {
   }
 }
 
-/* ---------- Gift list affiliate "buy it" links ---------- */
-/* ROADMAP.md "Affiliate 'buy it' links on wishlist items" — a small link
-   row under each card on the public gift list page only (see
-   app/u/[username]/wishlist/page.js). Used to be hidden below the mobile
-   breakpoint entirely, on the reasoning that the dashboard/profile grids'
-   shared `.grid` class forces a dense 4-per-row poster layout on mobile
-   with no room for a second line under the card. That reasoning backfired
-   in practice: it made the buy links — the entire point of this page —
-   invisible on a phone, which is exactly how a family member or friend
-   is most likely to open a shared gift-list link (found directly: "the
-   buy on ebay or amazon buttons dont exist," Sep 2026). Fixed properly
-   instead of just deleting the display:none — this page now uses its own
-   `.wishlist-grid` (below), not the shared `.grid`, so it never gets
-   pulled into that mobile 4-per-row override in the first place and the
-   buy links always have room underneath. */
-.wishlist-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 18px;
-}
-.wishlist-card-wrap {
+/* ---------- Gift list page ---------- */
+/* ROADMAP.md "Affiliate 'buy it' links on wishlist items" — the public
+   gift-list page (app/u/[username]/wishlist/page.js). Originally reused
+   the same GameCard poster-card grid every other collection view uses,
+   which turned out wrong for this page specifically on two fronts,
+   reported directly ("the layout of that gift list page needs work, its
+   bad," Sep 2026): the full trading-card-slab styling (cert header,
+   4-6 row stat block, a "WISHLIST" flag that's redundant when the whole
+   page already is the wishlist) was a lot of visual weight for a page
+   whose only job is "here's what it is, here's where to buy it" — and
+   the poster grid left a lot of dead space at typical widths since a
+   gift list is rarely more than a handful of items. Replaced with a
+   flat, full-width row per item (WishlistItemRow.jsx) instead of a
+   grid of cards — scans faster, and every row gets its buy links
+   without needing the card below it to make room.
+
+   A second, more serious bug also lived here: the buy links used to
+   open in a new tab (`target="_blank"`), which is exactly what the
+   wrapped iOS app's bare WKWebView has no way to actually do — confirmed
+   directly that this was sending people back to the app's home page
+   instead of to eBay/Amazon. WishlistItemRow's links are plain same-tab
+   navigation now, through this app's own `/go` interstitial (see
+   lib/externalListings.js) — `/go` already exists specifically to make
+   "back" work with zero reliance on new-tab/window support, which is
+   exactly the environment this needed to work in. */
+.wishlist-list {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  margin-bottom: 40px;
 }
-.wishlist-buy-links {
+.wishlist-row {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.wishlist-row-cover {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-alt);
+}
+.wishlist-row-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.wishlist-row-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wishlist-row-body {
+  flex: 1;
+  min-width: 0;
+}
+.wishlist-row-title {
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wishlist-row-subtitle {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wishlist-row-body .badge {
   margin-top: 6px;
 }
-.wishlist-buy-links a {
-  flex: 1;
+.wishlist-row-buy {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.wishlist-row-buy a {
+  white-space: nowrap;
   text-align: center;
   font-size: var(--fs-sm);
   font-weight: 600;
-  padding: 6px 8px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   color: var(--text);
   text-decoration: none;
-  background: var(--card);
+  background: var(--bg-alt);
 }
-.wishlist-buy-links a:hover {
+.wishlist-row-buy a:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+@media (max-width: 640px) {
+  .wishlist-row {
+    flex-wrap: wrap;
+  }
+  .wishlist-row-buy {
+    width: 100%;
+    margin-top: 4px;
+  }
+  .wishlist-row-buy a {
+    flex: 1;
+  }
 }
 
 .custom-lists-body {

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import ShareProfileButton from '@/components/ShareProfileButton';
-import GameCard from '@/components/GameCard';
+import WishlistItemRow from '@/components/WishlistItemRow';
 import { ebayBuyLink, amazonBuyLink } from '@/lib/affiliateLinks';
 import { goUrl } from '@/lib/externalListings';
 
@@ -132,28 +132,25 @@ export default async function WishlistPage({ params }) {
           <div>{isOwner ? "Nothing on your wishlist yet — mark an item as \"Wishlist\" and it'll show up here." : `${name} doesn't have anything on their wishlist right now.`}</div>
         </div>
       ) : (
-        <div className="wishlist-grid" style={{ marginTop: 8, marginBottom: 40 }}>
+        <div className="wishlist-list">
           {(wishlistItems || []).map((g) => {
             const ebayLink = ebayBuyLink(g, profile.currency);
             const amazonLink = amazonBuyLink(g);
             return (
-              <div key={g.id} className="wishlist-card-wrap">
-                <GameCard game={g} currency={profile.currency} />
-                {(ebayLink || amazonLink) && (
-                  <div className="wishlist-buy-links">
-                    {ebayLink && (
-                      <a href={goUrl(ebayLink, 'eBay')} target="_blank" rel="noopener noreferrer sponsored">
-                        Buy on eBay
-                      </a>
-                    )}
-                    {amazonLink && (
-                      <a href={goUrl(amazonLink, 'Amazon')} target="_blank" rel="noopener noreferrer sponsored">
-                        Search Amazon
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
+              <WishlistItemRow
+                key={g.id}
+                game={g}
+                currency={profile.currency}
+                // Same-tab navigation deliberately — no target="_blank"
+                // (see WishlistItemRow.jsx's comment): the wrapped iOS
+                // app's bare WKWebView has no way to open a new tab/
+                // window, and /go was already built to keep "back"
+                // working without one. Confirmed directly (Sep 2026)
+                // that target="_blank" here was sending people back to
+                // the app's home page instead of to eBay/Amazon.
+                ebayHref={ebayLink ? goUrl(ebayLink, 'eBay') : null}
+                amazonHref={amazonLink ? goUrl(amazonLink, 'Amazon') : null}
+              />
             );
           })}
         </div>
