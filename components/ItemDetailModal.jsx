@@ -4,7 +4,7 @@ import { useState } from 'react';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
-import { openBestListingTab } from '@/lib/externalListings';
+import { goToBestListing } from '@/lib/externalListings';
 import SeriesGrid from './SeriesGrid';
 import { getStatRows } from './GameCard';
 import { currencySymbol } from '@/lib/currency';
@@ -42,8 +42,8 @@ function cap(s) {
 // when `existingItems` really is the viewer's own collection, same
 // reasoning `SeriesModal` already applies — on someone else's profile,
 // "missing from their collection" says nothing about whether the viewer
-// already has it. When it is actionable, clicking a missing entry opens
-// a real listing in a new tab (see lib/externalListings.js — eBay if it
+// already has it. When it is actionable, clicking a missing entry
+// navigates to a real listing (see lib/externalListings.js — eBay if it
 // has any, CeX otherwise) rather than routing through this app's own Add
 // Item form first — reported back directly that the extra form click
 // wasn't wanted, just the listing itself. `onEdit`, when passed, adds an
@@ -65,7 +65,7 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
 
   function handleSelectMissing(entry) {
     const prefill = prefillFromSeriesEntry(game.item_type, series.data.seriesName, entry);
-    openBestListingTab(prefill, currency);
+    goToBestListing(prefill, currency);
   }
 
   return (

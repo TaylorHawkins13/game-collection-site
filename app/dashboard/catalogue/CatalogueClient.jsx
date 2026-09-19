@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CONSOLES } from '@/lib/consoleList';
 import { normalizeTitle } from '@/lib/duplicateCheck';
 import { ownedTitleKeysForPlatform } from '@/lib/platformCatalogueMatch';
-import { openBestListingTab } from '@/lib/externalListings';
+import { goToBestListing } from '@/lib/externalListings';
 
 const PAGE_SIZE = 100;
 
@@ -257,7 +257,7 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds, currency
                     className="franchise-item missing-clickable"
                     title={`${g.name} — not in your collection yet. Checks eBay, opens CeX if there's nothing there.`}
                     onClick={() =>
-                      openBestListingTab(
+                      goToBestListing(
                         { item_type: 'game', title: g.name, platforms: [resolvedName || activePlatform] },
                         currency
                       )
