@@ -381,6 +381,27 @@ textarea {
   flex-shrink: 0;
 }
 
+/* Current-page highlighting for the desktop navbar — the one thing
+   MobileBottomNav.jsx's/DashboardSidebar.jsx's own "active" gold
+   treatment never reached up here (flagged directly: "follow the theme
+   of the new bottom nav bar"). Same `background + gold text + bold`
+   recipe `.dashboard-sidebar-link.active` already uses (a stronger,
+   persistent version of `.nav-link:hover`'s own `var(--card)`, so
+   "you're here" reads as visibly different from "you're about to
+   click"), rather than the bottom bar's own bare gold-text-only look —
+   that one has no background anywhere on its icon+label items even at
+   rest, this one already does on hover, so matching that existing
+   hover weight felt truer to "this navbar's own version of the theme"
+   than copying the phone bar's treatment verbatim. Comes after
+   `.nav-link-menu-trigger` in the cascade so it still wins on the
+   Discover/Account triggers, which reset `background`/`border` for
+   their own `<button>` chrome. */
+.nav-link.active {
+  background: var(--card-hover);
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
 .nav-toggle {
   display: none;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import useCurrentProfile from '@/lib/useCurrentProfile';
@@ -14,6 +15,22 @@ export default function Navbar() {
   const { profile, userId, loading } = useCurrentProfile();
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
+  const pathname = usePathname();
+
+  // Current-page highlighting — the one thing MobileBottomNav.jsx's/
+  // DashboardSidebar.jsx's own "active" gold treatment had that this
+  // navbar never picked up (flagged directly: "follow the theme of the
+  // new bottom nav bar"). Same `startsWith` convention
+  // MobileBottomNav.jsx already uses for these same destinations (so a
+  // subpage — /dashboard/insights, /u/[username]/followers — still
+  // counts as "on" My Collection/Account), `===` for Log in, matching
+  // that file's own exact-match treatment there.
+  const discoverActive =
+    pathname.startsWith('/players') ||
+    pathname.startsWith('/leaderboard') ||
+    pathname.startsWith('/lists') ||
+    pathname.startsWith('/articles');
+  const accountActive = !!profile?.username && pathname.startsWith(`/u/${profile.username}`);
 
   // On phones this menu is a slide-in side drawer rather than the
   // dropdown desktop gets — while it's open, close it on Escape, close
@@ -85,10 +102,18 @@ export default function Navbar() {
             {/* Same Library/Rss icons MobileBottomNav.jsx already uses for
                 these exact two destinations — one icon per concept, reused
                 rather than picked separately each place it shows up. */}
-            <Link href="/dashboard" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>
+            <Link
+              href="/dashboard"
+              className={`nav-link nav-link-primary${pathname.startsWith('/dashboard') ? ' active' : ''}`}
+              onClick={() => setMenuOpen(false)}
+            >
               <Library aria-hidden="true" /> My Collection
             </Link>
-            <Link href="/feed" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>
+            <Link
+              href="/feed"
+              className={`nav-link nav-link-primary${pathname.startsWith('/feed') ? ' active' : ''}`}
+              onClick={() => setMenuOpen(false)}
+            >
               <Rss aria-hidden="true" /> Feed
             </Link>
           </>
@@ -97,7 +122,7 @@ export default function Navbar() {
         <ActionMenu
           label="Discover"
           trigger={<>Discover <ChevronDown aria-hidden="true" className="nav-link-menu-trigger-chevron" /></>}
-          triggerClassName="nav-link nav-link-menu-trigger"
+          triggerClassName={`nav-link nav-link-menu-trigger${discoverActive ? ' active' : ''}`}
           closeOnClick
         >
           <Link href="/players" className="btn-ghost nav-link-primary" onClick={() => setMenuOpen(false)}>Search</Link>
@@ -112,7 +137,7 @@ export default function Navbar() {
             <ActionMenu
               label="Account"
               trigger={<>Account <ChevronDown aria-hidden="true" className="nav-link-menu-trigger-chevron" /></>}
-              triggerClassName="nav-link nav-link-menu-trigger"
+              triggerClassName={`nav-link nav-link-menu-trigger${accountActive ? ' active' : ''}`}
               closeOnClick
             >
               {profile.username && (
@@ -131,7 +156,11 @@ export default function Navbar() {
             {/* Same LogIn/UserPlus pair the phone bottom bar's signed-out
                 row already uses — this was the one signed-out spot left
                 inconsistent with it. */}
-            <Link href="/login" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>
+            <Link
+              href="/login"
+              className={`nav-link nav-link-primary${pathname === '/login' ? ' active' : ''}`}
+              onClick={() => setMenuOpen(false)}
+            >
               <LogIn aria-hidden="true" /> Log in
             </Link>
             <Link
