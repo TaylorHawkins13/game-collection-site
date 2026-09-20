@@ -17,6 +17,7 @@ import WelcomePanel from '@/components/WelcomePanel';
 import ShelfIdentityHero from '@/components/ShelfIdentityHero';
 import CategoryRail from '@/components/CategoryRail';
 import ActionMenu from '@/components/ActionMenu';
+import { Plus, ChevronDown, RefreshCw, Settings, SlidersHorizontal, ListChecks, Check, X, Upload, Download } from 'lucide-react';
 // Code-split: these are all either heavy (GameModal, the biggest single
 // contributor to the dashboard's JS bundle) or only ever needed after a
 // deliberate click (import/Steam-import/quick-add modals, the passkeys
@@ -1778,7 +1779,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="dashboard-header-actions" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {refreshingAll && (
             <>
               <span className="sub" style={{ margin: 0 }}>
@@ -1796,7 +1797,11 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               Quick add (search) used to be one level deeper, inside
               "More actions", which buried the thing most people reach
               for right after signing up. */}
-          <ActionMenu label="Add item" trigger="+ Add Item ▾" triggerClassName="btn-primary">
+          <ActionMenu
+            label="Add item"
+            trigger={<><Plus aria-hidden="true" /> Add Item <ChevronDown aria-hidden="true" /></>}
+            triggerClassName="btn-primary"
+          >
             <button className="btn-ghost" onClick={() => setModalGame(null)} type="button">
               Add one item
             </button>
@@ -1818,10 +1823,10 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               page's own loaded `games` state / inline settings panel,
               not separate destinations to navigate to. */}
           <button className="btn-ghost" onClick={handleRefreshAllPrices} type="button" disabled={games.length === 0 || refreshingAll}>
-            Refresh all prices
+            <RefreshCw aria-hidden="true" /> Refresh all prices
           </button>
           <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)} type="button">
-            Settings
+            <Settings aria-hidden="true" /> Settings
           </button>
         </div>
       </div>
@@ -2124,18 +2129,18 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <>
               <div className="field">
                 <label>Collection tools</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div className="dashboard-collection-tools" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <button className="btn-ghost" onClick={() => setShowImport(true)} type="button">
-                    Import CSV
+                    <Upload aria-hidden="true" /> Import CSV
                   </button>
                   <button className="btn-ghost" onClick={() => setShowDiscogsImport(true)} type="button">
-                    Import from Discogs
+                    <Upload aria-hidden="true" /> Import from Discogs
                   </button>
                   <button className="btn-ghost" onClick={handleExport} type="button" disabled={games.length === 0}>
-                    Export CSV
+                    <Download aria-hidden="true" /> Export CSV
                   </button>
                   <button className="btn-ghost" onClick={handleDownloadData} type="button">
-                    Download my data
+                    <Download aria-hidden="true" /> Download my data
                   </button>
                   {steamId && syncingAchievements && (
                     <>
@@ -2327,7 +2332,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               style={{ position: 'relative' }}
               aria-label={showRecsIndicator ? 'Tools — new recommendations available' : undefined}
             >
-              Tools{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+              <SlidersHorizontal aria-hidden="true" /> Tools{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
               {showRecsIndicator && <span className="dash-tools-indicator" aria-hidden="true" />}
             </button>
             {/* Restored to an inline toolbar button (Aug 2026 — see
@@ -2341,6 +2346,12 @@ export default function DashboardClient({ userId, profile, initialGames }) {
               className={`btn-ghost${selectMode ? ' active' : ''}`}
               onClick={toggleSelectMode}
             >
+              {/* Check while selecting (confirms the mode you're in and
+                  doubles as "done"), ListChecks beforehand — same Menu/X-
+                  style convention DashboardSidebar.jsx/Navbar.jsx's own
+                  toggles already use: the icon shown matches the current
+                  state, not the state a click switches to. */}
+              {selectMode ? <Check aria-hidden="true" /> : <ListChecks aria-hidden="true" />}
               {selectMode ? 'Done selecting' : 'Select items'}
             </button>
           </div>
@@ -2364,7 +2375,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
             <div className="dash-tools-header">
               <h3>Tools</h3>
               <button type="button" className="btn-icon" onClick={() => setToolsOpen(false)} aria-label="Close">
-                ✕
+                <X aria-hidden="true" />
               </button>
             </div>
 

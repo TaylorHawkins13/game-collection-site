@@ -1155,6 +1155,30 @@ button:disabled {
   margin-bottom: 20px;
   align-items: center;
 }
+/* Icon sizing for the dashboard's own icon-bearing .btn-ghost/.btn-primary
+   buttons (icon rollout, dashboard page round) — scoped to these three
+   containers rather than a blanket `.btn-ghost svg`/`.btn-primary svg`
+   rule, since both classes are used all over the app on buttons that
+   don't have icons at all; a global rule risked reaching every one of
+   them instead of just these. `.dashboard-header-actions` is the "+ Add
+   Item"/"Refresh all prices"/"Settings" row, `.dashboard-collection-tools`
+   is the Import/Export row in Settings' Data tab. */
+.dashboard-header-actions .btn-ghost,
+.dashboard-header-actions .btn-primary,
+.toolbar .btn-ghost,
+.dashboard-collection-tools .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dashboard-header-actions svg,
+.toolbar svg,
+.dashboard-collection-tools svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
 .toolbar input[type='text'],
 .toolbar select {
   background: var(--card);
