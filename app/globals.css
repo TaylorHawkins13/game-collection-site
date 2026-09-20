@@ -326,6 +326,12 @@ textarea {
   flex-shrink: 0;
 }
 
+.text-size-control svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
 .text-size-control {
   display: inline-flex;
   align-items: center;
@@ -842,12 +848,27 @@ button:disabled {
 }
 
 .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--card);
   color: var(--text-dim);
   border: 1px solid var(--border);
   padding: 9px 10px;
   line-height: 0;
   border-radius: 8px;
+}
+/* Sized here (not just relying on `line-height: 0`, which only tightens
+   vertical spacing) since .btn-icon is shared with a few plain "✕"/"⋯"
+   text-character buttons elsewhere (GameModal's condition-photo remove,
+   DashboardClient's saved-view delete, ActionMenu's default trigger) —
+   none of those render an <svg>, so this only ever reaches ThemeToggle's
+   new Sun/Moon icon in practice. */
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
 }
 
 .btn-danger {
