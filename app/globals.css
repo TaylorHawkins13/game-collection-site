@@ -1680,10 +1680,30 @@ button.badge.tag:hover {
   background: #2ecc7122;
   color: #2ecc71;
 }
+/* A real card surface instead of bare centered text floating on the page
+   background — extends the "theme of the new bottom nav bar" rework
+   (gold/card-surface visual language, see CHANGELOG.md) to the one piece
+   shared by every plain page that never got the brand-tokens visual pass
+   (Leaderboard, Search, Lists, the profile wishlist/tabs, and more —
+   `.empty-state` is a single shared class used in a dozen spots, so this
+   one change reaches all of them at once rather than needing a per-page
+   pass). Same `background`/`border`/`border-radius: var(--radius)`
+   recipe `.card`/`.welcome-panel` already use, just centered as its own
+   bounded block instead of stretching full-width. Deliberately no icon
+   added here — these dozen spots mean different things ("no results
+   yet" vs. "this list is private" vs. "nothing logged yet"), and a
+   single hardcoded icon on a shared class can't fit all of them
+   correctly; a per-instance icon is a real follow-up, not guessed at
+   here (see ROADMAP.md). */
 .empty-state {
   text-align: center;
-  padding: 80px 20px;
+  padding: 56px 28px;
   color: var(--text-dim);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 480px;
+  margin: 0 auto;
 }
 .empty-state .big {
   font-size: 44px;
