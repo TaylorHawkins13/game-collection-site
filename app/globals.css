@@ -376,45 +376,64 @@ textarea {
   justify-content: center;
   flex: 1;
   min-width: 0;
-  padding: 6px 4px;
+  padding: 4px;
   color: var(--text-dim);
   text-decoration: none;
   min-height: 44px;
-  transition: background 0.1s ease, color 0.15s ease;
 }
 /* Flagged directly ("the collection, search, feed, profile, alerts
    buttons... it is no longer clear that they are buttons") right after
    the icon-removal pass shipped — each item used to read as a button by
    virtue of its icon; bare text alone in a row didn't carry the same
-   weight. First fix here was a tinted pill per label, rejected on sight
-   ("looks too stereotypical ai") — replaced with a plainer, more native
-   pattern instead: a hairline divider between items (turns the row into
-   a visibly segmented bar, same idea a native iOS/Android tab bar or
-   segmented control uses) plus a brief background flash on press for tap
-   feedback, rather than a permanent boxed/pill look at rest. */
-.mobile-bottom-nav-item + .mobile-bottom-nav-item {
-  border-left: 1px solid var(--border);
-}
-.mobile-bottom-nav-item:active {
-  background: var(--card-hover);
-}
+   weight. Two rejected attempts before this one: a tinted rounded-pill
+   chip ("looks too stereotypical ai"), then plain hairline dividers with
+   no fill ("i want it to match the vibe of the rest of the app"). This
+   is that — not a new one-off shape, the exact same background/border/
+   radius recipe .btn-ghost (and .dashboard-sidebar-link, the sidebar nav
+   items this same redesign already modeled the top navbar on) already
+   use everywhere else in the app, just sized to fit 5 narrow columns
+   instead of a normal button's padding/font-size. */
 .mobile-bottom-nav-item > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   font-size: var(--fs-xs);
   font-weight: 600;
   color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 4px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.mobile-bottom-nav-item:active > span {
+  background: var(--card-hover);
 }
 .mobile-bottom-nav-item.active {
   color: var(--accent-gold);
 }
+.mobile-bottom-nav-item.active > span {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
 .mobile-bottom-nav-text {
   font-size: var(--fs-base);
 }
-.mobile-bottom-nav-signup {
-  color: var(--accent-gold);
+/* Sign up gets the same gradient .btn-primary uses everywhere else in
+   the app (including the desktop navbar's own Sign up link right next
+   to this one, functionally) instead of another flat chip — it's the
+   one real call-to-action in this bar, same as it is everywhere else it
+   appears. Selector needs `.mobile-bottom-nav-item >` to out-specificity
+   the base pill rule above (same element, otherwise ties on source
+   order instead of actually overriding it). */
+.mobile-bottom-nav-item > .mobile-bottom-nav-signup {
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-mint));
+  border-color: transparent;
 }
 
 /* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
