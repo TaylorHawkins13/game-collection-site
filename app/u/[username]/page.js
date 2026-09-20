@@ -356,7 +356,7 @@ export default async function ProfilePage({ params }) {
 
       {!canView ? (
         <div className="empty-state">
-          <Lock aria-hidden="true" />
+          <span className="empty-state-icon-badge"><Lock aria-hidden="true" /></span>
           <div>This collector's shelf is private.</div>
         </div>
       ) : (

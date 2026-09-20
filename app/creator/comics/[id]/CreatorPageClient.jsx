@@ -68,7 +68,7 @@ export default function CreatorPageClient({ name, image, entries, ownedKeys, tru
 
       {entries.length === 0 ? (
         <div className="empty-state">
-          <BookOpen aria-hidden="true" />
+          <span className="empty-state-icon-badge"><BookOpen aria-hidden="true" /></span>
           <div>Comic Vine doesn&apos;t have any issue credits on file for {name}.</div>
         </div>
       ) : (

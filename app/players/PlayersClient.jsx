@@ -147,12 +147,12 @@ export default function PlayersClient() {
         <div className="sub">Loading…</div>
       ) : hasSearched && noResults ? (
         <div className="empty-state">
-          <SearchX aria-hidden="true" />
+          <span className="empty-state-icon-badge"><SearchX aria-hidden="true" /></span>
           <div>No collectors or collectibles found.</div>
         </div>
       ) : !hasSearched && results.length === 0 ? (
         <div className="empty-state">
-          <Users aria-hidden="true" />
+          <span className="empty-state-icon-badge"><Users aria-hidden="true" /></span>
           <div>No public collectors yet.</div>
         </div>
       ) : (

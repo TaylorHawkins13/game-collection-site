@@ -234,7 +234,7 @@ export default function LeaderboardClient({
 
       {podiumRows.length === 0 ? (
         <div className="empty-state">
-          <Trophy aria-hidden="true" />
+          <span className="empty-state-icon-badge"><Trophy aria-hidden="true" /></span>
           <div>{emptyText}</div>
         </div>
       ) : (

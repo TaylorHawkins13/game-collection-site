@@ -2792,7 +2792,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
           {filtered.length === 0 ? (
             <div className="empty-state" ref={gridSectionRef}>
-              <SearchX aria-hidden="true" />
+              <span className="empty-state-icon-badge"><SearchX aria-hidden="true" /></span>
               <div>No items match your filters.</div>
             </div>
           ) : (

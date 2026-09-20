@@ -251,7 +251,7 @@ export default function ProfileTabs({
       {tab === 'collection' &&
         (games.length === 0 ? (
           <div className="empty-state">
-            <Library aria-hidden="true" />
+            <span className="empty-state-icon-badge"><Library aria-hidden="true" /></span>
             <div>{singleType ? `${ownerPossessive} ${TYPE_NOUNS[singleType]} is empty.` : 'No items on this shelf yet.'}</div>
           </div>
         ) : (
@@ -280,7 +280,7 @@ export default function ProfileTabs({
             <div ref={gridRef} style={{ marginBottom: 40 }}>
               {visibleGames.length === 0 ? (
                 <div className="empty-state">
-                  <SearchX aria-hidden="true" />
+                  <span className="empty-state-icon-badge"><SearchX aria-hidden="true" /></span>
                   <div>Nothing here for this filter.</div>
                 </div>
               ) : (

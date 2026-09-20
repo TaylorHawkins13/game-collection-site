@@ -1700,20 +1700,35 @@ button.badge.tag:hover {
   max-width: 480px;
   margin: 0 auto;
 }
-/* Sizing for the per-instance lucide-react icon each `.empty-state`
-   caller now renders above its own message (round 2 of the "keep
-   going" — see CHANGELOG.md) — a single shared class covering a dozen
-   genuinely different meanings can't hardcode one icon for all of them,
-   so each call site picks its own (Trophy for the leaderboard, Lock for
-   a private profile, Gift for an empty wishlist, and so on) and this
-   just sizes/tints whichever one shows up consistently. */
-.empty-state svg {
-  width: 32px;
-  height: 32px;
+/* A soft gold-tinted circular badge behind each `.empty-state`'s own
+   lucide-react icon (round 3 of the "keep going" continuation) —
+   gives these a bit more of the decorative weight `.welcome-panel`'s
+   illustration has, without commissioning new hand-drawn SVG art.
+   Deliberately not that: this codebase already tried hand-drawn icons
+   twice (the original `CategoryIcon.jsx` glyphs and `BottomNavIcon.jsx`)
+   and both were explicitly replaced with real `lucide-react` icons
+   after reading as "stereotypical AI" — the same risk a dozen brand-new
+   bespoke illustrations here would reintroduce. A tinted badge around
+   an icon that's already real and already shipped gets a similar "more
+   designed than bare text" lift with none of that risk. Same
+   `color-mix(in srgb, var(--accent) X%, var(--card))` tint recipe
+   `.card .cover.placeholder`/the danger-badge/warn-badge rules already
+   use elsewhere, not a new one invented for this. */
+.empty-state-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 16%, var(--card));
+  margin-bottom: 16px;
+}
+.empty-state-icon-badge svg {
+  width: 28px;
+  height: 28px;
   stroke-width: 1.75px;
   color: var(--accent-gold);
-  opacity: 0.85;
-  margin-bottom: 14px;
 }
 .empty-state .big {
   font-size: 44px;

@@ -101,7 +101,7 @@ export default async function ListDetailPage({ params }) {
 
       {orderedGames.length === 0 ? (
         <div className="empty-state">
-          <ClipboardList aria-hidden="true" />
+          <span className="empty-state-icon-badge"><ClipboardList aria-hidden="true" /></span>
           <div>This list is empty.</div>
         </div>
       ) : (

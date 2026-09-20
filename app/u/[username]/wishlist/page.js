@@ -126,12 +126,12 @@ export default async function WishlistPage({ params }) {
 
       {!canView ? (
         <div className="empty-state">
-          <Lock aria-hidden="true" />
+          <span className="empty-state-icon-badge"><Lock aria-hidden="true" /></span>
           <div>This collector's shelf is private.</div>
         </div>
       ) : (wishlistItems || []).length === 0 ? (
         <div className="empty-state">
-          <Gift aria-hidden="true" />
+          <span className="empty-state-icon-badge"><Gift aria-hidden="true" /></span>
           <div>{isOwner ? "Nothing on your wishlist yet — mark an item as \"Wishlist\" and it'll show up here." : `${name} doesn't have anything on their wishlist right now.`}</div>
         </div>
       ) : (
