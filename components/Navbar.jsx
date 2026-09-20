@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import useCurrentProfile from '@/lib/useCurrentProfile';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import TextSizeControl from './TextSizeControl';
 import NotificationBell from './NotificationBell';
@@ -56,16 +57,23 @@ export default function Navbar() {
         onClick={() => setMenuOpen((o) => !o)}
         aria-expanded={menuOpen}
       >
+        {/* Same Menu/X pair DashboardSidebar.jsx's own mobile toggle
+            already uses, now that a real icon library is the confirmed
+            direction rather than plain text alone. */}
+        {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         {menuOpen ? 'Close' : 'Menu'}
       </button>
       <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
       <div className={`nav-links${menuOpen ? ' open' : ''}`}>
         {/* Grouped nav: primary destinations sit at the top level, the
-            rest live behind two text-only ActionMenu dropdowns (same
-            component GameModal's footer "More actions" menu already
-            uses — see components/ActionMenu.jsx) instead of one flat row
-            of 11 links. Mirrors DashboardSidebar.jsx's own primary/
-            grouped-sections split, per Taylor's explicit precedent.
+            rest live behind two ActionMenu dropdowns (same component
+            GameModal's footer "More actions" menu already uses — see
+            components/ActionMenu.jsx) instead of one flat row of 11
+            links. Mirrors DashboardSidebar.jsx's own primary/grouped-
+            sections split, per Taylor's explicit precedent. Each
+            trigger now ends in a ChevronDown (lucide-react) — nothing
+            previously signaled "Discover"/"Account" were dropdowns
+            rather than plain links until you clicked one.
 
             nav-link-primary: also has its own label-only slot in the
             phone bottom bar (see MobileBottomNav.jsx) — hidden here under
@@ -79,7 +87,12 @@ export default function Navbar() {
           </>
         )}
 
-        <ActionMenu label="Discover" trigger="Discover" triggerClassName="nav-link nav-link-menu-trigger" closeOnClick>
+        <ActionMenu
+          label="Discover"
+          trigger={<>Discover <ChevronDown aria-hidden="true" className="nav-link-menu-trigger-chevron" /></>}
+          triggerClassName="nav-link nav-link-menu-trigger"
+          closeOnClick
+        >
           <Link href="/players" className="btn-ghost nav-link-primary" onClick={() => setMenuOpen(false)}>Search</Link>
           <Link href="/leaderboard" className="btn-ghost" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
           <Link href="/lists" className="btn-ghost" onClick={() => setMenuOpen(false)}>Lists</Link>
@@ -89,7 +102,12 @@ export default function Navbar() {
         {!loading && profile && (
           <>
             <NotificationBell userId={userId} className="nav-link-primary" />
-            <ActionMenu label="Account" trigger="Account" triggerClassName="nav-link nav-link-menu-trigger" closeOnClick>
+            <ActionMenu
+              label="Account"
+              trigger={<>Account <ChevronDown aria-hidden="true" className="nav-link-menu-trigger-chevron" /></>}
+              triggerClassName="nav-link nav-link-menu-trigger"
+              closeOnClick
+            >
               {profile.username && (
                 <Link href={`/u/${profile.username}`} className="btn-ghost nav-link-primary" onClick={() => setMenuOpen(false)}>My Profile</Link>
               )}

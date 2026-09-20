@@ -349,6 +349,21 @@ textarea {
   background: none;
   border: none;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+/* The small down-chevron after "Discover"/"Account" — a real dropdown
+   affordance (lucide's ChevronDown) now that icons are the confirmed
+   direction, replacing the fact that nothing previously signaled these
+   two were dropdowns rather than plain links until you clicked one.
+   Doesn't rotate on open — these close on click-outside/Escape/navigation
+   rather than toggling a persistent open state you'd want reflected here. */
+.nav-link-menu-trigger-chevron {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5px;
+  flex-shrink: 0;
 }
 
 .nav-toggle {
@@ -4387,8 +4402,14 @@ button.badge.tag:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     min-height: 44px;
     padding: 0 14px;
+  }
+  .nav-toggle svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2px;
   }
   .nav-overlay.open {
     display: block;
