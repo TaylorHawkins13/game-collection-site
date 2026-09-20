@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { Bell } from 'lucide-react';
 import { createClient } from '@/lib/supabaseClient';
 import { describeNotification } from '@/lib/notificationTypes';
 import useUnreadNotifications from '@/lib/useUnreadNotifications';
@@ -98,7 +99,14 @@ export default function NotificationBell({ userId, className }) {
         aria-haspopup="true"
         aria-expanded={open}
       >
-        Alerts{unreadCount > 0 ? ` (${unreadCount > 9 ? '9+' : unreadCount})` : ''}
+        {/* Real Bell icon (lucide-react) restored, now that a real icon
+            library is the confirmed direction — was plain "Alerts" text
+            for a stretch (see CHANGELOG.md). Unread count moves from
+            inline text ("Alerts (3)") to the .notif-badge overlay this
+            file's own CSS already had sitting unused. */}
+        <Bell aria-hidden="true" />
+        <span>Alerts</span>
+        {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
       </button>
       {open && (
         <div className="notif-dropdown">

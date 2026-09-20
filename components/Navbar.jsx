@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import useCurrentProfile from '@/lib/useCurrentProfile';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Library, Rss, LogIn, UserPlus } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import TextSizeControl from './TextSizeControl';
 import NotificationBell from './NotificationBell';
@@ -82,8 +82,15 @@ export default function Navbar() {
             on a wider screen, where there's no bottom bar. */}
         {!loading && profile && (
           <>
-            <Link href="/dashboard" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>My Collection</Link>
-            <Link href="/feed" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>Feed</Link>
+            {/* Same Library/Rss icons MobileBottomNav.jsx already uses for
+                these exact two destinations — one icon per concept, reused
+                rather than picked separately each place it shows up. */}
+            <Link href="/dashboard" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>
+              <Library aria-hidden="true" /> My Collection
+            </Link>
+            <Link href="/feed" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>
+              <Rss aria-hidden="true" /> Feed
+            </Link>
           </>
         )}
 
@@ -121,14 +128,24 @@ export default function Navbar() {
         )}
         {!loading && !profile && (
           <>
-            <Link href="/login" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>Log in</Link>
+            {/* Same LogIn/UserPlus pair the phone bottom bar's signed-out
+                row already uses — this was the one signed-out spot left
+                inconsistent with it. */}
+            <Link href="/login" className="nav-link nav-link-primary" onClick={() => setMenuOpen(false)}>
+              <LogIn aria-hidden="true" /> Log in
+            </Link>
             <Link
               href="/signup"
               className="btn-primary nav-link-primary"
-              style={{ textDecoration: 'none', display: 'inline-block' }}
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
               onClick={() => setMenuOpen(false)}
             >
-              Sign up
+              {/* .btn-primary has no shared icon-sizing rule the way
+                  .nav-link does (it's used all over the app, several
+                  without icons) — sized explicitly here rather than
+                  adding a rule that would reach every other .btn-primary
+                  too. */}
+              <UserPlus aria-hidden="true" width={16} height={16} strokeWidth={2} /> Sign up
             </Link>
           </>
         )}

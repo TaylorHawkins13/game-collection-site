@@ -310,11 +310,20 @@ textarea {
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--fs-md);
   color: var(--text-dim);
   text-decoration: none;
   padding: 8px 10px;
   border-radius: 8px;
+}
+.nav-link svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
 }
 
 .text-size-control {
@@ -660,17 +669,21 @@ textarea {
 .notif-wrap {
   position: relative;
 }
-/* Text-only now (see CHANGELOG.md's "no icons anywhere" pass) — no
-   longer needs its own font-size/padding override, .nav-link's own
-   sizing matches every other top-level nav item. Still its own class
+/* Bell icon + "Alerts" text (real Bell icon restored — see CHANGELOG.md's
+   icon-rollout entries — after a text-only stretch). Still its own class
    only so the background/border reset below applies (a <button>, unlike
    the <Link>s .nav-link is otherwise used on, carries browser default
-   button chrome that needs suppressing). */
+   button chrome that needs suppressing); icon/gap sizing itself comes
+   from the shared `.nav-link svg` rule above. */
 .notif-bell {
   background: none;
   border: none;
   font-family: inherit;
 }
+/* Unread count as a small badge on the bell (`.notif-wrap`'s own
+   `position: relative` is what this positions against) instead of the
+   "Alerts (3)" inline-text form this used while the bell itself was
+   plain text with nothing to anchor a badge to. */
 .notif-badge {
   position: absolute;
   top: -2px;
