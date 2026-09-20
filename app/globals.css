@@ -2505,6 +2505,11 @@ button.badge.tag:hover {
     gap: 6px;
     margin: 20px 32px 0;
   }
+  .dashboard-sidebar-toggle svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2px;
+  }
   .dashboard-sidebar {
     position: fixed;
     top: 0;

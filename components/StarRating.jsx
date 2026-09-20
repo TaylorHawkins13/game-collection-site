@@ -1,5 +1,7 @@
 'use client';
 
+import { Star } from 'lucide-react';
+
 // Shared 5-star display used everywhere a rating shows up (GameCard, Play
 // next, recommendations, the activity feed) plus the interactive editable
 // version in GameModal. Ratings go in 0.5 steps, so each star can be
@@ -7,6 +9,17 @@
 // foreground star clipped to 0/50/100% width on top of it, rather than
 // relying on a single half-star text character (font support for those
 // is inconsistent).
+//
+// Real lucide-react Star icons (same library the rest of the app's icons
+// now use) rather than the ★ Unicode glyph this used to draw with — same
+// clipped-overlay technique underneath (still the right way to get a
+// clean half-star fill), just an SVG shape instead of a font character,
+// so it renders identically everywhere instead of depending on whatever
+// glyph shape the OS/browser's font happens to draw for ★. Both the dim
+// background star and the colored foreground star render fully filled
+// (`fill="currentColor"`) — an outline star wouldn't read as "half full"
+// once clipped, the same reason the old text version used the solid ★
+// rather than a hollow ☆ for its background.
 //
 // Interactive mode splits each star into a left half (sets n-0.5) and
 // right half (sets n) click target so half-star values are reachable
@@ -37,8 +50,12 @@ export default function StarRating({ value = 0, size = 16, interactive = false, 
         const fillPct = Math.max(0, Math.min(1, value - (n - 1))) * 100;
         return (
           <span key={n} className="star-rating-slot">
-            <span className="star-rating-bg" aria-hidden="true">★</span>
-            <span className="star-rating-fg" style={{ width: `${fillPct}%` }} aria-hidden="true">★</span>
+            <span className="star-rating-bg" aria-hidden="true">
+              <Star width="1em" height="1em" fill="currentColor" stroke="currentColor" />
+            </span>
+            <span className="star-rating-fg" style={{ width: `${fillPct}%` }} aria-hidden="true">
+              <Star width="1em" height="1em" fill="currentColor" stroke="currentColor" />
+            </span>
             {interactive && (
               <>
                 <button

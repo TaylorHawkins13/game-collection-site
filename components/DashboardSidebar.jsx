@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
 
 // Every real destination that used to live inside DashboardClient.jsx's
 // "More actions" dropdown, grouped the same way a reasonable person
@@ -88,7 +89,12 @@ export default function DashboardSidebar() {
         aria-expanded={open}
         aria-label={open ? 'Close dashboard menu' : 'Open dashboard menu'}
       >
-        {open ? '✕' : '☰'} Menu
+        {/* Same Menu/X pair from lucide-react the phone bottom bar's Add
+            button and its neighbors now use elsewhere — replaces the old
+            ☰/✕ text glyphs, which rendered inconsistently across fonts
+            and were the one remaining hand-drawn-looking spot on this
+            page once the icon direction was confirmed. */}
+        {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />} Menu
       </button>
       <div
         className={`dashboard-sidebar-overlay${open ? ' open' : ''}`}
