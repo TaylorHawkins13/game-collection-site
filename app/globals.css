@@ -372,26 +372,55 @@ textarea {
 }
 .mobile-bottom-nav-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
   flex: 1;
-  padding: 6px 4px 4px;
+  min-width: 0;
+  padding: 6px 4px;
   color: var(--text-dim);
   text-decoration: none;
-  font-size: var(--fs-xs);
   min-height: 44px;
+}
+/* Flagged directly ("the collection, search, feed, profile, alerts
+   buttons... it is no longer clear that they are buttons") right after
+   the icon-removal pass shipped — each item used to read as a button by
+   virtue of its icon; bare text alone in a row didn't carry the same
+   weight. Same fix as .category-chip (components/CategoryRail.jsx) uses
+   for the identical problem — a row of text-only tappable options that
+   needs to visually read as separate buttons, not a no-icons exception —
+   a tinted pill per label instead of an icon. */
+.mobile-bottom-nav-item > span {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: inherit;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 6px 8px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 .mobile-bottom-nav-item.active {
   color: var(--accent-gold);
 }
+.mobile-bottom-nav-item.active > span {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
 .mobile-bottom-nav-text {
   font-size: var(--fs-base);
-  font-weight: 600;
 }
-.mobile-bottom-nav-signup {
+/* .mobile-bottom-nav-item > .mobile-bottom-nav-signup, not the bare class
+   alone — needs to out-specificity the base `.mobile-bottom-nav-item >
+   span` pill rule above (same element, both selectors would otherwise
+   tie on source order rather than actually override it). */
+.mobile-bottom-nav-item > .mobile-bottom-nav-signup {
   color: var(--accent-gold);
+  background: color-mix(in srgb, var(--accent-gold) 14%, var(--card));
+  border-color: color-mix(in srgb, var(--accent-gold) 45%, var(--border));
 }
 
 /* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
