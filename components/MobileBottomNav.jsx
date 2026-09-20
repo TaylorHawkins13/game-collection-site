@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Library, Search, Rss, User, Plus, LogIn, UserPlus } from 'lucide-react';
 import useCurrentProfile from '@/lib/useCurrentProfile';
-import useUnreadNotifications from '@/lib/useUnreadNotifications';
 
 // A persistent bottom tab bar on phones, the way most native/mobile apps
 // (Spotify included) handle primary navigation instead of a hamburger
@@ -13,42 +13,51 @@ import useUnreadNotifications from '@/lib/useUnreadNotifications';
 // there's room for the real top navbar, and a bottom bar stapled onto a
 // desktop layout is an unfamiliar pattern with nothing to fix there.
 //
-// 5 signed-in destinations: the original 4 actually reached daily
-// (confirmed directly) — My Collection, Search, Feed, My Profile — plus
-// Alerts, added to close ROADMAP.md's "notification bell isn't reachable
-// from the phone bottom bar" follow-up (noticed while building the first
-// 4: the bell only lived in the hamburger menu, so checking it on a phone
-// took an extra tap the other daily-use links didn't). Every other
-// top-nav destination (Leaderboard, Lists, Articles) stays reachable from
-// the hamburger menu, unchanged — this bar isn't a full replacement for
-// it. Navbar.jsx's own copies of these links get a `nav-link-primary`
-// class and are CSS-hidden at the same breakpoint this bar appears at,
-// so nothing's listed twice.
+// Icon + raised center Add button (4th redesign of this bar): the first
+// icon-free pass ("the collection, search, feed, profile, alerts
+// buttons... it is no longer clear that they are buttons") went through
+// three icon-less fixes — a tinted pill ("too stereotypical ai"), plain
+// hairline dividers ("i want it to match the vibe of the rest of the
+// app"), and the app's own .btn-ghost chip recipe — before Taylor sent a
+// screenshot of a different app's bottom bar (icon+label items, a raised
+// circular "+" popping out of the bar on a curved notch) and said "use
+// this as inspo". Confirmed directly rather than guessed at: real icons
+// from a library (lucide-react, installed this same pass), not another
+// hand-drawn set — the old BottomNavIcon.jsx SVGs were themselves what
+// read as "stereotypical AI" the first time around — plus a real raised
+// "+ Add Item" button rather than just restyling the existing 5 items.
 //
-// Alerts links to the existing /notifications page rather than trying to
-// reproduce NotificationBell.jsx's dropdown inline — a dropdown anchored
-// to the very bottom of the screen has nowhere sensible to open toward,
-// and the full page already exists as exactly this bar's own "See all
-// notifications" escape hatch. The unread badge itself (and the muted-
-// types-aware count feeding it) comes from lib/useUnreadNotifications.js,
-// shared with NotificationBell's own badge rather than a second poll.
+// 4 regular destinations + a centered Add button (5 columns total, same
+// shape as the reference screenshot) rather than the previous 5 regular
+// items: an even split either side of a raised center button needs an
+// odd column count to land it exactly at 50% width, so Alerts is the one
+// dropped from *this bar*. It's the most recently added of the original
+// 5 (folded in later to close a phone-reachability gap, not one of the 4
+// originally confirmed "reached daily"), and dropping it here doesn't
+// remove it from the app: the bell (components/NotificationBell.jsx)
+// goes back to living in the hamburger drawer on phones, same as it did
+// before that gap was closed — one extra tap instead of a bottom-bar
+// slot. Worth flagging as a real navigation trade-off, not just styling.
+//
+// The Add button links to the existing /dashboard?add=1 deep link
+// (already built and working — see DashboardClient.jsx's own effect
+// watching that query param) rather than needing any new "open the add
+// form" plumbing.
 //
 // Deliberately always rendered (not conditionally mounted only under
 // 640px) and hidden via CSS, same pattern Navbar.jsx's own mobile drawer
 // already uses — avoids a hydration mismatch between server and client
 // guessing at viewport width.
 const SIGNED_IN_ITEMS = (username) => [
-  { href: '/dashboard', label: 'Collection', match: '/dashboard' },
-  { href: '/players', label: 'Search', match: '/players' },
-  { href: '/feed', label: 'Feed', match: '/feed' },
-  { href: username ? `/u/${username}` : '/dashboard', label: 'Profile', match: username ? `/u/${username}` : '__none__' },
-  { href: '/notifications', label: 'Alerts', match: '/notifications' },
+  { href: '/dashboard', label: 'Collection', match: '/dashboard', Icon: Library },
+  { href: '/players', label: 'Search', match: '/players', Icon: Search },
+  { href: username ? `/u/${username}` : '/dashboard', label: 'Profile', match: username ? `/u/${username}` : '__none__', Icon: User },
+  { href: '/feed', label: 'Feed', match: '/feed', Icon: Rss },
 ];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { profile, userId, loading } = useCurrentProfile();
-  const { unreadCount } = useUnreadNotifications(userId);
+  const { profile, loading } = useCurrentProfile();
 
   // Nothing to show yet — rather than flash a signed-out bar for half a
   // second on every load while the auth check resolves, the bar simply
@@ -59,40 +68,53 @@ export default function MobileBottomNav() {
 
   if (!profile) {
     return (
-      <nav className="mobile-bottom-nav" aria-label="Primary">
-        <Link href="/players" className={`mobile-bottom-nav-item${pathname.startsWith('/players') ? ' active' : ''}`}>
-          <span>Search</span>
-        </Link>
-        <Link href="/login" className={`mobile-bottom-nav-item${pathname === '/login' ? ' active' : ''}`}>
-          <span className="mobile-bottom-nav-text">Log in</span>
-        </Link>
-        <Link href="/signup" className={`mobile-bottom-nav-item${pathname === '/signup' ? ' active' : ''}`}>
-          <span className="mobile-bottom-nav-text mobile-bottom-nav-signup">Sign up</span>
-        </Link>
-      </nav>
+      <div className="mobile-bottom-nav-wrap">
+        <nav className="mobile-bottom-nav" aria-label="Primary">
+          <Link href="/players" className={`mobile-bottom-nav-item${pathname.startsWith('/players') ? ' active' : ''}`}>
+            <Search aria-hidden="true" />
+            <span>Search</span>
+          </Link>
+          <Link href="/login" className={`mobile-bottom-nav-item${pathname === '/login' ? ' active' : ''}`}>
+            <LogIn aria-hidden="true" />
+            <span>Log in</span>
+          </Link>
+          <Link href="/signup" className={`mobile-bottom-nav-item mobile-bottom-nav-signup${pathname === '/signup' ? ' active' : ''}`}>
+            <UserPlus aria-hidden="true" />
+            <span>Sign up</span>
+          </Link>
+        </nav>
+      </div>
     );
   }
 
   const items = SIGNED_IN_ITEMS(profile.username);
+  const left = items.slice(0, 2);
+  const right = items.slice(2);
 
   return (
-    <nav className="mobile-bottom-nav" aria-label="Primary">
-      {items.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href}
-          className={`mobile-bottom-nav-item${pathname.startsWith(item.match) ? ' active' : ''}`}
-        >
-          {/* Alerts' unread count is inline text ("Alerts (3)") rather than
-              a badge overlaid on an icon — no icon to anchor one to
-              anymore, and it's the same convention the navbar's own
-              NotificationBell.jsx trigger now uses. */}
-          <span>
-            {item.label}
-            {item.href === '/notifications' && unreadCount > 0 ? ` (${unreadCount > 9 ? '9+' : unreadCount})` : ''}
-          </span>
-        </Link>
-      ))}
-    </nav>
+    <div className="mobile-bottom-nav-wrap">
+      <nav className="mobile-bottom-nav" aria-label="Primary">
+        {left.map(({ href, label, match, Icon }) => (
+          <Link key={label} href={href} className={`mobile-bottom-nav-item${pathname.startsWith(match) ? ' active' : ''}`}>
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
+          </Link>
+        ))}
+        {/* Empty center column — the real Add button is a sibling of this
+            <nav>, not a child of it (see .mobile-bottom-nav-add below),
+            so the bar's own notch mask can't clip it away. This spacer
+            just keeps the 4 real items evenly split either side of it. */}
+        <span className="mobile-bottom-nav-spacer" aria-hidden="true" />
+        {right.map(({ href, label, match, Icon }) => (
+          <Link key={label} href={href} className={`mobile-bottom-nav-item${pathname.startsWith(match) ? ' active' : ''}`}>
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
+          </Link>
+        ))}
+      </nav>
+      <Link href="/dashboard?add=1" className="mobile-bottom-nav-add" aria-label="Add item">
+        <Plus aria-hidden="true" />
+      </Link>
+    </div>
   );
 }

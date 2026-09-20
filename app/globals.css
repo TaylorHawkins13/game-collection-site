@@ -364,76 +364,116 @@ textarea {
    for the handful of things actually reached daily. Hidden by default;
    the @media (max-width: 640px) block far below (same breakpoint the
    hamburger menu itself switches on at) turns it on, hides Navbar.jsx's
-   now-duplicate `.nav-link-primary` copies of the same 4 destinations,
+   now-duplicate `.nav-link-primary` copies of the same destinations,
    and gives the page body room at the bottom so this bar never covers
-   the last bit of real content. */
-.mobile-bottom-nav {
+   the last bit of real content.
+
+   4th redesign of this bar (icons + a raised center Add button) — see
+   components/MobileBottomNav.jsx's own header comment for the full
+   history of the 3 icon-less attempts Taylor rejected before sending a
+   reference screenshot ("use this as inspo") and confirming via two
+   direct questions that he wanted a real icon library (lucide-react)
+   back, plus a raised "+ Add Item" button, specifically for this bar.
+   `.mobile-bottom-nav-wrap` is the fixed-position element now (not the
+   `<nav>` itself) so the raised Add button — a sibling of the `<nav>`,
+   not a child of it — sits in the same fixed corner without being
+   clipped by the bar's own notch mask below. */
+.mobile-bottom-nav-wrap {
   display: none;
+}
+.mobile-bottom-nav {
+  display: flex;
+  /* Cuts a circular notch out of the bar itself, centered on its top
+     edge, so the raised Add button (an independent sibling element, see
+     above) looks like it's popping directly out of the bar rather than
+     just floating in front of a straight edge — the detail that stood
+     out in Taylor's reference screenshot. -webkit- prefix is the one
+     that actually matters here since this only ever renders on a phone
+     (iOS Safari support for unprefixed mask-image lagged for years). */
+  mask-image: radial-gradient(circle 30px at 50% 0px, transparent 97%, black 100%);
+  -webkit-mask-image: radial-gradient(circle 30px at 50% 0px, transparent 97%, black 100%);
 }
 .mobile-bottom-nav-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   flex: 1;
   min-width: 0;
-  padding: 4px;
+  padding: 6px 2px 4px;
   color: var(--text-dim);
   text-decoration: none;
   min-height: 44px;
+  transition: color 0.15s ease;
 }
-/* Flagged directly ("the collection, search, feed, profile, alerts
-   buttons... it is no longer clear that they are buttons") right after
-   the icon-removal pass shipped — each item used to read as a button by
-   virtue of its icon; bare text alone in a row didn't carry the same
-   weight. Two rejected attempts before this one: a tinted rounded-pill
-   chip ("looks too stereotypical ai"), then plain hairline dividers with
-   no fill ("i want it to match the vibe of the rest of the app"). This
-   is that — not a new one-off shape, the exact same background/border/
-   radius recipe .btn-ghost (and .dashboard-sidebar-link, the sidebar nav
-   items this same redesign already modeled the top navbar on) already
-   use everywhere else in the app, just sized to fit 5 narrow columns
-   instead of a normal button's padding/font-size. */
-.mobile-bottom-nav-item > span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  font-size: var(--fs-xs);
+.mobile-bottom-nav-item svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
+.mobile-bottom-nav-item span {
+  font-size: 10px;
   font-weight: 600;
-  color: inherit;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 4px;
+  line-height: 1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-.mobile-bottom-nav-item:active > span {
-  background: var(--card-hover);
 }
 .mobile-bottom-nav-item.active {
   color: var(--accent-gold);
 }
-.mobile-bottom-nav-item.active > span {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-}
-.mobile-bottom-nav-text {
-  font-size: var(--fs-base);
+/* The empty middle column MobileBottomNav.jsx renders between its left
+   and right item pairs — same flex-basis as a real item so the 4 of
+   them land evenly split either side of the notch/Add button above it,
+   without rendering anything of its own. */
+.mobile-bottom-nav-spacer {
+  flex: 1;
+  min-width: 0;
 }
 /* Sign up gets the same gradient .btn-primary uses everywhere else in
    the app (including the desktop navbar's own Sign up link right next
-   to this one, functionally) instead of another flat chip — it's the
-   one real call-to-action in this bar, same as it is everywhere else it
-   appears. Selector needs `.mobile-bottom-nav-item >` to out-specificity
-   the base pill rule above (same element, otherwise ties on source
-   order instead of actually overriding it). */
-.mobile-bottom-nav-item > .mobile-bottom-nav-signup {
+   to this one, functionally) — it's the one real call-to-action in this
+   bar, so it's allowed to look like one even though its neighbors are
+   plain icon+label. */
+.mobile-bottom-nav-item.mobile-bottom-nav-signup {
   color: var(--ink);
+}
+.mobile-bottom-nav-item.mobile-bottom-nav-signup span {
   background: linear-gradient(135deg, var(--accent-gold), var(--accent-mint));
-  border-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+/* The raised circular Add button — a sibling of the bar, not a child of
+   it (see the .mobile-bottom-nav-wrap comment above), positioned by eye
+   against the bar's own fixed corner so it pops up out of the notch cut
+   into `.mobile-bottom-nav` above. */
+.mobile-bottom-nav-add {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  transform: translate(-50%, -46%);
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-mint));
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+.mobile-bottom-nav-add:active {
+  transform: translate(-50%, -46%) scale(0.93);
+}
+.mobile-bottom-nav-add svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.5px;
 }
 
 /* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
@@ -4385,35 +4425,40 @@ button.badge.tag:hover {
     box-sizing: border-box;
   }
   /* Phone bottom tab bar takes over primary nav from here down — hide
-     Navbar.jsx's now-duplicate copies of the same 4 links (still the
-     only way to reach them above this breakpoint, where there's no
-     bottom bar), show the bar itself, and give the page body clearance
-     at the bottom so it never sits under the bar. 60px bar height (44px
-     tap target + top/bottom padding) plus the safe-area inset covers an
-     iPhone's home-indicator strip. */
+     Navbar.jsx's now-duplicate copies of the same links (still the only
+     way to reach them above this breakpoint, where there's no bottom
+     bar), show the bar itself, and give the page body clearance at the
+     bottom so it never sits under the bar. 60px bar height (44px tap
+     target + top/bottom padding) plus the safe-area inset covers an
+     iPhone's home-indicator strip.
+
+     .notif-wrap (the bell, components/NotificationBell.jsx) is
+     deliberately NOT hidden here any more — Alerts isn't one of this
+     bar's 4 items in the icon+Add-button redesign (see
+     MobileBottomNav.jsx's own comment on why), so the bell goes back to
+     living in the hamburger drawer on phones, same as before that gap
+     was ever closed. */
   .nav-link-primary {
     display: none;
   }
-  /* The navbar's bell (.notif-wrap, components/NotificationBell.jsx)
-     isn't a plain .nav-link so it doesn't pick up .nav-link-primary —
-     hidden here directly for the same reason: it's now the bottom bar's
-     Alerts item instead (closes ROADMAP.md's "notification bell isn't
-     reachable from the phone bottom bar"). Replaces this same selector's
-     old `align-self: flex-start` rule from when it still rendered in the
-     hamburger drawer — moot now that it doesn't render here at all. */
-  .notif-wrap {
-    display: none;
-  }
-  .mobile-bottom-nav {
-    display: flex;
+  .mobile-bottom-nav-wrap {
+    display: block;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 160;
+  }
+  .mobile-bottom-nav {
     background: var(--bg-alt);
     border-top: 1px solid var(--border);
     padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+  }
+  /* Only shown once the wrap (and the notch it pops out of) is actually
+     positioned — matches .mobile-bottom-nav-wrap's own display switch
+     above instead of being visible-but-unpositioned at wider widths. */
+  .mobile-bottom-nav-add {
+    display: flex;
   }
   body {
     padding-bottom: calc(60px + env(safe-area-inset-bottom));
