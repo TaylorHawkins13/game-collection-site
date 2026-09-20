@@ -128,6 +128,18 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
   const [priceCheck, setPriceCheck] = useState(null);
   const [priceHint, setPriceHint] = useState('');
   const series = useSeriesLookup();
+  // Which of the 4 labeled sections the jump nav below currently shows as
+  // selected — purely a label on the pill you last clicked, not a live
+  // scroll-position tracker (no IntersectionObserver here), so it can't
+  // drift out of sync with what's actually on screen if a field's error
+  // text or a search-results list changes a section's height. Clicking a
+  // field still works top-to-bottom without ever touching this.
+  const [activeSection, setActiveSection] = useState('gm-section-basics');
+
+  function jumpToSection(id) {
+    setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   useEffect(() => {
     setCoverBroken(false);
@@ -391,6 +403,32 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     : isFunko
     ? 'e.g. Pop!, Pop! Rides, Pop! Deluxe, Pin'
     : 'e.g. RPG';
+
+  // The 2nd jump-nav pill's label and the heading above the type-specific
+  // fields — "Game details", "Comic details", etc., same idea as
+  // mediaCreatorLabel/mediaPublisherLabel just below swapping labels by
+  // type rather than swapping which fields show.
+  const typeDetailsLabel = isGame
+    ? 'Game details'
+    : isComic
+    ? 'Comic details'
+    : isCard
+    ? 'Card details'
+    : isVinyl
+    ? 'Vinyl details'
+    : isBook
+    ? 'Book details'
+    : isDvd
+    ? 'DVD details'
+    : isVhs
+    ? 'VHS details'
+    : isCd
+    ? 'CD details'
+    : isConsole
+    ? 'Console details'
+    : isFunko
+    ? 'Funko details'
+    : 'Details';
 
   const mediaCreatorLabel = isMovie ? 'Director' : isCd ? 'Artist' : 'Author';
   const mediaPublisherLabel = isMovie ? 'Studio' : isCd ? 'Label' : 'Publisher';
@@ -898,6 +936,35 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           </div>
         )}
 
+        {/* Jump nav — sticks to the top of the modal's own scroll area
+            (.overlay, not .modal — see globals.css) once you've scrolled
+            past it. Not a wizard: every section still renders top to
+            bottom regardless of which pill is active, this just gives you
+            somewhere to jump to and a label for where you are, replacing
+            what used to be one unbroken scroll through ~30 fields with no
+            headings anywhere (see CHANGELOG.md). */}
+        <div className="form-section-tabs" role="tablist" aria-label="Jump to section">
+          {[
+            { id: 'gm-section-basics', label: 'Basics' },
+            { id: 'gm-section-details', label: typeDetailsLabel },
+            { id: 'gm-section-ownership', label: 'Ownership & value' },
+            { id: 'gm-section-status', label: 'Status & notes' },
+          ].map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={activeSection === s.id}
+              className={`form-section-tab${activeSection === s.id ? ' active' : ''}`}
+              onClick={() => jumpToSection(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div id="gm-section-basics" className="form-section">
+        <div className="form-section-heading">Basics</div>
         <div className="field">
           <label htmlFor="gm-item-type">Type</label>
           {/* Always shows every type, regardless of Collecting preferences
@@ -1036,6 +1103,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             </div>
           )}
         </div>
+        </div>
+
+        <div id="gm-section-details" className="form-section">
+        <div className="form-section-heading">{typeDetailsLabel}</div>
 
         {isGame && (
           <div className="row2">
@@ -1392,7 +1463,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             </>
           )}
         </div>
+        </div>
 
+        <div id="gm-section-ownership" className="form-section">
+        <div className="form-section-heading">Ownership &amp; value</div>
         <div className="row2">
           <div className="field">
             <label htmlFor="gm-ownership">Ownership status</label>
@@ -1561,7 +1635,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             )}
           </div>
         )}
+        </div>
 
+        <div id="gm-section-status" className="form-section">
+        <div className="form-section-heading">Status &amp; notes</div>
         <div className="row2">
           {isGame && (
             <div className="field">
@@ -1635,6 +1712,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         <div className="field">
           <label htmlFor="gm-notes">Notes</label>
           <textarea id="gm-notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Anything worth remembering…" />
+        </div>
         </div>
 
         {/* Autocomplete lists for the fields above, built from your own

@@ -340,6 +340,17 @@ textarea {
   color: var(--text);
 }
 
+/* The Discover/Account dropdown triggers (components/ActionMenu.jsx,
+   rendered with triggerClassName="nav-link nav-link-menu-trigger") are
+   <button>s wearing .nav-link's look — this just strips the browser's
+   own default button chrome (background/border) that .nav-link alone
+   doesn't override, same reason .notif-bell needs its own reset above. */
+.nav-link-menu-trigger {
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+
 .nav-toggle {
   display: none;
 }
@@ -381,30 +392,6 @@ textarea {
 }
 .mobile-bottom-nav-signup {
   color: var(--accent-gold);
-}
-/* Wraps just the icon (not the whole flex-column item) so the unread
-   badge on the Alerts item anchors to the icon itself rather than
-   floating somewhere in the middle of a much wider flex-1 tap target —
-   same idea as .notif-wrap/.notif-bell's own relative/absolute pairing
-   for the navbar's bell button. */
-.mobile-bottom-nav-icon-wrap {
-  position: relative;
-  display: inline-flex;
-}
-.mobile-bottom-nav-badge {
-  position: absolute;
-  top: -4px;
-  right: -6px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  border-radius: 999px;
-  background: #e0524a;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 14px;
-  text-align: center;
 }
 
 /* The dashboard's "Tools" panel — Filters, Select/Views, and the Play
@@ -521,13 +508,71 @@ textarea {
   border-bottom-color: var(--accent);
 }
 
+/* ---------- Add/edit item form sections (GameModal) ----------
+   Same 4-group organization pass as .settings-tabs above (and the same
+   visual language — tab strip with an underlined active pill, not a new
+   style) — see CHANGELOG.md. Replaces what used to be one unbroken
+   ~30-field scroll with no headings anywhere. Sticky (unlike
+   .settings-tabs, which never needs to be — it sits at the top of its
+   own page) because this form is genuinely long enough to scroll past
+   the tab row entirely otherwise; sticks to the top of .modal's own
+   scroll container, GameModal.jsx's .overlay, not the page. */
+.form-section-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: 4px 0 18px;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  background: var(--bg-alt);
+  z-index: 5;
+}
+.form-section-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  padding: 8px 4px 10px;
+  margin-right: 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.form-section-tab:hover {
+  color: var(--text);
+}
+.form-section-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.form-section-heading {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin: 18px 0 10px;
+}
+.form-section:first-of-type .form-section-heading {
+  margin-top: 0;
+}
+
 .notif-wrap {
   position: relative;
 }
+/* Text-only now (see CHANGELOG.md's "no icons anywhere" pass) — no
+   longer needs its own font-size/padding override, .nav-link's own
+   sizing matches every other top-level nav item. Still its own class
+   only so the background/border reset below applies (a <button>, unlike
+   the <Link>s .nav-link is otherwise used on, carries browser default
+   button chrome that needs suppressing). */
 .notif-bell {
-  position: relative;
-  font-size: 16px;
-  padding: 8px 10px;
+  background: none;
+  border: none;
+  font-family: inherit;
 }
 .notif-badge {
   position: absolute;
@@ -4255,9 +4300,8 @@ button.badge.tag:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    font-size: 17px;
+    min-height: 44px;
+    padding: 0 14px;
   }
   .nav-overlay.open {
     display: block;

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import useCurrentProfile from '@/lib/useCurrentProfile';
 import useUnreadNotifications from '@/lib/useUnreadNotifications';
-import BottomNavIcon from './BottomNavIcon';
 
 // A persistent bottom tab bar on phones, the way most native/mobile apps
 // (Spotify included) handle primary navigation instead of a hamburger
@@ -39,11 +38,11 @@ import BottomNavIcon from './BottomNavIcon';
 // already uses — avoids a hydration mismatch between server and client
 // guessing at viewport width.
 const SIGNED_IN_ITEMS = (username) => [
-  { href: '/dashboard', label: 'Collection', icon: 'collection', match: '/dashboard' },
-  { href: '/players', label: 'Search', icon: 'search', match: '/players' },
-  { href: '/feed', label: 'Feed', icon: 'feed', match: '/feed' },
-  { href: username ? `/u/${username}` : '/dashboard', label: 'Profile', icon: 'profile', match: username ? `/u/${username}` : '__none__' },
-  { href: '/notifications', label: 'Alerts', icon: 'bell', match: '/notifications' },
+  { href: '/dashboard', label: 'Collection', match: '/dashboard' },
+  { href: '/players', label: 'Search', match: '/players' },
+  { href: '/feed', label: 'Feed', match: '/feed' },
+  { href: username ? `/u/${username}` : '/dashboard', label: 'Profile', match: username ? `/u/${username}` : '__none__' },
+  { href: '/notifications', label: 'Alerts', match: '/notifications' },
 ];
 
 export default function MobileBottomNav() {
@@ -62,7 +61,6 @@ export default function MobileBottomNav() {
     return (
       <nav className="mobile-bottom-nav" aria-label="Primary">
         <Link href="/players" className={`mobile-bottom-nav-item${pathname.startsWith('/players') ? ' active' : ''}`}>
-          <BottomNavIcon type="search" />
           <span>Search</span>
         </Link>
         <Link href="/login" className={`mobile-bottom-nav-item${pathname === '/login' ? ' active' : ''}`}>
@@ -85,13 +83,14 @@ export default function MobileBottomNav() {
           href={item.href}
           className={`mobile-bottom-nav-item${pathname.startsWith(item.match) ? ' active' : ''}`}
         >
-          <span className="mobile-bottom-nav-icon-wrap">
-            <BottomNavIcon type={item.icon} />
-            {item.icon === 'bell' && unreadCount > 0 && (
-              <span className="mobile-bottom-nav-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-            )}
+          {/* Alerts' unread count is inline text ("Alerts (3)") rather than
+              a badge overlaid on an icon — no icon to anchor one to
+              anymore, and it's the same convention the navbar's own
+              NotificationBell.jsx trigger now uses. */}
+          <span>
+            {item.label}
+            {item.href === '/notifications' && unreadCount > 0 ? ` (${unreadCount > 9 ? '9+' : unreadCount})` : ''}
           </span>
-          <span>{item.label}</span>
         </Link>
       ))}
     </nav>

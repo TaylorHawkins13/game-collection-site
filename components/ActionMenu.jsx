@@ -21,7 +21,16 @@ import { useEffect, useRef, useState } from 'react';
 // which needs its own visible label/styling instead of the generic
 // more-actions affordance, while reusing the same dropdown/positioning/
 // click-outside/Escape behavior rather than duplicating it.
-export default function ActionMenu({ children, label = 'More actions', trigger, triggerClassName }) {
+//
+// `closeOnClick` is opt-in (default off, unchanged from before) — the
+// dashboard/profile/GameModal menus this originally shipped for rely on
+// staying open after a click inside (ShareProfileButton shows its own
+// "Link copied!" feedback in place for ~2s, which an auto-closing menu
+// would cut off). Navbar.jsx's new Discover/Account menus pass this true
+// instead: Navbar lives in the root layout and persists across client-side
+// navigation, so without this a dropdown left open by clicking a Link
+// inside it would still be sitting open over the next page.
+export default function ActionMenu({ children, label = 'More actions', trigger, triggerClassName, closeOnClick = false }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
@@ -62,12 +71,18 @@ export default function ActionMenu({ children, label = 'More actions', trigger, 
       >
         {trigger || '⋯'}
       </button>
-      {/* Deliberately does NOT auto-close on click inside — ShareProfileButton
-          shows its own "Link copied!" feedback in place for ~2s after a
-          click, which an auto-closing menu would cut off immediately.
-          Click-outside (above) and page navigation (for Link items) are
-          enough to dismiss it in practice. */}
-      {open && <div className="action-menu-dropdown">{children}</div>}
+      {/* Deliberately does NOT auto-close on click inside by default —
+          ShareProfileButton shows its own "Link copied!" feedback in place
+          for ~2s after a click, which an auto-closing menu would cut off
+          immediately. Click-outside (above) and page navigation (for Link
+          items) are enough to dismiss it in practice for that case.
+          closeOnClick opts a caller back into closing on any click inside
+          (see its own comment above). */}
+      {open && (
+        <div className="action-menu-dropdown" onClick={closeOnClick ? () => setOpen(false) : undefined}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
