@@ -1197,6 +1197,38 @@ button:disabled {
   stroke-width: 2px;
   flex-shrink: 0;
 }
+/* Icon sizing for the Search page's submit button (icon rollout, "the
+   other pages" round) — same reasoning as `.profile-action-icon-btn`:
+   `.btn-primary` is used all over the app on buttons with no icon, so
+   this stays a small scoped class rather than a blanket `.btn-primary
+   svg` rule. */
+.search-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.search-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
+/* Icon sizing for the small set of "back to X" / "submit your own"
+   outer nav links that picked up a real icon this round (Articles index
+   + detail, the Lists detail page's two back links) in place of a manual
+   "←"/"&larr;" character — same scoped-class reasoning as the classes
+   above. */
+.page-nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.page-nav-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
 .toolbar input[type='text'],
 .toolbar select {
   background: var(--card);

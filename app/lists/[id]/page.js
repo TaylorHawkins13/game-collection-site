@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 
@@ -53,7 +54,10 @@ export default async function ListDetailPage({ params }) {
       return (
         <main className="container" style={{ maxWidth: 720 }}>
           <p className="sub" style={{ marginTop: 20 }}>This list is private.</p>
-          <Link href="/lists">← Back to Lists</Link>
+          <Link href="/lists" className="page-nav-icon-btn">
+            <ArrowLeft aria-hidden="true" />
+            Back to Lists
+          </Link>
         </main>
       );
     }
@@ -77,8 +81,9 @@ export default async function ListDetailPage({ params }) {
   return (
     <main className="container">
       <div style={{ marginTop: 20, marginBottom: 8 }}>
-        <Link href="/lists" className="sub" style={{ textDecoration: 'none' }}>
-          ← Back to Lists
+        <Link href="/lists" className="sub page-nav-icon-btn" style={{ textDecoration: 'none' }}>
+          <ArrowLeft aria-hidden="true" />
+          Back to Lists
         </Link>
       </div>
       <h1>{list.name}</h1>

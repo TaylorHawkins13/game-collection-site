@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SquarePen } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import StarRating from '@/components/StarRating';
 import { getAllArticles } from '@/lib/articles';
@@ -22,7 +23,12 @@ export default async function ArticlesIndexPage() {
       <div className="home-hub-greeting">
         <h1>Reviews &amp; Articles</h1>
         <p className="sub">Writing about the stuff worth collecting — from the Shelf Life team and the community.</p>
-        <Link href="/articles/submit" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 10 }}>
+        <Link
+          href="/articles/submit"
+          className="btn-ghost page-nav-icon-btn"
+          style={{ textDecoration: 'none', marginTop: 10 }}
+        >
+          <SquarePen aria-hidden="true" />
           Submit your own
         </Link>
       </div>

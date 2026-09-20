@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import StarRating from '@/components/StarRating';
 import { getAllArticles } from '@/lib/articles';
@@ -28,8 +29,13 @@ export default async function ArticlePage({ params }) {
 
   return (
     <main className="container">
-      <Link href="/articles" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 20 }}>
-        &larr; Reviews &amp; Articles
+      <Link
+        href="/articles"
+        className="btn-ghost page-nav-icon-btn"
+        style={{ textDecoration: 'none', marginBottom: 20 }}
+      >
+        <ArrowLeft aria-hidden="true" />
+        Reviews &amp; Articles
       </Link>
 
       <article className="article-detail">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
 import { createClient } from '@/lib/supabaseClient';
 import ProfileCard from '@/components/ProfileCard';
 import CollectibleCard from '@/components/CollectibleCard';
@@ -136,7 +137,10 @@ export default function PlayersClient() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button className="btn-primary" type="submit">Search</button>
+        <button className="btn-primary search-icon-btn" type="submit">
+          <Search aria-hidden="true" />
+          Search
+        </button>
       </form>
 
       {loading ? (
