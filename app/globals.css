@@ -2075,6 +2075,23 @@ button.badge.tag:hover {
   display: flex;
   gap: 8px;
 }
+/* Icon sizing for GameModal's own Cancel/Save Item buttons (icon rollout,
+   GameModal footer round) — scoped to this one wrapper rather than a
+   blanket `.btn-ghost svg`/`.btn-primary svg` rule, same reasoning as
+   `.dashboard-header-actions`/`.profile-action-icon-btn` elsewhere: both
+   classes are used all over the app on buttons with no icon at all. */
+.modal-actions-icon-btns .btn-ghost,
+.modal-actions-icon-btns .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.modal-actions-icon-btns svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
 
 /* ---------- Star rating (half-star capable) ---------- */
 .star-rating {

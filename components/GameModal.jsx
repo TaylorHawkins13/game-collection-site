@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { X, Save } from 'lucide-react';
 import ChipInput from './ChipInput';
 import StarRating from './StarRating';
 import ActionMenu from './ActionMenu';
@@ -1750,9 +1751,19 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           ) : (
             <div />
           )}
-          <div className="right">
-            <button className="btn-ghost" type="button" onClick={onClose}>Cancel</button>
+          <div className="right modal-actions-icon-btns">
+            {/* Duplicate/Delete stay plain text — they're nested inside
+                the "More actions" ActionMenu above, same restraint every
+                dropdown's own contents get elsewhere in this rollout (only
+                the menu's ellipsis trigger itself is iconified, already
+                done in an earlier round). Cancel/Save Item are the two
+                outer, always-visible controls, so they get real icons. */}
+            <button className="btn-ghost" type="button" onClick={onClose}>
+              <X aria-hidden="true" />
+              Cancel
+            </button>
             <button className="btn-primary" type="button" onClick={handleSave} disabled={saving || !form.title.trim()}>
+              <Save aria-hidden="true" />
               {saving ? 'Saving…' : 'Save Item'}
             </button>
           </div>
