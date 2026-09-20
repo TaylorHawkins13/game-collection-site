@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { GitCompare, Pencil, ChevronDown } from 'lucide-react';
+import { GitCompare, Pencil, ChevronDown, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
 import RefreshPricesButton from './RefreshPricesButton';
@@ -356,6 +356,7 @@ export default async function ProfilePage({ params }) {
 
       {!canView ? (
         <div className="empty-state">
+          <Lock aria-hidden="true" />
           <div>This collector's shelf is private.</div>
         </div>
       ) : (

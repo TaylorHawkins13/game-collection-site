@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import PublicListCard from '@/components/PublicListCard';
 
@@ -31,6 +32,7 @@ export default async function ListsPage() {
 
       {!lists || lists.length === 0 ? (
         <div className="empty-state">
+          <ClipboardList aria-hidden="true" />
           <div>No public lists yet — be the first to make one.</div>
         </div>
       ) : (

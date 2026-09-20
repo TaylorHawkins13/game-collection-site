@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { Library, SearchX } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
 import ItemDetailModal from '@/components/ItemDetailModal';
@@ -250,6 +251,7 @@ export default function ProfileTabs({
       {tab === 'collection' &&
         (games.length === 0 ? (
           <div className="empty-state">
+            <Library aria-hidden="true" />
             <div>{singleType ? `${ownerPossessive} ${TYPE_NOUNS[singleType]} is empty.` : 'No items on this shelf yet.'}</div>
           </div>
         ) : (
@@ -278,6 +280,7 @@ export default function ProfileTabs({
             <div ref={gridRef} style={{ marginBottom: 40 }}>
               {visibleGames.length === 0 ? (
                 <div className="empty-state">
+                  <SearchX aria-hidden="true" />
                   <div>Nothing here for this filter.</div>
                 </div>
               ) : (

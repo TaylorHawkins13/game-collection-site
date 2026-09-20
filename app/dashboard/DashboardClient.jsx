@@ -17,7 +17,7 @@ import WelcomePanel from '@/components/WelcomePanel';
 import ShelfIdentityHero from '@/components/ShelfIdentityHero';
 import CategoryRail from '@/components/CategoryRail';
 import ActionMenu from '@/components/ActionMenu';
-import { Plus, ChevronDown, RefreshCw, Settings, SlidersHorizontal, ListChecks, Check, X, Upload, Download } from 'lucide-react';
+import { Plus, ChevronDown, RefreshCw, Settings, SlidersHorizontal, ListChecks, Check, X, Upload, Download, SearchX } from 'lucide-react';
 // Code-split: these are all either heavy (GameModal, the biggest single
 // contributor to the dashboard's JS bundle) or only ever needed after a
 // deliberate click (import/Steam-import/quick-add modals, the passkeys
@@ -2792,6 +2792,7 @@ export default function DashboardClient({ userId, profile, initialGames }) {
 
           {filtered.length === 0 ? (
             <div className="empty-state" ref={gridSectionRef}>
+              <SearchX aria-hidden="true" />
               <div>No items match your filters.</div>
             </div>
           ) : (

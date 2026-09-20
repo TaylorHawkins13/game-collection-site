@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import GameCard from '@/components/GameCard';
 
@@ -101,6 +101,7 @@ export default async function ListDetailPage({ params }) {
 
       {orderedGames.length === 0 ? (
         <div className="empty-state">
+          <ClipboardList aria-hidden="true" />
           <div>This list is empty.</div>
         </div>
       ) : (

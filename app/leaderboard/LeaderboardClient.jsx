@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Trophy } from 'lucide-react';
 import { CoverThumb, PersonAvatar } from '@/components/LeaderboardThumb';
 import { formatMoney } from '@/lib/currency';
 
@@ -233,6 +234,7 @@ export default function LeaderboardClient({
 
       {podiumRows.length === 0 ? (
         <div className="empty-state">
+          <Trophy aria-hidden="true" />
           <div>{emptyText}</div>
         </div>
       ) : (

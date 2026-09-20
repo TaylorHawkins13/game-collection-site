@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { BookOpen } from 'lucide-react';
 import SeriesGrid from '@/components/SeriesGrid';
 import { goToBestListing } from '@/lib/externalListings';
 
@@ -67,6 +68,7 @@ export default function CreatorPageClient({ name, image, entries, ownedKeys, tru
 
       {entries.length === 0 ? (
         <div className="empty-state">
+          <BookOpen aria-hidden="true" />
           <div>Comic Vine doesn&apos;t have any issue credits on file for {name}.</div>
         </div>
       ) : (

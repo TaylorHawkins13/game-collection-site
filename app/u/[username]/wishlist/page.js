@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { Lock, Gift } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import ShareProfileButton from '@/components/ShareProfileButton';
 import WishlistItemRow from '@/components/WishlistItemRow';
@@ -125,10 +126,12 @@ export default async function WishlistPage({ params }) {
 
       {!canView ? (
         <div className="empty-state">
+          <Lock aria-hidden="true" />
           <div>This collector's shelf is private.</div>
         </div>
       ) : (wishlistItems || []).length === 0 ? (
         <div className="empty-state">
+          <Gift aria-hidden="true" />
           <div>{isOwner ? "Nothing on your wishlist yet — mark an item as \"Wishlist\" and it'll show up here." : `${name} doesn't have anything on their wishlist right now.`}</div>
         </div>
       ) : (

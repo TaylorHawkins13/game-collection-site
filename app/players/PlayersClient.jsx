@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, SearchX, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabaseClient';
 import ProfileCard from '@/components/ProfileCard';
 import CollectibleCard from '@/components/CollectibleCard';
@@ -147,10 +147,12 @@ export default function PlayersClient() {
         <div className="sub">Loading…</div>
       ) : hasSearched && noResults ? (
         <div className="empty-state">
+          <SearchX aria-hidden="true" />
           <div>No collectors or collectibles found.</div>
         </div>
       ) : !hasSearched && results.length === 0 ? (
         <div className="empty-state">
+          <Users aria-hidden="true" />
           <div>No public collectors yet.</div>
         </div>
       ) : (

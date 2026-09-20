@@ -1689,12 +1689,7 @@ button.badge.tag:hover {
    one change reaches all of them at once rather than needing a per-page
    pass). Same `background`/`border`/`border-radius: var(--radius)`
    recipe `.card`/`.welcome-panel` already use, just centered as its own
-   bounded block instead of stretching full-width. Deliberately no icon
-   added here — these dozen spots mean different things ("no results
-   yet" vs. "this list is private" vs. "nothing logged yet"), and a
-   single hardcoded icon on a shared class can't fit all of them
-   correctly; a per-instance icon is a real follow-up, not guessed at
-   here (see ROADMAP.md). */
+   bounded block instead of stretching full-width. */
 .empty-state {
   text-align: center;
   padding: 56px 28px;
@@ -1704,6 +1699,21 @@ button.badge.tag:hover {
   border-radius: var(--radius);
   max-width: 480px;
   margin: 0 auto;
+}
+/* Sizing for the per-instance lucide-react icon each `.empty-state`
+   caller now renders above its own message (round 2 of the "keep
+   going" — see CHANGELOG.md) — a single shared class covering a dozen
+   genuinely different meanings can't hardcode one icon for all of them,
+   so each call site picks its own (Trophy for the leaderboard, Lock for
+   a private profile, Gift for an empty wishlist, and so on) and this
+   just sizes/tints whichever one shows up consistently. */
+.empty-state svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 1.75px;
+  color: var(--accent-gold);
+  opacity: 0.85;
+  margin-bottom: 14px;
 }
 .empty-state .big {
   font-size: 44px;
