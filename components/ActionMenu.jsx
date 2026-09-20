@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Ellipsis } from 'lucide-react';
 
 // A generic "⋯ more" dropdown for consolidating secondary/infrequent
 // buttons that were previously all sitting in a row — the dashboard
@@ -69,7 +70,15 @@ export default function ActionMenu({ children, label = 'More actions', trigger, 
         aria-haspopup="true"
         aria-expanded={open}
       >
-        {trigger || '⋯'}
+        {/* Real Ellipsis icon (lucide-react) replacing the "⋯" text
+            character — .btn-icon already picked up display:inline-flex
+            and its own svg sizing rule in the theme-toggle/text-size
+            round, so this needed no CSS changes of its own. Every
+            default-trigger caller (GameModal's "More actions",
+            DashboardClient's "More collection tools") gets this for
+            free; callers passing their own `trigger` (Navbar's Discover/
+            Account, DashboardClient's "+ Add Item ▾") are unaffected. */}
+        {trigger || <Ellipsis aria-hidden="true" />}
       </button>
       {/* Deliberately does NOT auto-close on click inside by default —
           ShareProfileButton shows its own "Link copied!" feedback in place
