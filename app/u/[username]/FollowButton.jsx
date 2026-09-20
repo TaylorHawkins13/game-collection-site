@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { UserPlus, UserCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabaseClient';
 import { announceTrophies } from '@/lib/trophyToast';
 import { announceToast } from '@/lib/toast';
@@ -55,8 +56,13 @@ export default function FollowButton({ profileId, initialFollowing }) {
   }
 
   return (
-    <button className={following ? 'btn-ghost' : 'btn-primary'} onClick={toggle} disabled={busy} type="button">
-      {following ? 'Following' : '+ Follow'}
+    <button className={following ? 'btn-ghost profile-action-icon-btn' : 'btn-primary profile-action-icon-btn'} onClick={toggle} disabled={busy} type="button">
+      {/* Drops the manual "+" character for a real icon — UserCheck once
+          following (confirms the state, same "icon matches current
+          state" convention Menu/X-style toggles use elsewhere), UserPlus
+          beforehand. */}
+      {following ? <UserCheck aria-hidden="true" /> : <UserPlus aria-hidden="true" />}
+      {following ? 'Following' : 'Follow'}
     </button>
   );
 }

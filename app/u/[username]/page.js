@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { GitCompare, Pencil, ChevronDown } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
 import RefreshPricesButton from './RefreshPricesButton';
@@ -281,13 +282,20 @@ export default async function ProfilePage({ params }) {
                 a wishlist that isn't empty, canView), and Report profile
                 being permanently in there means the menu is never
                 actually empty even on a profile where nothing else
-                qualifies. A labeled trigger ("More ▾", not a bare "⋯")
-                so it reads as an obvious, findable group of secondary
-                actions rather than a mystery icon. */}
-            <Link href={`/compare/${profile.username}`} className="btn-ghost" style={{ textDecoration: 'none' }}>
+                qualifies. A labeled trigger ("More" + a trailing chevron,
+                not a bare "⋯") so it reads as an obvious, findable group
+                of secondary actions rather than a mystery icon — matches
+                Navbar's Discover/Account triggers (real icons rolled out
+                across the app, see CHANGELOG.md). */}
+            <Link href={`/compare/${profile.username}`} className="btn-ghost profile-action-icon-btn" style={{ textDecoration: 'none' }}>
+              <GitCompare aria-hidden="true" />
               Compare collections
             </Link>
-            <ActionMenu label="More profile actions" trigger="More ▾" triggerClassName="btn-ghost action-menu-trigger">
+            <ActionMenu
+              label="More profile actions"
+              trigger={<>More <ChevronDown aria-hidden="true" /></>}
+              triggerClassName="btn-ghost action-menu-trigger"
+            >
               {canView && owned > 0 && (
                 <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
                   Shelf mosaic
@@ -306,13 +314,16 @@ export default async function ProfilePage({ params }) {
         {isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <ShareProfileButton username={profile.username} itemCount={owned} />
-            <Link href="/dashboard?settings=1" className="btn-ghost" style={{ textDecoration: 'none' }}>
+            <Link href="/dashboard?settings=1" className="btn-ghost profile-action-icon-btn" style={{ textDecoration: 'none' }}>
+              <Pencil aria-hidden="true" />
               Edit profile
             </Link>
             {/* Share + Edit profile are the two things an owner reaches
                 for most — everything below is real but lower-frequency
-                "manage" work, so it moved into one labeled "Manage ▾"
-                menu instead of sitting in the row as 4 more full-width
+                "manage" work, so it moved into one labeled "Manage" menu
+                (trailing chevron, matching the "More" trigger above and
+                Navbar's Discover/Account triggers) instead of sitting in
+                the row as 4 more full-width
                 buttons (flagged directly: "too many buttons," "looks
                 messy," once the mosaic behind this row got fixed to
                 actually show recognizable cover art — see CHANGELOG.md).
@@ -323,7 +334,11 @@ export default async function ProfilePage({ params }) {
                 real condition (owned>0) failed. That's not a risk here:
                 Gift list/Manage showcase/Manage lists are unconditional,
                 so this menu always has at least 3 real items in it. */}
-            <ActionMenu label="Manage your profile" trigger="Manage ▾" triggerClassName="btn-ghost action-menu-trigger">
+            <ActionMenu
+              label="Manage your profile"
+              trigger={<>Manage <ChevronDown aria-hidden="true" /></>}
+              triggerClassName="btn-ghost action-menu-trigger"
+            >
               {owned > 0 && (
                 <Link href={`/u/${profile.username}/mosaic`} className="btn-ghost" style={{ textDecoration: 'none' }}>
                   Shelf mosaic

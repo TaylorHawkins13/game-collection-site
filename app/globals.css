@@ -1179,6 +1179,24 @@ button:disabled {
   stroke-width: 2px;
   flex-shrink: 0;
 }
+/* Icon sizing for the profile page's action row (icon rollout, profile
+   page round) — Follow/Following, Share my shelf/Link copied!, Compare
+   collections, and Edit profile all carry this class directly on the
+   button/link element itself (rather than via a wrapping container class
+   like the dashboard rows above) since they're scattered across a few
+   different components (FollowButton.jsx, ShareProfileButton.jsx) as well
+   as this page's own JSX. */
+.profile-action-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.profile-action-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
 .toolbar input[type='text'],
 .toolbar select {
   background: var(--card);

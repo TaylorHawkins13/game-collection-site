@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Share2, Check } from 'lucide-react';
 import { SITE_URL } from '@/lib/siteUrl';
 import { announceToast } from '@/lib/toast';
 
@@ -46,7 +47,12 @@ export default function ShareProfileButton({ username, itemCount, path, text: te
   }
 
   return (
-    <button type="button" className="btn-ghost" onClick={handleShare} style={{ whiteSpace: 'nowrap' }}>
+    <button type="button" className="btn-ghost profile-action-icon-btn" onClick={handleShare} style={{ whiteSpace: 'nowrap' }}>
+      {/* Check while showing the "Link copied!" confirmation, Share2
+          otherwise — same "icon matches current state" convention used
+          elsewhere (FollowButton's own UserPlus/UserCheck, Menu/X-style
+          toggles). */}
+      {justCopied ? <Check aria-hidden="true" /> : <Share2 aria-hidden="true" />}
       {justCopied ? 'Link copied!' : label || 'Share my shelf'}
     </button>
   );
