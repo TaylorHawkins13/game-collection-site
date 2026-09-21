@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Building2 } from 'lucide-react';
 import SeriesGrid from '@/components/SeriesGrid';
 import { goToBestListing } from '@/lib/externalListings';
@@ -35,8 +36,7 @@ export default function CompanyPageClient({ name, logo, entries, ownedKeys, trun
       <div className="profile-header" style={{ marginTop: 0 }}>
         <div className="avatar">
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt={name} />
+            <Image src={logo} alt={name} fill sizes="72px" style={{ objectFit: 'cover' }} />
           ) : (
             (name || '?').slice(0, 1).toUpperCase()
           )}

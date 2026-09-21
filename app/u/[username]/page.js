@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { GitCompare, Pencil, ChevronDown, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import FollowButton from './FollowButton';
@@ -227,15 +228,27 @@ export default async function ProfilePage({ params }) {
         {mosaicCovers.length > 0 && (
           <div className="profile-header-mosaic" aria-hidden="true">
             {mosaicCovers.map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={src} alt="" />
+              // Each tile needs its own position:relative wrapper (rather
+              // than `fill` directly on the grid item) since these are CSS
+              // grid children — taking one out of flow with `fill` would
+              // break the 4x2 grid arrangement (Sept 2026, ROADMAP.md's
+              // "App feels laggy" item).
+              <div key={i} style={{ position: 'relative' }}>
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  sizes="12vw"
+                  style={{ objectFit: 'cover', filter: 'grayscale(0.45)' }}
+                  unoptimized={src.startsWith('data:')}
+                />
+              </div>
             ))}
           </div>
         )}
         <div className="avatar">
           {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatar_url} alt={profile.username} />
+            <Image src={profile.avatar_url} alt={profile.username} fill sizes="72px" style={{ objectFit: 'cover' }} />
           ) : (
             (profile.display_name || profile.username || '?').slice(0, 1).toUpperCase()
           )}

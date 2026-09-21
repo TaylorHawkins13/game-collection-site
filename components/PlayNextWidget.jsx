@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import CollapseToggle from './CollapseToggle';
 import StarRating from './StarRating';
 
@@ -95,15 +96,19 @@ export default function PlayNextWidget({ games, onOpen, collapsed, onToggleColla
         <>
           <button type="button" className="playnext-suggestion" onClick={() => onOpen(suggestion)}>
             {suggestion.cover ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className="playnext-suggestion-cover"
-                src={suggestion.cover}
-                alt={suggestion.title}
-                onError={(e) => {
-                  e.currentTarget.outerHTML = '<div class="playnext-suggestion-cover placeholder">No Cover</div>';
-                }}
-              />
+              <div className="playnext-suggestion-cover">
+                <Image
+                  src={suggestion.cover}
+                  alt={suggestion.title}
+                  fill
+                  sizes="48px"
+                  style={{ objectFit: 'cover' }}
+                  onError={(e) => {
+                    e.currentTarget.parentElement.outerHTML = '<div class="playnext-suggestion-cover placeholder">No Cover</div>';
+                  }}
+                  unoptimized={suggestion.cover.startsWith('data:')}
+                />
+              </div>
             ) : (
               <div className="playnext-suggestion-cover placeholder">No Cover</div>
             )}

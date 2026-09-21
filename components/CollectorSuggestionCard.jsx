@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import FollowButton from '@/app/u/[username]/FollowButton';
 
 // A tile in the dashboard's "Collectors you might like" panel — same
@@ -17,8 +18,7 @@ export default function CollectorSuggestionCard({ collector }) {
       >
         <div className="avatar" style={{ width: 40, height: 40, fontSize: 16, flexShrink: 0 }}>
           {collector.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={collector.avatar_url} alt="" />
+            <Image src={collector.avatar_url} alt="" fill sizes="40px" style={{ objectFit: 'cover' }} />
           ) : (
             (collector.display_name || collector.username || '?').slice(0, 1).toUpperCase()
           )}

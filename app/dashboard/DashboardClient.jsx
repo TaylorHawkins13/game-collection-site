@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
@@ -1984,8 +1985,14 @@ export default function DashboardClient({ userId, profile, initialGames }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div className="avatar" style={{ width: 56, height: 56, fontSize: 20 }}>
                     {settingsForm.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={settingsForm.avatar_url} alt="Avatar preview" />
+                      <Image
+                        src={settingsForm.avatar_url}
+                        alt="Avatar preview"
+                        fill
+                        sizes="56px"
+                        style={{ objectFit: 'cover' }}
+                        unoptimized={settingsForm.avatar_url.startsWith('data:')}
+                      />
                     ) : (
                       (settingsForm.display_name || profile?.username || '?').slice(0, 1).toUpperCase()
                     )}

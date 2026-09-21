@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ClipboardList } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import PublicListCard from '@/components/PublicListCard';
@@ -55,8 +56,9 @@ export default async function ListsPage() {
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', marginTop: 24 }}>
             {EXAMPLE_LISTS.map((l) => (
               <div className="card" key={l.name}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="cover" src={l.cover} alt="" />
+                <div className="card-cover-wrap">
+                  <Image className="cover" src={l.cover} alt="" fill sizes="220px" style={{ objectFit: 'cover' }} />
+                </div>
                 <div style={{ padding: '10px 12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span

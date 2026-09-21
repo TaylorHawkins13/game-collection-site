@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CONSOLES } from '@/lib/consoleList';
 import { normalizeTitle } from '@/lib/duplicateCheck';
@@ -223,17 +224,21 @@ export default function CatalogueClient({ ownedGames, ownedPlatformIds, currency
                 const content = (
                   <>
                     {g.cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={g.cover}
-                        alt={g.name}
-                        onError={(evt) => {
-                          const placeholder = document.createElement('div');
-                          placeholder.className = 'franchise-item-placeholder';
-                          placeholder.textContent = (g.name || '?').slice(0, 1);
-                          evt.currentTarget.replaceWith(placeholder);
-                        }}
-                      />
+                      <div className="franchise-item-cover">
+                        <Image
+                          src={g.cover}
+                          alt={g.name}
+                          fill
+                          sizes="90px"
+                          style={{ objectFit: 'cover' }}
+                          onError={(evt) => {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'franchise-item-placeholder';
+                            placeholder.textContent = (g.name || '?').slice(0, 1);
+                            evt.currentTarget.parentElement.replaceWith(placeholder);
+                          }}
+                        />
+                      </div>
                     ) : (
                       <div className="franchise-item-placeholder">{(g.name || '?').slice(0, 1)}</div>
                     )}

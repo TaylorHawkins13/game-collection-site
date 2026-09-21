@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Debounce/race-guard shape mirrors CreatorSearchClient.jsx
 // (app/creator/comics) exactly — same live-search-against-a-real-API
@@ -84,8 +85,7 @@ export default function CompanySearchClient() {
             <Link href={`/creator/games/${r.id}`} key={r.id} className="feed-item" style={{ textDecoration: 'none' }}>
               <div className="avatar feed-item-avatar">
                 {r.logo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.logo} alt="" />
+                  <Image src={r.logo} alt="" fill sizes="40px" style={{ objectFit: 'cover' }} />
                 ) : (
                   (r.name || '?').slice(0, 1).toUpperCase()
                 )}

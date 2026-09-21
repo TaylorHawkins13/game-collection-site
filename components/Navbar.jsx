@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
@@ -65,7 +66,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <Link href="/" className="brand" onClick={() => setMenuOpen(false)}>
-        <img src="/brand/icon.png" alt="" width={34} height={34} className="logo" />
+        <Image src="/brand/icon.png" alt="" width={34} height={34} className="logo" />
         Shelf Life
       </Link>
       <button

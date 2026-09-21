@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabaseServer';
 import { buildCollectibleDetail, buildIgdbDetail } from '@/lib/collectibleDetail';
 import { searchIgdb } from '@/lib/igdbSearch';
@@ -228,8 +229,7 @@ export default async function CollectiblePage({ searchParams }) {
               >
                 <div className="avatar" style={{ width: 36, height: 36, fontSize: 14, flexShrink: 0 }}>
                   {o.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={o.avatar_url} alt={o.username} />
+                    <Image src={o.avatar_url} alt={o.username} fill sizes="36px" style={{ objectFit: 'cover' }} />
                   ) : (
                     (o.display_name || o.username || '?').slice(0, 1).toUpperCase()
                   )}

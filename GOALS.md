@@ -16,16 +16,16 @@ These are floors/stretches to check yourself against, not commitments — you kn
 ## Feature / product decisions
 
 - A firm answer on monetization — AdSense actually flipped on (item 1), or a deliberate "not yet," rather than left half-decided.
-- A firm yes/no on a Pro subscription tier (item 44). Doesn't need to be built — but it needs Stripe, a `subscriptions` table, and a real entitlements system before anything behind it is buildable, so deciding whether it's happening this year shapes everything else worth prioritizing.
-- The app icon refresh (item 14) — no longer blocked on "mid-App-Store-review" caution now that the app's confirmed live; worth just scheduling.
-- The accessibility checklist (items 40-43) fully closed out — screen readers, keyboard nav, and low vision are each one small remaining piece from done.
-- Live currency conversion (item 25) reaching the dashboard/profile totals, not just the leaderboard.
+- A firm yes/no on a Pro subscription tier (item 43). Doesn't need to be built — but it needs Stripe, a `subscriptions` table, and a real entitlements system before anything behind it is buildable, so deciding whether it's happening this year shapes everything else worth prioritizing.
+- The app icon refresh (item 13) — no longer blocked on "mid-App-Store-review" caution now that the app's confirmed live; worth just scheduling.
+- The accessibility checklist (items 39-42) fully closed out — screen readers, keyboard nav, and low vision are each one small remaining piece from done.
+- Live currency conversion (item 24) reaching the dashboard/profile totals, not just the leaderboard.
 
 ## App-development health (not user-facing, but worth targeting)
 
-- Real test coverage on the React components and API routes (item 19's still-open half) — right now only pure-logic `lib/` modules are tested, so the highest-traffic code (GameModal, DashboardClient) has zero safety net.
-- Real usage analytics wired in — Plausible or Fathom (item 20). Right now "is this feature actually used" needs a hand-written SQL query every single time; that shouldn't need a database console.
-- The newly-flagged performance lead (item 3, "App feels laggy") at least investigated for real — migrating cover-art rendering to `next/image` is the current best guess, not yet confirmed as *the* fix.
+- Real test coverage on the React components and API routes (item 18's still-open half) — right now only pure-logic `lib/` modules are tested, so the highest-traffic code (GameModal, DashboardClient) has zero safety net.
+- Real usage analytics wired in — Plausible or Fathom (item 19). Right now "is this feature actually used" needs a hand-written SQL query every single time; that shouldn't need a database console.
+- The performance lag fix (next/image migration, Sept 2026, see `CHANGELOG.md`) — built and shipped, `ROADMAP.md`'s entry for it removed. Still worth a real production check-in: nothing here confirmed it as *the* fix rather than *a* fix, so watch whether "feels laggy" reports actually stop.
 
 ---
 

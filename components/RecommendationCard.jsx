@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import StarRating from './StarRating';
 
 const TYPE_LABELS = {
@@ -24,15 +25,19 @@ export default function RecommendationCard({ rec, onClick }) {
   return (
     <button type="button" className="rec-card" onClick={onClick}>
       {rec.cover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="rec-cover"
-          src={rec.cover}
-          alt={rec.title}
-          onError={(e) => {
-            e.currentTarget.outerHTML = '<div class="rec-cover placeholder">No Cover</div>';
-          }}
-        />
+        <div className="rec-cover">
+          <Image
+            src={rec.cover}
+            alt={rec.title}
+            fill
+            sizes="42px"
+            style={{ objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.parentElement.outerHTML = '<div class="rec-cover placeholder">No Cover</div>';
+            }}
+            unoptimized={rec.cover.startsWith('data:')}
+          />
+        </div>
       ) : (
         <div className="rec-cover placeholder">No Cover</div>
       )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Debounce/race-guard shape mirrors CatalogueClient.jsx's own live-search
 // effect (app/dashboard/catalogue/CatalogueClient.jsx) — a requestIdRef
@@ -83,8 +84,7 @@ export default function CreatorSearchClient() {
             <Link href={`/creator/comics/${r.id}`} key={r.id} className="feed-item" style={{ textDecoration: 'none' }}>
               <div className="avatar feed-item-avatar">
                 {r.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.image} alt="" />
+                  <Image src={r.image} alt="" fill sizes="40px" style={{ objectFit: 'cover' }} />
                 ) : (
                   (r.name || '?').slice(0, 1).toUpperCase()
                 )}

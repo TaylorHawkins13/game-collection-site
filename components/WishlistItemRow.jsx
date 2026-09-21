@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import CategoryIcon from './CategoryIcon';
 import { getStatRows } from './GameCard';
 
@@ -44,8 +45,7 @@ export default function WishlistItemRow({ game, currency, ebayHref, amazonHref }
     <div className="wishlist-row">
       <div className="wishlist-row-cover">
         {game.cover && !coverFailed ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={game.cover} alt={game.title} onError={() => setCoverFailed(true)} />
+          <Image src={game.cover} alt={game.title} fill sizes="64px" style={{ objectFit: 'cover' }} onError={() => setCoverFailed(true)} unoptimized={game.cover.startsWith('data:')} />
         ) : (
           <div className="wishlist-row-cover-placeholder">
             <CategoryIcon type={game.item_type} size={22} className="cover-placeholder-icon" />

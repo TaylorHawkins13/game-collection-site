@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import { shapeMosaic, modeLabel, titleColor, availableYears, availableTypes, TYPE_LABELS } from '@/lib/mosaicData';
 import { currencySymbol, formatMoney } from '@/lib/currency';
 import ShareProfileButton from '@/components/ShareProfileButton';
@@ -35,8 +36,20 @@ function Tile({ item, isShowcase, currency, failed, onFail, onHover }) {
           {(item.title || '?').slice(0, 1).toUpperCase()}
         </div>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.cover} alt={item.title} className="mosaic-tile-cover" onError={() => onFail(item.cover)} />
+        // .mosaic-tile already has width/height/position:relative/overflow,
+        // so no extra wrapper is needed for next/image's `fill` mode (Sept
+        // 2026, ROADMAP.md's "App feels laggy" item — a full mosaic can
+        // render dozens of tiles at once, so lazy-loading matters a lot here).
+        <Image
+          src={item.cover}
+          alt={item.title}
+          fill
+          sizes="100px"
+          className="mosaic-tile-cover"
+          style={{ objectFit: 'cover' }}
+          onError={() => onFail(item.cover)}
+          unoptimized={item.cover.startsWith('data:')}
+        />
       )}
       <div className="mosaic-tile-shade" />
       {isShowcase && <div className="mosaic-badge mosaic-badge-star" />}

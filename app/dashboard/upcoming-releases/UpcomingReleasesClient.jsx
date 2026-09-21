@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { computeSpendTotals } from '@/lib/upcomingReleases';
 import { currencySymbol, formatMoney } from '@/lib/currency';
 
@@ -132,7 +133,7 @@ export default function UpcomingReleasesClient({ groups, currency }) {
               >
                 {entry.cover ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={entry.cover} alt="" style={{ width: 40, height: 56, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                  <Image src={entry.cover} alt="" width={40} height={56} style={{ width: 40, height: 56, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
                 ) : (
                   <div
                     style={{

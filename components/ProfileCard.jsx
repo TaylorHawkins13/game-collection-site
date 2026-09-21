@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ProfileCard({ profile }) {
   if (!profile) return null;
@@ -10,8 +11,7 @@ export default function ProfileCard({ profile }) {
     >
       <div className="avatar" style={{ width: 48, height: 48, fontSize: 18, flexShrink: 0 }}>
         {profile.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={profile.avatar_url} alt={profile.username} />
+          <Image src={profile.avatar_url} alt={profile.username} fill sizes="48px" style={{ objectFit: 'cover' }} />
         ) : (
           (profile.display_name || profile.username || '?').slice(0, 1).toUpperCase()
         )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { X, Save } from 'lucide-react';
 import ChipInput from './ChipInput';
 import StarRating from './StarRating';
@@ -1168,7 +1169,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                     style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                   >
                     {(r.thumb || r.cover) && (
-                      <img src={r.thumb || r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                      <Image src={r.thumb || r.cover} alt="" width={34} height={44} style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} unoptimized={(r.thumb || r.cover).startsWith('data:')} />
                     )}
                     <div>
                       <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600 }}>{r.name}</div>
@@ -1189,7 +1190,12 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                   style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                 >
                   {r.cover && (
-                    <img src={r.cover} alt="" style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} />
+                    // r.cover here is pulled from another collector's own
+                    // games.cover (crowdsourced "already in the community"
+                    // match) — real risk of a stored data: URI, unlike the
+                    // dropdown above this one, whose results come straight
+                    // from a live API search.
+                    <Image src={r.cover} alt="" width={34} height={44} style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }} unoptimized={r.cover.startsWith('data:')} />
                   )}
                   <div>
                     <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600 }}>{r.title}</div>
@@ -1530,7 +1536,19 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 {coverBroken ? (
                   <span>Can't load</span>
                 ) : (
-                  <img src={form.cover} alt={form.title ? `Cover preview for ${form.title}` : 'Cover preview'} onError={() => setCoverBroken(true)} />
+                  <Image
+                    src={form.cover}
+                    alt={form.title ? `Cover preview for ${form.title}` : 'Cover preview'}
+                    fill
+                    sizes="54px"
+                    style={{ objectFit: 'cover' }}
+                    onError={() => setCoverBroken(true)}
+                    // form.cover is whatever's typed into the URL field, or
+                    // an existing item's stored cover — a few real rows are
+                    // data: URIs from an old aborted-upload edge case,
+                    // which next/image's remote loader can't handle.
+                    unoptimized={form.cover.startsWith('data:')}
+                  />
                 )}
               </div>
             )}
@@ -1566,8 +1584,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 <div className="condition-photos-grid">
                   {form.condition_photos.map((url, i) => (
                     <div className="condition-photo" key={url}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={`Condition photo ${i + 1}`} />
+                      <Image src={url} alt={`Condition photo ${i + 1}`} fill sizes="72px" style={{ objectFit: 'cover' }} />
                       <button
                         type="button"
                         className="btn-icon condition-photo-remove"

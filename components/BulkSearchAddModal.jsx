@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabaseClient';
 import { findPossibleDuplicates } from '@/lib/duplicateCheck';
 import { searchConsoles } from '@/lib/consoleList';
@@ -431,11 +432,13 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                     style={{ display: 'flex', gap: 10, padding: '8px 10px', alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
                   >
                     {(r.thumb || r.cover) && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={r.thumb || r.cover}
                         alt=""
+                        width={34}
+                        height={44}
                         style={{ width: 34, height: 44, objectFit: 'cover', borderRadius: 4 }}
+                        unoptimized={(r.thumb || r.cover).startsWith('data:')}
                         onError={(e) => {
                           // No adjacent placeholder box to swap to here (a
                           // small inline-styled row thumbnail, unlike the
@@ -467,11 +470,13 @@ export default function BulkSearchAddModal({ userId, currency, existingItems, on
                     <div key={item.key} style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                         {item.cover && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={item.cover}
                             alt=""
+                            width={26}
+                            height={34}
                             style={{ width: 26, height: 34, objectFit: 'cover', borderRadius: 3 }}
+                            unoptimized={item.cover.startsWith('data:')}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen } from 'lucide-react';
 import SeriesGrid from '@/components/SeriesGrid';
 import { goToBestListing } from '@/lib/externalListings';
@@ -39,8 +40,7 @@ export default function CreatorPageClient({ name, image, entries, ownedKeys, tru
       <div className="profile-header" style={{ marginTop: 0 }}>
         <div className="avatar">
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt={name} />
+            <Image src={image} alt={name} fill sizes="72px" style={{ objectFit: 'cover' }} />
           ) : (
             (name || '?').slice(0, 1).toUpperCase()
           )}

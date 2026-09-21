@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { TYPE_LABELS } from '@/lib/mosaicData';
 
 // A search-result tile for one deduped collectible (one card per
@@ -10,15 +11,24 @@ export default function CollectibleCard({ item }) {
   return (
     <Link href={href} className="card clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
       {item.cover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="cover"
-          src={item.cover}
-          alt={item.title}
-          onError={(e) => {
-            e.currentTarget.outerHTML = '<div class="cover placeholder">No Cover</div>';
-          }}
-        />
+        // Reuses GameCard's own `.card-cover-wrap` class purely for its
+        // sizing/position:relative — not literally the same component,
+        // but the same "search result tile" shape (see ROADMAP.md's "App
+        // feels laggy" item for why this moved to next/image).
+        <div className="card-cover-wrap">
+          <Image
+            className="cover"
+            src={item.cover}
+            alt={item.title}
+            fill
+            sizes="(max-width: 480px) 45vw, (max-width: 900px) 30vw, 220px"
+            style={{ objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.parentElement.outerHTML = '<div class="cover placeholder">No Cover</div>';
+            }}
+            unoptimized={item.cover.startsWith('data:')}
+          />
+        </div>
       ) : (
         <div className="cover placeholder">No Cover</div>
       )}

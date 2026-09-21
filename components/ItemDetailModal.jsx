@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import useModalA11y from '@/lib/useModalA11y';
 import useSeriesLookup from '@/lib/useSeriesLookup';
 import { seriesSupported, isMasterSetType, seriesQueryValueFor, ownedKeysFor, prefillFromSeriesEntry, variantHintsFor } from '@/lib/seriesLookup';
@@ -99,12 +100,18 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
         <div className="detail-layout">
           <div className="detail-cover-wrap">
             {game.cover && !coverFailed ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 className="detail-cover"
                 src={game.cover}
                 alt={game.title}
+                fill
+                sizes="140px"
+                style={{ objectFit: 'cover' }}
                 onError={() => setCoverFailed(true)}
+                // See GameCard.jsx's identical comment — a few real rows
+                // store `cover` as a data: URI, which next/image's remote
+                // loader can't handle.
+                unoptimized={game.cover.startsWith('data:')}
               />
             ) : (
               <div className="detail-cover placeholder">
@@ -165,8 +172,7 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
             <div className="condition-photos-grid">
               {game.condition_photos.map((url, i) => (
                 <div className="condition-photo" key={url}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Condition photo ${i + 1}`} />
+                  <Image src={url} alt={`Condition photo ${i + 1}`} fill sizes="72px" style={{ objectFit: 'cover' }} />
                 </div>
               ))}
             </div>

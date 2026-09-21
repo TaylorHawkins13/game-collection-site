@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabaseServer';
 import { WHATS_NEW } from '@/lib/whatsNew';
 import StarRating from '@/components/StarRating';
@@ -86,8 +87,7 @@ export default async function FeedPage() {
               <div className="feed-item" key={e.id}>
                 <Link href={`/u/${e.actor.username}`} className="avatar feed-item-avatar">
                   {e.actor.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={e.actor.avatar_url} alt={e.actor.username} />
+                    <Image src={e.actor.avatar_url} alt={e.actor.username} fill sizes="40px" style={{ objectFit: 'cover' }} />
                   ) : (
                     (e.actor.display_name || e.actor.username || '?').slice(0, 1).toUpperCase()
                   )}

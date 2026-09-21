@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { titleColor, CATEGORY_ORDER, TYPE_LABELS, TYPE_COLORS } from '@/lib/mosaicData';
 import { attachHorizontalWheelScroll } from '@/lib/useHorizontalWheelScroll';
 
@@ -86,15 +87,22 @@ function ShelfTile({ item, onClick }) {
   return (
     <button type="button" className="shelf-hero-tile" onClick={onClick} aria-label={item.title}>
       {item.cover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        // .shelf-hero-tile (the button) already has width/height/position:
+        // relative/overflow:hidden, so it's already the right shape for
+        // next/image's `fill` mode — no extra wrapper needed (Sept 2026,
+        // ROADMAP.md's "App feels laggy" item).
+        <Image
           src={item.cover}
           alt=""
+          fill
+          sizes="72px"
           className="shelf-hero-tile-cover"
+          style={{ objectFit: 'cover' }}
           onError={(e) => {
             e.currentTarget.style.display = 'none';
             e.currentTarget.nextSibling.style.display = 'flex';
           }}
+          unoptimized={item.cover.startsWith('data:')}
         />
       ) : null}
       <div className="shelf-hero-tile-placeholder" style={{ background: titleColor(item.title), display: item.cover ? 'none' : 'flex' }}>

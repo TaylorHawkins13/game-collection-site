@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 // A tile in the dashboard's "Wishlist matches" panel — one of the
 // viewer's own wishlist items that a public collector they follow
@@ -21,15 +22,19 @@ export default function WantlistMatchCard({ match }) {
   return (
     <Link href={`/u/${match.owner_username}`} className="rec-card">
       {match.cover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="rec-cover"
-          src={match.cover}
-          alt={match.title}
-          onError={(e) => {
-            e.currentTarget.outerHTML = '<div class="rec-cover placeholder">No Cover</div>';
-          }}
-        />
+        <div className="rec-cover">
+          <Image
+            src={match.cover}
+            alt={match.title}
+            fill
+            sizes="42px"
+            style={{ objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.parentElement.outerHTML = '<div class="rec-cover placeholder">No Cover</div>';
+            }}
+            unoptimized={match.cover.startsWith('data:')}
+          />
+        </div>
       ) : (
         <div className="rec-cover placeholder">No Cover</div>
       )}

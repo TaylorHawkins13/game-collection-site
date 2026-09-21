@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 // Pure display component for the "Series" feature — a small cover grid,
 // greyed out unless the entry's normalized key is in `ownedKeys`. Reused
@@ -60,21 +61,28 @@ export default function SeriesGrid({ data, ownedKeys, ownerLabel, onSelectMissin
           const content = (
             <>
               {e.cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={e.cover}
-                  alt={e.label}
-                  onError={(evt) => {
-                    // Built via the DOM rather than an outerHTML string swap
-                    // (the pattern used elsewhere for a static "No Cover"
-                    // placeholder) since this placeholder's text comes from
-                    // e.label, which can be arbitrary title/set text.
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'franchise-item-placeholder';
-                    placeholder.textContent = (e.label || '?').replace('#', '').slice(0, 1);
-                    evt.currentTarget.replaceWith(placeholder);
-                  }}
-                />
+                <div className="franchise-item-cover">
+                  <Image
+                    src={e.cover}
+                    alt={e.label}
+                    fill
+                    sizes="90px"
+                    style={{ objectFit: 'cover' }}
+                    unoptimized={e.cover.startsWith('data:')}
+                    onError={(evt) => {
+                      // Built via the DOM rather than an outerHTML string swap
+                      // (the pattern used elsewhere for a static "No Cover"
+                      // placeholder) since this placeholder's text comes from
+                      // e.label, which can be arbitrary title/set text.
+                      // Replaces the wrapper (not just the <img>) so no empty
+                      // sized div is left behind.
+                      const placeholder = document.createElement('div');
+                      placeholder.className = 'franchise-item-placeholder';
+                      placeholder.textContent = (e.label || '?').replace('#', '').slice(0, 1);
+                      evt.currentTarget.parentElement.replaceWith(placeholder);
+                    }}
+                  />
+                </div>
               ) : (
                 <div className="franchise-item-placeholder">{(e.label || '?').replace('#', '').slice(0, 1)}</div>
               )}

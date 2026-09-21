@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Lock, Gift } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import ShareProfileButton from '@/components/ShareProfileButton';
@@ -96,8 +97,7 @@ export default async function WishlistPage({ params }) {
       <div className="profile-header" style={{ marginTop: 20 }}>
         <div className="avatar">
           {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatar_url} alt={profile.username} />
+            <Image src={profile.avatar_url} alt={profile.username} fill sizes="72px" style={{ objectFit: 'cover' }} />
           ) : (
             (name || '?').slice(0, 1).toUpperCase()
           )}

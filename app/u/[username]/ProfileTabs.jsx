@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Library, SearchX } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 import TrophyCase from '@/components/TrophyCase';
@@ -156,8 +157,7 @@ export default function ProfileTabs({
                 <div className="profile-activity-item" key={row.key}>
                   <div className="profile-activity-avatar">
                     {c.author?.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={c.author.avatar_url} alt="" />
+                      <Image src={c.author.avatar_url} alt="" fill sizes="32px" style={{ objectFit: 'cover' }} />
                     ) : (
                       (c.author?.display_name || c.author?.username || '?').slice(0, 1).toUpperCase()
                     )}
@@ -188,8 +188,7 @@ export default function ProfileTabs({
                   </div>
                 ) : e.game?.cover ? (
                   <div className="profile-activity-avatar profile-activity-avatar-cover">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={e.game.cover} alt="" />
+                    <Image src={e.game.cover} alt="" fill sizes="32px" style={{ objectFit: 'cover' }} unoptimized={e.game.cover.startsWith('data:')} />
                   </div>
                 ) : (
                   <div className="profile-activity-avatar profile-activity-avatar-cover">

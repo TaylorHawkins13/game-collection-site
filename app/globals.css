@@ -981,6 +981,10 @@ button:disabled {
   object-fit: cover;
   border-radius: 6px;
   background: var(--bg-alt);
+  /* Now the wrapper div around a next/image `fill` cover, not the img
+     itself (Sept 2026, ROADMAP.md's "App feels laggy" item). */
+  position: relative;
+  overflow: hidden;
 }
 .playnext-suggestion-cover.placeholder {
   display: flex;
@@ -1079,6 +1083,10 @@ button:disabled {
   border-radius: 5px;
   background: var(--bg-alt);
   display: block;
+  /* Now the wrapper div around a next/image `fill` cover, not the img
+     itself (Sept 2026, ROADMAP.md's "App feels laggy" item). */
+  position: relative;
+  overflow: hidden;
 }
 .rec-cover.placeholder {
   display: flex;
@@ -1464,6 +1472,15 @@ button:disabled {
    stat rows/badges a given item type has. */
 .card-cover-wrap {
   position: relative;
+  /* width/aspect-ratio added (Sept 2026, ROADMAP.md's "App feels laggy"
+     item): this used to be implicitly sized by its `.cover` img child
+     (which carried `width: 100%; aspect-ratio: 3/4` directly). Now that
+     the real cover is a next/image `fill` element — absolutely
+     positioned, so it no longer contributes to this wrapper's own size —
+     the wrapper needs to size itself explicitly instead, matching what
+     `.cover` always specified so nothing visually changes. */
+  width: 100%;
+  aspect-ratio: 3 / 4;
 }
 .bulk-bar {
   position: sticky;
@@ -2013,6 +2030,19 @@ button.badge.tag:hover {
   border-radius: 6px;
   border: 1px solid var(--border);
 }
+/* Wrapper for the real cover (next/image `fill`, Sept 2026 — see
+   ROADMAP.md's "App feels laggy" item; a franchise/master-set grid can
+   show up to 100 covers at once, the single highest-volume cover-grid in
+   the app, so lazy-loading here matters more than almost anywhere else).
+   `.franchise-item img` above still styles the actual rendered <img> (the
+   selector matches at any depth), this just gives it a sized, positioned
+   ancestor to fill instead of sizing itself in normal flow. Also reused
+   as-is by app/dashboard/catalogue/CatalogueClient.jsx's grid. */
+.franchise-item-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}
 .franchise-item-placeholder {
   width: 100%;
   aspect-ratio: 3 / 4;
@@ -2077,6 +2107,14 @@ button.badge.tag:hover {
 .detail-cover-wrap {
   flex-shrink: 0;
   width: 140px;
+  /* position/aspect-ratio added (Sept 2026, ROADMAP.md's "App feels laggy"
+     item): height used to be implicit from `.detail-cover`'s own
+     `aspect-ratio: 3/4` sizing itself in normal flow. Now that the real
+     cover is a next/image `fill` element (absolutely positioned, so it no
+     longer contributes to this wrapper's height), the wrapper needs the
+     same aspect-ratio itself so nothing visually changes. */
+  position: relative;
+  aspect-ratio: 3 / 4;
 }
 .detail-cover {
   width: 100%;
@@ -2125,6 +2163,9 @@ button.badge.tag:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* position: relative added (Sept 2026, ROADMAP.md's "App feels laggy"
+     item) for next/image's `fill` mode. */
+  position: relative;
 }
 .cover-preview img {
   width: 100%;
@@ -2351,6 +2392,10 @@ button.badge.tag:hover {
   font-weight: 700;
   color: var(--ink);
   overflow: hidden;
+  /* position: relative added (Sept 2026, ROADMAP.md's "App feels laggy" item)
+     so next/image's `fill` mode has a sized ancestor to fill — every avatar
+     everywhere is now next/image instead of a plain hotlinked <img>. */
+  position: relative;
 }
 .avatar img {
   width: 100%;
@@ -2391,6 +2436,11 @@ button.badge.tag:hover {
   border-radius: 6px;
   object-fit: cover;
   background: var(--bg-alt);
+  /* Now the wrapper div around a next/image `fill` cover, not the img
+     itself (Sept 2026, ROADMAP.md's "App feels laggy" item) — see
+     LeaderboardThumb.jsx's CoverThumb. */
+  position: relative;
+  overflow: hidden;
   flex: none;
 }
 .leaderboard-thumb.placeholder {
@@ -3499,6 +3549,11 @@ button.badge.tag:hover {
   background: var(--bg-alt);
   flex-shrink: 0;
   display: block;
+  /* Now the wrapper div around a next/image `fill` cover, not the img
+     itself (Sept 2026, ROADMAP.md's "App feels laggy" item) — see
+     LeaderboardThumb.jsx's CoverThumb. */
+  position: relative;
+  overflow: hidden;
 }
 .collectible-cover.placeholder {
   display: flex;
@@ -3915,6 +3970,9 @@ button.badge.tag:hover {
   border-radius: 8px;
   overflow: hidden;
   background: var(--bg-alt);
+  /* position: relative added (Sept 2026, ROADMAP.md's "App feels laggy"
+     item) for next/image's `fill` mode. */
+  position: relative;
 }
 .wishlist-row-cover img {
   width: 100%;
@@ -4164,6 +4222,9 @@ button.badge.tag:hover {
   color: var(--ink);
   overflow: hidden;
   flex: none;
+  /* position: relative added (Sept 2026, ROADMAP.md's "App feels laggy"
+     item) for next/image's `fill` mode. */
+  position: relative;
 }
 .profile-activity-avatar img {
   width: 100%;

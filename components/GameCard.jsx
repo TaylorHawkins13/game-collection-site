@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { getCoverColor, colorToCss, shadeColor, readableTextColor } from '@/lib/coverColor';
 import { currencySymbol } from '@/lib/currency';
 import StarRating from './StarRating';
@@ -213,12 +214,25 @@ export default function GameCard({
       <div className={`card-ownership-flag ${game.ownership}`}>{game.ownership}</div>
       <div className="card-cover-wrap">
         {game.cover && !coverFailed ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // `.card-cover-wrap` already had `position: relative` for other
+          // reasons, so it was already the right shape for next/image's
+          // `fill` mode — switched over Sept 2026 (see ROADMAP.md's "App
+          // feels laggy" item) so this, the single most-repeated cover
+          // render in the app, gets resized/lazy-loaded instead of pulling
+          // every third-party host's full original image on every card.
+          <Image
             className="cover"
             src={game.cover}
             alt={game.title}
+            fill
+            sizes="(max-width: 480px) 45vw, (max-width: 900px) 30vw, 220px"
+            style={{ objectFit: 'cover' }}
             onError={() => setCoverFailed(true)}
+            // A handful of real rows have `cover` stored as a data: URI
+            // rather than a real URL (an old aborted-upload edge case) —
+            // next/image's remote loader can't handle those, so skip
+            // optimization for exactly that case rather than erroring.
+            unoptimized={game.cover.startsWith('data:')}
           />
         ) : (
           <div className="cover placeholder">
