@@ -22,6 +22,11 @@ export default async function sitemap() {
     // there's no reasonable static list to build here the way profiles
     // and lists have real id columns to query below.
     { url: `${SITE_URL}/creator/comics`, changeFrequency: 'monthly', priority: 0.5 },
+    // Same reasoning as /creator/comics above, one tier down — Books'
+    // creator page keys its URL on a free-typed author name rather than a
+    // stable id at all (see app/creator/books/[name]/page.js), so there's
+    // even less of a real list to enumerate here than the comics case.
+    { url: `${SITE_URL}/creator/books`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
     // The dedicated SEO landing pages (lib/landingPages.js) — evergreen
     // content, not something that changes often, but worth a slightly

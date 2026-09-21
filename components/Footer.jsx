@@ -17,9 +17,10 @@ export default function Footer() {
       <Link href="/collectible-database">Collectible Database</Link>
       {/* Same "needs a real internal link, not just a URL" reasoning as
           the Collectible Database link above — Creator pages
-          (app/creator/comics) are public but otherwise only reachable by
-          already knowing a creator's page URL. */}
+          (app/creator/comics, app/creator/books) are public but otherwise
+          only reachable by already knowing a creator's page URL. */}
       <Link href="/creator/comics">Browse by Creator</Link>
+      <Link href="/creator/books">Browse Books by Author</Link>
     </footer>
   );
 }
