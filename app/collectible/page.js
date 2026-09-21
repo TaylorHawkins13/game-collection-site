@@ -13,9 +13,21 @@ const SELECT_COLS =
 
 async function loadDetail(type, title) {
   const supabase = await createClient();
-  // RLS on `games` already scopes this to public collectors' items plus
-  // the viewer's own — same implicit-scoping pattern as the players
-  // search, no explicit is_public join needed here.
+  // RLS on `games` scopes this to public collectors' items, the viewer's
+  // own, and — a separate branch — wishlist rows on any profile with
+  // `wishlist_public` on (see ROADMAP.md item 3, and the wishlist page's
+  // own comment on that opt-in). Deliberately still unfiltered by
+  // ownership here, same as the "Collectors"/`count` stat this feeds
+  // (buildCollectibleDetail already correctly keeps `ownedCount` as its
+  // own separate, owned-only number) — someone wanting this on their
+  // wishlist is still a real signal worth counting. But the "Owned by"
+  // list below needs its own filter (fixed Sept 2026, see CHANGELOG.md):
+  // it was building `ownerIds` from every matching row, so a wishlist-
+  // only item on a profile sharing just its gift list could show that
+  // person's name/avatar under a section literally titled "Owned by,"
+  // which was wrong regardless of privacy (they don't own it) and, for a
+  // wishlist_public-but-not-is_public profile, exposed their identity
+  // somewhere that opt-in was never meant to reach.
   const { data: rows } = await supabase
     .from('games')
     .select(SELECT_COLS)
@@ -24,7 +36,7 @@ async function loadDetail(type, title) {
 
   if (rows && rows.length > 0) {
     const detail = buildCollectibleDetail(rows, type);
-    const ownerIds = [...new Set(rows.map((r) => r.user_id))];
+    const ownerIds = [...new Set(rows.filter((r) => r.ownership === 'owned').map((r) => r.user_id))];
     const { data: owners } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url')

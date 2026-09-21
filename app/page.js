@@ -385,14 +385,26 @@ async function LoggedInHome({ supabase, viewer }) {
   // Discovery rows, Backloggd-home-style: a live wall of what other public
   // collectors are actually adding/rating right now, not your own data (the
   // dashboard already covers that) and not a followed-only feed (that's
-  // /feed's job). RLS on `games` already limits this to public profiles
-  // (see supabase-schema.sql's "Games readable if profile is public or
-  // owner" policy) — excluding your own rows here on top of that just keeps
-  // this feeling like real community activity rather than a mirror of your
-  // own recent adds.
+  // /feed's job). RLS on `games` scopes reads to public profiles PLUS
+  // wishlist rows on any profile with `wishlist_public` on (see
+  // supabase-schema.sql's "Games readable if profile is public or owner"
+  // policy) — that second branch exists specifically so someone can share
+  // just their gift list while keeping the rest of the profile private
+  // (see the wishlist page's own comment), so it's not safe to rely on RLS
+  // alone here. Fixed (Sept 2026, see ROADMAP.md item 3 and CHANGELOG.md):
+  // explicit `ownership: 'owned'` filters added below, same rule
+  // `lib/mosaicData.js`'s shelf mosaic query already used — a private
+  // profile's gift-list items were previously eligible to show up
+  // unattributed (recentItems/spotlightRows) or with their username
+  // attached (recentRatings) on this public, unauthenticated homepage,
+  // which nobody opting into "share just my gift list" would expect.
+  // Excluding your own rows on top of the ownership filter just keeps this
+  // feeling like real community activity rather than a mirror of your own
+  // recent adds.
   const { data: recentItems } = await supabase
     .from('games')
     .select('id, item_type, title, cover')
+    .eq('ownership', 'owned')
     .neq('user_id', viewer.id)
     .not('cover', 'is', null)
     .neq('cover', '')
@@ -402,6 +414,7 @@ async function LoggedInHome({ supabase, viewer }) {
   const { data: recentRatings } = await supabase
     .from('games')
     .select('id, item_type, title, cover, rating, notes, profile:profiles(username, display_name)')
+    .eq('ownership', 'owned')
     .neq('user_id', viewer.id)
     .gte('rating', 4)
     .not('notes', 'is', null)
@@ -417,6 +430,7 @@ async function LoggedInHome({ supabase, viewer }) {
   const { data: spotlightRows } = await supabase
     .from('games')
     .select('id, title, cover')
+    .eq('ownership', 'owned')
     .neq('user_id', viewer.id)
     .gte('rating', 4)
     .not('cover', 'is', null)

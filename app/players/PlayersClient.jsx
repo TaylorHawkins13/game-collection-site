@@ -91,13 +91,20 @@ export default function PlayersClient() {
         .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
         .order('username', { ascending: true })
         .limit(40),
-      // No explicit public/owner filter needed — the games table's own
-      // RLS policy (readable if the profile is public, or it's yours)
-      // already scopes this the same way the community-suggestions
-      // search in GameModal.jsx relies on.
+      // RLS on `games` allows a non-owner to read a row when the profile
+      // is public OR (separately) when it's a wishlist row on a profile
+      // that's turned on wishlist_public without making the whole profile
+      // public (see the wishlist page's own comment on that opt-in) — so
+      // an explicit ownership filter is needed here too, same fix as
+      // app/page.js's homepage discovery rows (Sept 2026, see ROADMAP.md
+      // item 3 and CHANGELOG.md). Without it, a private collector's gift-
+      // list item could surface as a generic "here's who's logged this
+      // title" search result, which isn't what sharing just a gift list
+      // is meant to expose.
       supabase
         .from('games')
         .select('title, item_type, cover, rating')
+        .eq('ownership', 'owned')
         .ilike('title', `%${q}%`)
         .limit(150),
       // Same IGDB auto-fill search GameModal's "Search" button uses when
