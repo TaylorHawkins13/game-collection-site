@@ -138,7 +138,7 @@ export default async function WishlistPage({ params }) {
         <div className="wishlist-list">
           {(wishlistItems || []).map((g) => {
             const ebayLink = ebayBuyLink(g, profile.currency);
-            const amazonLink = amazonBuyLink(g);
+            const amazonLink = amazonBuyLink(g, profile.currency);
             return (
               <WishlistItemRow
                 key={g.id}
