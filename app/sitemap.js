@@ -27,6 +27,10 @@ export default async function sitemap() {
     // stable id at all (see app/creator/books/[name]/page.js), so there's
     // even less of a real list to enumerate here than the comics case.
     { url: `${SITE_URL}/creator/books`, changeFrequency: 'monthly', priority: 0.5 },
+    // Games' creator page (app/creator/games/[id]/page.js) is back to a
+    // real IGDB company id, same shape as /creator/comics, same reasoning
+    // for only indexing the search page here.
+    { url: `${SITE_URL}/creator/games`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
     // The dedicated SEO landing pages (lib/landingPages.js) — evergreen
     // content, not something that changes often, but worth a slightly
