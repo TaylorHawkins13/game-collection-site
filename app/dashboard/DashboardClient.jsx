@@ -1004,13 +1004,31 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     if (selectedIds.size === 0 || bulkBusy) return;
     const ids = [...selectedIds];
     setBulkBusy(true);
-    const { error } = await supabase.from('games').update({ ownership: bulkOwnership }).in('id', ids);
+    // Mirrors GameModal.jsx's single-item save handler (see its
+    // price_alert_threshold/wishlist_priority/for_sale/asking_price
+    // comments): those four fields are only meaningful for one specific
+    // ownership value each (wishlist-only, or owned-only) and get cleared
+    // there whenever ownership changes away from that value, so a stale
+    // "High priority" or "For sale · $50" can't linger on a row that's no
+    // longer a wishlist/owned item. Found (Sept 2026) doing this same bulk
+    // action didn't — a bulk Set-ownership to "Sold" left `for_sale`/
+    // `asking_price` untouched on a genuinely for-sale item, same
+    // "built/tested one way, silently missing here" shape as the item-type
+    // audit's other findings this round.
+    const clearFields = {
+      ...(bulkOwnership !== 'wishlist' ? { price_alert_threshold: null, wishlist_priority: null } : {}),
+      ...(bulkOwnership !== 'owned' ? { for_sale: false, asking_price: null } : {}),
+    };
+    const { error } = await supabase
+      .from('games')
+      .update({ ownership: bulkOwnership, ...clearFields })
+      .in('id', ids);
     setBulkBusy(false);
     if (error) {
       announceToast("Couldn't update those items — try again.");
       return;
     }
-    setGames((gs) => gs.map((g) => (selectedIds.has(g.id) ? { ...g, ownership: bulkOwnership } : g)));
+    setGames((gs) => gs.map((g) => (selectedIds.has(g.id) ? { ...g, ownership: bulkOwnership, ...clearFields } : g)));
     announceToast(`Marked ${ids.length} item${ids.length === 1 ? '' : 's'} as ${bulkOwnership}.`, 'success');
   }
 
