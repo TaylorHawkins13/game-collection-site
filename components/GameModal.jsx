@@ -238,6 +238,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
   const MAX_PHOTOS = 4;
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState('');
+  const [coverPhotoUploading, setCoverPhotoUploading] = useState(false);
+  const [coverPhotoError, setCoverPhotoError] = useState('');
 
   // Condition photos upload straight to Storage and get saved to the row
   // immediately (not just held in form state until "Save Item") — the
@@ -282,6 +284,48 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       await supabase.from('games').update({ condition_photos: nextPhotos }).eq('id', game.id);
     }
     await removeItemPhotos(supabase, [url]);
+  }
+
+  // Cover art from your own camera/files, not just a pasted URL — for the
+  // items least likely to have decent cover art findable online (an
+  // obscure VHS tape, a beat-up vinyl sleeve, a Funko Pop still in its
+  // taped-up box). Unlike condition photos above, this doesn't write to
+  // the database immediately: `cover` is an ordinary form field that
+  // already gets saved by the normal "Save Item" flow (same as typing a
+  // URL into the field does), so there's no "lost if you close without
+  // saving" risk to guard against here, and it works before an item has
+  // ever been saved too (condition photos need an existing `game.id` for
+  // their storage path; this one doesn't, since it's not tied to one).
+  // A previously-uploaded cover file left behind in Storage after
+  // replacing it with another photo or a pasted URL isn't cleaned up —
+  // same tolerance this codebase already has for cover art generally
+  // (see ROADMAP.md: re-hosting/cache-cleanup for cover art is a bigger,
+  // separate infra decision, not solved here).
+  async function handleCoverPhotoFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setCoverPhotoError('');
+    if (!file.type.startsWith('image/')) {
+      setCoverPhotoError('Please choose an image file.');
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setCoverPhotoError('Image is too large (5MB max).');
+      return;
+    }
+    setCoverPhotoUploading(true);
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${userId}/cover-${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, file, { cacheControl: '3600' });
+    setCoverPhotoUploading(false);
+    if (uploadError) {
+      setCoverPhotoError("Couldn't upload that photo — try again.");
+      return;
+    }
+    const { data: pub } = supabase.storage.from('item-photos').getPublicUrl(path);
+    setCoverBroken(false);
+    set('cover', pub.publicUrl);
   }
 
   // As you type a title, check whether anyone else (or you, previously)
@@ -1435,6 +1479,20 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               </div>
             )}
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+            <label htmlFor="gm-cover-photo-file" className="sub" style={{ margin: 0 }}>
+              Or take/upload a photo instead:
+            </label>
+            <input
+              id="gm-cover-photo-file"
+              type="file"
+              accept="image/*"
+              onChange={handleCoverPhotoFile}
+              disabled={coverPhotoUploading}
+            />
+            {coverPhotoUploading && <span className="sub" style={{ margin: 0 }}>Uploading…</span>}
+          </div>
+          {coverPhotoError && <div className="error-text">{coverPhotoError}</div>}
         </div>
 
         <div className="field">
