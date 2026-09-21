@@ -797,18 +797,30 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       player_name: isCard || isFunko ? form.player_name : '',
       region: isGame || isConsole ? form.region : '',
       completeness: isGame || isConsole ? form.completeness : '',
-      // A console or a Funko Pop is always a physical object you own —
-      // "digital" here means something different for games (no physical
-      // copy exists at all), which doesn't apply, so it's never set for
-      // these types regardless of what the (hidden, for both) selector says.
-      copy_type: isConsole || isFunko ? 'physical' : form.copy_type,
+      // A console, a Funko Pop, or a VHS tape is always a physical object
+      // you own — "digital" here means something different for games (no
+      // physical copy exists at all), which doesn't apply, so it's never
+      // set for these types regardless of what the (hidden, for all
+      // three) selector says. VHS joined this list Sep 2026 — found while
+      // auditing every "built for one type, silently extended to all"
+      // assumption after the CeX/Amazon buy-link fixes: unlike DVD/CD/
+      // Book/Vinyl, which genuinely have digital editions, there is no
+      // such thing as a digital VHS tape, but VHS had been left off this
+      // list since it shipped, so the Copy field was silently offering
+      // "Digital" for it — which then made buildPriceQuery
+      // (lib/marketPrice.js) treat that VHS as having no resale market at
+      // all (disabling "Check eBay price" and the wishlist buy links) and
+      // excluded it from lib/valueSnapshot.js's collection-value estimate.
+      copy_type: isConsole || isFunko || isVhs ? 'physical' : form.copy_type,
       // Switching Copy to Digital hides the price-check UI, but a value
       // set earlier (while it was still Physical, or before this field was
       // touched at all) would otherwise sit there stale — there's no eBay
       // resale market for a digital copy, so it shouldn't show a value.
-      market_price: form.copy_type === 'digital' && !isConsole && !isFunko ? null : form.market_price,
-      market_price_checked_at: form.copy_type === 'digital' && !isConsole && !isFunko ? null : form.market_price_checked_at,
-      market_price_currency: form.copy_type === 'digital' && !isConsole && !isFunko ? null : form.market_price_currency,
+      market_price: form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? null : form.market_price,
+      market_price_checked_at:
+        form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? null : form.market_price_checked_at,
+      market_price_currency:
+        form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? null : form.market_price_currency,
       trophy_platinum: isGame ? form.trophy_platinum : false,
       trophy_completion: isGame
         ? form.trophy_completion === '' || form.trophy_completion == null
@@ -1490,7 +1502,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               </select>
             </div>
           )}
-          {!isConsole && !isFunko && (
+          {!isConsole && !isFunko && !isVhs && (
             <div className="field">
               <label htmlFor="gm-copy-type">Copy</label>
               <select id="gm-copy-type" value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
@@ -1593,7 +1605,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           </div>
         )}
 
-        {form.copy_type === 'digital' && !isConsole && !isFunko ? (
+        {form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? (
           <div className="field">
             <label>Current market value</label>
             <div className="sub" style={{ margin: 0 }}>

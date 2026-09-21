@@ -1014,16 +1014,29 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     announceToast(`Marked ${ids.length} item${ids.length === 1 ? '' : 's'} as ${bulkOwnership}.`, 'success');
   }
 
-  // Platform is a multi-value array field, and only games/consoles use it
-  // in practice — bulk-setting it replaces (not merges) each selected
-  // item's platform list with the single chosen one, and silently skips
-  // any selected item type that doesn't have a platforms field rather
-  // than erroring on comics/vinyl/etc. caught up in the same selection.
+  // Platform is a multi-value array field, and only games actually use
+  // it — bulk-setting it replaces (not merges) each selected item's
+  // platform list with the single chosen one, and silently skips any
+  // selected item type that doesn't have a platforms field rather than
+  // erroring on comics/vinyl/etc. caught up in the same selection.
+  //
+  // `console` was in this eligibility list until Sep 2026 — removed
+  // (found while auditing every "built for one type, silently extended
+  // to all" assumption after the CeX/Amazon buy-link fixes): the comment
+  // above used to claim "games/consoles" use this field "in practice,"
+  // but nothing ever actually reads a console's `platforms` — GameCard's
+  // console stat row shows Manufacturer/Storage/Region/Grade instead
+  // (there's no "platforms" concept for a console item; a console *is* a
+  // platform, it doesn't have one), GameModal's Platforms input only
+  // renders for `isGame`, and GameModal's own save handler unconditionally
+  // wipes `platforms` back to `[]` for every non-game type. So bulk-
+  // setting it on a console used to write a value nothing ever displayed,
+  // report success, and then get silently erased the next time that same
+  // console was opened and saved in GameModal — a real, confirmed dead
+  // write, not a theoretical one.
   async function handleBulkPlatform() {
     if (selectedIds.size === 0 || !bulkPlatform || bulkBusy) return;
-    const targetIds = games
-      .filter((g) => selectedIds.has(g.id) && (g.item_type === 'game' || g.item_type === 'console'))
-      .map((g) => g.id);
+    const targetIds = games.filter((g) => selectedIds.has(g.id) && g.item_type === 'game').map((g) => g.id);
     if (targetIds.length === 0) {
       announceToast('None of the selected items have a platform field.');
       return;
