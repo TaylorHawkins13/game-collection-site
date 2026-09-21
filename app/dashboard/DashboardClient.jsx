@@ -1016,8 +1016,8 @@ export default function DashboardClient({ userId, profile, initialGames }) {
     // "built/tested one way, silently missing here" shape as the item-type
     // audit's other findings this round.
     const clearFields = {
-      ...(bulkOwnership !== 'wishlist' ? { price_alert_threshold: null, wishlist_priority: null } : {}),
-      ...(bulkOwnership !== 'owned' ? { for_sale: false, asking_price: null } : {}),
+      ...(bulkOwnership !== 'wishlist' ? { price_alert_threshold: null, price_alert_threshold_currency: null, wishlist_priority: null } : {}),
+      ...(bulkOwnership !== 'owned' ? { for_sale: false, asking_price: null, asking_price_currency: null } : {}),
     };
     const { error } = await supabase
       .from('games')

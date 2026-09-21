@@ -25,6 +25,25 @@ async function checkOne(supabase, item) {
   const query = buildPriceQuery(item);
   if (!query) return { skipped: true };
 
+  // The eBay check below always runs in the profile's *current* currency
+  // (marketplaceForCurrency, right below) and compares the raw number it
+  // gets back directly against item.price_alert_threshold — with no
+  // conversion. That was already silently assuming the threshold was set
+  // in that same currency; price_alert_threshold_currency (see
+  // pricecurrency-migration.sql/ROADMAP.md) now makes it possible to
+  // actually check that assumption instead of just hoping it holds. A
+  // mismatch means someone set this alert while their currency was
+  // something else and has since switched Settings > Currency — comparing
+  // the two raw numbers across currencies would be comparing apples to
+  // oranges (a "25" GBP threshold isn't the same amount as a "25" USD
+  // one), so this skips the comparison entirely rather than risk a wrong
+  // notification. Real currency conversion is the bigger, separate
+  // ROADMAP.md item ("Live currency conversion") this doesn't attempt to
+  // solve — skipping is the safe stopgap until that exists.
+  if (item.price_alert_threshold_currency && item.price_alert_threshold_currency !== item.profiles?.currency) {
+    return { skipped: true, currencyMismatch: true };
+  }
+
   const marketplace = marketplaceForCurrency(item.profiles?.currency || 'USD');
   const url = `${SITE_URL}/api/ebay-price?q=${encodeURIComponent(query)}&title=${encodeURIComponent(item.title)}&marketplace=${marketplace}&itemType=${encodeURIComponent(item.item_type || '')}`;
 
@@ -87,7 +106,7 @@ export async function GET(request) {
   const { data: items, error } = await supabase
     .from('games')
     .select(
-      'id, user_id, title, item_type, copy_type, completeness, card_set, format, issue_number, card_number, price_alert_threshold, price_alert_active, profiles!inner(currency)'
+      'id, user_id, title, item_type, copy_type, completeness, card_set, format, issue_number, card_number, price_alert_threshold, price_alert_threshold_currency, price_alert_active, profiles!inner(currency)'
     )
     .eq('ownership', 'wishlist')
     .not('price_alert_threshold', 'is', null);
@@ -101,12 +120,14 @@ export async function GET(request) {
 
   let notified = 0;
   let checked = 0;
+  let currencyMismatches = 0;
   for (const item of items || []) {
     const result = await checkOne(supabase, item);
     if (result.notified) notified += 1;
     if (result.checked || result.notified) checked += 1;
+    if (result.currencyMismatch) currencyMismatches += 1;
   }
 
   await recordCronRun(supabase, 'price-drop-check', 'success');
-  return NextResponse.json({ total: (items || []).length, checked, notified });
+  return NextResponse.json({ total: (items || []).length, checked, notified, currencyMismatches });
 }

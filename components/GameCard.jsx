@@ -11,6 +11,23 @@ function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// Same mismatch-flagging idea as market_price/market_price_currency just
+// below (see ROADMAP.md "price/asking_price/price_alert_threshold have no
+// stored currency of their own") — asking_price now carries its own
+// entered-in currency, so a stale asking price left over from before a
+// Settings > Currency change reads as "$40 (GBP)" rather than silently
+// relabeling the same number under the new symbol. `storedCurrency` null
+// (a row saved before this column existed) falls back to the viewer's
+// own currency, same "no way to know, so assume today's" rule this app
+// already applied to every one of these values before the column existed.
+function formatTaggedPrice(amount, storedCurrency, viewerCurrency) {
+  const priceCurrency = storedCurrency || viewerCurrency;
+  const mismatched = viewerCurrency && priceCurrency !== viewerCurrency;
+  return mismatched
+    ? `${currencySymbol(priceCurrency)}${amount} (${priceCurrency})`
+    : `${currencySymbol(priceCurrency)}${amount}`;
+}
+
 // See ROADMAP.md "Gift list items have no priority/ranking" — wishlist-only
 // field (GameModal.jsx), 1/2/3 stored on the row, shown here as a badge so
 // it's visible wherever a wishlist item's card renders: the dashboard grid,
@@ -248,7 +265,10 @@ export default function GameCard({
             )}
             {game.ownership === 'owned' && game.for_sale && (
               <span className="badge tag for-sale-badge">
-                For sale{game.asking_price != null ? ` · ${currencySymbol(currency)}${game.asking_price}` : ''}
+                For sale
+                {game.asking_price != null
+                  ? ` · ${formatTaggedPrice(game.asking_price, game.asking_price_currency, currency)}`
+                  : ''}
               </span>
             )}
             {(game.tags || []).map((t) =>

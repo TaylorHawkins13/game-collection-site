@@ -76,6 +76,7 @@ const EMPTY = {
   ownership: 'owned',
   condition: '',
   price: '',
+  price_currency: null,
   purchase_date: '',
   play_status: 'backlog',
   rating: 0,
@@ -103,9 +104,11 @@ const EMPTY = {
   trophy_platinum: false,
   trophy_completion: null,
   price_alert_threshold: '',
+  price_alert_threshold_currency: null,
   wishlist_priority: '',
   for_sale: false,
   asking_price: '',
+  asking_price_currency: null,
 };
 
 export default function GameModal({ game, duplicateOf, duplicateSource, currency, userId, onClose, onSave, onDelete, onDuplicate, suggestions, existingItems, onTypeUsed }) {
@@ -168,6 +171,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         ownership: source.ownership || 'owned',
         condition: source.condition || '',
         price: source.price ?? '',
+        // Carries over on a duplicate too, same as `price` itself just
+        // above — a duplicated item is still the same "what did this
+        // cost" number, entered in whatever currency it always was.
+        price_currency: source.price_currency || null,
         purchase_date: source.purchase_date || '',
         play_status: source.play_status || 'backlog',
         // Supabase can hand back numeric columns as strings — coerce to a
@@ -197,12 +204,14 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         trophy_platinum: duplicateOf ? false : source.trophy_platinum || false,
         trophy_completion: duplicateOf ? null : source.trophy_completion ?? null,
         price_alert_threshold: duplicateOf ? '' : source.price_alert_threshold ?? '',
+        price_alert_threshold_currency: duplicateOf ? null : source.price_alert_threshold_currency || null,
         wishlist_priority: duplicateOf ? '' : source.wishlist_priority ?? '',
         // Instance-specific, same reasoning as price_alert_threshold/
         // wishlist_priority above — a duplicated item is a different
         // physical copy, not automatically also for sale.
         for_sale: duplicateOf ? false : source.for_sale || false,
         asking_price: duplicateOf ? '' : source.asking_price ?? '',
+        asking_price_currency: duplicateOf ? null : source.asking_price_currency || null,
       });
     } else {
       // Blank "Add Item" (no item being edited, no duplicateOf source) —
@@ -232,6 +241,39 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
 
   function set(field, val) {
     setForm((f) => ({ ...f, [field]: val }));
+  }
+
+  // price/asking_price/price_alert_threshold are typed in whatever
+  // currency is currently showing (Settings > Currency) — same as
+  // always — but now that currency gets stamped onto the matching
+  // `*_currency` field the moment the number itself changes, not just
+  // assumed live at display time. That's what lets the label below (and
+  // GameCard.jsx's "For sale" badge) flag a real mismatch later if
+  // Settings > Currency changes after this is saved, the same way
+  // market_price_currency already flags one for price-check snapshots.
+  // Re-stamping on every change (not just once) matters for editing an
+  // existing item: if it was entered in GBP, currency later switched to
+  // USD, and you now retype the number, that new number was typed under
+  // USD, so its tag needs to move too — not staying "GBP" just because
+  // that's what was there before this edit. Clearing the field back to
+  // empty clears its currency tag too, so an empty field never carries a
+  // stale one.
+  function setPriceField(field, currencyField, val) {
+    setForm((f) => ({ ...f, [field]: val, [currencyField]: val === '' ? null : currency }));
+  }
+
+  // Flags a real mismatch between a stored *_currency tag and the
+  // profile's current currency — same idea as GameCard.jsx's
+  // market_price mismatch note, just for price/asking_price/
+  // price_alert_threshold instead. Null for a legacy row with no tag at
+  // all (nothing to flag it against) or one that already matches.
+  function currencyMismatchNote(storedCurrency) {
+    if (!storedCurrency || storedCurrency === currency) return null;
+    return (
+      <p className="sub" style={{ margin: '4px 0 0' }}>
+        Stored as {storedCurrency}, not your current {currency} — retyping it saves it under {currency} instead.
+      </p>
+    );
   }
 
   const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB
@@ -821,6 +863,12 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       ...form,
       title: form.title.trim(),
       price: form.price === '' ? null : parseFloat(form.price),
+      // Falls back to the current profile currency if somehow untagged
+      // (e.g. a Quick Add prefill that never touched the field's own
+      // onChange) — same "assume it's in the currency it's displayed in"
+      // rule this codebase already applied to every price before this
+      // column existed, just made explicit now instead of implicit.
+      price_currency: form.price === '' ? null : form.price_currency || currency,
       purchase_date: form.purchase_date || null,
       // keep the fields that don't apply to this type cleared out
       platforms: isGame ? form.platforms : [],
@@ -877,6 +925,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         form.ownership === 'wishlist' && form.price_alert_threshold !== ''
           ? parseFloat(form.price_alert_threshold)
           : null,
+      price_alert_threshold_currency:
+        form.ownership === 'wishlist' && form.price_alert_threshold !== ''
+          ? form.price_alert_threshold_currency || currency
+          : null,
       // Same rule as price_alert_threshold above — only meaningful on a
       // wishlist row, cleared if ownership changes away from Wishlist so a
       // stale "High priority" doesn't linger once something's actually
@@ -895,6 +947,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       asking_price:
         form.ownership === 'owned' && form.for_sale && form.asking_price !== ''
           ? parseFloat(form.asking_price)
+          : null,
+      asking_price_currency:
+        form.ownership === 'owned' && form.for_sale && form.asking_price !== ''
+          ? form.asking_price_currency || currency
           : null,
     });
     setSaving(false);
@@ -1587,7 +1643,15 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         <div className="row2">
           <div className="field">
             <label htmlFor="gm-price">Purchase price ({currencySymbol(currency)})</label>
-            <input id="gm-price" type="number" step="0.01" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} />
+            <input
+              id="gm-price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.price}
+              onChange={(e) => setPriceField('price', 'price_currency', e.target.value)}
+            />
+            {currencyMismatchNote(form.price_currency)}
           </div>
           <div className="field">
             <label htmlFor="gm-purchase-date">Purchase date</label>
@@ -1605,12 +1669,13 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 step="0.01"
                 min="0"
                 value={form.price_alert_threshold}
-                onChange={(e) => set('price_alert_threshold', e.target.value)}
+                onChange={(e) => setPriceField('price_alert_threshold', 'price_alert_threshold_currency', e.target.value)}
                 placeholder="e.g. 25 — leave blank for no alert"
               />
               <p className="sub" style={{ margin: '4px 0 0' }}>
                 Checked once a day against current eBay listings for this title.
               </p>
+              {currencyMismatchNote(form.price_alert_threshold_currency)}
             </div>
             <div className="field">
               <label htmlFor="gm-wishlist-priority">Gift priority</label>
@@ -1655,10 +1720,11 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 step="0.01"
                 min="0"
                 value={form.asking_price}
-                onChange={(e) => set('asking_price', e.target.value)}
+                onChange={(e) => setPriceField('asking_price', 'asking_price_currency', e.target.value)}
                 placeholder="e.g. 40"
                 disabled={!form.for_sale}
               />
+              {currencyMismatchNote(form.asking_price_currency)}
             </div>
           </div>
         )}

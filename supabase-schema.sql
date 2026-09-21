@@ -89,6 +89,12 @@ create table if not exists games (
   ownership text not null default 'owned' check (ownership in ('owned','wishlist','sold')),
   condition text default '',
   price numeric,
+  -- which currency `price` was actually entered in (see
+  -- pricecurrency-migration.sql) -- without this, changing Settings >
+  -- Currency silently relabels an old entry under the new symbol instead
+  -- of flagging it as stale, the same problem market_price_currency
+  -- below already solved for market-price snapshots.
+  price_currency text,
   purchase_date date,
   play_status text not null default 'backlog' check (play_status in ('backlog','playing','completed','abandoned')),
   -- half-star steps: 0, 0.5, 1, 1.5, ... 5
@@ -148,6 +154,9 @@ create table if not exists games (
   -- optional wishlist-only price-drop alert threshold, and whether the
   -- item is currently below it (see app/api/cron/price-drop-check)
   price_alert_threshold numeric,
+  -- see price_currency's comment above -- same fix, same reasoning
+  -- (see pricecurrency-migration.sql)
+  price_alert_threshold_currency text,
   price_alert_active boolean not null default false,
   -- optional wishlist-only 1/2/3 (High/Medium/Low) gift-list priority
   -- (see wishlist-priority-migration.sql, components/GameModal.jsx)
@@ -157,6 +166,9 @@ create table if not exists games (
   -- ROADMAP.md "'For sale' flag on owned items, shown on your profile")
   for_sale boolean not null default false,
   asking_price numeric,
+  -- see price_currency's comment above -- same fix, same reasoning
+  -- (see pricecurrency-migration.sql)
+  asking_price_currency text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
