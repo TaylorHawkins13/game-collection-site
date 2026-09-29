@@ -159,6 +159,7 @@ export default function InsightsClient({ games, currency }) {
   const consolesOwned = useMemo(() => owned.filter((g) => g.item_type === 'console'), [owned]);
   const screenOwned = useMemo(() => owned.filter((g) => g.item_type === 'dvd' || g.item_type === 'vhs'), [owned]);
   const funkoOwned = useMemo(() => owned.filter((g) => g.item_type === 'funko_pop'), [owned]);
+  const legoOwned = useMemo(() => owned.filter((g) => g.item_type === 'lego'), [owned]);
 
   const backlogHealth = useMemo(() => {
     const counts = {};
@@ -199,6 +200,7 @@ export default function InsightsClient({ games, currency }) {
   const byManufacturer = useMemo(() => countBy(consolesOwned, 'publisher'), [consolesOwned]);
   const byStudio = useMemo(() => countBy(screenOwned, 'publisher'), [screenOwned]);
   const byCharacter = useMemo(() => countBy(funkoOwned, 'player_name'), [funkoOwned]);
+  const byTheme = useMemo(() => countBy(legoOwned, 'card_set'), [legoOwned]);
 
   return (
     <main className="container">
@@ -265,7 +267,8 @@ export default function InsightsClient({ games, currency }) {
         musicOwned.length > 0 ||
         consolesOwned.length > 0 ||
         screenOwned.length > 0 ||
-        funkoOwned.length > 0) && (
+        funkoOwned.length > 0 ||
+        legoOwned.length > 0) && (
         <>
           <h2 style={{ fontSize: 'var(--fs-2xl)', margin: '28px 0 12px' }}>Made for what you collect</h2>
           <div className="insights-grid">
@@ -352,6 +355,13 @@ export default function InsightsClient({ games, currency }) {
               <div className="insights-panel">
                 <h3>By character</h3>
                 <BarList rows={byCharacter} emptyText="No characters logged for your Funko Pops yet." />
+              </div>
+            )}
+
+            {legoOwned.length > 0 && (
+              <div className="insights-panel">
+                <h3>By theme</h3>
+                <BarList rows={byTheme} emptyText="No themes logged for your LEGO sets yet." />
               </div>
             )}
           </div>

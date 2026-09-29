@@ -1,4 +1,4 @@
-import { Gamepad2, BookOpen, Layers, DiscAlbum, Book, Clapperboard, CassetteTape, Disc2, Joystick, PersonStanding } from 'lucide-react';
+import { Gamepad2, BookOpen, Layers, DiscAlbum, Book, Clapperboard, CassetteTape, Disc2, Joystick, PersonStanding, Blocks } from 'lucide-react';
 
 // One glyph per collectible type — used on cover placeholders
 // (GameCard/ItemDetailModal/WishlistItemRow) so a missing cover reads as
@@ -23,6 +23,7 @@ const ICONS = {
   cd: Disc2,
   console: Joystick,
   funko_pop: PersonStanding,
+  lego: Blocks,
 };
 
 export default function CategoryIcon({ type, size = 22, className }) {

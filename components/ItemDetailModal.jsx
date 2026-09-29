@@ -59,7 +59,8 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
   const isComic = game.item_type === 'comic';
   const isCard = game.item_type === 'trading_card';
   const isFunko = game.item_type === 'funko_pop';
-  const hasVariant = (isComic || isCard || isFunko) && game.is_variant;
+  const isLego = game.item_type === 'lego';
+  const hasVariant = (isComic || isCard || isFunko || isLego) && game.is_variant;
   const priceCurrency = game.market_price_currency || currency || 'USD';
   const seriesValue = seriesQueryValueFor(game);
   const ownedKeys = ownedKeysFor(existingItems, game.item_type);
@@ -132,7 +133,7 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
 
         {(hasVariant || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
           <div className="badge-row" style={{ marginTop: 10 }}>
-            {hasVariant && <span className="badge tag">{isFunko ? 'Chase' : isCard ? 'Parallel' : 'Variant'}</span>}
+            {hasVariant && <span className="badge tag">{isFunko ? 'Chase' : isLego ? 'Exclusive' : isCard ? 'Parallel' : 'Variant'}</span>}
             {game.copy_type && <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>}
             {game.fully_completed && <span className="badge tag complete-100">100% Complete</span>}
             {game.showcase_order != null && <span className="badge tag showcase-badge">Showcased</span>}

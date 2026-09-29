@@ -37,6 +37,7 @@ const ITEM_TYPE_OPTIONS = [
   { value: 'cd', label: 'CD' },
   { value: 'console', label: 'Console' },
   { value: 'funko_pop', label: 'Funko Pop' },
+  { value: 'lego', label: 'LEGO Set' },
 ];
 export const KNOWN_ITEM_TYPES = ITEM_TYPE_OPTIONS.map((t) => t.value);
 // Exported so components/QuickAddTextModal.jsx can default its prefill's
@@ -453,6 +454,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
   const isCd = form.item_type === 'cd';
   const isConsole = form.item_type === 'console';
   const isFunko = form.item_type === 'funko_pop';
+  const isLego = form.item_type === 'lego';
   const isMediaLike = isBook || isDvd || isVhs || isCd;
   // DVD and VHS are the same "movie" data underneath — same search
   // source, same field labels — just a different physical format.
@@ -490,6 +492,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     ? 'e.g. Home console, Handheld'
     : isFunko
     ? 'e.g. Pop!, Pop! Rides, Pop! Deluxe, Pin'
+    : isLego
+    ? 'e.g. Technic, Speed Champions, Creator Expert, Icons'
     : 'e.g. RPG';
 
   // The 2nd jump-nav pill's label and the heading above the type-specific
@@ -516,6 +520,8 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     ? 'Console details'
     : isFunko
     ? 'Funko details'
+    : isLego
+    ? 'LEGO details'
     : 'Details';
 
   const mediaCreatorLabel = isMovie ? 'Director' : isCd ? 'Artist' : 'Author';
@@ -701,6 +707,42 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     runComicSearch(form.title);
   }
 
+  // Rebrickable's free API — see lib/legoLookup.js for the query/caching
+  // details. Same shape as comic search: hit the thin API route, surface
+  // a "not configured" hint if no REBRICKABLE_API_KEY is set, otherwise
+  // list results for applySearchResult's lego branch below to fill in.
+  async function runLegoSearch(query) {
+    const q = (query || '').trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchHint('Searching…');
+    try {
+      const res = await fetch(`/api/lego-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.error === 'not_configured') {
+        setSearchHint('Auto-fill is not configured on this site (no Rebrickable API key set).');
+        setSearchResults([]);
+        return;
+      }
+      if (data.error) {
+        setSearchHint('Search failed — try again in a moment.');
+        setSearchResults([]);
+        return;
+      }
+      const list = data.results || [];
+      setSearchResults(list);
+      setSearchHint(list.length ? `${list.length} result(s) — click one to auto-fill` : 'No matches found on Rebrickable.');
+    } catch {
+      setSearchHint('Search failed — check your connection.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function legoSearch() {
+    runLegoSearch(form.title);
+  }
+
   function consoleSearch() {
     const q = (form.title || '').trim();
     if (!q) return;
@@ -774,6 +816,10 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       if (item.manufacturer) set('publisher', item.manufacturer);
       if (item.genre) set('genre', item.genre);
       setSearchHint(`Filled: ${item.name}`);
+    } else if (item.kind === 'lego') {
+      if (item.theme) set('card_set', item.theme);
+      if (item.setNum) set('card_number', item.setNum);
+      setSearchHint(`Filled from Rebrickable: ${item.name}`);
     } else if (item.kind === 'music') {
       // Vinyl's "Artist" field is the real artist column; CD reuses the
       // shared media "writer" field (labeled Artist for CD).
@@ -877,17 +923,17 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       condition: isComic ? '' : form.condition,
       series: isComic ? form.series : '',
       issue_number: isComic ? form.issue_number : '',
-      publisher: isComic || isCard || isVinyl || isMediaLike || isConsole || isFunko ? form.publisher : '',
+      publisher: isComic || isCard || isVinyl || isMediaLike || isConsole || isFunko || isLego ? form.publisher : '',
       writer: isComic || isMediaLike ? form.writer : '',
       artist: isComic || isVinyl ? form.artist : '',
-      grade: isComic || isCard || isConsole || isFunko ? form.grade : '',
-      is_variant: isComic || isCard || isFunko ? form.is_variant : false,
-      variant_notes: isComic || isCard || isFunko ? form.variant_notes : '',
+      grade: isComic || isCard || isConsole || isFunko || isLego ? form.grade : '',
+      is_variant: isComic || isCard || isFunko || isLego ? form.is_variant : false,
+      variant_notes: isComic || isCard || isFunko || isLego ? form.variant_notes : '',
       format: isVinyl || isMediaLike || isConsole ? form.format : '',
       edition: isVinyl || isMediaLike || isConsole ? form.edition : '',
-      card_set: isCard || isFunko ? form.card_set : '',
-      card_number: isCard || isFunko ? form.card_number : '',
-      player_name: isCard || isFunko ? form.player_name : '',
+      card_set: isCard || isFunko || isLego ? form.card_set : '',
+      card_number: isCard || isFunko || isLego ? form.card_number : '',
+      player_name: isCard || isFunko || isLego ? form.player_name : '',
       region: isGame || isConsole ? form.region : '',
       completeness: isGame || isConsole ? form.completeness : '',
       // A console, a Funko Pop, or a VHS tape is always a physical object
@@ -904,16 +950,18 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       // (lib/marketPrice.js) treat that VHS as having no resale market at
       // all (disabling "Check eBay price" and the wishlist buy links) and
       // excluded it from lib/valueSnapshot.js's collection-value estimate.
-      copy_type: isConsole || isFunko || isVhs ? 'physical' : form.copy_type,
+      // LEGO joined this list when the type shipped (Sep 2026) for the
+      // same reason — a LEGO set is always a physical object.
+      copy_type: isConsole || isFunko || isVhs || isLego ? 'physical' : form.copy_type,
       // Switching Copy to Digital hides the price-check UI, but a value
       // set earlier (while it was still Physical, or before this field was
       // touched at all) would otherwise sit there stale — there's no eBay
       // resale market for a digital copy, so it shouldn't show a value.
-      market_price: form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? null : form.market_price,
+      market_price: form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs && !isLego ? null : form.market_price,
       market_price_checked_at:
-        form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? null : form.market_price_checked_at,
+        form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs && !isLego ? null : form.market_price_checked_at,
       market_price_currency:
-        form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? null : form.market_price_currency,
+        form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs && !isLego ? null : form.market_price_currency,
       trophy_platinum: isGame ? form.trophy_platinum : false,
       trophy_completion: isGame
         ? form.trophy_completion === '' || form.trophy_completion == null
@@ -1141,8 +1189,13 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
                 Search
               </button>
             )}
+            {isLego && (
+              <button type="button" className="btn-ghost" onClick={legoSearch} disabled={searching}>
+                Search
+              </button>
+            )}
           </div>
-          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchHint && !platformPick && (
+          {(isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic || isLego) && searchHint && !platformPick && (
             <div className="sub" style={{ marginTop: 4, marginBottom: 0 }}>{searchHint}</div>
           )}
           {platformPick ? (
@@ -1160,7 +1213,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               </div>
             </div>
           ) : (
-            (isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic) && searchResults.length > 0 && (
+            (isGame || isCard || isBook || isConsole || isVinyl || isCd || isMovie || isComic || isLego) && searchResults.length > 0 && (
               <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, maxHeight: 220, overflowY: 'auto', background: 'var(--card)' }}>
                 {searchResults.map((r) => (
                   <div
@@ -1499,6 +1552,58 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           </>
         )}
 
+        {isLego && (
+          <>
+            <div className="row2">
+              <div className="field">
+                <label htmlFor="gm-card-set-lego">Theme</label>
+                <input id="gm-card-set-lego" type="text" value={form.card_set} onChange={(e) => set('card_set', e.target.value)} placeholder="e.g. Star Wars, City, Harry Potter, Marvel" list="dl-card_set" />
+              </div>
+              <div className="field">
+                <label htmlFor="gm-card-number-lego">Set number</label>
+                <input id="gm-card-number-lego" type="text" value={form.card_number} onChange={(e) => set('card_number', e.target.value)} placeholder="e.g. #75192" />
+              </div>
+            </div>
+            <div className="row2">
+              <div className="field">
+                <label htmlFor="gm-player-name-lego">Minifigures included</label>
+                <input id="gm-player-name-lego" type="text" value={form.player_name} onChange={(e) => set('player_name', e.target.value)} placeholder="e.g. Han Solo, Chewbacca, Rey" list="dl-player_name" />
+              </div>
+              <div className="field">
+                <label htmlFor="gm-publisher-lego">Exclusive to</label>
+                <input id="gm-publisher-lego" type="text" value={form.publisher} onChange={(e) => set('publisher', e.target.value)} placeholder="e.g. LEGO Store, LEGOLAND, San Diego Comic-Con" list="dl-publisher" />
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="gm-grade-lego">Grading</label>
+              <input id="gm-grade-lego" type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. AFA 85, Raw" />
+            </div>
+            <div className="field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.is_variant}
+                  onChange={(e) => set('is_variant', e.target.checked)}
+                  style={{ width: 'auto', marginRight: 8 }}
+                />
+                This is a special/exclusive variant
+              </label>
+            </div>
+            {form.is_variant && (
+              <div className="field">
+                <label htmlFor="gm-variant-notes-lego">Details</label>
+                <input
+                  id="gm-variant-notes-lego"
+                  type="text"
+                  value={form.variant_notes}
+                  onChange={(e) => set('variant_notes', e.target.value)}
+                  placeholder="e.g. alternate box print, promotional polybag included, employee exclusive"
+                />
+              </div>
+            )}
+          </>
+        )}
+
         <div className="row2">
           <div className="field">
             <label htmlFor="gm-genre">Genre</label>
@@ -1633,7 +1738,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
               </select>
             </div>
           )}
-          {!isConsole && !isFunko && !isVhs && (
+          {!isConsole && !isFunko && !isVhs && !isLego && (
             <div className="field">
               <label htmlFor="gm-copy-type">Copy</label>
               <select id="gm-copy-type" value={form.copy_type} onChange={(e) => set('copy_type', e.target.value)}>
@@ -1746,7 +1851,7 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
           </div>
         )}
 
-        {form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs ? (
+        {form.copy_type === 'digital' && !isConsole && !isFunko && !isVhs && !isLego ? (
           <div className="field">
             <label>Current market value</label>
             <div className="sub" style={{ margin: 0 }}>

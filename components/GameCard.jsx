@@ -51,6 +51,7 @@ export function getStatRows(game, currency) {
   const isCd = game.item_type === 'cd';
   const isConsole = game.item_type === 'console';
   const isFunko = game.item_type === 'funko_pop';
+  const isLego = game.item_type === 'lego';
   const isMediaLike = isBook || isDvd || isVhs || isCd;
   const rating = Number(game.rating) || 0;
 
@@ -96,6 +97,13 @@ export function getStatRows(game, currency) {
     statRows.push({ label: 'Series', value: game.card_set || '—' });
     statRows.push({ label: 'Pop! #', value: game.card_number || '—' });
     statRows.push({ label: 'Character', value: game.player_name || '—' });
+    if (game.publisher) statRows.push({ label: 'Exclusive', value: game.publisher });
+    if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
+    statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
+  } else if (isLego) {
+    statRows.push({ label: 'Theme', value: game.card_set || '—' });
+    statRows.push({ label: 'Set #', value: game.card_number || '—' });
+    if (game.player_name) statRows.push({ label: 'Minifigures', value: game.player_name });
     if (game.publisher) statRows.push({ label: 'Exclusive', value: game.publisher });
     if (game.condition) statRows.push({ label: 'Condition', value: game.condition });
     statRows.push({ label: 'Grade', value: game.grade || 'Ungraded' });
@@ -197,6 +205,7 @@ export default function GameCard({
 
   const isCard = game.item_type === 'trading_card';
   const isFunko = game.item_type === 'funko_pop';
+  const isLego = game.item_type === 'lego';
 
   const statRows = getStatRows(game, currency);
 
@@ -258,10 +267,10 @@ export default function GameCard({
             ))}
           </div>
         </div>
-        {(((isComic || isCard || isFunko) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.ownership === 'owned' && game.for_sale) || (game.tags || []).length > 0) && (
+        {(((isComic || isCard || isFunko || isLego) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.ownership === 'owned' && game.for_sale) || (game.tags || []).length > 0) && (
           <div className="badge-row">
-            {(isComic || isCard || isFunko) && game.is_variant && (
-              <span className="badge tag">{isFunko ? 'Chase' : isCard ? 'Parallel' : 'Variant'}</span>
+            {(isComic || isCard || isFunko || isLego) && game.is_variant && (
+              <span className="badge tag">{isFunko ? 'Chase' : isLego ? 'Exclusive' : isCard ? 'Parallel' : 'Variant'}</span>
             )}
             {game.copy_type && (
               <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>

@@ -14,6 +14,7 @@ const TYPE_LABELS = {
   cd: 'CD',
   console: 'Console',
   funko_pop: 'Funko Pop',
+  lego: 'LEGO Set',
 };
 
 // Lighter-weight than GameCard — a recommendation isn't one of your own
