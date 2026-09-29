@@ -790,9 +790,48 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
     }
   }
 
+  // LEGO gets its own apply path, same reason comics do (applyComicResult
+  // above) — the set's included minifigures aren't on the initial search
+  // result at all (Rebrickable only exposes them on a separate per-set
+  // endpoint, see lib/legoLookup.js's fetchLegoMinifigs), so Theme/Set
+  // number/cover fill in instantly from the search result and Minifigures
+  // included follows right after, with its own hint text so a set with a
+  // slow (or failed) minifig lookup doesn't look like the Search button
+  // silently did nothing. A set with genuinely no minifigures (Technic,
+  // many City sets) is a real, valid result too, not an error — that just
+  // leaves Minifigures included blank rather than showing a failure
+  // message.
+  async function applyLegoResult(item) {
+    set('title', item.name || form.title);
+    set('cover', item.cover || form.cover);
+    if (item.theme) set('card_set', item.theme);
+    if (item.setNum) set('card_number', item.setNum);
+    setSearchResults([]);
+    setSearchHint(`Filled from Rebrickable: ${item.name} — looking up minifigures…`);
+    try {
+      const res = await fetch(`/api/lego-detail?setNum=${encodeURIComponent(item.id)}`);
+      const data = await res.json();
+      if (data.error) {
+        setSearchHint(`Filled from Rebrickable: ${item.name} (couldn't fetch minifigures — fill in manually).`);
+        return;
+      }
+      if (Array.isArray(data.minifigs) && data.minifigs.length) {
+        const names = data.minifigs.map((m) => (m.quantity > 1 ? `${m.name} (x${m.quantity})` : m.name)).join(', ');
+        set('player_name', names);
+      }
+      setSearchHint(`Filled from Rebrickable: ${item.name}`);
+    } catch {
+      setSearchHint(`Filled from Rebrickable: ${item.name} (couldn't fetch minifigures — fill in manually).`);
+    }
+  }
+
   function applySearchResult(item) {
     if (item.kind === 'comic') {
       applyComicResult(item);
+      return;
+    }
+    if (item.kind === 'lego') {
+      applyLegoResult(item);
       return;
     }
     set('title', item.name || form.title);
@@ -816,10 +855,6 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       if (item.manufacturer) set('publisher', item.manufacturer);
       if (item.genre) set('genre', item.genre);
       setSearchHint(`Filled: ${item.name}`);
-    } else if (item.kind === 'lego') {
-      if (item.theme) set('card_set', item.theme);
-      if (item.setNum) set('card_number', item.setNum);
-      setSearchHint(`Filled from Rebrickable: ${item.name}`);
     } else if (item.kind === 'music') {
       // Vinyl's "Artist" field is the real artist column; CD reuses the
       // shared media "writer" field (labeled Artist for CD).
