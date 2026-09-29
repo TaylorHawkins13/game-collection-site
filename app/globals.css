@@ -1697,6 +1697,16 @@ button.badge.tag:hover {
   background: #2ecc7122;
   color: #2ecc71;
 }
+/* LEGO "Built" badge (Sep 2026, requested directly: "i like the idea of
+   being able to mark a set as built or not") — reuses LEGO's own shelf-
+   mosaic orange (lib/mosaicData.js's #f97316) so the badge reads as
+   LEGO-specific at a glance, distinct from .complete-100's teal (which
+   means something different — "I have every piece/box/manual," not "I've
+   actually assembled it"). */
+.badge.built-badge {
+  background: #f9731622;
+  color: #f97316;
+}
 /* A real card surface instead of bare centered text floating on the page
    background — extends the "theme of the new bottom nav bar" rework
    (gold/card-surface visual language, see CHANGELOG.md) to the one piece

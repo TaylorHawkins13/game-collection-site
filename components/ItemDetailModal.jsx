@@ -131,9 +131,10 @@ export default function ItemDetailModal({ game, currency, existingItems, onClose
           </div>
         </div>
 
-        {(hasVariant || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
+        {(hasVariant || (isLego && game.built) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.tags || []).length > 0) && (
           <div className="badge-row" style={{ marginTop: 10 }}>
             {hasVariant && <span className="badge tag">{isFunko ? 'Chase' : isLego ? 'Exclusive' : isCard ? 'Parallel' : 'Variant'}</span>}
+            {isLego && game.built && <span className="badge tag built-badge">Built</span>}
             {game.copy_type && <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>}
             {game.fully_completed && <span className="badge tag complete-100">100% Complete</span>}
             {game.showcase_order != null && <span className="badge tag showcase-badge">Showcased</span>}

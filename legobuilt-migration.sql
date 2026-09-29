@@ -1,0 +1,19 @@
+-- LEGO-only "Built" checkbox -- requested directly (Sept 2026): "i like
+-- the idea of being able to mark a set as built or not". Scoped as a
+-- simple boolean (not multi-state built/in-progress/still-boxed, not a
+-- piece-count progress bar) per the follow-up decision to keep it simple.
+--
+-- Deliberately a NEW column, not a reuse of fully_completed: that field
+-- already means something different -- "I have every piece/box/manual"
+-- (collector-completeness), same as it does for every other item type.
+-- "I've actually assembled this set" is a genuinely LEGO-specific concept
+-- (a set can be fully_completed and not built, e.g. still sealed in the
+-- box; or built with a piece missing/swapped) -- reusing fully_completed
+-- would conflate the two and corrupt cross-type aggregate stats that
+-- already depend on fully_completed's existing meaning.
+--
+-- See supabase-schema.sql (games.built), components/GameModal.jsx (the
+-- Built checkbox + save-payload scoping), components/GameCard.jsx and
+-- components/ItemDetailModal.jsx (the Built badge), lib/csvImport.js
+-- (CSV round-trip), CHANGELOG.md, and lib/whatsNew.js.
+alter table games add column if not exists built boolean not null default false;

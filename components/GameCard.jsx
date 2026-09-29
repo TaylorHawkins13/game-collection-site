@@ -267,11 +267,12 @@ export default function GameCard({
             ))}
           </div>
         </div>
-        {(((isComic || isCard || isFunko || isLego) && game.is_variant) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.ownership === 'owned' && game.for_sale) || (game.tags || []).length > 0) && (
+        {(((isComic || isCard || isFunko || isLego) && game.is_variant) || (isLego && game.built) || game.copy_type || game.fully_completed || game.showcase_order != null || (game.ownership === 'wishlist' && game.wishlist_priority) || (game.ownership === 'owned' && game.for_sale) || (game.tags || []).length > 0) && (
           <div className="badge-row">
             {(isComic || isCard || isFunko || isLego) && game.is_variant && (
               <span className="badge tag">{isFunko ? 'Chase' : isLego ? 'Exclusive' : isCard ? 'Parallel' : 'Variant'}</span>
             )}
+            {isLego && game.built && <span className="badge tag built-badge">Built</span>}
             {game.copy_type && (
               <span className={`badge tag copy-${game.copy_type}`}>{cap(game.copy_type)}</span>
             )}

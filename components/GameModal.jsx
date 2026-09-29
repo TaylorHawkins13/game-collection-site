@@ -100,6 +100,7 @@ const EMPTY = {
   copy_type: '',
   completeness: '',
   fully_completed: false,
+  built: false,
   market_price: null,
   market_price_checked_at: null,
   market_price_currency: null,
@@ -200,6 +201,12 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
         copy_type: source.copy_type || '',
         completeness: source.completeness || '',
         fully_completed: source.fully_completed || false,
+        // A duplicated LEGO row is "a different platform, a replacement
+        // copy, etc." (see the duplicate-warning text above the Search
+        // results) — a fresh copy isn't already built just because the
+        // original was, so this resets rather than carrying over, same
+        // spirit as market_price/trophy_platinum below.
+        built: duplicateOf ? false : source.built || false,
         market_price: duplicateOf ? null : source.market_price ?? null,
         market_price_checked_at: duplicateOf ? null : source.market_price_checked_at || null,
         market_price_currency: duplicateOf ? null : source.market_price_currency || null,
@@ -964,6 +971,17 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
       grade: isComic || isCard || isConsole || isFunko || isLego ? form.grade : '',
       is_variant: isComic || isCard || isFunko || isLego ? form.is_variant : false,
       variant_notes: isComic || isCard || isFunko || isLego ? form.variant_notes : '',
+      // Whether this LEGO set has actually been assembled — a genuinely
+      // LEGO-specific concept (unlike fully_completed's "beyond play
+      // status/condition" scope, which already applies to every type),
+      // so it's scoped to isLego only rather than reusing fully_completed
+      // and conflating "I have all the pieces" with "I've built it."
+      // Requested directly (Sep 2026, alongside the minifig/master-set
+      // upgrades): "i like the idea of being able to mark a set as built
+      // or not" — scoped to a plain checkbox rather than a multi-state
+      // field or piece-count progress, Taylor's own pick from the choices
+      // offered.
+      built: isLego ? form.built : false,
       format: isVinyl || isMediaLike || isConsole ? form.format : '',
       edition: isVinyl || isMediaLike || isConsole ? form.edition : '',
       card_set: isCard || isFunko || isLego ? form.card_set : '',
@@ -1612,6 +1630,17 @@ export default function GameModal({ game, duplicateOf, duplicateSource, currency
             <div className="field">
               <label htmlFor="gm-grade-lego">Grading</label>
               <input id="gm-grade-lego" type="text" value={form.grade} onChange={(e) => set('grade', e.target.value)} placeholder="e.g. AFA 85, Raw" />
+            </div>
+            <div className="field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.built}
+                  onChange={(e) => set('built', e.target.checked)}
+                  style={{ width: 'auto', marginRight: 8 }}
+                />
+                Built
+              </label>
             </div>
             <div className="field">
               <label>

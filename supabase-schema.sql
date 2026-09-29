@@ -169,6 +169,12 @@ create table if not exists games (
   -- see price_currency's comment above -- same fix, same reasoning
   -- (see pricecurrency-migration.sql)
   asking_price_currency text,
+  -- LEGO-only: have you actually assembled this set? (see
+  -- legobuilt-migration.sql, ROADMAP.md). Deliberately separate from
+  -- fully_completed above -- that means "I have every piece/box/manual"
+  -- (collector-completeness), this means "I've put it together"; a set can
+  -- be fully_completed and not built, or built with a missing piece.
+  built boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
