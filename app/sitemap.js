@@ -31,6 +31,10 @@ export default async function sitemap() {
     // real IGDB company id, same shape as /creator/comics, same reasoning
     // for only indexing the search page here.
     { url: `${SITE_URL}/creator/games`, changeFrequency: 'monthly', priority: 0.5 },
+    // Trading cards' creator page keys its URL on a (game, free-typed
+    // illustrator name) pair rather than a stable id — same "just the
+    // search page" reasoning as comics/books above, one tier down.
+    { url: `${SITE_URL}/creator/cards`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/whats-new`, changeFrequency: 'weekly', priority: 0.4 },
     // The dedicated SEO landing pages (lib/landingPages.js) — evergreen
     // content, not something that changes often, but worth a slightly
