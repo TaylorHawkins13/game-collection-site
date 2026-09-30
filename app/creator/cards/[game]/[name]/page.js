@@ -9,9 +9,17 @@ import CardCreatorPageClient from './CardCreatorPageClient';
 // getWorksCached — generateMetadata and the page body below share one
 // real Scryfall/TCGdex lookup instead of two.
 //
-// `game`/`name` both arrive already URL-decoded — Next.js decodes dynamic
-// segment params itself.
-const getWorksCached = cache((game, name) => getCardArtistWorks(name, game));
+// `name` does NOT arrive pre-decoded — confirmed live via a temporary
+// debug render on this exact page: a real illustrator name with a space
+// (Rebecca Guay) showed up in `params.name` as the literal, still-encoded
+// "Rebecca%20Guay", not a real space, so the Scryfall/TCGdex query always
+// searched for an artist that doesn't exist. Decoded explicitly here
+// rather than trusted — this project's `[name]`-based route in
+// app/creator/books/[name]/page.js carried the identical wrong assumption
+// and the identical silent bug, fixed the same way in the same round.
+// `game` is a fixed 'mtg'/'pokemon' literal with no encodable characters,
+// so it doesn't need this.
+const getWorksCached = cache((game, name) => getCardArtistWorks(decodeURIComponent(name), game));
 
 const GAME_LABEL = { mtg: 'Magic: The Gathering', pokemon: 'Pokémon TCG' };
 
@@ -66,17 +74,6 @@ export default async function CardCreatorPage({ params }) {
               ? "Couldn't reach Scryfall or TCGdex right now — try again in a moment."
               : "Couldn't find that illustrator, or they have nothing on file."}
           </div>
-          {/* TEMP DEBUG — remove once the game/name mismatch is understood */}
-          <pre style={{ fontSize: 11, opacity: 0.6, whiteSpace: 'pre-wrap' }}>
-            {JSON.stringify({
-              rawGame: game,
-              rawName: name,
-              gameLabelLookup: GAME_LABEL[game] || null,
-              resultError: result.error || null,
-              resultName: result.name || null,
-              entryCount: Array.isArray(result.entries) ? result.entries.length : null,
-            })}
-          </pre>
           <p className="sub">
             <Link href="/creator/cards">Try a different search</Link>.
           </p>

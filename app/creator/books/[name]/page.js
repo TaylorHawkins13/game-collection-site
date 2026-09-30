@@ -11,10 +11,14 @@ import BookCreatorPageClient from './BookCreatorPageClient';
 // genuinely costs two real Open Library requests (search authors, then
 // that author's works — see lib/openLibraryAuthorLookup.js).
 //
-// `name` arrives already URL-decoded — Next.js decodes dynamic-segment
-// params itself, so this doesn't re-decode it (double-decoding would
-// mangle a name that happens to contain a literal `%`).
-const getBibliographyCached = cache((name) => getAuthorBibliography(name));
+// `name` does NOT arrive pre-decoded — verified live, the hard way: this
+// comment used to claim Next.js decodes dynamic-segment params itself, but
+// a real production test (via the same-shaped app/creator/cards/[game]/
+// [name]/page.js, which shares this exact assumption) showed the raw
+// segment still had its literal `%20`s, so every author name containing a
+// space — i.e. almost every author name — silently 404'd here too. Decode
+// once, explicitly, rather than trust the framework to have done it.
+const getBibliographyCached = cache((name) => getAuthorBibliography(decodeURIComponent(name)));
 
 export async function generateMetadata({ params }) {
   const { name } = await params;
