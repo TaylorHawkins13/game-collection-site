@@ -66,6 +66,17 @@ export default async function CardCreatorPage({ params }) {
               ? "Couldn't reach Scryfall or TCGdex right now — try again in a moment."
               : "Couldn't find that illustrator, or they have nothing on file."}
           </div>
+          {/* TEMP DEBUG — remove once the game/name mismatch is understood */}
+          <pre style={{ fontSize: 11, opacity: 0.6, whiteSpace: 'pre-wrap' }}>
+            {JSON.stringify({
+              rawGame: game,
+              rawName: name,
+              gameLabelLookup: GAME_LABEL[game] || null,
+              resultError: result.error || null,
+              resultName: result.name || null,
+              entryCount: Array.isArray(result.entries) ? result.entries.length : null,
+            })}
+          </pre>
           <p className="sub">
             <Link href="/creator/cards">Try a different search</Link>.
           </p>
