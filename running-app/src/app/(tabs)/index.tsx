@@ -67,7 +67,7 @@ export default function Home() {
           <Small>{greeting()}</Small>
           <H1>Today</H1>
         </View>
-        <Pressable onPress={() => router.push('/progress')} accessibilityRole="button" accessibilityLabel={`Rank ${divisionLabel(rank.division)}. Open progress`}>
+        <Pressable onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel={`Rank ${divisionLabel(rank.division)}. Open progress`}>
           <Row>
             <View style={{ alignItems: 'flex-end' }}>
               <H3>{divisionLabel(rank.division)}</H3>
@@ -201,7 +201,7 @@ export default function Home() {
         </Card>
       ) : null}
 
-      <Card onPress={() => router.push('/progress')}>
+      <Card onPress={() => router.push('/profile')}>
         <Row style={{ justifyContent: 'space-between' }}>
           <H3>{divisionLabel(rank.division)}</H3>
           <Small>

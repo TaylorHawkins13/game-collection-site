@@ -190,7 +190,7 @@ export default function Summary() {
             ? a.healthSynced
               ? `Saved to ${health.name} ✓`
               : `Saving to ${health.name}…`
-            : 'Connect a health app in Plan settings to save workouts automatically.'}
+            : 'Connect a health app in Profile → Plan & settings to save workouts automatically.'}
         </Small>
       </Card>
 

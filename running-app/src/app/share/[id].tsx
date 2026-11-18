@@ -65,7 +65,7 @@ export default function ShareRun() {
     setStatus(null);
     try {
       if (!(await Social.currentUserId()) || !(await Social.myProfile())) {
-        router.push('/friends');
+        router.push('/feed');
         return;
       }
       await Social.postRun(buildSharedRun(a, o, ctx, p.hideRouteEnds));
@@ -107,7 +107,7 @@ export default function ShareRun() {
         <Chip label="Streak & week" selected={o.showStreak} onPress={() => toggle('showStreak')} />
       </Row>
       {a.route?.length && o.showRoute ? (
-        <Small>{p.hideRouteEnds ? 'The start and end of your route are trimmed so your home isn’t shown.' : 'Your full route is shown, including where you started. You can hide route ends in Plan → Runs.'}</Small>
+        <Small>{p.hideRouteEnds ? 'The start and end of your route are trimmed so your home isn’t shown.' : 'Your full route is shown, including where you started. You can hide route ends in Profile → Plan & settings.'}</Small>
       ) : null}
 
       {Social.socialConfigured() ? <Button big title="Post to my friends in Steady" onPress={() => void postToFriends()} disabled={busy} /> : null}

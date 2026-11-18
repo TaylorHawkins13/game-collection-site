@@ -1,17 +1,17 @@
 /** Plan & settings: adjust the plan, pause for life, reminders, run options, health, data. */
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Switch, View } from 'react-native';
-import { CustomWeekEditor } from '../../components/CustomWeekEditor';
-import { PbEditor } from '../../components/PbEditor';
-import { currentWeek, templateFromWeek } from '../../domain/plan';
-import { phaseFor, phaseLabel, upcomingRaces } from '../../domain/races';
-import { formatDistance } from '../../domain/gps';
-import { Body, Button, Card, Chip, Divider, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../../components/ui';
-import { goalLabel, goalsFor } from '../../goals';
-import { currentPaces, direction } from '../../domain/fitness';
-import { formatTime, paceLabel } from '../../domain/pace';
-import type { FitnessReason } from '../../domain/types';
+import { CustomWeekEditor } from './CustomWeekEditor';
+import { PbEditor } from './PbEditor';
+import { currentWeek, templateFromWeek } from '../domain/plan';
+import { phaseFor, phaseLabel, upcomingRaces } from '../domain/races';
+import { formatDistance } from '../domain/gps';
+import { Body, Button, Card, Chip, Divider, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from './ui';
+import { goalLabel, goalsFor } from '../goals';
+import { currentPaces, direction } from '../domain/fitness';
+import { formatTime, paceLabel } from '../domain/pace';
+import type { FitnessReason } from '../domain/types';
 
 const REASON: Record<FitnessReason, string> = {
   pb: 'Set from your PBs',
@@ -23,16 +23,16 @@ const REASON: Record<FitnessReason, string> = {
   easy_struggle: 'Easy runs felt hard',
   break: 'Time off running',
 };
-import { formatShort, weekdayName, weekdayShort } from '../../domain/dates';
-import { activePause, previewNextWeek } from '../../domain/engine';
-import type { ExperienceLevel, Pause, Profile } from '../../domain/types';
-import { confirmDialog } from '../../services/dialog';
-import { health } from '../../services/health';
-import { requestNotificationPermission, scheduleReminders } from '../../services/notifications';
-import { refreshRecovery } from '../../services/sync';
-import { useRunStore } from '../../state/runStore';
-import { today as getToday, useStore } from '../../state/store';
-import { space, useColors } from '../../theme';
+import { formatShort, weekdayName, weekdayShort } from '../domain/dates';
+import { activePause, previewNextWeek } from '../domain/engine';
+import type { ExperienceLevel, Pause, Profile } from '../domain/types';
+import { confirmDialog } from '../services/dialog';
+import { health } from '../services/health';
+import { requestNotificationPermission, scheduleReminders } from '../services/notifications';
+import { refreshRecovery } from '../services/sync';
+import { useRunStore } from '../state/runStore';
+import { today as getToday, useStore } from '../state/store';
+import { space, useColors } from '../theme';
 
 const LEVEL_LABEL: Record<ExperienceLevel, string> = {
   new: 'New to running',
@@ -68,7 +68,7 @@ function Stepper({ label, value, min, max, onChange, format }: { label: string; 
 
 const fmtTime = (h: number, m: number) => `${h}:${String(m).padStart(2, '0')}`;
 
-export default function Settings() {
+export function PlanView({ header }: { header: ReactNode }) {
   const c = useColors();
   const app = useStore((s) => s.app);
   const s = useStore.getState();
@@ -101,7 +101,7 @@ export default function Settings() {
 
   return (
     <Screen>
-      <H1>Your plan</H1>
+      {header}
 
       <SectionTitle>Races</SectionTitle>
       {upcomingRaces(app.races, today).map((r) => (

@@ -67,10 +67,10 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('home-outline') }} />
-      <Tabs.Screen name="progress" options={{ title: 'Progress', tabBarIcon: icon('trophy-outline') }} />
+      <Tabs.Screen name="feed" options={{ title: 'Feed', tabBarIcon: icon('people-outline') }} />
       <Tabs.Screen name="record" options={{ title: 'Record', tabBarButton: () => <RecordButton /> }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity', tabBarIcon: icon('stats-chart-outline') }} />
-      <Tabs.Screen name="settings" options={{ title: 'Plan', tabBarIcon: icon('calendar-outline') }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('person-circle-outline') }} />
     </Tabs>
   );
 }

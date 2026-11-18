@@ -1,20 +1,20 @@
 /** Progress: rank & season, peak rank, consistency calendar, season stats, badges, lifetime. No leaderboard. */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { ConsistencyCalendar, seasonCalendarRange } from '../../components/ConsistencyCalendar';
-import { RankEmblem } from '../../components/RankEmblem';
-import { Body, Button, Card, H1, H2, H3, ProgressBar, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
-import { BADGES } from '../../domain/badges';
-import { formatShort } from '../../domain/dates';
-import { lifetimeStats, seasonStats } from '../../domain/engine';
-import { formatDistance, formatDuration } from '../../domain/gps';
-import { planStreak } from '../../domain/metrics';
-import { divisionLabel, divisionProgress, gateFor, GOLD_I, isGated, MAX_DIVISION, RANK_NAMES, rankOf, XP_PER_TIER, xpToClear } from '../../domain/ranks';
-import { inFinalTwoWeeks } from '../../domain/season';
-import { today as getToday, useStore } from '../../state/store';
-import { RANK_COLORS, space, useColors } from '../../theme';
+import { ConsistencyCalendar, seasonCalendarRange } from './ConsistencyCalendar';
+import { RankEmblem } from './RankEmblem';
+import { Body, Button, Card, H2, H3, ProgressBar, Row, Screen, SectionTitle, Small, Stat, StatRow } from './ui';
+import { BADGES } from '../domain/badges';
+import { formatShort } from '../domain/dates';
+import { lifetimeStats, seasonStats } from '../domain/engine';
+import { formatDistance, formatDuration } from '../domain/gps';
+import { planStreak } from '../domain/metrics';
+import { divisionLabel, divisionProgress, gateFor, GOLD_I, isGated, MAX_DIVISION, RANK_NAMES, rankOf, XP_PER_TIER, xpToClear } from '../domain/ranks';
+import { inFinalTwoWeeks } from '../domain/season';
+import { today as getToday, useStore } from '../state/store';
+import { RANK_COLORS, space, useColors } from '../theme';
 
-export default function Progress() {
+export function ProgressView({ header }: { header: ReactNode }) {
   const c = useColors();
   const app = useStore((s) => s.app);
   const [showLadder, setShowLadder] = useState(false);
@@ -29,7 +29,7 @@ export default function Progress() {
 
   return (
     <Screen>
-      <H1>Progress</H1>
+      {header}
 
       <Card style={{ alignItems: 'center', gap: space.md, paddingVertical: space.xl }}>
         <RankEmblem division={rank.division} size={88} />
