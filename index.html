@@ -13,10 +13,12 @@ h1 { font-size: 28px; font-weight: 700; margin: 0; padding: 28px 20px 8px; line-
 .group { margin: 0 16px 20px; }
 .gh { min-height: 52px; background: #FC4C02; color: #fff; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 14px; letter-spacing: 0.4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .gb { border: 1px solid #E2E4E1; border-top: none; border-radius: 0 0 12px 12px; background: #fff; margin-top: -2px; overflow: hidden; }
-.opt { min-height: 52px; padding: 14px 18px; border-bottom: 1px solid #E2E4E1; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+.opt { min-height: 52px; padding: 14px 18px; border-bottom: 1px solid #E2E4E1; display: flex; justify-content: space-between; align-items: center; font-size: 16px; cursor: pointer; }
 .opt:last-child { border: none; }
+.opt:active { background: #F3F4F2; }
 .sel { background: #FFF0EB; }
 .chk { width: 24px; height: 24px; border: 2px solid #FC4C02; border-radius: 50%; color: #FC4C02; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.desc { font-size: 13px; color: #5E6B63; margin-top: 2px; }
 .bottom { position: sticky; bottom: 0; background: #fff; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #E2E4E1; }
 .btn { display: block; min-height: 52px; background: #FC4C02; color: #fff; text-align: center; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 17px; text-decoration: none; line-height: 20px; }
 .hide { display: none; }
@@ -26,34 +28,61 @@ h1 { font-size: 28px; font-weight: 700; margin: 0; padding: 28px 20px 8px; line-
 <div class="wrap">
 <h1>Any goal?</h1>
 <p class="sub">Optional — your plan stays easy either way.</p>
+
 <div class="group">
 <div class="gh" onclick="t('g1')">JUST RUN <span id="i1">−</span></div>
 <div class="gb" id="g1">
-<div class="opt">Build a running habit</div>
-<div class="opt">Get fitter and healthier</div>
-<div class="opt sel">Clear my head <span class="chk">✓</span></div>
+<div class="opt" data-id="habit" onclick="pick(this)">Build a running habit<div class="desc">No target — just make it stick.</div></div>
+<div class="opt" data-id="fitness" onclick="pick(this)">Get fitter and healthier<div class="desc">General fitness, steady progress.</div></div>
+<div class="opt sel" data-id="stress" onclick="pick(this)">Clear my head <span class="chk">✓</span><div class="desc">Running for headspace. Easy, regular, no numbers.</div></div>
+<div class="opt" data-id="back_to_routine" onclick="pick(this)">Get back to my old routine<div class="desc">Rebuild gradually.</div></div>
 </div>
 </div>
+
 <div class="group">
 <div class="gh" onclick="t('g2')">DISTANCE GOALS <span id="i2">+</span></div>
 <div class="gb hide" id="g2">
-<div class="opt">Run 30 minutes non-stop</div>
-<div class="opt">Run a 5K</div>
-<div class="opt">Run a 10K</div>
+<div class="opt" data-id="run30" onclick="pick(this)">Run 30 minutes non-stop<div class="desc">A classic first milestone.</div></div>
+<div class="opt" data-id="5k" onclick="pick(this)">Run a 5K<div class="desc">Comfortably, at your own pace.</div></div>
+<div class="opt" data-id="10k" onclick="pick(this)">Run a 10K<div class="desc">Build the distance steadily.</div></div>
+<div class="opt" data-id="half" onclick="pick(this)">Run a half marathon<div class="desc">Longer-term base building.</div></div>
+<div class="opt" data-id="marathon" onclick="pick(this)">Run a marathon<div class="desc">Long runs build up gradually over many weeks.</div></div>
+<div class="opt" data-id="ultra" onclick="pick(this)">Run an ultra (50K+)<div class="desc">Longer base runs, long runs measured in hours.</div></div>
 </div>
 </div>
+
 <div class="group">
 <div class="gh" onclick="t('g3')">GET FASTER <span id="i3">+</span></div>
 <div class="gb hide" id="g3">
-<div class="opt">Get faster at 5K</div>
+<div class="opt" data-id="5k_faster" onclick="pick(this)">Get faster at 5K<div class="desc">Weekly tempo or interval session at your PB-based paces.</div></div>
+<div class="opt" data-id="10k_faster" onclick="pick(this)">Get faster at 10K<div class="desc">Quality sessions plus a steady long run.</div></div>
+<div class="opt" data-id="half_faster" onclick="pick(this)">Get faster at the half<div class="desc">Tempo work and longer long runs.</div></div>
 </div>
 </div>
+
 <div class="bottom">
 <a class="btn" href="#">Continue</a>
 </div>
 </div>
 <script>
-function t(id){var e=document.getElementById(id);e.classList.toggle('hide');var i=document.getElementById('i'+id.slice(1));i.textContent=e.classList.contains('hide')?'+':'−';}
+function t(id) {
+  var e = document.getElementById(id);
+  e.classList.toggle('hide');
+  var i = document.getElementById('i' + id.slice(1));
+  i.textContent = e.classList.contains('hide') ? '+' : '−';
+}
+function pick(el) {
+  document.querySelectorAll('.opt').forEach(function(o) {
+    o.classList.remove('sel');
+    var c = o.querySelector('.chk');
+    if (c) c.remove();
+  });
+  el.classList.add('sel');
+  var chk = document.createElement('span');
+  chk.className = 'chk';
+  chk.textContent = '✓';
+  el.appendChild(chk);
+}
 </script>
 </body>
 </html>
