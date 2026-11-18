@@ -1,6 +1,6 @@
 /**
  * Layout primitives. Visual language: flat, full-width white sections on a
- * grey gutter (no floating boxes), list rows with dividers, pill and circular
+ * grey gutter (no floating boxes), list rows with dividers, medium-radius
  * buttons, small labels above big numbers.
  */
 import type { ReactNode } from 'react';
@@ -95,12 +95,14 @@ export function Button({
       style={({ pressed }) => [
         {
           backgroundColor: bg,
-          borderRadius: radius.pill,
+          borderRadius: radius.md,
           borderWidth: kind === 'secondary' ? 1.5 : 0,
           borderColor: c.primary,
-          paddingVertical: big ? 16 : 10,
+          minHeight: 52,
+          paddingVertical: big ? 16 : 12,
           paddingHorizontal: space.xl,
           alignItems: 'center',
+          justifyContent: 'center',
           opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
         },
         style,
@@ -164,7 +166,7 @@ export function OptionGroup({ children }: { children: ReactNode }) {
   return <View style={{ marginHorizontal: -GUTTER, backgroundColor: c.surface }}>{children}</View>;
 }
 
-/** A list row with a round radio indicator on the right. */
+/** A list row with a round radio indicator on the right. Minimum 52px touch height. */
 export function Option({
   label,
   description,
@@ -186,6 +188,7 @@ export function Option({
         flexDirection: 'row',
         alignItems: 'center',
         gap: space.md,
+        minHeight: 52,
         paddingVertical: space.lg,
         paddingHorizontal: GUTTER,
         backgroundColor: pressed ? c.surfaceAlt : c.surface,
@@ -222,12 +225,14 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
       style={{
-        borderRadius: radius.pill,
+        borderRadius: radius.md,
         borderWidth: 1.5,
         borderColor: selected ? c.text : c.border,
         backgroundColor: selected ? c.text : c.surface,
-        paddingVertical: 7,
-        paddingHorizontal: 14,
+        minHeight: 40,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        justifyContent: 'center',
       }}
     >
       <Text style={{ color: selected ? c.surface : c.text, fontWeight: '600', fontSize: 14 }}>{label}</Text>
