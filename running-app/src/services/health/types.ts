@@ -1,4 +1,4 @@
-import type { Activity, DateKey, RecoverySnapshot } from '../../domain/types';
+import type { Activity, DateKey, ImportedRun, RecoverySnapshot } from '../../domain/types';
 
 export interface HealthService {
   /** 'Apple Health', 'Health Connect', or null if unsupported on this device. */
@@ -8,6 +8,10 @@ export interface HealthService {
   readRecovery(today: DateKey): Promise<RecoverySnapshot | null>;
   heartRateDuring(startMs: number, endMs: number): Promise<{ avg: number; max: number } | null>;
   writeWorkout(activity: Activity): Promise<boolean>;
+  /** Most recent heart-rate sample since `sinceMs` (e.g. from a watch recording alongside). */
+  latestHeartRate(sinceMs: number): Promise<number | null>;
+  /** Running workouts since `sinceMs`, for importing history. */
+  importRuns(sinceMs: number): Promise<ImportedRun[]>;
 }
 
 export function summarizeHr(values: number[]): { avg: number; max: number } | null {

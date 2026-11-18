@@ -7,6 +7,7 @@ import { adaptAfterFeedback, directiveFor } from './adaptation.ts';
 import { BADGES, newlyEarned } from './badges.ts';
 import { currentFiveK, describeMove, direction, evaluateAfterRun, evaluateBreak, fitnessFromPbs, hadSlipSince, possiblePb, type FitnessMove } from './fitness.ts';
 import { fiveKEquivalent, trainingPaces } from './pace.ts';
+import { fitnessFromHistory, historySummary, levelHint, mergeImports } from './history.ts';
 import { challengeProgress } from './challenges.ts';
 import { addDays, diffDays, maxKey, minKey, rangeKeys } from './dates.ts';
 import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused } from './metrics.ts';
@@ -26,6 +27,7 @@ import type {
   IssueId,
   Notice,
   Pause,
+  ImportedRun,
   PersonalBest,
   Race,
   RaceDistance,
@@ -347,6 +349,7 @@ export interface SessionInput {
   route?: Activity['route'];
   avgHr?: number;
   maxHr?: number;
+  hrSource?: 'strap' | 'health';
   routineId?: string;
 }
 
@@ -378,6 +381,7 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
     route: input.route,
     avgHr: input.avgHr,
     maxHr: input.maxHr,
+    hrSource: input.hrSource,
     xpEarned: xp,
     completion,
     routineId: input.routineId ?? planned?.routineId,
@@ -626,6 +630,26 @@ export function removeRace(state: AppState, raceId: string, today: DateKey): App
   return rebuildCurrentWeek({ ...state, races: (state.races ?? []).filter((r) => r.id !== raceId) }, today);
 }
 
+/** Import past runs. Sets fitness from them when there's no PB-based estimate yet, or when they show you're clearly fitter. */
+export function importHistory(state: AppState, incoming: ImportedRun[], today: DateKey): Result & { added: number } {
+  const events: EngineEvent[] = [];
+  const { runs, added } = mergeImports(state, incoming);
+  let s: AppState = { ...state, importedRuns: runs };
+  const fromHistory = state.profile?.level !== 'new' ? fitnessFromHistory(runs, today) : null;
+  const cur = currentFiveK(s);
+  if (fromHistory && (!cur || fromHistory < cur * 0.98)) {
+    s = applyFitnessMove(s, { fiveKSec: fromHistory, reason: 'history' }, today, events);
+  }
+  const sum = historySummary(runs, today);
+  const hint = state.profile ? levelHint(sum, state.profile.level) : null;
+  const text =
+    added === 0
+      ? 'No new runs to import — you’re up to date.'
+      : `Imported ${added} run${added === 1 ? '' : 's'}. Lately: about ${sum.perWeek} a week, longest ${sum.longestMin} min.${hint ? ` ${hint}` : ''}`;
+  events.push({ type: 'history_imported', count: added, text });
+  return { state: s, events, added };
+}
+
 /** Save a PB detected from a run (or entered by hand) and update fitness from it. */
 export function savePersonalBest(state: AppState, pb: { distance: RaceDistance; timeSec: number }, today: DateKey): Result {
   const events: EngineEvent[] = [];
@@ -674,5 +698,7 @@ export function lifetimeStats(state: AppState) {
     badges: Object.keys(state.badges).length,
     totalBadges: BADGES.length,
     totalXp: state.xpLog.reduce((sum, e) => sum + e.amount, 0),
+    importedRuns: (state.importedRuns ?? []).length,
+    importedDistanceM: (state.importedRuns ?? []).reduce((sum, r) => sum + (r.distanceM ?? 0), 0),
   };
 }

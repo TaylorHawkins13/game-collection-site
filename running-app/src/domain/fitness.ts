@@ -155,6 +155,8 @@ export function describeMove(move: FitnessMove, units: 'km' | 'mi'): string {
       return `Welcome back after a break. Paces are eased a little (easy ${easy}) so getting going feels good. They’ll come back as you run.`;
     case 'pb':
       return `Paces set from your PB: easy ${easy}.`;
+    case 'history':
+      return `From your imported runs, your easy pace looks like about ${easy}. Workout targets now use this too.`;
   }
 }
 

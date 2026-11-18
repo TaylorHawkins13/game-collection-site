@@ -69,6 +69,12 @@ export interface Profile {
   goalTimeSec?: number;
   /** 'adaptive' (default): Steady builds and adapts the plan. 'custom': the user's own weekly plan. */
   planMode?: 'adaptive' | 'custom';
+  /** Bluetooth heart-rate strap remembered for runs. */
+  hrDevice?: { id: string; name: string };
+  /** Strava connection (tokens live in the device's secure store, not here). */
+  strava?: { athlete: string; autoUpload: boolean };
+  /** Lock-screen / notification live stats during runs. */
+  liveStats?: boolean;
   customWeek?: CustomSlot[];
   /** Experienced/consistent runners may opt into one light quality session (strides). */
   includeQuality: boolean;
@@ -187,6 +193,9 @@ export interface Activity {
   route?: RoutePoint[];
   avgHr?: number;
   maxHr?: number;
+  /** Where the HR came from: a Bluetooth strap during the run, or the health store afterwards. */
+  hrSource?: 'strap' | 'health';
+  stravaId?: string;
   feel?: Feel;
   soreness?: Soreness;
   xpEarned: number;
@@ -259,7 +268,8 @@ export type FitnessReason =
   | 'easy_trend'
   | 'workouts_hard'
   | 'easy_struggle'
-  | 'break';
+  | 'break'
+  | 'history';
 
 export interface FitnessChange {
   date: DateKey;
@@ -274,9 +284,24 @@ export interface Fitness {
   log: FitnessChange[];
 }
 
+/** A past run pulled in from Apple Health, Health Connect or Strava. Never earns XP or counts toward the plan. */
+export interface ImportedRun {
+  id: string;
+  source: 'apple_health' | 'health_connect' | 'strava';
+  externalId: string;
+  date: DateKey;
+  startedAt: number;
+  durationSec: number;
+  distanceM?: number;
+  avgHr?: number;
+  title: string;
+  treadmill?: boolean;
+}
+
 export interface AppState {
   version: 1;
   fitness?: Fitness;
+  importedRuns?: ImportedRun[];
   races?: Race[];
   profile: Profile | null;
   plan: PlanState | null;
@@ -307,4 +332,5 @@ export type EngineEvent =
   | { type: 'challenge'; id: string }
   | { type: 'plan_note'; text: string }
   | { type: 'fitness'; direction: 'up' | 'down'; reason: FitnessReason; text: string }
-  | { type: 'possible_pb'; distance: RaceDistance; timeSec: number };
+  | { type: 'possible_pb'; distance: RaceDistance; timeSec: number }
+  | { type: 'history_imported'; count: number; text: string };

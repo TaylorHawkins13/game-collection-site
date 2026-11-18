@@ -16,9 +16,14 @@
       "bundleIdentifier": "com.taylorhawkins13.steady",
       "supportsTablet": false,
       "infoPlist": {
-        "UIBackgroundModes": ["location", "audio"],
+        "UIBackgroundModes": [
+          "location",
+          "audio",
+          "bluetooth-central"
+        ],
         "NSLocationWhenInUseUsageDescription": "Steady uses your location to record distance, pace and your route during runs.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow “Always” so Steady can keep recording your run with the screen off or while you use other apps. Location is only used during a run."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow \u201cAlways\u201d so Steady can keep recording your run with the screen off or while you use other apps. Location is only used during a run.",
+        "NSBluetoothAlwaysUsageDescription": "Steady connects to your Bluetooth heart-rate strap to show live heart rate during runs."
       }
     },
     "android": {
@@ -43,7 +48,10 @@
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.WRITE_EXERCISE",
         "android.permission.health.WRITE_EXERCISE_ROUTE",
-        "android.permission.health.WRITE_DISTANCE"
+        "android.permission.health.WRITE_DISTANCE",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "android.permission.health.READ_DISTANCE"
       ]
     },
     "web": {
@@ -54,14 +62,18 @@
       [
         "expo-build-properties",
         {
-          "android": { "compileSdkVersion": 36, "targetSdkVersion": 36, "minSdkVersion": 26 }
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 26
+          }
         }
       ],
       [
         "expo-location",
         {
           "locationWhenInUsePermission": "Steady uses your location to record distance, pace and your route during runs.",
-          "locationAlwaysAndWhenInUsePermission": "Allow “Always” so Steady can keep recording your run with the screen off. Location is only used during a run.",
+          "locationAlwaysAndWhenInUsePermission": "Allow \u201cAlways\u201d so Steady can keep recording your run with the screen off. Location is only used during a run.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -80,7 +92,21 @@
           "healthUpdatePermission": "Steady saves your completed runs and strength sessions as workouts."
         }
       ],
-      "react-native-health-connect"
+      "react-native-health-connect",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": [
+            "central"
+          ],
+          "neverForLocation": true,
+          "bluetoothAlwaysPermission": "Steady connects to your Bluetooth heart-rate strap to show live heart rate during runs."
+        }
+      ],
+      "expo-live-activity",
+      "expo-secure-store",
+      "expo-web-browser"
     ]
   }
 }

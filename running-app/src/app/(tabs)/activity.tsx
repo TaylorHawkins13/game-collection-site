@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
 import { RouteMap } from '../../components/RouteMap';
 import { BarChart } from '../../components/BarChart';
-import { Body, Card, Chip, H1, H3, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
+import { Body, Button, Card, Chip, H1, H3, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
 import { formatShort, weekdayShort } from '../../domain/dates';
 import { averagePace, formatDistance, formatDuration, formatPace, METERS_PER_UNIT } from '../../domain/gps';
 import { countsTowardCompletion } from '../../domain/metrics';
@@ -14,6 +14,7 @@ import { today as getToday, useStore } from '../../state/store';
 import { space, useColors } from '../../theme';
 
 type KindFilter = 'all' | 'run' | 'strength';
+const SOURCE = { apple_health: 'Apple Health', health_connect: 'Health Connect', strava: 'Strava' } as const;
 type RangeFilter = 'season' | 'all';
 
 export default function ActivityTab() {
@@ -26,6 +27,8 @@ export default function ActivityTab() {
   const season = seasonFor(today);
   const units = app.profile?.units ?? 'km';
   const beginner = app.profile?.level === 'new' || app.profile?.level === 'returning';
+  const [showAllImported, setShowAllImported] = useState(false);
+  const imported = (app.importedRuns ?? []).filter((r) => kind !== 'strength' && (range === 'all' || (r.date >= season.start && r.date <= season.end)));
 
   const list = useMemo(
     () =>
@@ -120,6 +123,29 @@ export default function ActivityTab() {
           </Pressable>
         );
       })}
+      {imported.length ? (
+        <>
+          <SectionTitle>Imported history</SectionTitle>
+          <Small>From {[...new Set(imported.map((r) => SOURCE[r.source]))].join(' and ')}. Used for your fitness estimate; no XP.</Small>
+          {imported.slice(0, showAllImported ? 500 : 10).map((r) => (
+            <Card key={r.id}>
+              <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                <View style={{ flex: 1 }}>
+                  <Small>
+                    {weekdayShort(r.date)} {formatShort(r.date)} · {SOURCE[r.source]}
+                  </Small>
+                  <H3>{r.title}</H3>
+                </View>
+                <Small muted={false}>
+                  {formatDuration(r.durationSec)}
+                  {r.distanceM ? ` · ${formatDistance(r.distanceM, units)}` : ''}
+                </Small>
+              </Row>
+            </Card>
+          ))}
+          {imported.length > 10 && !showAllImported ? <Button kind="ghost" title={`Show all ${imported.length}`} onPress={() => setShowAllImported(true)} /> : null}
+        </>
+      ) : null}
     </Screen>
   );
 }

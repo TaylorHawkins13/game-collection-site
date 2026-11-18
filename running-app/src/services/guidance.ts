@@ -11,6 +11,8 @@ import type { AppState, Units } from '../domain/types';
 import { useRunStore } from '../state/runStore';
 import { useStore } from '../state/store';
 import { speak } from './audio';
+import { liveStatus } from '../domain/liveStatus';
+import { liveStats } from './liveActivity';
 
 let cachedFor: string | null = null;
 let cachedCues: Cue[] = [];
@@ -44,11 +46,29 @@ function spokenPace(secPerUnit: number, units: Units): string {
   return `${Math.floor(s / 60)} minutes ${s % 60} seconds per ${units === 'km' ? 'kilometer' : 'mile'}`;
 }
 
+/** Current live heart rate if fresh (≤15 s old). */
+export function freshHr(): number | null {
+  const hr = useRunStore.getState().active?.hr;
+  return hr && Date.now() - hr.t < 15_000 ? hr.bpm : null;
+}
+
+export function currentLiveStatus() {
+  const a = useRunStore.getState().active;
+  const app = useStore.getState().app;
+  if (!a) return null;
+  const session = a.plannedSessionId ? findSession(app, a.plannedSessionId)?.session ?? null : null;
+  return liveStatus(a.tracker, session, Date.now(), app.profile?.units ?? 'km', freshHr());
+}
+
 export function guidanceTick() {
   const run = useRunStore.getState();
   const a = run.active;
-  if (!a || a.tracker.paused) return;
   const app = useStore.getState().app;
+  if (a && app.profile?.liveStats !== false) {
+    const st = currentLiveStatus();
+    if (st) liveStats.update(st);
+  }
+  if (!a || a.tracker.paused) return;
   const profile = app.profile;
   if (!profile?.audioCues) return;
   const now = Date.now();

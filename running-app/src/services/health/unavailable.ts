@@ -8,4 +8,6 @@ export const unavailableHealth: HealthService = {
   readRecovery: async () => null,
   heartRateDuring: async () => null,
   writeWorkout: async () => false,
+  latestHeartRate: async () => null,
+  importRuns: async () => [],
 };

@@ -2,14 +2,15 @@
 import Constants from 'expo-constants';
 import AppleHealthKit, { type HealthKitPermissions, type HealthValue } from 'react-native-health';
 import { restingHrBaseline } from '../../domain/recovery';
-import type { Activity } from '../../domain/types';
+import { toDateKey } from '../../domain/dates';
+import type { Activity, ImportedRun } from '../../domain/types';
 import { unavailableHealth as unavailable } from './unavailable';
 import { sleepWindow, summarizeHr, type HealthService } from './types';
 
 const P = AppleHealthKit.Constants.Permissions;
 const permissions: HealthKitPermissions = {
   permissions: {
-    read: [P.HeartRate, P.RestingHeartRate, P.SleepAnalysis, P.Workout, P.StepCount],
+    read: [P.HeartRate, P.RestingHeartRate, P.SleepAnalysis, P.Workout, P.StepCount, P.DistanceWalkingRunning],
     write: [P.Workout],
   },
 };
@@ -62,6 +63,35 @@ const appleHealth: HealthService = {
       ),
     );
     return summarizeHr((hr ?? []).map((v) => v.value));
+  },
+  latestHeartRate: async (sinceMs) => {
+    const hr = await call<HealthValue[]>((cb) =>
+      AppleHealthKit.getHeartRateSamples({ startDate: new Date(sinceMs).toISOString(), endDate: new Date().toISOString(), ascending: false, limit: 1 }, cb),
+    );
+    const v = hr?.[0];
+    // Only trust it if it's fresh (last 60 s).
+    return v && Date.now() - Date.parse(v.endDate) < 60_000 ? Math.round(v.value) : null;
+  },
+  importRuns: async (sinceMs) => {
+    type W = { id?: string; activityName?: string; distance?: number; start: string; end: string; sourceId?: string; sourceName?: string };
+    const ws = await call<W[]>((cb) =>
+      AppleHealthKit.getSamples({ startDate: new Date(sinceMs).toISOString(), endDate: new Date().toISOString(), type: 'Workout' as never }, cb as never),
+    );
+    return (ws ?? [])
+      .filter((w) => w.activityName === 'Running')
+      .map((w): ImportedRun => {
+        const startedAt = Date.parse(w.start);
+        return {
+          id: `ah-${w.id ?? startedAt}`,
+          source: 'apple_health',
+          externalId: w.id ?? `${w.start}`,
+          date: toDateKey(startedAt),
+          startedAt,
+          durationSec: Math.round((Date.parse(w.end) - startedAt) / 1000),
+          distanceM: w.distance ? Math.round(w.distance * 1609.344) : undefined,
+          title: w.sourceName ? `Run (${w.sourceName})` : 'Run',
+        };
+      });
   },
   writeWorkout: async (a: Activity) => {
     const options = {

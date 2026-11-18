@@ -1,7 +1,7 @@
 /** Plan & settings: adjust the plan, pause for life, reminders, run options, health, data. */
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Switch, View } from 'react-native';
+import { Platform, Switch, View } from 'react-native';
 import { CustomWeekEditor } from './CustomWeekEditor';
 import { PbEditor } from './PbEditor';
 import { currentWeek, templateFromWeek } from '../domain/plan';
@@ -22,12 +22,14 @@ const REASON: Record<FitnessReason, string> = {
   workouts_hard: 'Workouts felt hard',
   easy_struggle: 'Easy runs felt hard',
   break: 'Time off running',
+  history: 'Imported run history',
 };
 import { formatShort, weekdayName, weekdayShort } from '../domain/dates';
 import { activePause, previewNextWeek } from '../domain/engine';
 import type { ExperienceLevel, Pause, Profile } from '../domain/types';
 import { confirmDialog } from '../services/dialog';
 import { health } from '../services/health';
+import { connectStrava, disconnectStrava, importFromStrava, stravaConfigured } from '../services/strava';
 import { requestNotificationPermission, scheduleReminders } from '../services/notifications';
 import { refreshRecovery } from '../services/sync';
 import { useRunStore } from '../state/runStore';
@@ -79,6 +81,26 @@ export function PlanView({ header }: { header: ReactNode }) {
   const [pauseReason, setPauseReason] = useState<Pause['reason']>('busy');
   const [healthMsg, setHealthMsg] = useState<string | null>(null);
   const [showGoals, setShowGoals] = useState(false);
+  const [importing, setImporting] = useState<'health' | 'strava' | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const runImport = async (from: 'health' | 'strava') => {
+    setImporting(from);
+    setImportMsg(null);
+    try {
+      const since = Date.now() - 183 * 86_400_000;
+      if (from === 'health' && !app.health.connected) {
+        const ok = await health.connect().catch(() => false);
+        if (!ok) throw new Error(`Allow ${health.name} access first.`);
+        s.setHealthConnected(true);
+      }
+      const runs = from === 'health' ? await health.importRuns(since) : await importFromStrava(since);
+      setImportMsg(useStore.getState().importHistory(runs).text);
+    } catch (e) {
+      setImportMsg((e as Error).message);
+    } finally {
+      setImporting(null);
+    }
+  };
   const fitnessPaces = currentPaces(app);
 
   const update = (patch: Partial<Profile>) => {
@@ -333,6 +355,70 @@ export function PlanView({ header }: { header: ReactNode }) {
         <Toggle label="Hide route start & end" help="Trims ~200 m from each end on maps and in health exports." value={p.hideRouteEnds} onChange={(v) => update({ hideRouteEnds: v })} />
       </Card>
 
+      <SectionTitle>Connections</SectionTitle>
+      <Card style={{ gap: space.md }}>
+        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <View style={{ flex: 1 }}>
+            <H3>Heart-rate strap</H3>
+            <Small>{p.hrDevice ? `${p.hrDevice.name} — connects when you start a run` : 'Live heart rate from any Bluetooth chest strap.'}</Small>
+          </View>
+          <Button kind="ghost" title={p.hrDevice ? 'Manage' : 'Pair'} onPress={() => router.push('/devices')} />
+        </Row>
+        <Divider />
+        <Toggle
+          label="Live stats on lock screen"
+          help={Platform.OS === 'ios' ? 'Time, distance, pace and your interval countdown on the lock screen and Dynamic Island.' : 'A silent notification with live time, distance and pace.'}
+          value={p.liveStats !== false}
+          onChange={(v) => update({ liveStats: v })}
+        />
+        <Divider />
+        <View style={{ gap: space.sm }}>
+          <H3>Strava</H3>
+          {!stravaConfigured() ? (
+            <Small>Strava isn’t set up in this build yet.</Small>
+          ) : p.strava ? (
+            <>
+              <Small>Connected as {p.strava.athlete}.</Small>
+              <Toggle label="Upload runs automatically" help="Each finished run goes to Strava (route ends trimmed if you’ve chosen that)." value={p.strava.autoUpload} onChange={(v) => update({ strava: { ...p.strava!, autoUpload: v } })} />
+              <Button kind="ghost" title="Disconnect Strava" onPress={() => void disconnectStrava().then(() => update({ strava: undefined }))} />
+            </>
+          ) : (
+            <Button
+              kind="secondary"
+              title="Connect Strava"
+              onPress={() =>
+                void connectStrava()
+                  .then((athlete) => update({ strava: { athlete, autoUpload: true } }))
+                  .catch((e: Error) => setImportMsg(e.message))
+              }
+            />
+          )}
+        </View>
+        <Divider />
+        <View style={{ gap: space.sm }}>
+          <H3>Import past runs</H3>
+          <Small>
+            Pull in the last 6 months so your fitness estimate starts from real history. Imported runs show in Activity but never earn XP or count toward your plan.
+            {(app.importedRuns ?? []).length ? ` ${(app.importedRuns ?? []).length} imported so far.` : ''}
+          </Small>
+          <Row>
+            {health.name ? (
+              <Button
+                kind="secondary"
+                title={importing === 'health' ? 'Importing…' : `From ${health.name}`}
+                disabled={!!importing}
+                onPress={() => void runImport('health')}
+              />
+            ) : null}
+            {stravaConfigured() && p.strava ? (
+              <Button kind="secondary" title={importing === 'strava' ? 'Importing…' : 'From Strava'} disabled={!!importing} onPress={() => void runImport('strava')} />
+            ) : null}
+          </Row>
+          {!health.name && !(stravaConfigured() && p.strava) ? <Small>Connect a health app or Strava to import.</Small> : null}
+          {importMsg ? <Small muted={false}>{importMsg}</Small> : null}
+        </View>
+      </Card>
+
       <SectionTitle>Health</SectionTitle>
       <Card>
         {health.name ? (
@@ -364,7 +450,7 @@ export function PlanView({ header }: { header: ReactNode }) {
 
       <SectionTitle>Data</SectionTitle>
       <Card>
-        <Small>Everything is stored on this device. No account, no social feed.</Small>
+        <Small>Your plan, runs and history are stored on this device. No account needed — Friends and Strava are optional and only get what you send them.</Small>
         <Button
           kind="ghost"
           title="Reset all data"

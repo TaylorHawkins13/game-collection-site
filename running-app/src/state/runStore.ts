@@ -18,6 +18,11 @@ export interface ActiveRun {
   /** Next split index to announce. */
   announcedSplits: number;
   gpsMode: 'background' | 'foreground' | 'none';
+  /** Latest heart rate and where it came from. */
+  hr?: { bpm: number; t: number; source: 'strap' | 'health' } | null;
+  /** Strap samples (thinned to one per ~5 s) for avg/max. */
+  hrSamples?: { t: number; bpm: number }[];
+  strapStatus?: 'connecting' | 'connected' | 'lost' | 'off';
 }
 
 interface RunStore {
@@ -30,6 +35,8 @@ interface RunStore {
   setEaseOffSaid: () => void;
   setAnnouncedSplits: (n: number) => void;
   setGpsMode: (m: ActiveRun['gpsMode']) => void;
+  pushHr: (bpm: number, source: 'strap' | 'health') => void;
+  setStrapStatus: (s: NonNullable<ActiveRun['strapStatus']>) => void;
   clear: () => void;
 }
 
@@ -79,6 +86,18 @@ export const useRunStore = create<RunStore>()(
       setGpsMode: (m) => {
         const a = get().active;
         if (a) set({ active: { ...a, gpsMode: m } });
+      },
+      pushHr: (bpm, source) => {
+        const a = get().active;
+        if (!a || a.tracker.paused) return;
+        const now = Date.now();
+        const samples = a.hrSamples ?? [];
+        const keep = source === 'strap' && (!samples.length || now - samples[samples.length - 1].t >= 5000);
+        set({ active: { ...a, hr: { bpm, t: now, source }, hrSamples: keep ? [...samples, { t: now, bpm }].slice(-5000) : samples } });
+      },
+      setStrapStatus: (st) => {
+        const a = get().active;
+        if (a) set({ active: { ...a, strapStatus: st } });
       },
       clear: () => set({ active: null }),
     }),

@@ -22,10 +22,14 @@ import { routineById } from '../../domain/strength';
 import type { PlannedSession } from '../../domain/types';
 import { confirmDialog } from '../../services/dialog';
 import { setAudioEnabled, speak, stopSpeaking } from '../../services/audio';
-import { guidanceTick } from '../../services/guidance';
+import { currentLiveStatus, guidanceTick } from '../../services/guidance';
+import { health } from '../../services/health';
+import { hrStrap } from '../../services/heartRate';
+import { liveStats } from '../../services/liveActivity';
+import { summarizeSamples } from '../../domain/hr';
 import { ensureTrackingAfterRestore, setBackgroundTickListener, startTracking, stopTracking } from '../../services/locationTracking';
 import { cancelTodayNudge } from '../../services/notifications';
-import { syncActivityToHealth } from '../../services/sync';
+import { syncActivityToHealth, syncActivityToStrava } from '../../services/sync';
 import { useRunStore } from '../../state/runStore';
 import { useStore } from '../../state/store';
 import { font, radius, space, useColors } from '../../theme';
@@ -78,8 +82,45 @@ function RunSession({ session }: { session: PlannedSession | null }) {
       if (!active.tracker.treadmill && !active.tracker.paused) {
         void ensureTrackingAfterRestore().then((m) => run.setGpsMode(m === 'denied' ? 'none' : m));
       }
+      connectStrap();
     }
   }, []);
+
+  // Heart-rate strap: connect at the start of a run, reconnect once if it drops.
+  const connectStrap = () => {
+    const dev = useStore.getState().app.profile?.hrDevice;
+    if (!dev || !hrStrap.supported) return;
+    let retried = false;
+    const attempt = () => {
+      run.setStrapStatus('connecting');
+      hrStrap
+        .connect(dev.id, (bpm) => useRunStore.getState().pushHr(bpm, 'strap'), () => {
+          run.setStrapStatus('lost');
+          if (!retried && useRunStore.getState().active) {
+            retried = true;
+            setTimeout(attempt, 5000);
+          }
+        })
+        .then(() => run.setStrapStatus('connected'))
+        .catch(() => run.setStrapStatus('lost'));
+    };
+    attempt();
+  };
+
+  // No strap? Read a watch's heart rate from Apple Health / Health Connect while it records alongside.
+  useEffect(() => {
+    if (!active || !useStore.getState().app.health.connected) return;
+    const startedAt = active.tracker.startedAt;
+    const poll = async () => {
+      const cur = useRunStore.getState().active;
+      if (!cur || (cur.hr?.source === 'strap' && Date.now() - cur.hr.t < 15_000)) return;
+      const bpm = await health.latestHeartRate(Math.max(startedAt, Date.now() - 120_000)).catch(() => null);
+      if (bpm) useRunStore.getState().pushHr(bpm, 'health');
+    };
+    void poll();
+    const id = setInterval(() => void poll(), 20_000);
+    return () => clearInterval(id);
+  }, [!!active]);
 
   useEffect(() => {
     setAudioEnabled(profile.audioCues);
@@ -110,6 +151,11 @@ function RunSession({ session }: { session: PlannedSession | null }) {
   const begin = async () => {
     setGpsError(null);
     run.start({ plannedSessionId: session?.id, title: session?.title ?? 'Easy run', units, treadmill });
+    connectStrap();
+    if (useStore.getState().app.profile?.liveStats !== false) {
+      const st = currentLiveStatus();
+      if (st) liveStats.start(st);
+    }
     if (!treadmill) {
       const mode = await startTracking().catch(() => 'denied' as const);
       if (mode === 'denied') {
@@ -131,6 +177,9 @@ function RunSession({ session }: { session: PlannedSession | null }) {
     const end = Date.now();
     const t = a.tracker.paused ? a.tracker : { ...a.tracker, segments: a.tracker.segments.map((s, i, arr) => (i === arr.length - 1 && !s.end ? { ...s, end } : s)) };
     const durationSec = movingMs(t, end) / 1000;
+    const strapHr = summarizeSamples(a.hrSamples ?? []);
+    liveStats.end({ title: `${formatDuration(durationSec)}${t.distanceM > 0 && !t.treadmill ? ` · ${(t.distanceM / METERS_PER_UNIT[units]).toFixed(2)} ${units}` : ''}`, subtitle: 'Run saved. Nice work showing up.' });
+    void hrStrap.disconnect();
     const manual = parseFloat(treadmillKm.replace(',', '.'));
     const distanceM = t.treadmill ? (isFinite(manual) && manual > 0 ? manual * METERS_PER_UNIT[units] : undefined) : t.distanceM > 0 ? t.distanceM : undefined;
     const activityId = completeSession({
@@ -144,10 +193,11 @@ function RunSession({ session }: { session: PlannedSession | null }) {
       treadmill: t.treadmill,
       splits: t.treadmill ? undefined : finalSplits(t, end),
       route: t.treadmill ? undefined : t.points.map((p) => ({ lat: p.lat, lng: p.lng, t: p.t, ...(p.alt != null ? { alt: Math.round(p.alt) } : {}) })),
+      ...(strapHr && (a.hrSamples?.length ?? 0) >= 6 ? { avgHr: strapHr.avg, maxHr: strapHr.max, hrSource: 'strap' as const } : {}),
     });
     run.clear();
     void cancelTodayNudge(toDateKey());
-    void syncActivityToHealth(activityId);
+    void syncActivityToHealth(activityId).then(() => syncActivityToStrava(activityId));
     router.replace(`/summary/${activityId}`);
   };
 
@@ -160,6 +210,8 @@ function RunSession({ session }: { session: PlannedSession | null }) {
         onPress: async () => {
           await stopTracking();
           stopSpeaking();
+          liveStats.end({ title: 'Session discarded', subtitle: 'No problem — see you next time.' });
+          void hrStrap.disconnect();
           run.clear();
           close();
         },
@@ -284,6 +336,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
       }
     : { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
 
+  const liveHr = active.hr && now - active.hr.t < 15_000 ? active.hr.bpm : null;
   const gpsLabel = t.paused
     ? 'Paused'
     : t.treadmill
@@ -334,7 +387,10 @@ function RunSession({ session }: { session: PlannedSession | null }) {
         <StatRow>
           <Stat big center label={`Distance (${units})`} value={t.treadmill ? '—' : (t.distanceM / METERS_PER_UNIT[units]).toFixed(2)} />
           <Stat big center label={`Pace (/${units})`} value={formatPace(pace ?? avg, units).split(' ')[0]} />
+          {liveHr ? <Stat big center label={active.hr?.source === 'strap' ? 'Heart rate' : 'HR (watch)'} value={String(liveHr)} /> : null}
         </StatRow>
+        {active.strapStatus === 'lost' ? <Small style={{ textAlign: 'center', color: c.danger }}>Heart-rate strap disconnected — check it’s on and wet.</Small> : null}
+        {active.strapStatus === 'connecting' ? <Small style={{ textAlign: 'center' }}>Connecting to your heart-rate strap…</Small> : null}
         {plannedSec > 0 && !phase ? (
           <View style={{ gap: 4 }}>
             <ProgressBar value={elapsed / plannedSec} />
@@ -388,7 +444,7 @@ function StrengthSession({ session }: { session: PlannedSession }) {
       routineId: session.routineId,
     });
     void cancelTodayNudge(toDateKey());
-    void syncActivityToHealth(activityId);
+    void syncActivityToHealth(activityId).then(() => syncActivityToStrava(activityId));
     router.replace(`/summary/${activityId}`);
   };
 

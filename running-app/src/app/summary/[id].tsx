@@ -13,6 +13,8 @@ import { pbText } from '../../domain/fitness';
 import type { EngineEvent, Feel, RaceDistance, Soreness } from '../../domain/types';
 import { XP } from '../../domain/xp';
 import { health } from '../../services/health';
+import { stravaConfigured } from '../../services/strava';
+import { syncActivityToStrava } from '../../services/sync';
 import { useStore } from '../../state/store';
 import { RANK_COLORS, space, useColors } from '../../theme';
 
@@ -115,6 +117,7 @@ export default function Summary() {
   const [soreness, setSoreness] = useState<Soreness>(a?.soreness ?? 'none');
   const [note, setNote] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(!!a?.feel);
+  const [stravaState, setStravaState] = useState<'idle' | 'uploading' | 'failed'>('idle');
 
   if (!a || !app.profile) {
     return (
@@ -194,6 +197,16 @@ export default function Summary() {
         </Small>
       </Card>
 
+      {app.profile.strava && stravaConfigured() ? (
+        <Card>
+          <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+            <Small muted={false}>{a.stravaId ? 'On Strava ✓' : stravaState === 'failed' ? 'Strava upload didn’t go through.' : app.profile.strava.autoUpload ? 'Uploading to Strava…' : 'Not on Strava yet.'}</Small>
+            {!a.stravaId && (stravaState === 'failed' || !app.profile.strava.autoUpload) ? (
+              <Button kind="ghost" title="Upload" onPress={() => { setStravaState('uploading'); void syncActivityToStrava(a.id, true).then((r) => setStravaState(r === 'uploaded' ? 'idle' : 'failed')); }} />
+            ) : null}
+          </Row>
+        </Card>
+      ) : null}
       <Button kind="secondary" title="Share with friends" onPress={() => router.push(`/share/${a.id}`)} />
       <Button big title="Done" onPress={() => router.replace('/')} />
     </Screen>
