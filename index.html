@@ -1,59 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Steady — Live Preview</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #EDEEEC; color: #1D2420; }
-    .phone { max-width: 390px; margin: 20px auto; background: #fff; min-height: 100vh; }
-    .header { padding: 24px 20px 12px; }
-    h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; }
-    .group { margin: 0 16px 8px; }
-    .group-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #FC4C02; color: #fff; border-radius: 10px; font-weight: 600; font-size: 13px; letter-spacing: 0.5px; cursor: pointer; }
-    .group-body { background: #fff; border: 1px solid #E2E4E1; border-top: none; border-radius: 0 0 10px 10px; overflow: hidden; }
-    .option { padding: 14px 16px; border-bottom: 1px solid #E2E4E1; display: flex; align-items: center; justify-content: space-between; }
-    .option:last-child { border-bottom: none; }
-    .option.selected { background: #FFF0EB; }
-    .check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #FC4C02; display: flex; align-items: center; justify-content: center; color: #FC4C02; font-size: 12px; }
-    .btn { display: block; margin: 24px 16px; background: #FC4C02; color: #fff; text-align: center; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 16px; text-decoration: none; }
-    .collapsed .group-body { display: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steady</title>
+<style>
+body{margin:0;background:#EDEEEC;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1D2420}
+.wrap{max-width:390px;margin:0 auto;background:#fff;min-height:100vh;padding-bottom:40px}
+h1{font-size:28px;margin:24px 20px 16px;font-weight:700}
+.gh{background:#FC4C02;color:#fff;padding:14px 16px;margin:0 16px 0;border-radius:10px;font-weight:600;font-size:13px;letter-spacing:.4px;display:flex;justify-content:space-between;cursor:pointer}
+.gb{border:1px solid #E2E4E1;border-top:none;margin:0 16px 12px;border-radius:0 0 10px 10px;background:#fff}
+.opt{padding:14px 16px;border-bottom:1px solid #E2E4E1;display:flex;justify-content:space-between;align-items:center}
+.opt:last-child{border:none}
+.sel{background:#FFF0EB}
+.chk{width:22px;height:22px;border:2px solid #FC4C02;border-radius:50%;color:#FC4C02;display:flex;align-items:center;justify-content:center;font-size:13px}
+.btn{display:block;margin:24px 16px;background:#FC4C02;color:#fff;text-align:center;padding:16px;border-radius:10px;font-weight:700;font-size:17px;text-decoration:none}
+.hide{display:none}
+</style>
 </head>
 <body>
-  <div class="phone">
-    <div class="header"><h1>Any goal?</h1></div>
-    <div class="group" id="just-run">
-      <div class="group-header" onclick="toggle('just-run')">JUST RUN <span>−</span></div>
-      <div class="group-body">
-        <div class="option">Build a running habit</div>
-        <div class="option">Get fitter and healthier</div>
-        <div class="option selected">Clear my head <span class="check">✓</span></div>
-      </div>
-    </div>
-    <div class="group collapsed" id="distance">
-      <div class="group-header" onclick="toggle('distance')">DISTANCE GOALS <span>+</span></div>
-      <div class="group-body">
-        <div class="option">Run 30 minutes non-stop</div>
-        <div class="option">Run a 5K</div>
-        <div class="option">Run a 10K</div>
-      </div>
-    </div>
-    <div class="group collapsed" id="faster">
-      <div class="group-header" onclick="toggle('faster')">GET FASTER <span>+</span></div>
-      <div class="group-body">
-        <div class="option">Get faster at 5K</div>
-      </div>
-    </div>
-    <a class="btn" href="#">Continue</a>
-  </div>
-  <script>
-    function toggle(id) {
-      const el = document.getElementById(id);
-      el.classList.toggle('collapsed');
-      el.querySelector('.group-header span').textContent = el.classList.contains('collapsed') ? '+' : '−';
-    }
-  </script>
+<div class="wrap">
+<h1>Any goal?</h1>
+<div class="gh" onclick="t('g1')">JUST RUN <span id="i1">−</span></div>
+<div class="gb" id="g1">
+<div class="opt">Build a running habit</div>
+<div class="opt">Get fitter and healthier</div>
+<div class="opt sel">Clear my head <span class="chk">✓</span></div>
+</div>
+<div class="gh" onclick="t('g2')">DISTANCE GOALS <span id="i2">+</span></div>
+<div class="gb hide" id="g2">
+<div class="opt">Run 30 minutes non-stop</div>
+<div class="opt">Run a 5K</div>
+<div class="opt">Run a 10K</div>
+</div>
+<div class="gh" onclick="t('g3')">GET FASTER <span id="i3">+</span></div>
+<div class="gb hide" id="g3">
+<div class="opt">Get faster at 5K</div>
+</div>
+<a class="btn" href="#">Continue</a>
+</div>
+<script>
+function t(id){var e=document.getElementById(id);e.classList.toggle('hide');var i=document.getElementById('i'+id.slice(1));i.textContent=e.classList.contains('hide')?'+':'−';}
+</script>
 </body>
 </html>
