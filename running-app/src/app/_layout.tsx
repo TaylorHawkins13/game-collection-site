@@ -1,5 +1,7 @@
 import '../services/locationTracking'; // defines the background GPS task at startup
-import { Stack } from 'expo-router';
+import { registerAutoImport, runAutoImport } from '../services/autoImport'; // defines the watch-run check task
+import * as Notifications from 'expo-notifications';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, AppState as RNAppState, View } from 'react-native';
@@ -22,6 +24,7 @@ export default function RootLayout() {
         useStore.getState().tick();
         void refreshRecovery();
         void retryPendingSyncs();
+        void runAutoImport();
       }
     });
     return () => sub.remove();
@@ -31,7 +34,18 @@ export default function RootLayout() {
     if (!hydrated) return;
     void refreshRecovery();
     void retryPendingSyncs();
+    void runAutoImport();
+    void registerAutoImport();
   }, [hydrated]);
+
+  // Tapping a "Run counted" notification opens that run's check-in.
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+      const url = r.notification.request.content.data?.url;
+      if (typeof url === 'string' && url.startsWith('/')) router.push(url as never);
+    });
+    return () => sub.remove();
+  }, []);
 
   // Keep reminders in step with the plan.
   useEffect(() => {

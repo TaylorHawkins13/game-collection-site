@@ -8,6 +8,7 @@ import { BADGES, newlyEarned } from './badges.ts';
 import { currentFiveK, describeMove, direction, evaluateAfterRun, evaluateBreak, fitnessFromPbs, hadSlipSince, possiblePb, type FitnessMove } from './fitness.ts';
 import { fiveKEquivalent, trainingPaces } from './pace.ts';
 import { fitnessFromHistory, historySummary, levelHint, mergeImports } from './history.ts';
+import { matchImportedRun } from './matching.ts';
 import { challengeProgress } from './challenges.ts';
 import { addDays, diffDays, maxKey, minKey, rangeKeys } from './dates.ts';
 import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused } from './metrics.ts';
@@ -640,6 +641,20 @@ export function importHistory(state: AppState, incoming: ImportedRun[], today: D
   if (fromHistory && (!cur || fromHistory < cur * 0.98)) {
     s = applyFitnessMove(s, { fiveKSec: fromHistory, reason: 'history' }, today, events);
   }
+  // Count recent watch runs toward the plan (or ask when unsure).
+  const newIds = new Set(runs.filter((r) => !(state.importedRuns ?? []).some((e) => e.id === r.id)).map((r) => r.id));
+  const auto = state.profile?.autoCountWatchRuns !== false;
+  for (const r of [...runs].filter((x) => newIds.has(x.id)).sort((a, b) => a.startedAt - b.startedAt)) {
+    const m = matchImportedRun(s, r, today);
+    if (!m) continue;
+    if (m.kind === 'auto' && auto) {
+      const c = countImportedRun(s, r.id, m.session.id, today);
+      s = c.state;
+      events.push(...c.events);
+    } else {
+      s = { ...s, pendingMatches: [...(s.pendingMatches ?? []).filter((p) => p.importedRunId !== r.id), { importedRunId: r.id, sessionId: m.session?.id ?? null, reason: m.reason }] };
+    }
+  }
   const sum = historySummary(runs, today);
   const hint = state.profile ? levelHint(sum, state.profile.level) : null;
   const text =
@@ -648,6 +663,50 @@ export function importHistory(state: AppState, incoming: ImportedRun[], today: D
       : `Imported ${added} run${added === 1 ? '' : 's'}. Lately: about ${sum.perWeek} a week, longest ${sum.longestMin} min.${hint ? ` ${hint}` : ''}`;
   events.push({ type: 'history_imported', count: added, text });
   return { state: s, events, added };
+}
+
+const SOURCE_NAME = { apple_health: 'Apple Health', health_connect: 'Health Connect', strava: 'Strava' } as const;
+
+/** Count an imported (watch) run as a planned session — or as an extra run when sessionId is null. */
+export function countImportedRun(state: AppState, importedRunId: string, sessionId: string | null, today: DateKey): Result & { activityId?: string } {
+  const run = (state.importedRuns ?? []).find((r) => r.id === importedRunId);
+  if (!run || run.countedActivityId) return { state, events: [] };
+  const r = completeSession(
+    state,
+    {
+      plannedSessionId: sessionId ?? undefined,
+      kind: 'run',
+      title: sessionId ? findSession(state, sessionId)?.session.title ?? run.title : run.title,
+      startedAt: run.startedAt,
+      endedAt: run.startedAt + run.durationSec * 1000,
+      durationSec: run.durationSec,
+      distanceM: run.distanceM,
+      treadmill: run.treadmill,
+      avgHr: run.avgHr,
+      hrSource: run.avgHr ? 'health' : undefined,
+    },
+    run.date,
+  );
+  const activityId = r.activity.id;
+  let s: AppState = {
+    ...r.state,
+    activities: r.state.activities.map((a) => (a.id === activityId ? { ...a, importedFrom: run.source, healthSynced: true, stravaId: run.source === 'strava' ? run.externalId : a.stravaId ?? 'external' } : a)),
+    importedRuns: (r.state.importedRuns ?? []).map((x) => (x.id === run.id ? { ...x, countedActivityId: activityId } : x)),
+    pendingMatches: (r.state.pendingMatches ?? []).filter((p) => p.importedRunId !== run.id),
+  };
+  const text = `Your run from ${SOURCE_NAME[run.source]} counted${sessionId ? ` for ${s.activities.find((a) => a.id === activityId)?.title}` : ' as an extra run'}. How did it feel?`;
+  const events: EngineEvent[] = [...r.events, { type: 'watch_run_counted', activityId, text }];
+  s = addNotice(s, 'plan', text, today);
+  return { state: s, events, activityId };
+}
+
+export function dismissMatch(state: AppState, importedRunId: string): AppState {
+  return { ...state, pendingMatches: (state.pendingMatches ?? []).filter((p) => p.importedRunId !== importedRunId) };
+}
+
+/** Recent runs (last 2 days) still waiting for a check-in. */
+export function pendingCheckIns(state: AppState, today: DateKey) {
+  return state.activities.filter((a) => !a.feel && a.kind === 'run' && diffDays(a.date, today) <= 2);
 }
 
 /** Save a PB detected from a run (or entered by hand) and update fitness from it. */

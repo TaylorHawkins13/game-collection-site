@@ -75,6 +75,8 @@ export interface Profile {
   strava?: { athlete: string; autoUpload: boolean };
   /** Lock-screen / notification live stats during runs. */
   liveStats?: boolean;
+  /** Count runs recorded on a watch (via Health / Strava) toward the plan automatically when they clearly match. */
+  autoCountWatchRuns?: boolean;
   customWeek?: CustomSlot[];
   /** Experienced/consistent runners may opt into one light quality session (strides). */
   includeQuality: boolean;
@@ -196,6 +198,8 @@ export interface Activity {
   /** Where the HR came from: a Bluetooth strap during the run, or the health store afterwards. */
   hrSource?: 'strap' | 'health';
   stravaId?: string;
+  /** Recorded on a watch / another app and counted here. */
+  importedFrom?: ImportedRun['source'];
   feel?: Feel;
   soreness?: Soreness;
   xpEarned: number;
@@ -296,12 +300,23 @@ export interface ImportedRun {
   avgHr?: number;
   title: string;
   treadmill?: boolean;
+  /** Set when this run was counted as a session in Steady. */
+  countedActivityId?: string;
+}
+
+/** A watch run we think matches a planned session, waiting for a yes/no. */
+export interface PendingMatch {
+  importedRunId: string;
+  sessionId: string | null; // null = count as an extra run
+  reason: string;
 }
 
 export interface AppState {
   version: 1;
   fitness?: Fitness;
   importedRuns?: ImportedRun[];
+  pendingMatches?: PendingMatch[];
+  lastAutoImport?: number;
   races?: Race[];
   profile: Profile | null;
   plan: PlanState | null;
@@ -333,4 +348,5 @@ export type EngineEvent =
   | { type: 'plan_note'; text: string }
   | { type: 'fitness'; direction: 'up' | 'down'; reason: FitnessReason; text: string }
   | { type: 'possible_pb'; distance: RaceDistance; timeSec: number }
-  | { type: 'history_imported'; count: number; text: string };
+  | { type: 'history_imported'; count: number; text: string }
+  | { type: 'watch_run_counted'; activityId: string; text: string };

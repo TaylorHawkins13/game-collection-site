@@ -36,6 +36,8 @@ interface Store {
   markHealthSynced: (activityId: string) => void;
   patchActivity: (activityId: string, patch: { avgHr?: number; maxHr?: number; hrSource?: 'strap' | 'health'; stravaId?: string }) => void;
   importHistory: (runs: ImportedRun[]) => { added: number; text: string };
+  countImportedRun: (importedRunId: string, sessionId: string | null) => void;
+  dismissMatch: (importedRunId: string) => void;
   dismissNotice: (id: string) => void;
   savePersonalBest: (pb: { distance: RaceDistance; timeSec: number }) => void;
   saveRace: (race: Race) => void;
@@ -92,6 +94,11 @@ export const useStore = create<Store>()(
       patchActivity: (id, patch) =>
         set((s) => ({ app: { ...s.app, activities: s.app.activities.map((a) => (a.id === id ? { ...a, ...patch } : a)) } })),
       dismissNotice: (id) => set({ app: E.dismissNotice(get().app, id) }),
+      countImportedRun: (id, sessionId) => {
+        const r = E.countImportedRun(get().app, id, sessionId, today());
+        set((st) => ({ app: r.state, sessionEvents: r.activityId ? { ...st.sessionEvents, [r.activityId]: r.events } : st.sessionEvents }));
+      },
+      dismissMatch: (id) => set({ app: E.dismissMatch(get().app, id) }),
       importHistory: (runs) => {
         const r = E.importHistory(get().app, runs, today());
         set({ app: r.state });

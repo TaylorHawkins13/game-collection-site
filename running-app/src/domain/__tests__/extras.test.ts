@@ -76,7 +76,8 @@ test('history sets fitness when there is none, never awards XP, and hints at lev
   const r = importHistory(s, hist(10, 330, 6), TODAY);
   s = r.state;
   assert.equal(r.added, 10);
-  assert.ok(currentFiveK(s)! > 1500 && currentFiveK(s)! < 1700, `history 5K ${currentFiveK(s)}`);
+  // 6 km training runs at 5:30/km ≈ a 23:00 5K once adjusted for training effort.
+  assert.ok(currentFiveK(s)! > 1320 && currentFiveK(s)! < 1450, `history 5K ${currentFiveK(s)}`);
   assert.equal(s.rank.seasonXp, 0, 'no XP from imports');
   assert.equal(Object.keys(s.badges).length, 0, 'no badges from imports');
   assert.ok(r.events.some((e) => e.type === 'history_imported' && e.count === 10));

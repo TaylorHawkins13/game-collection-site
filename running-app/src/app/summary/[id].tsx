@@ -127,7 +127,9 @@ export default function Summary() {
       </Screen>
     );
   }
-  const xp = events.filter((e) => e.type === 'xp').reduce((sum, e) => sum + (e.type === 'xp' ? e.amount : 0), 0);
+  const eventXp = events.filter((e) => e.type === 'xp').reduce((sum, e) => sum + (e.type === 'xp' ? e.amount : 0), 0);
+  // Events live in memory only; after a restart (or for a counted watch run) fall back to what the run earned.
+  const xp = Math.max(eventXp, a?.xpEarned ?? 0);
   const highlights = events.filter((e) => e.type !== 'xp' && e.type !== 'plan_note');
   const rank = app.rank;
 
@@ -142,6 +144,7 @@ export default function Summary() {
       <View style={{ alignItems: 'center', gap: space.sm, paddingTop: space.lg }}>
         <Small style={{ fontWeight: '700', color: c.primary }}>SESSION COMPLETE</Small>
         <H1>{a.completion < 0.9 && a.plannedSessionId ? 'Every bit counts' : 'You showed up'}</H1>
+        {a.importedFrom ? <Small>Recorded on your watch · counted from {a.importedFrom === 'strava' ? 'Strava' : a.importedFrom === 'apple_health' ? 'Apple Health' : 'Health Connect'}</Small> : null}
         <Body muted center>
           {a.title}
         </Body>
@@ -189,7 +192,9 @@ export default function Summary() {
         {a.kind === 'run' && !a.treadmill ? <RouteMap route={a.route} hideEnds={app.profile.hideRouteEnds} /> : null}
         <SplitsTable a={a} units={app.profile.units} />
         <Small>
-          {app.health.connected
+          {a.importedFrom
+            ? 'Already in your health app.'
+            : app.health.connected
             ? a.healthSynced
               ? `Saved to ${health.name} ✓`
               : `Saving to ${health.name}…`
@@ -197,7 +202,7 @@ export default function Summary() {
         </Small>
       </Card>
 
-      {app.profile.strava && stravaConfigured() ? (
+      {app.profile.strava && stravaConfigured() && !a.importedFrom ? (
         <Card>
           <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
             <Small muted={false}>{a.stravaId ? 'On Strava ✓' : stravaState === 'failed' ? 'Strava upload didn’t go through.' : app.profile.strava.autoUpload ? 'Uploading to Strava…' : 'Not on Strava yet.'}</Small>

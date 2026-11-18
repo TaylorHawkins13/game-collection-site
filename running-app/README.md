@@ -9,7 +9,7 @@ Health, Maps and background GPS use native code, so this needs a **development b
 ```bash
 cd running-app
 npm install
-npm test             # 72 unit tests for the plan/rank/XP/GPS logic
+npm test             # 77 unit tests for the plan/rank/XP/GPS logic
 npm run typecheck
 
 # Local native builds (needs Xcode / Android Studio):
@@ -63,7 +63,8 @@ New Strava API apps start in a limited mode (only your own account can connect) 
 | Lock-screen live stats | `domain/liveStatus.ts`, `services/liveActivity.{ios,android}.ts` | iOS Live Activity (lock screen + Dynamic Island, via `expo-live-activity`): time · distance, pace · heart rate, and the current walk-run/workout interval with a native countdown that ticks with no app work. Android: a silent ongoing notification. Updated about every 10 s, or immediately when the interval changes. Toggle in Profile → Plan & settings → Connections. |
 | Live heart rate | `domain/hr.ts`, `services/heartRate.native.ts` | Any standard Bluetooth chest strap (Heart Rate Service 0x180D): pair once (`app/devices.tsx`), and it auto-connects at the start of each run and reconnects once if it drops; HR shows on the run screen and lock screen, and time-weighted avg/max are saved with the run. No strap? If a watch records alongside, Steady reads its live HR from Apple Health / Health Connect every 20 s. A native Apple Watch app is not included. |
 | Strava | `services/strava.ts`, `supabase/functions/strava-token` | Connect (OAuth; tokens in the secure store), auto-upload finished runs as GPX (route ends trimmed if chosen) or as manual activities (treadmill/strength), manual "Upload" on the summary, import past runs, disconnect. The client secret stays server-side in a small edge function. |
-| Import history | `domain/history.ts` | Last 6 months of runs from Apple Health, Health Connect or Strava. De-duplicated (including against runs Steady recorded itself), shown in Activity → Imported history, and used to set the fitness estimate (median of the 3 best recent 5K-equivalents) plus a starting-point hint. Never earns XP, badges or plan completion. |
+| Import history | `domain/history.ts` | Last 6 months of runs from Apple Health, Health Connect or Strava. De-duplicated (including against runs Steady recorded itself), shown in Activity → Imported history, and used to set the fitness estimate (median of the 3 best recent 5K-equivalents, adjusted ÷1.18 because training runs aren't race efforts) plus a starting-point hint. Never earns XP, badges or plan completion. |
+| Watch runs count toward the plan | `domain/matching.ts`, `services/autoImport.ts` | Runs recorded on a Garmin, Apple Watch or another app arrive via Apple Health / Health Connect / Strava and tick off the matching session. Same day, one open run session and a plausible length (40–250% of planned) → counted automatically with normal XP, then a check-in prompt. Ambiguous (two sessions, odd length, strength day, nothing planned) → a "Count this?" card on Today. Only the last 3 days are considered (history never back-fills), Steady-recorded runs are never double counted, and counted runs aren't written back to Health/Strava. Checks run on app open and periodically in the background (`expo-background-task`; on iOS the system picks the timing, often overnight), with a "Run counted ✓" notification. Toggle: Profile → Plan & settings → Connections. Garmin live HR: turn on Broadcast Heart Rate on the watch and pair it like a strap (BLE-capable models). |
 | Adaptation | `adaptation.ts` | **Noticeable soreness**: the next run within 2 days becomes mobility, and the rest of the week eases. **Two "Hard" in the last three check-ins**: the rest of the week eases and next week eases. **Easy / Just right with ≥75% completion**: next week goes up one step (every other week if you reported issues). **Missed sessions**: reschedule, shorten the week, or let it go, with no penalty; a long gap eases the plan back down. |
 | Life happens | `engine.ts#pausePlan` | Pause for 3, 7 or 14 days (sick, injury, travel, busy). Paused days are left out of every metric and decay is frozen. Resuming starts gently. |
 | Badges | `badges.ts` | First Session, Week 1 Complete, 3-Session Week, Easy Effort, Recovery Aware, Health Connected, 7-Day Streak (the streak is plan-honoured days, so rest days count), Strength Starter, Comeback, Four Steady Weeks, Gold Standard, Season Finisher. None are for speed or distance. |
@@ -88,7 +89,7 @@ New Strava API apps start in a limited mode (only your own account can connect) 
 ## What has and hasn't been verified
 
 Verified in the build environment:
-- 72 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
+- 77 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
 - `tsc` is clean, and Metro bundles for iOS and Android each pull in the right Health module.
 - A headless-browser walkthrough of the web build: onboarding → Home → full walk-run session → check-in → Progress / Activity / detail / Plan → next-day rest state, with zero console errors.
 
@@ -99,6 +100,8 @@ Verified in the build environment:
 - Connect Friends to a Supabase project (steps above).
 
 - A native Apple Watch app (live HR straight from the watch, and running from the wrist).
+- Instant watch-run recognition with the app closed: Strava webhooks → Supabase function → push notification (needs the Supabase project), or HealthKit background delivery (needs a native AppDelegate hook + entitlement).
+- Garmin Connect IQ / Garmin Health API integration (requires Garmin developer approval).
 - Move activity history to SQLite once histories get large (routes are stored inline).
 - Optional account and cloud backup.
 - Real app icon and splash; localisation.

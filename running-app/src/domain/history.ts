@@ -25,10 +25,12 @@ export function mergeImports(state: AppState, incoming: ImportedRun[]): { runs: 
   return { runs, added: fresh.length };
 }
 
+export const TRAINING_TO_RACE = 1.18;
+
 /**
  * A 5K-equivalent from recent history: the median of the three best equivalents
- * among runs ≥3 km in the last 10 weeks (training runs understate fitness a bit,
- * and the median protects against one GPS-glitched "super run").
+ * among runs ≥3 km in the last 10 weeks, adjusted because training runs aren't
+ * race efforts (÷1.18). The median protects against one GPS-glitched "super run".
  */
 export function fitnessFromHistory(runs: ImportedRun[], today: DateKey): number | null {
   const since = addDays(today, -70);
@@ -39,7 +41,8 @@ export function fitnessFromHistory(runs: ImportedRun[], today: DateKey): number 
     .sort((a, b) => a - b)
     .slice(0, 3);
   if (equivs.length < 2) return null;
-  return Math.round(equivs[Math.floor(equivs.length / 2)]);
+  // Everyday runs aren't races: even someone's quicker runs are typically ~15–20% off 5K effort.
+  return Math.round(equivs[Math.floor(equivs.length / 2)] / TRAINING_TO_RACE);
 }
 
 export interface HistorySummary {

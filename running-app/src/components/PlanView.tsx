@@ -372,6 +372,13 @@ export function PlanView({ header }: { header: ReactNode }) {
           onChange={(v) => update({ liveStats: v })}
         />
         <Divider />
+        <Toggle
+          label="Count watch runs automatically"
+          help="Runs from a Garmin, Apple Watch or other app (via your health app or Strava) tick off the matching session. If it’s unclear, Steady asks first."
+          value={p.autoCountWatchRuns !== false}
+          onChange={(v) => update({ autoCountWatchRuns: v })}
+        />
+        <Divider />
         <View style={{ gap: space.sm }}>
           <H3>Strava</H3>
           {!stravaConfigured() ? (

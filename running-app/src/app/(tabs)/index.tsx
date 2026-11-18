@@ -8,7 +8,9 @@ import { Body, Button, Card, H1, H2, H3, ProgressBar, Row, Screen, Small } from 
 import { WeekStrip } from '../../components/WeekStrip';
 import { challengeById, challengeProgress } from '../../domain/challenges';
 import { addDays, formatShort, weekdayLong } from '../../domain/dates';
-import { activePause, freeDaysThisWeek, isRestDay, missedThisWeek, todaySessions } from '../../domain/engine';
+import { activePause, freeDaysThisWeek, isRestDay, missedThisWeek, pendingCheckIns, todaySessions } from '../../domain/engine';
+import { findSession } from '../../domain/engine';
+import { formatDuration, formatDistance } from '../../domain/gps';
 import { countsTowardCompletion } from '../../domain/metrics';
 import { currentWeek } from '../../domain/plan';
 import { divisionLabel, divisionProgress, isGated, MAX_DIVISION, gateFor, rankOf, xpToClear } from '../../domain/ranks';
@@ -131,6 +133,38 @@ export default function Home() {
           </Small>
         </Card>
       ) : null}
+
+      {(app.pendingMatches ?? []).map((m) => {
+        const r = (app.importedRuns ?? []).find((x) => x.id === m.importedRunId);
+        if (!r) return null;
+        const target = m.sessionId ? findSession(app, m.sessionId)?.session : undefined;
+        return (
+          <Card key={m.importedRunId} style={{ borderLeftColor: c.primary, borderLeftWidth: 4 }}>
+            <Small style={{ fontWeight: '700', color: c.primary }}>NEW RUN FROM {r.source === 'strava' ? 'STRAVA' : r.source === 'apple_health' ? 'APPLE HEALTH' : 'HEALTH CONNECT'}</Small>
+            <H3>
+              {weekdayLong(r.date)} · {formatDuration(r.durationSec)}
+              {r.distanceM ? ` · ${formatDistance(r.distanceM, app.profile?.units ?? 'km')}` : ''}
+            </H3>
+            <Small>{m.reason}</Small>
+            <View style={{ gap: space.sm }}>
+              <Button title={target ? `Count it for ${target.title}` : 'Count it as an extra run'} onPress={() => actions.countImportedRun(m.importedRunId, m.sessionId)} />
+              <Button kind="ghost" title="Don’t count it" onPress={() => actions.dismissMatch(m.importedRunId)} />
+            </View>
+          </Card>
+        );
+      })}
+
+      {pendingCheckIns(app, today).slice(0, 1).map((a) => (
+        <Card key={a.id} onPress={() => router.push(`/summary/${a.id}`)}>
+          <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+            <View style={{ flex: 1 }}>
+              <H3>How did {a.date === today ? 'today’s' : `${weekdayLong(a.date)}’s`} run feel?</H3>
+              <Small>{a.importedFrom ? 'Counted from your watch. ' : ''}A 5-second check-in helps your plan adapt (+10 XP).</Small>
+            </View>
+            <Small style={{ color: c.primary, fontWeight: '700' }}>Check in</Small>
+          </Row>
+        </Card>
+      ))}
 
       {!pause && missed.length > 0 ? (
         <Card>
