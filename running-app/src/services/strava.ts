@@ -142,17 +142,20 @@ export async function importFromStrava(sinceMs: number): Promise<ImportedRun[]> 
     }[];
     for (const x of list) {
       const t = x.sport_type ?? x.type ?? '';
-      if (!['Run', 'TrailRun', 'VirtualRun'].includes(t)) continue;
+      const isRun = ['Run', 'TrailRun', 'VirtualRun'].includes(t);
+      const isStrength = ['WeightTraining', 'Workout', 'Crossfit', 'Yoga', 'Pilates'].includes(t);
+      if (!isRun && !isStrength) continue;
       if (x.external_id?.startsWith('steady-')) continue; // our own uploads
       const startedAt = Date.parse(x.start_date);
       out.push({
         id: `sv-${x.id}`,
         source: 'strava',
+        kind: isRun ? 'run' : 'strength',
         externalId: String(x.id),
         date: toDateKey(startedAt),
         startedAt,
         durationSec: x.moving_time,
-        distanceM: x.distance ? Math.round(x.distance) : undefined,
+        distanceM: isRun && x.distance ? Math.round(x.distance) : undefined,
         avgHr: x.average_heartrate ? Math.round(x.average_heartrate) : undefined,
         treadmill: !!x.trainer || t === 'VirtualRun',
         title: x.name,

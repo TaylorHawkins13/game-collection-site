@@ -4,6 +4,8 @@ export const XP = {
   strength: 30,
   /** An unplanned extra session: a small thank-you, deliberately not a reason to overdo it. */
   extraSession: 15,
+  /** Unplanned sessions that earn XP per day (so splitting one run into many can't game ranks). */
+  extraPerDay: 3,
   weeklyTarget: 100,
   weeklyChallenge: 75,
   feedback: 10,

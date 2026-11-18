@@ -1,79 +1,70 @@
 /// <reference types="node" />
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { countImportedRun, createInitialState, dismissMatch, importHistory, onboard, pendingCheckIns, submitFeedback, todaySessions, updateProfile } from '../engine.ts';
+import { createInitialState, importHistory, onboard, pendingCheckIns, submitFeedback, todaySessions } from '../engine.ts';
 import { matchImportedRun } from '../matching.ts';
 import { addDays } from '../dates.ts';
+import { allSessions } from '../plan.ts';
+import { XP } from '../xp.ts';
 import type { AppState, ImportedRun } from '../types.ts';
 
-const START = '2026-01-05'; // plan week: runs on day 0, 2, 4
+const START = '2026-01-05'; // returning runner: runs day 0, 2, 4; strength on a rest day
 
 function runner(): AppState {
   return onboard(createInitialState(START), { level: 'returning', frequency: 2, goal: 'habit', issues: [], includeQuality: false }, START);
 }
-function watchRun(date: string, minutes: number, extra: Partial<ImportedRun> = {}): ImportedRun {
-  const startedAt = Date.parse(`${date}T07:00:00`);
-  return { id: `ah-${date}-${minutes}`, source: 'apple_health', externalId: `${date}-${minutes}`, date, startedAt, durationSec: minutes * 60, distanceM: minutes * 160, avgHr: 141, title: 'Run (Garmin Connect)', ...extra };
+let n = 0;
+function watch(date: string, minutes: number, extra: Partial<ImportedRun> = {}): ImportedRun {
+  n++;
+  const startedAt = Date.parse(`${date}T07:00:00`) + n * 3_600_000;
+  return { id: `ah-${n}`, source: 'apple_health', externalId: `x${n}`, date, startedAt, durationSec: minutes * 60, distanceM: minutes * 160, avgHr: 141, title: 'Run (Garmin Connect)', ...extra };
 }
 
-test('a watch run on a planned day is counted automatically with normal XP', () => {
+test('a watch run on a planned day ticks it off with normal XP and asks for a check-in', () => {
   const s = runner();
   const planned = todaySessions(s, START)[0];
-  const r = importHistory(s, [watchRun(START, planned.durationMin + 2)], START);
-  const done = todaySessions(r.state, START).find((x) => x.id === planned.id)!;
-  assert.equal(done.status, 'completed');
+  const r = importHistory(s, [watch(START, planned.durationMin + 2)], START);
+  assert.equal(todaySessions(r.state, START).find((x) => x.id === planned.id)!.status, 'completed');
   const act = r.state.activities[0];
   assert.equal(act.importedFrom, 'apple_health');
-  assert.equal(act.avgHr, 141);
-  assert.equal(act.healthSynced, true, 'never written back to Health (it came from there)');
-  assert.equal(r.state.rank.seasonXp, 50);
-  assert.ok(r.events.some((e) => e.type === 'watch_run_counted'));
-  assert.equal(pendingCheckIns(r.state, START).length, 1, 'asks how it felt');
-  const f = submitFeedback(r.state, act.id, 'easy', 'none', START).state;
-  assert.equal(pendingCheckIns(f, START).length, 0);
-  // Re-importing the same run does nothing.
-  assert.equal(importHistory(r.state, [watchRun(START, planned.durationMin + 2)], START).state.activities.length, 1);
+  assert.equal(act.xpEarned, XP.run);
+  assert.equal(act.healthSynced, true, 'never written back to Health');
+  assert.equal(pendingCheckIns(r.state, START).length, 1);
+  assert.equal(pendingCheckIns(submitFeedback(r.state, act.id, 'easy', 'none', START).state, START).length, 0);
+  assert.equal(importHistory(r.state, [watch(START, planned.durationMin + 2, { externalId: `x${n}`, id: `ah-${n}` })], START).state.activities.length, 1, 'no double count');
 });
 
-test('a run done yesterday still ticks off yesterday’s (missed) session', () => {
-  let s = runner();
-  const planned = todaySessions(s, START)[0];
-  const r = importHistory(s, [watchRun(START, planned.durationMin)], addDays(START, 1));
-  assert.equal(r.state.plan!.weeks[0].sessions.find((x) => x.id === planned.id)!.status, 'completed');
-});
-
-test('ambiguous runs ask instead of guessing; nothing-planned days offer an extra run', () => {
+test('every activity counts — odd lengths, rest days, strength — with no questions asked', () => {
   const s = runner();
   const planned = todaySessions(s, START)[0];
-  const tooShort = importHistory(s, [watchRun(START, 4 + 2)], START); // tiny run (6 min)
-  assert.equal(tooShort.state.pendingMatches!.length, 1);
-  assert.equal(tooShort.state.pendingMatches![0].sessionId, planned.id);
-  assert.match(tooShort.state.pendingMatches![0].reason, /planned/);
-  const restDay = importHistory(s, [watchRun(addDays(START, 1), 30)], addDays(START, 1));
-  assert.equal(restDay.state.pendingMatches![0].sessionId, null);
-  // Saying yes counts it; saying no just clears it.
-  const yes = countImportedRun(restDay.state, restDay.state.pendingMatches![0].importedRunId, null, addDays(START, 1)).state;
-  assert.equal(yes.activities.length, 1);
-  assert.equal(yes.pendingMatches!.length, 0);
-  assert.equal(dismissMatch(restDay.state, restDay.state.pendingMatches![0].importedRunId).pendingMatches!.length, 0);
+  const short = importHistory(s, [watch(START, 6)], START).state;
+  assert.equal(todaySessions(short, START).find((x) => x.id === planned.id)!.status, 'completed', 'short run still ticks it off (partial XP)');
+  assert.ok(short.activities[0].xpEarned > 0 && short.activities[0].xpEarned < XP.run);
+  const rest = importHistory(s, [watch(addDays(START, 1), 30)], addDays(START, 1)).state;
+  assert.equal(rest.activities.length, 1);
+  assert.equal(rest.activities[0].xpEarned, XP.extraSession);
+  const strengthDay = allSessions(s.plan).find((x) => x.kind === 'strength')!;
+  const str = importHistory(s, [watch(strengthDay.date, 15, { kind: 'strength', title: 'Traditional Strength Training (Garmin)' })], strengthDay.date).state;
+  assert.equal(allSessions(str.plan).find((x) => x.id === strengthDay.id)!.status, 'completed');
+  assert.equal(str.activities[0].xpEarned, XP.strength);
+  assert.equal((str.pendingMatches ?? []).length, 0);
 });
 
-test('old history never back-fills sessions, and the toggle turns auto-counting off', () => {
+test('activities from earlier in the plan count too, and extras cap at 3 a day', () => {
   const s = runner();
-  assert.equal(matchImportedRun(s, watchRun(addDays(START, -10), 30), START), null, 'before the plan started');
   const later = addDays(START, 10);
-  const old = importHistory(s, [watchRun(START, 25)], later);
-  assert.equal(old.state.activities.length, 0, 'more than 3 days ago');
-  const off = updateProfile(s, { autoCountWatchRuns: false }, START);
-  const planned = todaySessions(off, START)[0];
-  const r = importHistory(off, [watchRun(START, planned.durationMin)], START);
-  assert.equal(r.state.activities.length, 0);
-  assert.equal(r.state.pendingMatches!.length, 1, 'asks instead');
+  const r = importHistory(s, [watch(START, 25)], later);
+  assert.equal(r.state.activities.length, 1, 'ten days later still counts');
+  const day = addDays(START, 1);
+  const many = importHistory(s, [1, 2, 3, 4, 5].map(() => watch(day, 20)), day).state;
+  assert.equal(many.activities.length, 5);
+  assert.equal(many.activities.filter((a) => a.xpEarned > 0).length, XP.extraPerDay);
 });
 
-test('runs Steady recorded itself are never double counted', () => {
-  let s = runner();
+test('history from before the plan only sets fitness; Steady-recorded runs never double count', () => {
+  const s = runner();
+  assert.equal(matchImportedRun(s, watch(addDays(START, -10), 30), START), null);
   const planned = todaySessions(s, START)[0];
-  s = { ...s, activities: [{ id: 'mine', date: START, startedAt: Date.parse(`${START}T07:02:00`), endedAt: 0, kind: 'run', title: 'x', durationSec: 1500, xpEarned: 50, completion: 1 }] };
-  assert.equal(matchImportedRun(s, watchRun(START, planned.durationMin), START), null);
+  const mine = { ...s, activities: [{ id: 'mine', date: START, startedAt: Date.parse(`${START}T07:02:00`), endedAt: 0, kind: 'run' as const, title: 'x', durationSec: 1500, xpEarned: 50, completion: 1 }] };
+  assert.equal(matchImportedRun(mine, { ...watch(START, planned.durationMin), startedAt: Date.parse(`${START}T07:00:00`) }, START), null);
 });

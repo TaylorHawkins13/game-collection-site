@@ -75,8 +75,6 @@ export interface Profile {
   strava?: { athlete: string; autoUpload: boolean };
   /** Lock-screen / notification live stats during runs. */
   liveStats?: boolean;
-  /** Count runs recorded on a watch (via Health / Strava) toward the plan automatically when they clearly match. */
-  autoCountWatchRuns?: boolean;
   customWeek?: CustomSlot[];
   /** Experienced/consistent runners may opt into one light quality session (strides). */
   includeQuality: boolean;
@@ -300,6 +298,8 @@ export interface ImportedRun {
   avgHr?: number;
   title: string;
   treadmill?: boolean;
+  /** 'run' (default) or a strength / mobility workout (strength training, core, yoga, pilates, stretching). */
+  kind?: 'run' | 'strength';
   /** Set when this run was counted as a session in Steady. */
   countedActivityId?: string;
 }

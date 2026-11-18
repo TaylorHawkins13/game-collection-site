@@ -40,13 +40,7 @@ export async function runAutoImport(opts: { background?: boolean } = {}): Promis
       for (const id of counted) {
         const a = useStore.getState().app.activities.find((x) => x.id === id);
         await Notifications.scheduleNotificationAsync({
-          content: { title: 'Run counted ✓', body: `${a?.title ?? 'Your watch run'} is ticked off. Tap to check in.`, data: { url: `/summary/${id}` } },
-          trigger: null,
-        }).catch(() => undefined);
-      }
-      if (!counted.length && (useStore.getState().app.pendingMatches ?? []).length) {
-        await Notifications.scheduleNotificationAsync({
-          content: { title: 'New run found', body: 'Want it to count toward your plan?', data: { url: '/' } },
+          content: { title: `${a?.kind === 'strength' ? 'Workout' : 'Run'} counted ✓ +${a?.xpEarned ?? 0} XP`, body: `${a?.title ?? 'Your watch session'} is in. Tap to check in.`, data: { url: `/summary/${id}` } },
           trigger: null,
         }).catch(() => undefined);
       }

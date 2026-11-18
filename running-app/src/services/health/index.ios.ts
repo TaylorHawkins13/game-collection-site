@@ -77,11 +77,14 @@ const appleHealth: HealthService = {
     const ws = await call<W[]>((cb) =>
       AppleHealthKit.getSamples({ startDate: new Date(sinceMs).toISOString(), endDate: new Date().toISOString(), type: 'Workout' as never }, cb as never),
     );
+    const STRENGTH = new Set(['TraditionalStrengthTraining', 'FunctionalStrengthTraining', 'CoreTraining', 'Flexibility', 'Yoga', 'Pilates']);
     return (ws ?? [])
-      .filter((w) => w.activityName === 'Running')
+      .filter((w) => w.activityName === 'Running' || STRENGTH.has(w.activityName ?? ''))
       .map((w): ImportedRun => {
         const startedAt = Date.parse(w.start);
+        const strength = w.activityName !== 'Running';
         return {
+          kind: strength ? 'strength' : 'run',
           id: `ah-${w.id ?? startedAt}`,
           source: 'apple_health',
           externalId: w.id ?? `${w.start}`,
@@ -89,7 +92,7 @@ const appleHealth: HealthService = {
           startedAt,
           durationSec: Math.round((Date.parse(w.end) - startedAt) / 1000),
           distanceM: w.distance ? Math.round(w.distance * 1609.344) : undefined,
-          title: w.sourceName ? `Run (${w.sourceName})` : 'Run',
+          title: strength ? `${(w.activityName ?? 'Strength').replace(/([a-z])([A-Z])/g, '$1 $2')}${w.sourceName ? ` (${w.sourceName})` : ''}` : w.sourceName ? `Run (${w.sourceName})` : 'Run',
         };
       });
   },

@@ -364,8 +364,8 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
   if (planned && planned.kind === 'run' && planned.durationMin > 0) {
     completion = Math.min(1, input.durationSec / (planned.durationMin * 60));
   }
-  const extraToday = state.activities.some((a) => a.date === today && !a.plannedSessionId);
-  const xp = planned ? sessionXp(planned.kind, true, completion) : extraToday ? 0 : sessionXp(input.kind, false, 1);
+  const extrasToday = state.activities.filter((a) => a.date === today && !a.plannedSessionId).length;
+  const xp = planned ? sessionXp(planned.kind, true, completion) : extrasToday >= XP.extraPerDay ? 0 : sessionXp(input.kind, false, 1);
 
   const activity: Activity = {
     id: activityId,
@@ -641,26 +641,21 @@ export function importHistory(state: AppState, incoming: ImportedRun[], today: D
   if (fromHistory && (!cur || fromHistory < cur * 0.98)) {
     s = applyFitnessMove(s, { fiveKSec: fromHistory, reason: 'history' }, today, events);
   }
-  // Count recent watch runs toward the plan (or ask when unsure).
-  const newIds = new Set(runs.filter((r) => !(state.importedRuns ?? []).some((e) => e.id === r.id)).map((r) => r.id));
-  const auto = state.profile?.autoCountWatchRuns !== false;
-  for (const r of [...runs].filter((x) => newIds.has(x.id)).sort((a, b) => a.startedAt - b.startedAt)) {
+  // Every activity since the plan started counts, whatever recorded it (oldest first, so weekly bonuses land right).
+  for (const r of [...runs].filter((x) => !x.countedActivityId).sort((x, y) => x.startedAt - y.startedAt)) {
     const m = matchImportedRun(s, r, today);
     if (!m) continue;
-    if (m.kind === 'auto' && auto) {
-      const c = countImportedRun(s, r.id, m.session.id, today);
-      s = c.state;
-      events.push(...c.events);
-    } else {
-      s = { ...s, pendingMatches: [...(s.pendingMatches ?? []).filter((p) => p.importedRunId !== r.id), { importedRunId: r.id, sessionId: m.session?.id ?? null, reason: m.reason }] };
-    }
+    const c = countImportedRun(s, r.id, m.session?.id ?? null, today);
+    s = c.state;
+    events.push(...c.events);
   }
+  s = { ...s, pendingMatches: [] };
   const sum = historySummary(runs, today);
   const hint = state.profile ? levelHint(sum, state.profile.level) : null;
   const text =
     added === 0
       ? 'No new runs to import — you’re up to date.'
-      : `Imported ${added} run${added === 1 ? '' : 's'}. Lately: about ${sum.perWeek} a week, longest ${sum.longestMin} min.${hint ? ` ${hint}` : ''}`;
+      : `Imported ${added} activit${added === 1 ? 'y' : 'ies'}. Lately: about ${sum.perWeek} runs a week, longest ${sum.longestMin} min. Everything since you started your Steady plan counts with XP.${hint ? ` ${hint}` : ''}`;
   events.push({ type: 'history_imported', count: added, text });
   return { state: s, events, added };
 }
@@ -675,7 +670,7 @@ export function countImportedRun(state: AppState, importedRunId: string, session
     state,
     {
       plannedSessionId: sessionId ?? undefined,
-      kind: 'run',
+      kind: run.kind ?? 'run',
       title: sessionId ? findSession(state, sessionId)?.session.title ?? run.title : run.title,
       startedAt: run.startedAt,
       endedAt: run.startedAt + run.durationSec * 1000,
@@ -694,7 +689,8 @@ export function countImportedRun(state: AppState, importedRunId: string, session
     importedRuns: (r.state.importedRuns ?? []).map((x) => (x.id === run.id ? { ...x, countedActivityId: activityId } : x)),
     pendingMatches: (r.state.pendingMatches ?? []).filter((p) => p.importedRunId !== run.id),
   };
-  const text = `Your run from ${SOURCE_NAME[run.source]} counted${sessionId ? ` for ${s.activities.find((a) => a.id === activityId)?.title}` : ' as an extra run'}. How did it feel?`;
+  const what = (run.kind ?? 'run') === 'run' ? 'run' : 'workout';
+  const text = `Your ${what} from ${SOURCE_NAME[run.source]} counted${sessionId ? ` for ${s.activities.find((a) => a.id === activityId)?.title}` : ` as an extra ${what === 'run' ? 'run' : 'session'}`} (+${r.activity.xpEarned} XP).${what === 'run' ? ' How did it feel?' : ''}`;
   const events: EngineEvent[] = [...r.events, { type: 'watch_run_counted', activityId, text }];
   s = addNotice(s, 'plan', text, today);
   return { state: s, events, activityId };

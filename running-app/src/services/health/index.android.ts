@@ -94,11 +94,17 @@ export const health: HealthService = {
     if (!(await ensureInit())) return [];
     try {
       const res = await readRecords('ExerciseSession', { timeRangeFilter: { operator: 'after', startTime: new Date(sinceMs).toISOString() } });
-      const runs = res.records.filter((r) => r.exerciseType === ExerciseType.RUNNING || r.exerciseType === ExerciseType.RUNNING_TREADMILL);
+      const STRENGTH: number[] = [ExerciseType.STRENGTH_TRAINING, ExerciseType.WEIGHTLIFTING, ExerciseType.CALISTHENICS, ExerciseType.YOGA, ExerciseType.PILATES, ExerciseType.STRETCHING];
+      const isRun = (t: number) => t === ExerciseType.RUNNING || t === ExerciseType.RUNNING_TREADMILL;
+      const runs = res.records.filter((r) => isRun(r.exerciseType) || STRENGTH.includes(r.exerciseType));
       const out: ImportedRun[] = [];
       for (const r of runs.slice(0, 300)) {
         const startedAt = Date.parse(r.startTime);
         let distanceM: number | undefined;
+        if (!isRun(r.exerciseType)) {
+          out.push({ id: `hc-${r.metadata?.id ?? startedAt}`, source: 'health_connect', externalId: r.metadata?.id ?? r.startTime, kind: 'strength', date: toDateKey(startedAt), startedAt, durationSec: Math.round((Date.parse(r.endTime) - startedAt) / 1000), title: r.title || 'Strength session' });
+          continue;
+        }
         try {
           const agg = await aggregateRecord({ recordType: 'Distance', timeRangeFilter: between(new Date(r.startTime), new Date(r.endTime)) });
           distanceM = agg.DISTANCE?.inMeters ? Math.round(agg.DISTANCE.inMeters) : undefined;

@@ -35,7 +35,7 @@ export const TRAINING_TO_RACE = 1.18;
 export function fitnessFromHistory(runs: ImportedRun[], today: DateKey): number | null {
   const since = addDays(today, -70);
   const equivs = runs
-    .filter((r) => r.date >= since && !r.treadmill && (r.distanceM ?? 0) >= 3000 && r.durationSec > 0)
+    .filter((r) => (r.kind ?? 'run') === 'run' && r.date >= since && !r.treadmill && (r.distanceM ?? 0) >= 3000 && r.durationSec > 0)
     .map((r) => riegel(r.durationSec, r.distanceM!, 5000))
     .filter((t) => t / 5 >= 160 && t / 5 <= 720)
     .sort((a, b) => a - b)
@@ -53,7 +53,8 @@ export interface HistorySummary {
   lastRunDaysAgo: number | null;
 }
 
-export function historySummary(runs: ImportedRun[], today: DateKey): HistorySummary {
+export function historySummary(all: ImportedRun[], today: DateKey): HistorySummary {
+  const runs = all.filter((r) => (r.kind ?? 'run') === 'run');
   const recent = runs.filter((r) => diffDays(r.date, today) <= 56);
   const last = runs.reduce<DateKey | null>((m, r) => (!m || r.date > m ? r.date : m), null);
   return {
