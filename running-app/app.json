@@ -57,6 +57,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "experiments": {
+      "baseUrl": "/game-collection-site"
+    },
     "plugins": [
       "expo-router",
       [
