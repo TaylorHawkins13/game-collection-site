@@ -7,35 +7,42 @@
 <style>
 body{margin:0;background:#EDEEEC;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1D2420}
 .wrap{max-width:390px;margin:0 auto;background:#fff;min-height:100vh;padding-bottom:40px}
-h1{font-size:28px;margin:24px 20px 16px;font-weight:700}
-.gh{background:#FC4C02;color:#fff;padding:14px 16px;margin:0 16px 0;border-radius:10px;font-weight:600;font-size:13px;letter-spacing:.4px;display:flex;justify-content:space-between;cursor:pointer}
-.gb{border:1px solid #E2E4E1;border-top:none;margin:0 16px 12px;border-radius:0 0 10px 10px;background:#fff}
-.opt{padding:14px 16px;border-bottom:1px solid #E2E4E1;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:28px;margin:28px 20px 20px;font-weight:700}
+.group{margin:0 16px 16px}
+.gh{background:#FC4C02;color:#fff;padding:16px 18px;border-radius:12px;font-weight:600;font-size:13px;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.gb{border:1px solid #E2E4E1;border-top:none;border-radius:0 0 12px 12px;background:#fff;margin-top:-4px}
+.opt{padding:16px 18px;border-bottom:1px solid #E2E4E1;display:flex;justify-content:space-between;align-items:center}
 .opt:last-child{border:none}
 .sel{background:#FFF0EB}
 .chk{width:22px;height:22px;border:2px solid #FC4C02;border-radius:50%;color:#FC4C02;display:flex;align-items:center;justify-content:center;font-size:13px}
-.btn{display:block;margin:24px 16px;background:#FC4C02;color:#fff;text-align:center;padding:16px;border-radius:10px;font-weight:700;font-size:17px;text-decoration:none}
+.btn{display:block;margin:28px 16px 16px;background:#FC4C02;color:#fff;text-align:center;padding:16px;border-radius:12px;font-weight:700;font-size:17px;text-decoration:none}
 .hide{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>Any goal?</h1>
+<div class="group">
 <div class="gh" onclick="t('g1')">JUST RUN <span id="i1">−</span></div>
 <div class="gb" id="g1">
 <div class="opt">Build a running habit</div>
 <div class="opt">Get fitter and healthier</div>
 <div class="opt sel">Clear my head <span class="chk">✓</span></div>
 </div>
+</div>
+<div class="group">
 <div class="gh" onclick="t('g2')">DISTANCE GOALS <span id="i2">+</span></div>
 <div class="gb hide" id="g2">
 <div class="opt">Run 30 minutes non-stop</div>
 <div class="opt">Run a 5K</div>
 <div class="opt">Run a 10K</div>
 </div>
+</div>
+<div class="group">
 <div class="gh" onclick="t('g3')">GET FASTER <span id="i3">+</span></div>
 <div class="gb hide" id="g3">
 <div class="opt">Get faster at 5K</div>
+</div>
 </div>
 <a class="btn" href="#">Continue</a>
 </div>
