@@ -1,20 +1,20 @@
 import { useColorScheme } from 'react-native';
 
 const light = {
-  bg: '#EDEEEC', // grey gutter between flat white sections
+  bg: '#EDEEEC',
   surface: '#FFFFFF',
   surfaceAlt: '#F3F4F2',
   text: '#1D2420',
   textMuted: '#5E6B63',
   border: '#E2E4E1',
-  primary: '#2F7D62',
+  primary: '#FC4C02',
   primaryText: '#FFFFFF',
-  primarySoft: '#DCEFE6',
+  primarySoft: '#FFF0EB',
   accent: '#E8A33D',
   danger: '#C4553F',
   rest: '#8DA3B8',
   missed: '#E4E1D9',
-  mapLine: '#2F7D62',
+  mapLine: '#FC4C02',
 };
 
 const dark: typeof light = {
@@ -24,14 +24,14 @@ const dark: typeof light = {
   text: '#EDF2EE',
   textMuted: '#9DAAA2',
   border: '#2C3530',
-  primary: '#5CC09A',
+  primary: '#FF6B35',
   primaryText: '#0D1A14',
-  primarySoft: '#1E3A2E',
+  primarySoft: '#3A1F14',
   accent: '#F0B65C',
   danger: '#E07A63',
   rest: '#6E869C',
   missed: '#2A302C',
-  mapLine: '#5CC09A',
+  mapLine: '#FF6B35',
 };
 
 export type Colors = typeof light;
