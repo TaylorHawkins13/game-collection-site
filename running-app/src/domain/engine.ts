@@ -5,6 +5,8 @@
  */
 import { adaptAfterFeedback, directiveFor } from './adaptation.ts';
 import { BADGES, newlyEarned } from './badges.ts';
+import { currentFiveK, describeMove, direction, evaluateAfterRun, evaluateBreak, fitnessFromPbs, hadSlipSince, possiblePb, type FitnessMove } from './fitness.ts';
+import { fiveKEquivalent, trainingPaces } from './pace.ts';
 import { challengeProgress } from './challenges.ts';
 import { addDays, diffDays, maxKey, minKey, rangeKeys } from './dates.ts';
 import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused } from './metrics.ts';
@@ -25,6 +27,7 @@ import type {
   Notice,
   Pause,
   PersonalBest,
+  RaceDistance,
   PlanWeek,
   PlannedSession,
   Profile,
@@ -100,7 +103,8 @@ export function defaultProfile(a: OnboardingAnswers, today: DateKey): Profile {
 
 export function onboard(state: AppState, answers: OnboardingAnswers, today: DateKey, profileOverrides: Partial<Profile> = {}): AppState {
   const profile = { ...defaultProfile(answers, today), ...profileOverrides };
-  return { ...state, profile, plan: createPlan(profile, today), lastTick: today };
+  const s: AppState = { ...state, profile, plan: createPlan(profile, today), lastTick: today };
+  return { ...s, fitness: fitnessFromPbs(s, today) };
 }
 
 // ───────────────────────────── helpers ─────────────────────────────
@@ -133,6 +137,23 @@ function weekContaining(state: AppState, date: DateKey): PlanWeek | undefined {
 function addNotice(state: AppState, kind: Notice['kind'], text: string, date: DateKey): AppState {
   const notice: Notice = { id: uid('n'), date, kind, text };
   return { ...state, notices: [notice, ...state.notices].slice(0, 30) };
+}
+
+/** Apply a fitness change: update the estimate, retarget upcoming workouts, explain it. */
+function applyFitnessMove(state: AppState, move: FitnessMove, today: DateKey, events: EngineEvent[]): AppState {
+  const prev = state.fitness;
+  const fitness = { fiveKSec: move.fiveKSec, updatedAt: today, log: [...(prev?.log ?? []), { date: today, fiveKSec: move.fiveKSec, reason: move.reason }].slice(-50) };
+  const paces = trainingPaces(move.fiveKSec);
+  let s: AppState = { ...state, fitness };
+  s = mapSessions(s, (x) =>
+    x.workout && x.status === 'planned' && x.date >= today
+      ? { ...x, targetPaceSecPerKm: x.runType === 'tempo' ? paces.tempo : paces.interval }
+      : x,
+  );
+  const text = describeMove(move, state.profile?.units ?? 'km');
+  const dir = direction(move.reason);
+  events.push({ type: 'fitness', direction: dir === 'down' ? 'down' : 'up', reason: move.reason, text });
+  return addNotice(s, 'plan', text, today);
 }
 
 function grantXp(state: AppState, amount: number, reason: XpReason, today: DateKey, events: EngineEvent[], refId?: string): AppState {
@@ -246,17 +267,24 @@ function rollWeeks(state: AppState, today: DateKey, events: EngineEvent[]): AppS
     const pausedDays = rangeKeys(last.start, last.end).filter((d) => isPaused(s, d)).length;
     const feelings = s.activities.filter((a) => a.date >= last.start && a.date <= last.end && a.feel);
     const gap = daysSinceLastActivity(s, nextStart);
-    const { directive, reason } = directiveFor(
+    const brk = evaluateBreak(s, nextStart);
+    if (brk) s = applyFitnessMove(s, brk, nextStart <= today ? nextStart : today, events);
+    let { directive, reason } = directiveFor(
       { completion: core.length ? done / core.length : 1, completedCount: done, pausedDays, feelings, daysSinceLastActivity: gap },
       last.index + 1,
       plan.step,
     );
+    // Fitness slipped this week (workouts or easy runs felt hard): don't step up.
+    if (directive === 'progress' && hadSlipSince(s, last.start)) {
+      directive = 'hold';
+      reason = 'Holding steady this week while your body catches up. You’ll step up again soon.';
+    }
     const { step, progressed } = nextStep(plan.step, directive, {
       cap: stepCap(profile.goal, profile.level),
       cautious: profile.issues.length > 0,
       weeksSinceProgress: plan.weeksSinceProgress,
     });
-    const week = generateWeek(profile, last.index + 1, nextStart, step, directive);
+    const week = generateWeek(profile, last.index + 1, nextStart, step, directive, currentFiveK(s));
     week.summary = reason;
     s = {
       ...s,
@@ -363,6 +391,8 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
   const reason: XpReason = !planned ? 'extra_session' : planned.kind === 'run' ? 'run' : 'strength';
   s = grantXp(s, xp, reason, today, events, activityId);
   s = weeklyBonuses(s, today, today, events);
+  const pb = possiblePb(s, activity);
+  if (pb) events.push({ type: 'possible_pb', ...pb });
   const r = finish(s, today, events);
   return { ...r, activity: r.state.activities.find((a) => a.id === activityId)! };
 }
@@ -387,6 +417,10 @@ export function submitFeedback(state: AppState, activityId: string, feel: Feel, 
       events.push({ type: 'plan_note', text: note });
       s = addNotice(s, 'plan', note, today);
     }
+  }
+  if (firstTime) {
+    const move = evaluateAfterRun(s, activityId, today);
+    if (move) s = applyFitnessMove(s, move, today, events);
   }
   s = weeklyBonuses(s, activity.date, today, events);
   return { ...finish(s, today, events), note };
@@ -517,6 +551,10 @@ export function updateProfile(state: AppState, patch: Partial<Profile>, today: D
   if (!state.profile || !state.plan) return state;
   const profile = { ...state.profile, ...patch };
   let s: AppState = { ...state, profile };
+  if (patch.pbs && JSON.stringify(patch.pbs) !== JSON.stringify(state.profile.pbs ?? [])) {
+    // Explicit PBs are the user's word: restart the estimate from them (keep run-based history if none left).
+    s = { ...s, fitness: fitnessFromPbs(s, today) ?? state.fitness };
+  }
   const structural = STRUCTURAL.some((k) => JSON.stringify(patch[k] ?? state.profile![k]) !== JSON.stringify(state.profile![k]));
   if (!structural) return s;
 
@@ -528,7 +566,7 @@ export function updateProfile(state: AppState, patch: Partial<Profile>, today: D
   }
   const week = currentWeek(plan, today);
   if (!week) return { ...s, plan };
-  const fresh = generateWeek(profile, week.index, week.start, plan.step, week.directive);
+  const fresh = generateWeek(profile, week.index, week.start, plan.step, week.directive, currentFiveK(s));
   const kept = week.sessions.filter((x) => x.date < today || x.status !== 'planned');
   const version = uid('v').slice(-5);
   const added = fresh.sessions
@@ -544,7 +582,19 @@ export function previewNextWeek(state: AppState, today: DateKey): PlanWeek | nul
   if (!state.plan || !state.profile) return null;
   const week = currentWeek(state.plan, today);
   if (!week) return null;
-  return generateWeek(state.profile, week.index + 1, addDays(week.end, 1), state.plan.step, 'hold');
+  return generateWeek(state.profile, week.index + 1, addDays(week.end, 1), state.plan.step, 'hold', currentFiveK(state));
+}
+
+/** Save a PB detected from a run (or entered by hand) and update fitness from it. */
+export function savePersonalBest(state: AppState, pb: { distance: RaceDistance; timeSec: number }, today: DateKey): Result {
+  const events: EngineEvent[] = [];
+  if (!state.profile) return { state, events };
+  const pbs = [...(state.profile.pbs ?? []).filter((p) => p.distance !== pb.distance), { ...pb, recency: 'recent' as const }];
+  let s: AppState = { ...state, profile: { ...state.profile, pbs } };
+  const equiv = fiveKEquivalent([{ ...pb, recency: 'recent' }], s.profile!.level);
+  const cur = currentFiveK(state);
+  if (equiv && (!cur || equiv < cur)) s = applyFitnessMove(s, { fiveKSec: Math.round(equiv), reason: 'faster_run' }, today, events);
+  return finish(s, today, events);
 }
 
 export function dismissNotice(state: AppState, id: string): AppState {

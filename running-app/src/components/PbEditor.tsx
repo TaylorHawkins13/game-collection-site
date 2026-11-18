@@ -33,6 +33,7 @@ export function PbEditor({
   goalTimeSec,
   onGoalTime,
   units,
+  showPaces = true,
 }: {
   pbs: PersonalBest[];
   onChange: (pbs: PersonalBest[]) => void;
@@ -41,6 +42,7 @@ export function PbEditor({
   goalTimeSec?: number;
   onGoalTime: (sec: number | undefined) => void;
   units: Units;
+  showPaces?: boolean;
 }) {
   const c = useColors();
   const [text, setText] = useState<Record<string, string>>(() =>
@@ -110,7 +112,7 @@ export function PbEditor({
         );
       })}
 
-      {paces ? (
+      {paces && showPaces ? (
         <Card style={{ borderLeftColor: c.primary, borderLeftWidth: 4 }}>
           <H3>Your training paces</H3>
           <Small muted={false}>

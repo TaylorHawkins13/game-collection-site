@@ -221,8 +221,32 @@ export interface Notice {
   dismissed?: boolean;
 }
 
+export type FitnessReason =
+  | 'pb'
+  | 'estimated'
+  | 'faster_run'
+  | 'workouts_easy'
+  | 'easy_trend'
+  | 'workouts_hard'
+  | 'easy_struggle'
+  | 'break';
+
+export interface FitnessChange {
+  date: DateKey;
+  fiveKSec: number;
+  reason: FitnessReason;
+}
+
+/** Current fitness as a 5K-equivalent time. Starts from PBs and moves with real runs. */
+export interface Fitness {
+  fiveKSec: number;
+  updatedAt: DateKey;
+  log: FitnessChange[];
+}
+
 export interface AppState {
   version: 1;
+  fitness?: Fitness;
   profile: Profile | null;
   plan: PlanState | null;
   activities: Activity[];
@@ -250,4 +274,6 @@ export type EngineEvent =
   | { type: 'season_reset'; finish: SeasonFinish | null; newDivision: number }
   | { type: 'weekly_target' }
   | { type: 'challenge'; id: string }
-  | { type: 'plan_note'; text: string };
+  | { type: 'plan_note'; text: string }
+  | { type: 'fitness'; direction: 'up' | 'down'; reason: FitnessReason; text: string }
+  | { type: 'possible_pb'; distance: RaceDistance; timeSec: number };

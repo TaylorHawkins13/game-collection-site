@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { toDateKey } from '../domain/dates';
 import * as E from '../domain/engine';
-import type { AppState, DateKey, EngineEvent, Feel, Pause, Profile, RecoverySnapshot, Soreness } from '../domain/types';
+import type { AppState, DateKey, EngineEvent, Feel, Pause, Profile, RaceDistance, RecoverySnapshot, Soreness } from '../domain/types';
 
 export const today = (): DateKey => toDateKey(new Date());
 
@@ -36,6 +36,7 @@ interface Store {
   markHealthSynced: (activityId: string) => void;
   patchActivity: (activityId: string, patch: { avgHr?: number; maxHr?: number }) => void;
   dismissNotice: (id: string) => void;
+  savePersonalBest: (pb: { distance: RaceDistance; timeSec: number }) => void;
   clearTickEvents: () => void;
   resetAll: () => void;
 }
@@ -88,6 +89,7 @@ export const useStore = create<Store>()(
       patchActivity: (id, patch) =>
         set((s) => ({ app: { ...s.app, activities: s.app.activities.map((a) => (a.id === id ? { ...a, ...patch } : a)) } })),
       dismissNotice: (id) => set({ app: E.dismissNotice(get().app, id) }),
+      savePersonalBest: (pb) => set({ app: E.savePersonalBest(get().app, pb, today()).state }),
       clearTickEvents: () => set({ tickEvents: [] }),
       resetAll: () => set({ app: E.createInitialState(today()), sessionEvents: {}, tickEvents: [] }),
     }),

@@ -9,7 +9,8 @@ import { Body, Button, Card, Chip, H1, H3, ProgressBar, Row, Screen, Small } fro
 import { badgeById } from '../../domain/badges';
 import { challengeById } from '../../domain/challenges';
 import { divisionLabel, divisionProgress, rankOf } from '../../domain/ranks';
-import type { EngineEvent, Feel, Soreness } from '../../domain/types';
+import { pbText } from '../../domain/fitness';
+import type { EngineEvent, Feel, RaceDistance, Soreness } from '../../domain/types';
 import { XP } from '../../domain/xp';
 import { health } from '../../services/health';
 import { useStore } from '../../state/store';
@@ -55,6 +56,18 @@ function EventLine({ e }: { e: EngineEvent }) {
         </Row>
       ) : null;
     }
+    case 'fitness':
+      return (
+        <Row style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+          <Body style={{ fontSize: 22 }}>{e.direction === 'up' ? '📈' : '🧭'}</Body>
+          <View style={{ flex: 1 }}>
+            <H3>{e.direction === 'up' ? 'You’re getting fitter' : 'Plan adjusted'}</H3>
+            <Small>{e.text}</Small>
+          </View>
+        </Row>
+      );
+    case 'possible_pb':
+      return <PbPrompt distance={e.distance} timeSec={e.timeSec} />;
     case 'weekly_target':
       return <Body>✓ Weekly target hit (+{XP.weeklyTarget} XP)</Body>;
     case 'challenge':
@@ -64,11 +77,38 @@ function EventLine({ e }: { e: EngineEvent }) {
   }
 }
 
+function PbPrompt({ distance, timeSec }: { distance: RaceDistance; timeSec: number }) {
+  const save = useStore((s) => s.savePersonalBest);
+  const [saved, setSaved] = useState(false);
+  return (
+    <View style={{ gap: space.sm }}>
+      <H3>🏅 Possible new PB: {pbText({ distance, timeSec })}</H3>
+      {saved ? (
+        <Small>Saved. Your paces now use it.</Small>
+      ) : (
+        <>
+          <Small>Save it and your training paces update to match.</Small>
+          <Button
+            kind="secondary"
+            title="Save as my PB"
+            onPress={() => {
+              save({ distance, timeSec });
+              setSaved(true);
+            }}
+          />
+        </>
+      )}
+    </View>
+  );
+}
+
+const NO_EVENTS: EngineEvent[] = [];
+
 export default function Summary() {
   const c = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const app = useStore((s) => s.app);
-  const events = useStore((s) => s.sessionEvents[id ?? ''] ?? []);
+  const events = useStore((s) => s.sessionEvents[id ?? '']) ?? NO_EVENTS;
   const submitFeedback = useStore((s) => s.submitFeedback);
   const a = app.activities.find((x) => x.id === id);
   const [feel, setFeel] = useState<Feel | null>(a?.feel ?? null);

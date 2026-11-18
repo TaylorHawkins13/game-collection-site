@@ -12,6 +12,7 @@ import { createPlan } from '../domain/plan';
 import type { ExperienceLevel, GoalId, IssueId, PersonalBest, WeeklyFrequency } from '../domain/types';
 import { PbEditor } from '../components/PbEditor';
 import { sessionSubtitle } from '../components/SessionCard';
+import { pacesFor } from '../domain/pace';
 import { goalsFor, pbsRequired } from '../goals';
 import { health } from '../services/health';
 import { requestNotificationPermission } from '../services/notifications';
@@ -237,7 +238,7 @@ export default function Onboarding() {
               <View style={{ flex: 1 }}>
                 <H3>{s.title}</H3>
                 <Small>
-                  {sessionSubtitle(s, answers ? { ...defaultProfile(answers, today()) } : null)}
+                  {sessionSubtitle(s, answers ? defaultProfile(answers, today()) : null, pacesFor(pbs, level ?? 'new'))}
                   {s.optional ? ' · optional' : ''}
                 </Small>
               </View>

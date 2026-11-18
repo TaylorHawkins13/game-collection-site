@@ -6,7 +6,7 @@
 import { buildCues, dueCues, EASE_OFF_CUE, shouldSuggestEasing, type Cue } from '../domain/cues';
 import { findSession } from '../domain/engine';
 import { averagePace, currentPace, METERS_PER_UNIT, movingMs } from '../domain/gps';
-import { pacesFor } from '../domain/pace';
+import { currentPaces } from '../domain/fitness';
 import type { AppState, Units } from '../domain/types';
 import { useRunStore } from '../state/runStore';
 import { useStore } from '../state/store';
@@ -74,7 +74,7 @@ export function guidanceTick() {
   const found = a.plannedSessionId ? findSession(app, a.plannedSessionId) : null;
   const easyRun = !found || found.session.runType === 'easy' || found.session.runType === 'long';
   if (easyRun) {
-    const paces = pacesFor(profile.pbs ?? [], profile.level);
+    const paces = currentPaces(app);
     const pbEasyFast = paces ? (profile.units === 'km' ? paces.easy[0] : (paces.easy[0] * METERS_PER_UNIT.mi) / 1000) : null;
     if (
       shouldSuggestEasing({

@@ -16,6 +16,7 @@ import { walkRunPhase } from '../../domain/cues';
 import { toDateKey } from '../../domain/dates';
 import { findSession } from '../../domain/engine';
 import { averagePace, currentPace, finalSplits, formatDuration, formatPace, METERS_PER_UNIT, movingMs } from '../../domain/gps';
+import { currentPaces } from '../../domain/fitness';
 import { paceLabel } from '../../domain/pace';
 import { routineById } from '../../domain/strength';
 import type { PlannedSession } from '../../domain/types';
@@ -190,7 +191,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
           <Button kind="ghost" title="Close" onPress={close} />
         </Row>
         <H1>{session?.title ?? 'Easy run'}</H1>
-        <Body muted>{session ? sessionSubtitle(session, profile) : 'Unplanned runs earn a little XP. Keep it easy — your plan has your back.'}</Body>
+        <Body muted>{session ? sessionSubtitle(session, profile, currentPaces(useStore.getState().app)) : 'Unplanned runs earn a little XP. Keep it easy — your plan has your back.'}</Body>
         {session?.walkRun ? (
           <Card>
             <H3>How it goes</H3>
@@ -392,7 +393,7 @@ function StrengthSession({ session }: { session: PlannedSession }) {
         <Button kind="ghost" title="Close" onPress={close} />
       </Row>
       <H1>{session.title}</H1>
-      <Body muted>{sessionSubtitle(session, useStore.getState().app.profile)}</Body>
+      <Body muted>{sessionSubtitle(session, useStore.getState().app.profile, currentPaces(useStore.getState().app))}</Body>
       {startedAt ? <H2>{formatDuration(elapsed)}</H2> : null}
       {routine?.exercises.map((e, i) => {
         const checked = done.includes(i);

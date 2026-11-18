@@ -5,6 +5,20 @@ import { Switch, View } from 'react-native';
 import { PbEditor } from '../../components/PbEditor';
 import { Body, Button, Card, Chip, Divider, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../../components/ui';
 import { goalLabel, goalsFor } from '../../goals';
+import { currentPaces, direction } from '../../domain/fitness';
+import { formatTime, paceLabel } from '../../domain/pace';
+import type { FitnessReason } from '../../domain/types';
+
+const REASON: Record<FitnessReason, string> = {
+  pb: 'Set from your PBs',
+  estimated: 'Estimated from your first runs',
+  faster_run: 'Faster run / new PB',
+  workouts_easy: 'Workouts felt easy',
+  easy_trend: 'Easy runs getting quicker',
+  workouts_hard: 'Workouts felt hard',
+  easy_struggle: 'Easy runs felt hard',
+  break: 'Time off running',
+};
 import { formatShort, weekdayName, weekdayShort } from '../../domain/dates';
 import { activePause, previewNextWeek } from '../../domain/engine';
 import type { ExperienceLevel, Pause, Profile } from '../../domain/types';
@@ -61,6 +75,7 @@ export default function Settings() {
   const [pauseReason, setPauseReason] = useState<Pause['reason']>('busy');
   const [healthMsg, setHealthMsg] = useState<string | null>(null);
   const [showGoals, setShowGoals] = useState(false);
+  const fitnessPaces = currentPaces(app);
 
   const update = (patch: Partial<Profile>) => {
     s.updateProfile(patch);
@@ -83,6 +98,56 @@ export default function Settings() {
   return (
     <Screen>
       <H1>Your plan</H1>
+
+      <SectionTitle>Goal & best times</SectionTitle>
+      <Card>
+        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <View style={{ flex: 1 }}>
+            <Small>Training for</Small>
+            <H3>{goalLabel(p.goal)}</H3>
+          </View>
+          <Button kind="ghost" title={showGoals ? 'Done' : 'Change'} onPress={() => setShowGoals(!showGoals)} />
+        </Row>
+      </Card>
+      {showGoals ? (
+        <OptionGroup>
+          {goalsFor(p.level).map((g) => (
+            <Option key={g.id} label={g.label} description={g.description} selected={p.goal === g.id} onPress={() => update({ goal: g.id })} />
+          ))}
+        </OptionGroup>
+      ) : null}
+      {p.level !== 'new' ? (
+        <Card>
+          <H3>Current fitness</H3>
+          {fitnessPaces ? (
+            <>
+              <Small muted={false}>
+                5K estimate {formatTime(fitnessPaces.fiveKSec)} · easy {paceLabel(fitnessPaces.easy[0], p.units)}–{paceLabel(fitnessPaces.easy[1], p.units)}/{p.units} · tempo ~
+                {paceLabel(fitnessPaces.tempo, p.units)} · intervals ~{paceLabel(fitnessPaces.interval, p.units)}
+              </Small>
+              <Small>Updates automatically as your runs show you getting fitter (or need an easier patch).</Small>
+              {(app.fitness?.log ?? []).slice(-4).reverse().map((l, i) => (
+                <Small key={i} muted={false}>
+                  {direction(l.reason) === 'up' ? '↑' : direction(l.reason) === 'down' ? '↓' : '•'} {formatShort(l.date)} · {REASON[l.reason]} → {formatTime(l.fiveKSec)}
+                </Small>
+              ))}
+            </>
+          ) : (
+            <Small>Add a PB below, or do a few easy runs with GPS and Steady will estimate it for you.</Small>
+          )}
+        </Card>
+      ) : null}
+      <PbEditor
+        pbs={p.pbs ?? []}
+        onChange={(pbs) => update({ pbs })}
+        level={p.level}
+        goal={p.goal}
+        goalTimeSec={p.goalTimeSec}
+        onGoalTime={(goalTimeSec) => update({ goalTimeSec })}
+        units={p.units}
+        showPaces={false}
+      />
+
 
       <SectionTitle>Plan</SectionTitle>
       <Card style={{ gap: space.md }}>
@@ -124,33 +189,6 @@ export default function Settings() {
         ) : null}
         <Small>Changes apply from today; finished sessions are never touched.</Small>
       </Card>
-
-      <SectionTitle>Goal & best times</SectionTitle>
-      <Card>
-        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-          <View style={{ flex: 1 }}>
-            <Small>Training for</Small>
-            <H3>{goalLabel(p.goal)}</H3>
-          </View>
-          <Button kind="ghost" title={showGoals ? 'Done' : 'Change'} onPress={() => setShowGoals(!showGoals)} />
-        </Row>
-      </Card>
-      {showGoals ? (
-        <OptionGroup>
-          {goalsFor(p.level).map((g) => (
-            <Option key={g.id} label={g.label} description={g.description} selected={p.goal === g.id} onPress={() => update({ goal: g.id })} />
-          ))}
-        </OptionGroup>
-      ) : null}
-      <PbEditor
-        pbs={p.pbs ?? []}
-        onChange={(pbs) => update({ pbs })}
-        level={p.level}
-        goal={p.goal}
-        goalTimeSec={p.goalTimeSec}
-        onGoalTime={(goalTimeSec) => update({ goalTimeSec })}
-        units={p.units}
-      />
 
       {preview ? (
         <Card>

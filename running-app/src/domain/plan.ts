@@ -9,7 +9,7 @@
  */
 import { addDays, diffDays, weekday } from './dates.ts';
 import { pickChallenge } from './challenges.ts';
-import { isFasterGoal, pacesFor } from './pace.ts';
+import { isFasterGoal, pacesFor, trainingPaces } from './pace.ts';
 import { pickRoutines } from './strength.ts';
 import type {
   DateKey,
@@ -260,7 +260,8 @@ const SUMMARIES: Record<WeekDirective, string> = {
   recovery: 'Recovery week: a little less, on purpose. This is how you get stronger.',
 };
 
-export function generateWeek(profile: Profile, index: number, start: DateKey, step: number, directive: WeekDirective): PlanWeek {
+/** `fiveKSec` is the current fitness estimate; without it, paces come straight from the PBs. */
+export function generateWeek(profile: Profile, index: number, start: DateKey, step: number, directive: WeekDirective, fiveKSec?: number | null): PlanWeek {
   const runs = Math.max(1, Math.min(5, profile.runsPerWeek));
   const dates = runDates(start, runs, profile.preferredDays);
   const pattern = PATTERNS[runs];
@@ -276,7 +277,7 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
     directive !== 'recovery' &&
     runs >= 3;
   const workoutKind: 'tempo' | 'intervals' = index % 2 === 1 ? 'tempo' : 'intervals';
-  const paces = pacesFor(profile.pbs ?? [], profile.level);
+  const paces = fiveKSec ? trainingPaces(fiveKSec) : pacesFor(profile.pbs ?? [], profile.level);
   const longBoost = longGoal && step >= 14 ? 0.1 : 0;
   const quality =
     !workoutWeek &&

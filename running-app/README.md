@@ -9,7 +9,7 @@ Health, Maps and background GPS use native code, so this needs a **development b
 ```bash
 cd running-app
 npm install
-npm test             # 48 unit tests for the plan/rank/XP/GPS logic
+npm test             # 55 unit tests for the plan/rank/XP/GPS logic
 npm run typecheck
 
 # Local native builds (needs Xcode / Android Studio):
@@ -35,6 +35,7 @@ Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json`
 | XP | `xp.ts` | Planned run 50, strength/mobility 30, weekly target +100, weekly challenge +75, check-in +10, logged rest day +10. Unplanned extra session: 15, once a day. Distance and pace earn nothing. |
 | Plans | `plan.ts`, `strength.ts` | One progression ladder: 10 walk-run steps, then continuous easy runs of 20–60 min. Week 1 starts **today**, so the first week is never half-empty. Starting step comes from level + frequency (New: 3× walk-run, 17–23 min; Returning: 20–25 min; Consistent: 25–35 min; Experienced: 4 runs, optional strides). 1–2 optional 8–15 min strength/mobility routines per week, chosen to suit reported issues. Every 4th continuous-running week is a planned recovery week. |
 | Goals & PBs | `pace.ts`, `goals.ts`, `components/PbEditor.tsx` | 12 goals in three groups (Just run / Distance / Get faster: 5K, 10K, half, marathon, faster 5K/10K/half…). PBs (5K/10K/half/marathon plus how recent) are required for consistent/experienced runners and "get faster" goals, and optional for returning runners. Each PB becomes a 5K equivalent via Riegel (older results adjusted slower), which sets easy-pace ranges (shown on every run), tempo and interval target paces, the "ease off" voice cue, and a suggested goal time. "Get faster" goals add one tempo or interval session a week from week 2, never in ease or recovery weeks. A recent half or marathon PB starts seasoned runners one step higher. |
+| Fitness tracking | `fitness.ts` | A live 5K-equivalent estimate, starting from PBs and moving with real runs. **Up:** a ≥3 km run faster than the estimate (max 5% per jump); two workouts in a row logged Easy (−1.5%); four comfortable easy runs naturally quicker than the easy range (−1.5%). **Down:** two workouts in a row logged Hard (+2%); three easy runs all Hard and slower than the range (+2%); 14+ days without running (+2% per extra week, max 10%, once per break). Trend moves wait 10 days. Each change retargets upcoming workouts, adds a plain-language note, and a slip blocks that week's step-up. Runs at a race distance that beat a PB offer "Save as my PB". Runners without PBs (except New) get an estimate after 3 comfortable easy runs. The Plan tab shows the estimate and its history. |
 | Adaptation | `adaptation.ts` | **Noticeable soreness**: the next run within 2 days becomes mobility, and the rest of the week eases. **Two "Hard" in the last three check-ins**: the rest of the week eases and next week eases. **Easy / Just right with ≥75% completion**: next week goes up one step (every other week if you reported issues). **Missed sessions**: reschedule, shorten the week, or let it go, with no penalty; a long gap eases the plan back down. |
 | Life happens | `engine.ts#pausePlan` | Pause for 3, 7 or 14 days (sick, injury, travel, busy). Paused days are left out of every metric and decay is frozen. Resuming starts gently. |
 | Badges | `badges.ts` | First Session, Week 1 Complete, 3-Session Week, Easy Effort, Recovery Aware, Health Connected, 7-Day Streak (the streak is plan-honoured days, so rest days count), Strength Starter, Comeback, Four Steady Weeks, Gold Standard, Season Finisher. None are for speed or distance. |
@@ -57,7 +58,7 @@ Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json`
 ## What has and hasn't been verified
 
 Verified in the build environment:
-- 48 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
+- 55 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
 - `tsc` is clean, and Metro bundles for iOS and Android each pull in the right Health module.
 - A headless-browser walkthrough of the web build: onboarding → Home → full walk-run session → check-in → Progress / Activity / detail / Plan → next-day rest state, with zero console errors.
 
