@@ -1,10 +1,16 @@
-// Adds the Google Maps key for Android route maps from the environment, so it
-// never has to be committed. iOS uses Apple Maps and needs no key.
-//   GOOGLE_MAPS_ANDROID_API_KEY=... npx expo prebuild
+// Dynamic config on top of app.json.
+//
+//   GOOGLE_MAPS_ANDROID_API_KEY=...  Android route maps (iOS uses Apple Maps, no key).
+//   STEADY_NO_HEALTH=1               Build without Apple Health: drops the HealthKit
+//                                    entitlement so the app can be signed with a free
+//                                    Apple ID. Health options are hidden in the app.
+const noHealth = process.env.STEADY_NO_HEALTH === '1';
+
 module.exports = ({ config }) => ({
   ...config,
   plugins: [
-    ...config.plugins,
+    ...config.plugins.filter((p) => !(noHealth && (p === 'react-native-health' || (Array.isArray(p) && p[0] === 'react-native-health')))),
     ['react-native-maps', process.env.GOOGLE_MAPS_ANDROID_API_KEY ? { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY } : {}],
   ],
+  extra: { ...config.extra, healthEnabled: !noHealth },
 });

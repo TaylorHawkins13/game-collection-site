@@ -1,7 +1,9 @@
 /** Apple Health via react-native-health. Reads HR, resting HR, sleep; writes workouts. */
+import Constants from 'expo-constants';
 import AppleHealthKit, { type HealthKitPermissions, type HealthValue } from 'react-native-health';
 import { restingHrBaseline } from '../../domain/recovery';
 import type { Activity } from '../../domain/types';
+import { unavailableHealth as unavailable } from './unavailable';
 import { sleepWindow, summarizeHr, type HealthService } from './types';
 
 const P = AppleHealthKit.Constants.Permissions;
@@ -24,7 +26,7 @@ function call<T>(fn: (cb: (err: string, res: T) => void) => void): Promise<T | n
 
 const ASLEEP = new Set(['ASLEEP', 'CORE', 'DEEP', 'REM']);
 
-export const health: HealthService = {
+const appleHealth: HealthService = {
   name: 'Apple Health',
   isAvailable: async () => (await call<boolean>((cb) => AppleHealthKit.isAvailable(cb as never))) ?? false,
   connect: async () => (await call<HealthValue>((cb) => AppleHealthKit.initHealthKit(permissions, cb))) !== null,
@@ -73,3 +75,6 @@ export const health: HealthService = {
     return res !== null;
   },
 };
+
+/** Builds made with STEADY_NO_HEALTH=1 have no HealthKit entitlement, so behave as if Health doesn't exist. */
+export const health: HealthService = Constants.expoConfig?.extra?.healthEnabled === false ? unavailable : appleHealth;

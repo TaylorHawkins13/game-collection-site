@@ -41,7 +41,9 @@
     "ios": "expo run:ios",
     "test": "node --test \"src/domain/__tests__/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "build:dev": "npx eas-cli@latest build --profile development"
+    "build:dev": "npx eas-cli@latest build --profile development",
+    "ios:device": "expo run:ios --device",
+    "ios:device:nohealth": "STEADY_NO_HEALTH=1 expo prebuild --clean --platform ios && STEADY_NO_HEALTH=1 expo run:ios --device"
   },
   "private": true
 }
