@@ -1,7 +1,7 @@
 /** Home / Today: rank, today's session (or rest), the week, XP progress and the weekly challenge. No feed, no pressure. */
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import { RankEmblem } from '../../components/RankEmblem';
 import { SessionCard } from '../../components/SessionCard';
 import { Body, Button, Card, H1, H2, H3, ProgressBar, Row, Screen, Small } from '../../components/ui';
@@ -74,6 +74,15 @@ export default function Home() {
           </Row>
         </Pressable>
       </Row>
+
+      {Platform.OS === 'web' ? (
+        <Card style={{ borderLeftColor: c.accent, borderLeftWidth: 4 }}>
+          <H3>Browser preview</H3>
+          <Small>
+            Tap through the real app logic here. GPS distance, Apple Health, voice cues and reminders only work in the iPhone app. Runs here record time only.
+          </Small>
+        </Card>
+      ) : null}
 
       {seasonEvent && seasonEvent.type === 'season_reset' ? (
         <Card style={{ borderLeftColor: RANK_COLORS[rankOf(seasonEvent.newDivision)], borderLeftWidth: 4 }}>

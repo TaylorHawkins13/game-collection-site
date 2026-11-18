@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useRef, useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Alert, Switch, Text, TextInput, View } from 'react-native';
+import { Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LiveMap } from '../../components/LiveMap';
 import { sessionSubtitle } from '../../components/SessionCard';
@@ -18,6 +18,7 @@ import { findSession } from '../../domain/engine';
 import { averagePace, currentPace, finalSplits, formatDuration, formatPace, METERS_PER_UNIT, movingMs } from '../../domain/gps';
 import { routineById } from '../../domain/strength';
 import type { PlannedSession } from '../../domain/types';
+import { confirmDialog } from '../../services/dialog';
 import { setAudioEnabled, speak, stopSpeaking } from '../../services/audio';
 import { guidanceTick } from '../../services/guidance';
 import { ensureTrackingAfterRestore, setBackgroundTickListener, startTracking, stopTracking } from '../../services/locationTracking';
@@ -149,7 +150,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
   };
 
   const discard = () =>
-    Alert.alert('Discard this session?', 'Nothing will be saved. No XP lost — it just won’t count.', [
+    confirmDialog('Discard this session?', 'Nothing will be saved. No XP lost — it just won’t count.', [
       { text: 'Keep going', style: 'cancel' },
       {
         text: 'Discard',
@@ -168,10 +169,10 @@ function RunSession({ session }: { session: PlannedSession | null }) {
     if (!a) return;
     if (!a.tracker.paused) run.pause();
     if (movingMs(a.tracker, Date.now()) < 60_000) {
-      Alert.alert('That was under a minute', 'Save it anyway, or discard?', [
+      confirmDialog('That was under a minute', 'Save it anyway, or discard?', [
         { text: 'Resume', onPress: () => run.resume() },
         { text: 'Discard', style: 'destructive', onPress: discard },
-        { text: 'Save', onPress: () => (a.tracker.treadmill ? setFinishing(true) : void save()) },
+        { text: 'Save', web: true, onPress: () => (a.tracker.treadmill ? setFinishing(true) : void save()) },
       ]);
       return;
     }

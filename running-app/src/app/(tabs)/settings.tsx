@@ -1,11 +1,12 @@
 /** Plan & settings: adjust the plan, pause for life, reminders, run options, health, data. */
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 import { Body, Button, Card, Chip, Divider, H1, H3, Row, Screen, SectionTitle, Small } from '../../components/ui';
 import { formatShort, weekdayName, weekdayShort } from '../../domain/dates';
 import { activePause, previewNextWeek } from '../../domain/engine';
 import type { ExperienceLevel, Pause, Profile } from '../../domain/types';
+import { confirmDialog } from '../../services/dialog';
 import { health } from '../../services/health';
 import { requestNotificationPermission, scheduleReminders } from '../../services/notifications';
 import { refreshRecovery } from '../../services/sync';
@@ -93,7 +94,7 @@ export default function Settings() {
                 selected={p.level === l}
                 onPress={() =>
                   l !== p.level &&
-                  Alert.alert('Change starting point?', 'The rest of this week will be rebuilt to match. Completed sessions stay.', [
+                  confirmDialog('Change starting point?', 'The rest of this week will be rebuilt to match. Completed sessions stay.', [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Change', onPress: () => update({ level: l, frequency: l === 'new' || l === 'returning' ? p.frequency ?? 0 : null }) },
                   ])
@@ -244,8 +245,8 @@ export default function Settings() {
           kind="ghost"
           title="Reset all data"
           onPress={() =>
-            Alert.alert('Reset everything?', 'This deletes your plan, history, ranks and badges on this device.', [
-              { text: 'Cancel', style: 'cancel' },
+            confirmDialog('Reset everything?', 'This deletes your plan, history, ranks and badges on this device.', [
+              { text: 'Cancel', style: 'cancel', web: true },
               {
                 text: 'Reset',
                 style: 'destructive',
