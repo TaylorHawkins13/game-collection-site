@@ -16,6 +16,9 @@ npm run typecheck
 npx expo run:ios
 GOOGLE_MAPS_ANDROID_API_KEY=your-key npx expo run:android
 
+# iPhone with a free Apple ID (no HealthKit entitlement, Health hidden in the app):
+npm run ios:device:nohealth
+
 # Or build in the cloud, no Xcode needed:
 npx eas-cli@latest build --profile development --platform ios   # or android
 ```
