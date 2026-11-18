@@ -57,6 +57,7 @@ export default function RootLayout() {
         <Stack.Screen name="history/[id]" options={{ title: 'Session' }} />
         <Stack.Screen name="race/[id]" options={{ title: 'Race', presentation: 'modal' }} />
         <Stack.Screen name="share/[id]" options={{ title: 'Share', presentation: 'modal' }} />
+        <Stack.Screen name="friends" options={{ title: 'Friends' }} />
       </Stack>
     </SafeAreaProvider>
   );

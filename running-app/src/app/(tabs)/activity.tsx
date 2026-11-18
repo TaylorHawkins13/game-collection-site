@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
 import { RouteMap } from '../../components/RouteMap';
 import { BarChart } from '../../components/BarChart';
-import { Body, Card, Chip, H1, H3, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
+import { Body, Button, Card, Chip, H1, H3, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
 import { formatShort, weekdayShort } from '../../domain/dates';
 import { averagePace, formatDistance, formatDuration, formatPace, METERS_PER_UNIT } from '../../domain/gps';
 import { countsTowardCompletion } from '../../domain/metrics';
@@ -52,7 +52,10 @@ export default function ActivityTab() {
 
   return (
     <Screen>
-      <H1>Activity</H1>
+      <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+        <H1>Activity</H1>
+        <Button kind="secondary" title="Friends" onPress={() => router.push('/friends')} />
+      </Row>
       <Row>
         {(['all', 'run', 'strength'] as KindFilter[]).map((k) => (
           <Chip key={k} label={k === 'all' ? 'All' : k === 'run' ? 'Runs' : 'Strength'} selected={kind === k} onPress={() => setKind(k)} />

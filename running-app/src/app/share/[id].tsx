@@ -4,6 +4,9 @@ import * as Sharing from 'expo-sharing';
 import { useMemo, useRef, useState } from 'react';
 import { Platform, Share, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+import { router } from 'expo-router';
+import { buildSharedRun } from '../../domain/social';
+import * as Social from '../../services/social';
 import { ShareCard } from '../../components/ShareCard';
 import { Body, Button, Chip, Row, Screen, SectionTitle, Small } from '../../components/ui';
 import { countsTowardCompletion, planStreak } from '../../domain/metrics';
@@ -57,6 +60,23 @@ export default function ShareRun() {
     }
   };
 
+  const postToFriends = async () => {
+    setBusy(true);
+    setStatus(null);
+    try {
+      if (!(await Social.currentUserId()) || !(await Social.myProfile())) {
+        router.push('/friends');
+        return;
+      }
+      await Social.postRun(buildSharedRun(a, o, ctx, p.hideRouteEnds));
+      setStatus('Posted to your friends.');
+    } catch (e) {
+      setStatus((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const shareTextOnly = async () => {
     setStatus(null);
     try {
@@ -90,10 +110,11 @@ export default function ShareRun() {
         <Small>{p.hideRouteEnds ? 'The start and end of your route are trimmed so your home isn’t shown.' : 'Your full route is shown, including where you started. You can hide route ends in Plan → Runs.'}</Small>
       ) : null}
 
-      {Platform.OS !== 'web' ? <Button big title={busy ? 'Preparing…' : 'Share image'} onPress={() => void shareImage()} disabled={busy} /> : null}
+      {Social.socialConfigured() ? <Button big title="Post to my friends in Steady" onPress={() => void postToFriends()} disabled={busy} /> : null}
+      {Platform.OS !== 'web' ? <Button big kind={Social.socialConfigured() ? 'secondary' : 'primary'} title={busy ? 'Preparing…' : 'Share image'} onPress={() => void shareImage()} disabled={busy} /> : null}
       <Button kind={Platform.OS === 'web' ? 'primary' : 'secondary'} big={Platform.OS === 'web'} title="Share as text" onPress={() => void shareTextOnly()} />
-      {status ? <Small style={{ color: status.startsWith('Copied') ? c.primary : c.danger, textAlign: 'center' }}>{status}</Small> : null}
-      <Small style={{ textAlign: 'center' }}>Nothing is posted anywhere. You choose who gets it.</Small>
+      {status ? <Small style={{ color: status.startsWith('Copied') || status.startsWith('Posted') ? c.primary : c.danger, textAlign: 'center' }}>{status}</Small> : null}
+      <Small style={{ textAlign: 'center' }}>{Social.socialConfigured() ? 'Posts are visible only to friends you’ve accepted. Share image/text goes only to who you pick.' : 'Nothing is posted anywhere. You choose who gets it.'}</Small>
     </Screen>
   );
 }
