@@ -1,0 +1,33 @@
+name: Deploy Steady Web
+
+on:
+  push:
+    branches: [claude/mobile-running-consistency-app-9yzj3w]
+    paths:
+      - 'running-app/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/mobile-running-consistency-app-9yzj3w
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install and export
+        working-directory: running-app
+        run: |
+          npm ci
+          npx expo export --platform web --output-dir ../web-dist
+      - name: Fix paths
+        run: |
+          sed -i 's|href="/favicon.ico"|href="./favicon.ico"|g; s|src="/_expo/|src="./_expo/|g' web-dist/index.html
+      - name: Deploy to Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web-dist
+          publish_branch: gh-pages
