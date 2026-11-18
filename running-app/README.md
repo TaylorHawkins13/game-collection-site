@@ -20,7 +20,7 @@ GOOGLE_MAPS_ANDROID_API_KEY=your-key npx expo run:android
 npx eas-cli@latest build --profile development --platform ios   # or android
 ```
 
-Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json` (they're `com.example.steady` placeholders) and replace the template icons in `assets/`. The Android route map needs a Google Maps API key, passed in through the `GOOGLE_MAPS_ANDROID_API_KEY` env var (`app.config.js`) so it's never committed. iOS uses Apple Maps and needs no key.
+Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json` (currently `com.taylorhawkins13.steady`) and replace the template icons in `assets/`. The Android route map needs a Google Maps API key, passed in through the `GOOGLE_MAPS_ANDROID_API_KEY` env var (`app.config.js`) so it's never committed. iOS uses Apple Maps and needs no key.
 
 ## How it works
 
