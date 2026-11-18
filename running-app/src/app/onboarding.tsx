@@ -4,8 +4,8 @@
  */
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Platform, View } from 'react-native';
-import { Body, Button, Card, Chip, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../components/ui';
+import { Platform, Pressable, View } from 'react-native';
+import { Body, Button, Card, Chip, H1, H3, Option, OptionGroup, Row, Screen, Small } from '../components/ui';
 import { formatShort, weekdayLong, weekdayShort } from '../domain/dates';
 import { defaultProfile, type OnboardingAnswers } from '../domain/engine';
 import { createPlan } from '../domain/plan';
@@ -53,6 +53,7 @@ export default function Onboarding() {
   const [customStart, setCustomStart] = useState(false);
   const [healthBusy, setHealthBusy] = useState(false);
   const [healthDone, setHealthDone] = useState<boolean | null>(null);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ 'Just run': true });
 
   const answers: OnboardingAnswers | null = level ? { level, frequency, goal, issues, includeQuality, pbs, goalTimeSec, startDate } : null;
   const preview = useMemo(() => (answers ? createPlan(defaultProfile(answers, today()), startDate).weeks[0] : null), [level, frequency, goal, issues, includeQuality, pbs, startDate]);
@@ -80,6 +81,8 @@ export default function Onboarding() {
     setHealthDone(ok);
     if (ok) next();
   };
+
+  const toggleGroup = (g: string) => setOpenGroups((cur) => ({ ...cur, [g]: !cur[g] }));
 
   const footer = (primary: string, onPress: () => void, disabled = false, secondary?: { title: string; onPress: () => void }) => (
     <View style={{ gap: space.sm, marginTop: space.md }}>
@@ -140,21 +143,31 @@ export default function Onboarding() {
       )}
 
       {step === 'goal' && (
-        <View style={{ gap: space.md }}>
-          <H1>Anything you’re working toward?</H1>
-          <Body muted>Optional. Your plan stays easy either way.</Body>
+        <View style={{ gap: space.lg }}>
+          <H1>Any goal?</H1>
+          <Body muted>Optional — your plan stays easy either way.</Body>
           {(['Just run', 'Distance goals', 'Get faster'] as const).map((group) => {
             const opts = goalsFor(level).filter((g) => g.group === group);
-            return opts.length ? (
-              <View key={group} style={{ gap: space.xs }}>
-                <SectionTitle>{group}</SectionTitle>
-                <OptionGroup>
-                  {opts.map((g) => (
-                    <Option key={g.id} label={g.label} description={g.description} selected={goal === g.id} onPress={() => setGoal(g.id)} />
-                  ))}
-                </OptionGroup>
+            if (!opts.length) return null;
+            const open = openGroups[group] ?? false;
+            return (
+              <View key={group} style={{ gap: 0 }}>
+                <Pressable
+                  onPress={() => toggleGroup(group)}
+                  style={{ minHeight: 52, backgroundColor: c.primary, borderRadius: 12, paddingHorizontal: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Body style={{ color: c.primaryText, fontWeight: '700', letterSpacing: 0.4 }}>{group.toUpperCase()}</Body>
+                  <Body style={{ color: c.primaryText, fontSize: 18 }}>{open ? '−' : '+'}</Body>
+                </Pressable>
+                {open ? (
+                  <View style={{ borderWidth: 1, borderTopWidth: 0, borderColor: c.border, borderRadius: 0, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, overflow: 'hidden', marginTop: -2 }}>
+                    {opts.map((g) => (
+                      <Option key={g.id} label={g.label} description={g.description} selected={goal === g.id} onPress={() => setGoal(g.id)} />
+                    ))}
+                  </View>
+                ) : null}
               </View>
-            ) : null;
+            );
           })}
           {level === 'experienced' || level === 'consistent' ? (
             <Card>
