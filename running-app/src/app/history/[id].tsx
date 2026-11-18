@@ -1,7 +1,7 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ActivityStats, SplitsTable } from '../../components/ActivityStats';
 import { RouteMap } from '../../components/RouteMap';
-import { Body, Card, H1, H3, Row, Screen, Small } from '../../components/ui';
+import { Body, Button, Card, H1, H3, Row, Screen, Small } from '../../components/ui';
 import { formatShort, weekdayLong } from '../../domain/dates';
 import { routineById } from '../../domain/strength';
 import { health } from '../../services/health';
@@ -36,6 +36,7 @@ export default function ActivityDetail() {
           ))}
         </Card>
       ) : null}
+      <Button kind="secondary" title="Share with friends" onPress={() => router.push(`/share/${a.id}`)} />
       <Card>
         <H3>Check-in</H3>
         {a.feel ? (

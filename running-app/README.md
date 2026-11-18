@@ -9,7 +9,7 @@ Health, Maps and background GPS use native code, so this needs a **development b
 ```bash
 cd running-app
 npm install
-npm test             # 62 unit tests for the plan/rank/XP/GPS logic
+npm test             # 64 unit tests for the plan/rank/XP/GPS logic
 npm run typecheck
 
 # Local native builds (needs Xcode / Android Studio):
@@ -38,6 +38,7 @@ Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json`
 | Fitness tracking | `fitness.ts` | A live 5K-equivalent estimate, starting from PBs and moving with real runs. **Up:** a ≥3 km run faster than the estimate (max 5% per jump); two workouts in a row logged Easy (−1.5%); four comfortable easy runs naturally quicker than the easy range (−1.5%). **Down:** two workouts in a row logged Hard (+2%); three easy runs all Hard and slower than the range (+2%); 14+ days without running (+2% per extra week, max 10%, once per break). Trend moves wait 10 days. Each change retargets upcoming workouts, adds a plain-language note, and a slip blocks that week's step-up. Runs at a race distance that beat a PB offer "Save as my PB". Runners without PBs (except New) get an estimate after 3 comfortable easy runs. The Plan tab shows the estimate and its history. |
 | Races | `races.ts`, `raceCatalog.ts`, `app/race/[id].tsx` | Add races from ~30 popular ones (searchable; usual month only, since dates change yearly) or your own (name, any distance, road/trail/track/cross-country). Each is a **PB attempt** or **for fun / training**. PB attempts drive periodisation by weeks out: base → build (4–12 wks) → peak (≤4 wks) → taper (≤10K 7 days, half 10, marathon 14; −25% volume, one rep fewer) → race week. In build/peak, seasoned runners get race-specific workouts at race pace (from a goal time or the fitness estimate): intervals for 5K/10K, tempo for half/marathon, hills for trail. Long runs grow toward the race (10K 70 / half 100 / marathon 160 min targets, scaled down for newer runners, max +60% over the normal long run). Every race goes in the plan on race day, with rest the day before (PB) or a very short run (fun), short easy runs 2–3 days before, and recovery after (5K 2 days … marathon 14; trail ×1.3; short fun races halved), the first third as rest. Finishing records the result, can offer a PB, and earns the Race Day badge. |
 | Your own plan | `plan.ts#customSessions`, `components/CustomWeekEditor.tsx` | "I'll plan it myself" mode: a weekly template you build day by day (easy, long, tempo, intervals, hills, strides, walk-run, strength, mobility; length; counts or optional), starting as a copy of your current week. Steady keeps score, uses your paces for workout targets, slots races in, and still swaps a run for mobility after noticeable soreness; it doesn't auto-progress or ease the plan otherwise. |
+| Share with friends | `domain/share.ts`, `components/ShareCard.tsx`, `app/share/[id].tsx` | From the run summary or any activity: a share card (session, time, optional distance/pace/route/rank/streak) captured as a 1080×1350 PNG (`react-native-view-shot`) and sent through the phone's share sheet (`expo-sharing`), or plain text. Leads with consistency, not speed; pace off by default for newer runners; routes use the privacy trim. Nothing is posted anywhere and no account is needed. |
 | Adaptation | `adaptation.ts` | **Noticeable soreness**: the next run within 2 days becomes mobility, and the rest of the week eases. **Two "Hard" in the last three check-ins**: the rest of the week eases and next week eases. **Easy / Just right with ≥75% completion**: next week goes up one step (every other week if you reported issues). **Missed sessions**: reschedule, shorten the week, or let it go, with no penalty; a long gap eases the plan back down. |
 | Life happens | `engine.ts#pausePlan` | Pause for 3, 7 or 14 days (sick, injury, travel, busy). Paused days are left out of every metric and decay is frozen. Resuming starts gently. |
 | Badges | `badges.ts` | First Session, Week 1 Complete, 3-Session Week, Easy Effort, Recovery Aware, Health Connected, 7-Day Streak (the streak is plan-honoured days, so rest days count), Strength Starter, Comeback, Four Steady Weeks, Gold Standard, Season Finisher. None are for speed or distance. |
@@ -60,7 +61,7 @@ Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json`
 ## What has and hasn't been verified
 
 Verified in the build environment:
-- 62 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
+- 64 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
 - `tsc` is clean, and Metro bundles for iOS and Android each pull in the right Health module.
 - A headless-browser walkthrough of the web build: onboarding → Home → full walk-run session → check-in → Progress / Activity / detail / Plan → next-day rest state, with zero console errors.
 

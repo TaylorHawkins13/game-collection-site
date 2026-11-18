@@ -114,3 +114,28 @@ test('race catalog search', () => {
   assert.ok(searchCatalog('').length >= 25);
   assert.equal(searchCatalog('zzzz').length, 0);
 });
+
+import { defaultShareOptions, routePolyline, shareText } from '../share.ts';
+
+test('share text leads with consistency and respects choices', () => {
+  const a = { id: 'a', date: '2026-01-05', startedAt: 0, endedAt: 1, kind: 'run' as const, plannedSessionId: 'x', title: 'Easy run · 30 min', durationSec: 1800, distanceM: 5000, xpEarned: 50, completion: 1 };
+  const ctx = { units: 'km' as const, division: 4, streak: 9, weekDone: 2, weekTotal: 3 };
+  const beginner = defaultShareOptions('new', false);
+  assert.equal(beginner.showPace, false, 'pace hidden by default for newer runners');
+  const t = shareText(a, beginner, ctx);
+  assert.match(t, /Planned run: done/);
+  assert.match(t, /9-day plan streak/);
+  assert.match(t, /2\/3 sessions this week/);
+  assert.match(t, /Silver II/);
+  assert.doesNotMatch(t, /⚡/);
+  assert.match(shareText(a, { ...beginner, showPace: true }, ctx), /⚡ 6:00 \/km/);
+  assert.doesNotMatch(shareText(a, { ...beginner, showRank: false, showStreak: false }, ctx), /Silver|streak/);
+});
+
+test('route polyline is trimmed and fits the box', () => {
+  const route = Array.from({ length: 300 }, (_, i) => ({ lat: 51.5 + i * 0.00005, lng: -0.1 + Math.sin(i / 30) * 0.001, t: i * 1000 }));
+  const pts = routePolyline(route, 300, 200)!.split(' ').map((p) => p.split(',').map(Number));
+  assert.ok(pts.length > 10);
+  for (const [x, y] of pts) assert.ok(x >= 0 && x <= 300 && y >= 0 && y <= 200);
+  assert.equal(routePolyline(route.slice(0, 5), 300, 200), null, 'too short to show safely');
+});

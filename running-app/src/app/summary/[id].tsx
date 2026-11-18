@@ -194,6 +194,7 @@ export default function Summary() {
         </Small>
       </Card>
 
+      <Button kind="secondary" title="Share with friends" onPress={() => router.push(`/share/${a.id}`)} />
       <Button big title="Done" onPress={() => router.replace('/')} />
     </Screen>
   );
