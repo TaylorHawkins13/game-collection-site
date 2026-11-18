@@ -2,7 +2,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Switch, View } from 'react-native';
-import { Body, Button, Card, Chip, Divider, H1, H3, Row, Screen, SectionTitle, Small } from '../../components/ui';
+import { PbEditor } from '../../components/PbEditor';
+import { Body, Button, Card, Chip, Divider, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../../components/ui';
+import { goalLabel, goalsFor } from '../../goals';
 import { formatShort, weekdayName, weekdayShort } from '../../domain/dates';
 import { activePause, previewNextWeek } from '../../domain/engine';
 import type { ExperienceLevel, Pause, Profile } from '../../domain/types';
@@ -58,6 +60,7 @@ export default function Settings() {
   const preview = previewNextWeek(app, today);
   const [pauseReason, setPauseReason] = useState<Pause['reason']>('busy');
   const [healthMsg, setHealthMsg] = useState<string | null>(null);
+  const [showGoals, setShowGoals] = useState(false);
 
   const update = (patch: Partial<Profile>) => {
     s.updateProfile(patch);
@@ -121,6 +124,33 @@ export default function Settings() {
         ) : null}
         <Small>Changes apply from today; finished sessions are never touched.</Small>
       </Card>
+
+      <SectionTitle>Goal & best times</SectionTitle>
+      <Card>
+        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <View style={{ flex: 1 }}>
+            <Small>Training for</Small>
+            <H3>{goalLabel(p.goal)}</H3>
+          </View>
+          <Button kind="ghost" title={showGoals ? 'Done' : 'Change'} onPress={() => setShowGoals(!showGoals)} />
+        </Row>
+      </Card>
+      {showGoals ? (
+        <OptionGroup>
+          {goalsFor(p.level).map((g) => (
+            <Option key={g.id} label={g.label} description={g.description} selected={p.goal === g.id} onPress={() => update({ goal: g.id })} />
+          ))}
+        </OptionGroup>
+      ) : null}
+      <PbEditor
+        pbs={p.pbs ?? []}
+        onChange={(pbs) => update({ pbs })}
+        level={p.level}
+        goal={p.goal}
+        goalTimeSec={p.goalTimeSec}
+        onGoalTime={(goalTimeSec) => update({ goalTimeSec })}
+        units={p.units}
+      />
 
       {preview ? (
         <Card>

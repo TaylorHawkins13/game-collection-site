@@ -45,7 +45,28 @@ const FORM = [
   'Breathe easy. If you can’t talk, slow down or walk — that’s allowed.',
 ];
 
-export function buildCues(session: PlannedSession, level: ExperienceLevel): Cue[] {
+/** Tempo / interval cues. `pace` is an optional spoken target like "5 minutes 10 per kilometer". */
+export function workoutCues(w: WalkRunStructure, kind: 'tempo' | 'intervals', pace?: string): Cue[] {
+  const effort = kind === 'tempo' ? 'Comfortably hard — you could say a few words, not sentences.' : 'Strong but controlled, about 5K effort.';
+  const cues: Cue[] = [{ atSec: 0, kind: 'interval', text: `Warm up with ${say(w.warmupMin * 60)} of easy jogging.` }];
+  let t = w.warmupMin * 60;
+  for (let i = 1; i <= w.repeats; i++) {
+    const prefix = i === w.repeats ? 'Last one. ' : i === 1 ? '' : `Rep ${i}. `;
+    cues.push({ atSec: t, kind: 'interval', text: `${prefix}Go for ${say(w.runSec)}. ${i === 1 ? effort : ''}${i === 1 && pace ? ` Target about ${pace}.` : ''}`.trim() });
+    t += w.runSec;
+    cues.push({ atSec: t, kind: 'interval', text: i === w.repeats ? 'Done. Easy jog now.' : `Easy jog for ${say(w.walkSec)}.` });
+    t += w.walkSec;
+  }
+  cues.push({ atSec: t, kind: 'interval', text: `Cool down: ${say(w.cooldownMin * 60)} easy.` });
+  t += w.cooldownMin * 60;
+  cues.push({ atSec: t, kind: 'end', text: 'Workout complete. Nice, controlled work.' });
+  return cues;
+}
+
+export function buildCues(session: PlannedSession, level: ExperienceLevel, spokenTargetPace?: string): Cue[] {
+  if (session.workout && (session.runType === 'tempo' || session.runType === 'intervals')) {
+    return workoutCues(session.workout, session.runType, spokenTargetPace);
+  }
   const newer = level === 'new' || level === 'returning';
   let cues: Cue[];
   const total = session.durationMin * 60;
@@ -109,8 +130,11 @@ export function shouldSuggestEasing(opts: {
   currentPace: number | null;
   typicalEasyPace: number | null;
   alreadySaid: boolean;
+  /** Fastest end of the PB-derived easy range (same units as currentPace). Applies to every level. */
+  pbEasyFast?: number | null;
 }): boolean {
   if (opts.alreadySaid || opts.elapsedSec < 180) return false;
+  if (opts.pbEasyFast && opts.currentPace) return opts.currentPace < opts.pbEasyFast * 0.95;
   if (opts.level !== 'new' && opts.level !== 'returning') return false;
   if (!opts.currentPace || !opts.typicalEasyPace) return false;
   return opts.currentPace < opts.typicalEasyPace * 0.88;

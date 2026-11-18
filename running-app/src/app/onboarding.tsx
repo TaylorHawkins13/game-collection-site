@@ -5,32 +5,26 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Body, Button, Card, Chip, H1, H3, Option, OptionGroup, Row, Screen, Small } from '../components/ui';
+import { Body, Button, Card, Chip, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../components/ui';
 import { formatShort, weekdayShort } from '../domain/dates';
 import { defaultProfile, type OnboardingAnswers } from '../domain/engine';
 import { createPlan } from '../domain/plan';
-import type { ExperienceLevel, GoalId, IssueId, WeeklyFrequency } from '../domain/types';
+import type { ExperienceLevel, GoalId, IssueId, PersonalBest, WeeklyFrequency } from '../domain/types';
+import { PbEditor } from '../components/PbEditor';
+import { sessionSubtitle } from '../components/SessionCard';
+import { goalsFor, pbsRequired } from '../goals';
 import { health } from '../services/health';
 import { requestNotificationPermission } from '../services/notifications';
 import { today, useStore } from '../state/store';
 import { space, useColors } from '../theme';
 
-type Step = 'welcome' | 'level' | 'frequency' | 'goal' | 'health' | 'issues' | 'plan';
+type Step = 'welcome' | 'level' | 'frequency' | 'goal' | 'pbs' | 'health' | 'issues' | 'plan';
 
 const LEVELS: { id: ExperienceLevel; label: string; description: string }[] = [
   { id: 'new', label: 'New to running', description: 'Starting from scratch — walk-run sessions to begin.' },
   { id: 'returning', label: 'Returning', description: 'I used to run and want to get back into it.' },
   { id: 'consistent', label: 'Already consistent', description: 'I run most weeks and want to keep it going.' },
   { id: 'experienced', label: 'Experienced', description: 'Running is a regular part of my life.' },
-];
-
-const GOALS: { id: GoalId; label: string; description: string; levels?: ExperienceLevel[] }[] = [
-  { id: 'habit', label: 'Build a running habit', description: 'No target — just make it stick.' },
-  { id: 'run30', label: 'Run 30 minutes without stopping', description: 'A classic first milestone.', levels: ['new', 'returning'] },
-  { id: '5k', label: 'Run a 5K', description: 'Comfortably, at your own pace.' },
-  { id: 'back_to_routine', label: 'Get back to my old routine', description: 'Rebuild gradually.', levels: ['returning', 'consistent'] },
-  { id: '10k', label: 'Build toward a 10K', description: 'Steady base building.', levels: ['returning', 'consistent', 'experienced'] },
-  { id: 'half', label: 'Build toward a half marathon', description: 'Longer-term base.', levels: ['consistent', 'experienced'] },
 ];
 
 const ISSUES: { id: IssueId; label: string }[] = [
@@ -51,14 +45,18 @@ export default function Onboarding() {
   const [goal, setGoal] = useState<GoalId>('habit');
   const [includeQuality, setIncludeQuality] = useState(false);
   const [issues, setIssues] = useState<IssueId[]>([]);
+  const [pbs, setPbs] = useState<PersonalBest[]>([]);
+  const [goalTimeSec, setGoalTimeSec] = useState<number | undefined>(undefined);
   const [healthBusy, setHealthBusy] = useState(false);
   const [healthDone, setHealthDone] = useState<boolean | null>(null);
 
-  const answers: OnboardingAnswers | null = level ? { level, frequency, goal, issues, includeQuality } : null;
-  const preview = useMemo(() => (answers ? createPlan(defaultProfile(answers, today()), today()).weeks[0] : null), [level, frequency, goal, issues, includeQuality]);
+  const answers: OnboardingAnswers | null = level ? { level, frequency, goal, issues, includeQuality, pbs, goalTimeSec } : null;
+  const preview = useMemo(() => (answers ? createPlan(defaultProfile(answers, today()), today()).weeks[0] : null), [level, frequency, goal, issues, includeQuality, pbs]);
 
   const needsFrequency = level === 'new' || level === 'returning';
-  const order: Step[] = ['welcome', 'level', ...(needsFrequency ? (['frequency'] as Step[]) : []), 'goal', 'health', 'issues', 'plan'];
+  const askPbs = level !== 'new' || goal.endsWith('_faster');
+  const mustPbs = pbsRequired(level, goal);
+  const order: Step[] = ['welcome', 'level', ...(needsFrequency ? (['frequency'] as Step[]) : []), 'goal', ...(askPbs ? (['pbs'] as Step[]) : []), 'health', 'issues', 'plan'];
   const next = () => setStep(order[Math.min(order.length - 1, order.indexOf(step) + 1)]);
   const back = () => setStep(order[Math.max(0, order.indexOf(step) - 1)]);
   const progress = order.indexOf(step) / (order.length - 1);
@@ -141,11 +139,19 @@ export default function Onboarding() {
         <View style={{ gap: space.md }}>
           <H1>Anything you’re working toward?</H1>
           <Body muted>Optional. Your plan stays easy either way.</Body>
-          <OptionGroup>
-            {GOALS.filter((g) => !g.levels || (level && g.levels.includes(level))).map((g) => (
-              <Option key={g.id} label={g.label} description={g.description} selected={goal === g.id} onPress={() => setGoal(g.id)} />
-            ))}
-          </OptionGroup>
+          {(['Just run', 'Distance goals', 'Get faster'] as const).map((group) => {
+            const opts = goalsFor(level).filter((g) => g.group === group);
+            return opts.length ? (
+              <View key={group} style={{ gap: space.xs }}>
+                <SectionTitle>{group}</SectionTitle>
+                <OptionGroup>
+                  {opts.map((g) => (
+                    <Option key={g.id} label={g.label} description={g.description} selected={goal === g.id} onPress={() => setGoal(g.id)} />
+                  ))}
+                </OptionGroup>
+              </View>
+            ) : null;
+          })}
           {level === 'experienced' || level === 'consistent' ? (
             <Card>
               <H3>Include one light quality session?</H3>
@@ -157,6 +163,25 @@ export default function Onboarding() {
             </Card>
           ) : null}
           {footer('Continue', next)}
+        </View>
+      )}
+
+      {step === 'pbs' && level && (
+        <View style={{ gap: space.md }}>
+          <H1>Your best times</H1>
+          <Body muted>
+            {mustPbs
+              ? 'Add at least one personal best. Your plan uses it to set your easy pace and the targets for any faster sessions.'
+              : 'Got any race or timed-run bests? They help set your easy pace. Skip if you don’t have one.'}
+          </Body>
+          <PbEditor pbs={pbs} onChange={setPbs} level={level} goal={goal} goalTimeSec={goalTimeSec} onGoalTime={setGoalTimeSec} units="km" />
+          {footer(
+            'Continue',
+            next,
+            mustPbs && pbs.length === 0,
+            mustPbs ? undefined : { title: 'I don’t have any times', onPress: () => { setPbs([]); next(); } },
+          )}
+          {mustPbs && pbs.length === 0 ? <Small style={{ textAlign: 'center' }}>Not sure? A recent parkrun or a timed 5K on your watch works fine.</Small> : null}
         </View>
       )}
 
@@ -212,7 +237,8 @@ export default function Onboarding() {
               <View style={{ flex: 1 }}>
                 <H3>{s.title}</H3>
                 <Small>
-                  {s.durationMin} min{s.optional ? ' · optional' : ''}
+                  {sessionSubtitle(s, answers ? { ...defaultProfile(answers, today()) } : null)}
+                  {s.optional ? ' · optional' : ''}
                 </Small>
               </View>
             </Card>

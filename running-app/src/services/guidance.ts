@@ -6,6 +6,7 @@
 import { buildCues, dueCues, EASE_OFF_CUE, shouldSuggestEasing, type Cue } from '../domain/cues';
 import { findSession } from '../domain/engine';
 import { averagePace, currentPace, METERS_PER_UNIT, movingMs } from '../domain/gps';
+import { pacesFor } from '../domain/pace';
 import type { AppState, Units } from '../domain/types';
 import { useRunStore } from '../state/runStore';
 import { useStore } from '../state/store';
@@ -18,7 +19,10 @@ function cuesFor(app: AppState, plannedSessionId: string | undefined): Cue[] {
   const key = `${plannedSessionId ?? 'free'}:${app.profile?.level}`;
   if (cachedFor === key) return cachedCues;
   const found = plannedSessionId ? findSession(app, plannedSessionId) : null;
-  cachedCues = found && app.profile ? buildCues(found.session, app.profile.level) : [];
+  const units = app.profile?.units ?? 'km';
+  const target = found?.session.targetPaceSecPerKm;
+  const spoken = target ? spokenPace(units === 'km' ? target : target * METERS_PER_UNIT.mi / 1000, units) : undefined;
+  cachedCues = found && app.profile ? buildCues(found.session, app.profile.level, spoken) : [];
   cachedFor = key;
   return cachedCues;
 }
@@ -68,9 +72,13 @@ export function guidanceTick() {
   }
 
   const found = a.plannedSessionId ? findSession(app, a.plannedSessionId) : null;
-  if (!found?.session.walkRun) {
+  const easyRun = !found || found.session.runType === 'easy' || found.session.runType === 'long';
+  if (easyRun) {
+    const paces = pacesFor(profile.pbs ?? [], profile.level);
+    const pbEasyFast = paces ? (profile.units === 'km' ? paces.easy[0] : (paces.easy[0] * METERS_PER_UNIT.mi) / 1000) : null;
     if (
       shouldSuggestEasing({
+        pbEasyFast,
         level: profile.level,
         elapsedSec: elapsed,
         currentPace: currentPace(a.tracker, now, 60),

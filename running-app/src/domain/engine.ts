@@ -24,6 +24,7 @@ import type {
   IssueId,
   Notice,
   Pause,
+  PersonalBest,
   PlanWeek,
   PlannedSession,
   Profile,
@@ -71,6 +72,8 @@ export interface OnboardingAnswers {
   goal: GoalId;
   issues: IssueId[];
   includeQuality: boolean;
+  pbs?: PersonalBest[];
+  goalTimeSec?: number;
 }
 
 export function defaultProfile(a: OnboardingAnswers, today: DateKey): Profile {
@@ -79,6 +82,8 @@ export function defaultProfile(a: OnboardingAnswers, today: DateKey): Profile {
     frequency: a.level === 'new' || a.level === 'returning' ? a.frequency ?? 0 : null,
     goal: a.goal,
     issues: a.issues,
+    pbs: a.pbs ?? [],
+    goalTimeSec: a.goalTimeSec,
     includeQuality: a.includeQuality,
     runsPerWeek: defaultRunsPerWeek(a.level),
     strengthPerWeek: defaultStrengthPerWeek(a.level),
@@ -453,6 +458,8 @@ export function swapForMobility(state: AppState, sessionId: string): AppState {
           kind: 'strength',
           runType: undefined,
           walkRun: undefined,
+          workout: undefined,
+          targetPaceSecPerKm: undefined,
           strides: undefined,
           step: undefined,
           title: routine.title,
@@ -503,7 +510,7 @@ export function markHealthSynced(state: AppState, activityId: string): AppState 
   return { ...state, activities: state.activities.map((a) => (a.id === activityId ? { ...a, healthSynced: true } : a)) };
 }
 
-const STRUCTURAL: (keyof Profile)[] = ['level', 'frequency', 'goal', 'runsPerWeek', 'strengthPerWeek', 'preferredDays', 'includeQuality', 'issues'];
+const STRUCTURAL: (keyof Profile)[] = ['level', 'frequency', 'goal', 'runsPerWeek', 'strengthPerWeek', 'preferredDays', 'includeQuality', 'issues', 'pbs'];
 
 /** Update settings; structural changes rebuild the rest of the current week. */
 export function updateProfile(state: AppState, patch: Partial<Profile>, today: DateKey): AppState {
@@ -515,7 +522,7 @@ export function updateProfile(state: AppState, patch: Partial<Profile>, today: D
 
   let plan = s.plan!;
   if (patch.level && patch.level !== state.profile.level) {
-    plan = { ...plan, step: Math.min(stepCap(profile.goal, profile.level), startingStep(profile.level, profile.frequency)) };
+    plan = { ...plan, step: Math.min(stepCap(profile.goal, profile.level), startingStep(profile.level, profile.frequency, profile.pbs)) };
   } else if (plan.step > stepCap(profile.goal, profile.level)) {
     plan = { ...plan, step: stepCap(profile.goal, profile.level) };
   }

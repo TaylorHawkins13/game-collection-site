@@ -9,6 +9,7 @@
  */
 import { addDays, diffDays, weekday } from './dates.ts';
 import { pickChallenge } from './challenges.ts';
+import { isFasterGoal, pacesFor } from './pace.ts';
 import { pickRoutines } from './strength.ts';
 import type {
   DateKey,
@@ -21,6 +22,7 @@ import type {
   WalkRunStructure,
   WeekDirective,
   WeeklyFrequency,
+  PersonalBest,
 } from './types.ts';
 
 export interface StepTemplate {
@@ -62,8 +64,11 @@ export const LADDER: StepTemplate[] = [
 
 export const FIRST_CONTINUOUS_STEP = 10;
 
-export function startingStep(level: ExperienceLevel, freq: WeeklyFrequency | null): number {
+export function startingStep(level: ExperienceLevel, freq: WeeklyFrequency | null, pbs: PersonalBest[] = []): number {
   const f = freq ?? 0;
+  // A recent half or marathon PB means the legs are used to longer running: start one step higher.
+  const recentLong = pbs.some((p) => p.recency === 'recent' && (p.distance === 'half' || p.distance === 'marathon'));
+  if (recentLong && (level === 'consistent' || level === 'experienced')) return level === 'consistent' ? 12 : 14;
   switch (level) {
     case 'new':
       return [0, 1, 2, 3][f];
@@ -86,18 +91,28 @@ export function defaultStrengthPerWeek(level: ExperienceLevel): number {
 
 /** Highest step a goal needs; beyond this the plan maintains rather than builds. */
 export function stepCap(goal: GoalId, level: ExperienceLevel): number {
+  const beginner = level === 'new' || level === 'returning';
   switch (goal) {
     case 'run30':
     case '5k':
       return 12;
     case 'habit':
-      return level === 'new' || level === 'returning' ? 12 : level === 'consistent' ? 13 : 14;
+    case 'fitness':
+    case 'stress':
+      return beginner ? 12 : level === 'consistent' ? 13 : 14;
     case 'back_to_routine':
+    case '5k_faster':
       return 13;
     case '10k':
+    case '10k_faster':
       return 15;
     case 'half':
+    case 'half_faster':
       return 17;
+    case 'marathon':
+      return 18;
+    default:
+      return 12;
   }
 }
 
@@ -166,6 +181,31 @@ export interface BuildRunOptions {
   multiplier: number;
   long: boolean;
   strides: boolean;
+  quality?: 'tempo' | 'intervals';
+  /** Target pace for the hard reps, sec/km. */
+  targetPace?: number;
+}
+
+function qualityRun(id: string, date: DateKey, minutes: number, kind: 'tempo' | 'intervals', step: number, targetPace?: number): PlannedSession {
+  const workout =
+    kind === 'tempo'
+      ? { warmupMin: 10, runSec: 480, walkSec: 120, repeats: Math.max(2, Math.min(4, Math.floor((minutes - 15) / 10))), cooldownMin: 5 }
+      : { warmupMin: 10, runSec: 180, walkSec: 120, repeats: Math.max(3, Math.min(6, Math.floor((minutes - 15) / 5))), cooldownMin: 5 };
+  const total = walkRunMinutes(workout);
+  const work = workout.runSec / 60;
+  return {
+    id,
+    date,
+    kind: 'run',
+    runType: kind,
+    step,
+    title: kind === 'tempo' ? `Tempo: ${workout.repeats} × ${work} min comfortably hard` : `Intervals: ${workout.repeats} × ${work} min at 5K effort`,
+    durationMin: total,
+    workout,
+    targetPaceSecPerKm: targetPace,
+    optional: false,
+    status: 'planned',
+  };
 }
 
 export function buildRun(id: string, date: DateKey, o: BuildRunOptions): PlannedSession {
@@ -185,6 +225,7 @@ export function buildRun(id: string, date: DateKey, o: BuildRunOptions): Planned
     };
   }
   const minutes = round5(t.minutes * o.multiplier);
+  if (o.quality) return qualityRun(id, date, minutes, o.quality, o.step, o.targetPace);
   if (o.strides) {
     return {
       id,
@@ -224,7 +265,21 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
   const dates = runDates(start, runs, profile.preferredDays);
   const pattern = PATTERNS[runs];
   const recoveryFactor = directive === 'recovery' ? 0.8 : 1;
+  const longGoal = profile.goal === 'half' || profile.goal === 'half_faster' || profile.goal === 'marathon';
+  // Week 1 is always easy; quality work starts in week 2.
+  const workoutWeek =
+    index > 0 &&
+    (isFasterGoal(profile.goal) || (longGoal && profile.level === 'experienced')) &&
+    (profile.level === 'experienced' || profile.level === 'consistent') &&
+    step >= FIRST_CONTINUOUS_STEP &&
+    directive !== 'ease' &&
+    directive !== 'recovery' &&
+    runs >= 3;
+  const workoutKind: 'tempo' | 'intervals' = index % 2 === 1 ? 'tempo' : 'intervals';
+  const paces = pacesFor(profile.pbs ?? [], profile.level);
+  const longBoost = longGoal && step >= 14 ? 0.1 : 0;
   const quality =
+    !workoutWeek &&
     profile.includeQuality &&
     (profile.level === 'experienced' || profile.level === 'consistent') &&
     step >= FIRST_CONTINUOUS_STEP &&
@@ -235,9 +290,11 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
   const sessions: PlannedSession[] = dates.map((date, i) =>
     buildRun(`w${index}-r${i}`, date, {
       step,
-      multiplier: pattern[i] * recoveryFactor,
+      multiplier: (pattern[i] + (i === runs - 1 && pattern[i] > 1.1 ? longBoost : 0)) * recoveryFactor,
       long: runs >= 2 && i === runs - 1 && pattern[i] > 1.1,
       strides: quality && i === 1,
+      quality: workoutWeek && i === 1 ? workoutKind : undefined,
+      targetPace: workoutWeek && i === 1 && paces ? (workoutKind === 'tempo' ? paces.tempo : paces.interval) : undefined,
     }),
   );
 
@@ -277,7 +334,7 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
 }
 
 export function createPlan(profile: Profile, today: DateKey): PlanState {
-  const step = startingStep(profile.level, profile.frequency);
+  const step = Math.min(stepCap(profile.goal, profile.level), startingStep(profile.level, profile.frequency, profile.pbs));
   return {
     startDate: today,
     step,

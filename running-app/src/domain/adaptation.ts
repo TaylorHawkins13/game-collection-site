@@ -25,8 +25,10 @@ export function easeSession(s: PlannedSession): PlannedSession {
   const minutes = Math.max(10, Math.round((s.durationMin * 0.8) / 5) * 5);
   return {
     ...s,
-    runType: s.runType === 'strides' ? 'easy' : s.runType,
+    runType: s.runType === 'strides' || s.runType === 'tempo' || s.runType === 'intervals' ? 'easy' : s.runType,
     strides: undefined,
+    workout: undefined,
+    targetPaceSecPerKm: undefined,
     durationMin: minutes,
     title: s.runType === 'long' ? `Longer easy run · ${minutes} min` : `Easy run · ${minutes} min`,
     note: EASED,
@@ -57,6 +59,8 @@ export function adaptAfterFeedback(week: PlanWeek, activity: Activity, recent: A
           kind: 'strength' as const,
           runType: undefined,
           walkRun: undefined,
+          workout: undefined,
+          targetPaceSecPerKm: undefined,
           strides: undefined,
           step: undefined,
           title: routine.title,

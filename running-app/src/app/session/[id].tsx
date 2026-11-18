@@ -16,6 +16,7 @@ import { walkRunPhase } from '../../domain/cues';
 import { toDateKey } from '../../domain/dates';
 import { findSession } from '../../domain/engine';
 import { averagePace, currentPace, finalSplits, formatDuration, formatPace, METERS_PER_UNIT, movingMs } from '../../domain/gps';
+import { paceLabel } from '../../domain/pace';
 import { routineById } from '../../domain/strength';
 import type { PlannedSession } from '../../domain/types';
 import { confirmDialog } from '../../services/dialog';
@@ -189,7 +190,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
           <Button kind="ghost" title="Close" onPress={close} />
         </Row>
         <H1>{session?.title ?? 'Easy run'}</H1>
-        <Body muted>{session ? sessionSubtitle(session) : 'Unplanned runs earn a little XP. Keep it easy — your plan has your back.'}</Body>
+        <Body muted>{session ? sessionSubtitle(session, profile) : 'Unplanned runs earn a little XP. Keep it easy — your plan has your back.'}</Body>
         {session?.walkRun ? (
           <Card>
             <H3>How it goes</H3>
@@ -200,6 +201,18 @@ function RunSession({ session }: { session: PlannedSession | null }) {
             </Body>
             <Body>• Walk {session.walkRun.cooldownMin} min to cool down</Body>
             <Small>Voice prompts tell you when to switch — no need to look at your phone.</Small>
+          </Card>
+        ) : null}
+        {session?.workout ? (
+          <Card>
+            <H3>How it goes</H3>
+            <Body>• {session.workout.warmupMin} min easy jog to warm up</Body>
+            <Body>
+              • {session.workout.repeats} × {session.workout.runSec / 60} min {session.runType === 'tempo' ? 'comfortably hard' : 'at about 5K effort'}
+              {session.targetPaceSecPerKm ? ` (~${paceLabel(session.targetPaceSecPerKm, units)}/${units}, from your PBs)` : ''}, with {session.workout.walkSec / 60} min easy jog between
+            </Body>
+            <Body>• {session.workout.cooldownMin} min easy to cool down</Body>
+            <Small>Hit the effort, not the number. If it feels too hard, slow down — the plan adapts.</Small>
           </Card>
         ) : null}
         {session?.note ? <Small style={{ fontStyle: 'italic' }}>{session.note}</Small> : null}
@@ -255,11 +268,14 @@ function RunSession({ session }: { session: PlannedSession | null }) {
   const t = active.tracker;
   const elapsed = movingMs(t, now) / 1000;
   const plannedSec = (session?.durationMin ?? 0) * 60;
-  const phase = session?.walkRun ? walkRunPhase(session.walkRun, elapsed) : null;
+  const structure = session?.walkRun ?? session?.workout;
+  const phase = structure ? walkRunPhase(structure, elapsed) : null;
   const pace = t.treadmill ? null : currentPace(t, now);
   const avg = t.treadmill ? null : averagePace(t.distanceM, elapsed, units);
   const phaseColor = phase?.phase === 'run' ? c.primary : phase?.phase === 'walk' ? c.rest : c.accent;
-  const phaseLabel: Record<string, string> = { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
+  const phaseLabel: Record<string, string> = session?.workout
+    ? { warmup: 'WARM-UP JOG', run: session.runType === 'tempo' ? 'TEMPO' : 'HARD', walk: 'EASY JOG', cooldown: 'COOL-DOWN', done: 'ALL DONE' }
+    : { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
 
   const gpsLabel = t.paused
     ? 'Paused'
@@ -293,7 +309,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{phaseLabel[phase.phase]}</Text>
             {phase.repeat > 0 && phase.phase !== 'done' ? (
               <Text style={{ color: '#fff', opacity: 0.9 }}>
-                Interval {phase.repeat} of {session!.walkRun!.repeats}
+                {session?.workout ? 'Rep' : 'Interval'} {phase.repeat} of {structure!.repeats}
               </Text>
             ) : null}
           </View>
@@ -376,7 +392,7 @@ function StrengthSession({ session }: { session: PlannedSession }) {
         <Button kind="ghost" title="Close" onPress={close} />
       </Row>
       <H1>{session.title}</H1>
-      <Body muted>{sessionSubtitle(session)}</Body>
+      <Body muted>{sessionSubtitle(session, useStore.getState().app.profile)}</Body>
       {startedAt ? <H2>{formatDuration(elapsed)}</H2> : null}
       {routine?.exercises.map((e, i) => {
         const checked = done.includes(i);

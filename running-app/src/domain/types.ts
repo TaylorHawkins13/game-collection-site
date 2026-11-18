@@ -8,7 +8,28 @@ export type DateKey = string;
 
 export type ExperienceLevel = 'new' | 'returning' | 'consistent' | 'experienced';
 export type WeeklyFrequency = 0 | 1 | 2 | 3;
-export type GoalId = 'habit' | 'run30' | '5k' | 'back_to_routine' | '10k' | 'half';
+export type GoalId =
+  | 'habit'
+  | 'run30'
+  | '5k'
+  | '5k_faster'
+  | '10k'
+  | '10k_faster'
+  | 'half'
+  | 'half_faster'
+  | 'marathon'
+  | 'back_to_routine'
+  | 'fitness'
+  | 'stress';
+
+export type RaceDistance = '5k' | '10k' | 'half' | 'marathon';
+export type PbRecency = 'recent' | 'one_two_years' | 'older';
+
+export interface PersonalBest {
+  distance: RaceDistance;
+  timeSec: number;
+  recency: PbRecency;
+}
 export type IssueId = 'knee' | 'shin' | 'calf_achilles' | 'hip_back' | 'fatigue';
 export type Units = 'km' | 'mi';
 
@@ -18,6 +39,10 @@ export interface Profile {
   frequency: WeeklyFrequency | null;
   goal: GoalId;
   issues: IssueId[];
+  /** Personal bests; the plan derives training paces from these. */
+  pbs: PersonalBest[];
+  /** Optional finish-time target for "get faster" goals (seconds). */
+  goalTimeSec?: number;
   /** Experienced/consistent runners may opt into one light quality session (strides). */
   includeQuality: boolean;
   runsPerWeek: number;
@@ -36,7 +61,7 @@ export interface Profile {
   createdAt: DateKey;
 }
 
-export type RunType = 'walk_run' | 'easy' | 'long' | 'strides' | 'walk';
+export type RunType = 'walk_run' | 'easy' | 'long' | 'strides' | 'walk' | 'tempo' | 'intervals';
 
 export interface WalkRunStructure {
   warmupMin: number;
@@ -64,6 +89,10 @@ export interface PlannedSession {
   title: string;
   durationMin: number;
   walkRun?: WalkRunStructure;
+  /** Tempo/interval structure: runSec = hard rep, walkSec = easy jog between reps. */
+  workout?: WalkRunStructure;
+  /** Target pace for the hard reps (sec/km), from the user's PBs. */
+  targetPaceSecPerKm?: number;
   strides?: number;
   routineId?: string;
   /** Optional sessions earn XP but never count against completion %. */
