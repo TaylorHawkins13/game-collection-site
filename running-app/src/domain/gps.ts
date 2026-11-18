@@ -77,6 +77,11 @@ export function movingMs(t: TrackerState, now: number): number {
   return t.segments.reduce((sum, s) => sum + Math.max(0, (s.end ?? now) - s.start), 0);
 }
 
+/** Moving time (ms) elapsed by wall-clock timestamp `ts` — correct for past timestamps too. */
+export function movingAt(t: TrackerState, ts: number): number {
+  return t.segments.reduce((sum, s) => sum + Math.max(0, Math.min(s.end ?? ts, ts) - s.start), 0);
+}
+
 /** Is timestamp `ts` inside a moving segment? */
 function inMovingSegment(t: TrackerState, ts: number): boolean {
   return t.segments.some((s) => ts >= s.start && (s.end === undefined || ts <= s.end));
@@ -88,7 +93,7 @@ export function addFix(t: TrackerState, fix: RawFix): TrackerState {
   if (!inMovingSegment(t, fix.t)) return t;
   const point: RoutePoint = { lat: fix.lat, lng: fix.lng, t: fix.t, ...(fix.alt != null ? { alt: fix.alt } : {}) };
   const prev = t.points[t.points.length - 1];
-  const movingAtFix = movingMs(t, fix.t);
+  const movingAtFix = movingAt(t, fix.t);
 
   if (t.needsAnchor || !prev) {
     return { ...t, points: [...t.points, point], needsAnchor: false, movingMsAtLast: movingAtFix };

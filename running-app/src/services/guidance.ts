@@ -11,6 +11,7 @@ import type { AppState, Units } from '../domain/types';
 import { useRunStore } from '../state/runStore';
 import { useStore } from '../state/store';
 import { speak } from './audio';
+import { repCue, repStats } from '../domain/reps';
 import { liveStatus } from '../domain/liveStatus';
 import { liveStats } from './liveActivity';
 
@@ -81,6 +82,18 @@ export function guidanceTick() {
     due.forEach((i) => run.markCue(i));
     speak(cues[due[due.length - 1]].text);
     return;
+  }
+
+  // Workouts: say how each hard rep went, right after it ends.
+  const workoutSession = a.plannedSessionId ? findSession(app, a.plannedSessionId)?.session : undefined;
+  if (workoutSession?.workout && !a.tracker.treadmill) {
+    const reps = repStats(a.tracker, workoutSession.workout, elapsed);
+    if (reps.length > (a.announcedReps ?? 0)) {
+      run.setAnnouncedReps(reps.length);
+      const last = reps[reps.length - 1];
+      speak(repCue(last, workoutSession.targetPaceSecPerKm, (p) => spokenPace(profile.units === 'km' ? p : (p * METERS_PER_UNIT.mi) / 1000, profile.units)));
+      return;
+    }
   }
 
   if (profile.splitAnnouncements && a.tracker.splits.length > a.announcedSplits) {

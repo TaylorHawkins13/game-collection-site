@@ -5,6 +5,8 @@ import { View } from 'react-native';
 import { ActivityStats, SplitsTable } from '../../components/ActivityStats';
 import { RankEmblem } from '../../components/RankEmblem';
 import { RouteMap } from '../../components/RouteMap';
+import { RepsTable } from '../../components/RepsTable';
+import { findSession } from '../../domain/engine';
 import { Body, Button, Card, Chip, H1, H3, ProgressBar, Row, Screen, Small } from '../../components/ui';
 import { badgeById } from '../../domain/badges';
 import { challengeById } from '../../domain/challenges';
@@ -205,6 +207,7 @@ export default function Summary() {
       <Card>
         <ActivityStats a={a} units={app.profile.units} level={app.profile.level} />
         {a.kind === 'run' && !a.treadmill ? <RouteMap route={a.route} hideEnds={app.profile.hideRouteEnds} /> : null}
+        <RepsTable a={a} units={app.profile.units} target={a.plannedSessionId ? findSession(app, a.plannedSessionId)?.session.targetPaceSecPerKm : undefined} />
         <SplitsTable a={a} units={app.profile.units} />
         <Small>
           {a.importedFrom

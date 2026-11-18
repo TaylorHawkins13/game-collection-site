@@ -27,6 +27,7 @@ import { health } from '../../services/health';
 import { hrStrap } from '../../services/heartRate';
 import { liveStats } from '../../services/liveActivity';
 import { summarizeSamples } from '../../domain/hr';
+import { currentRepPace, repStats } from '../../domain/reps';
 import { ensureTrackingAfterRestore, setBackgroundTickListener, startTracking, stopTracking } from '../../services/locationTracking';
 import { cancelTodayNudge } from '../../services/notifications';
 import { syncActivityToHealth, syncActivityToStrava } from '../../services/sync';
@@ -193,6 +194,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
       treadmill: t.treadmill,
       splits: t.treadmill ? undefined : finalSplits(t, end),
       route: t.treadmill ? undefined : t.points.map((p) => ({ lat: p.lat, lng: p.lng, t: p.t, ...(p.alt != null ? { alt: Math.round(p.alt) } : {}) })),
+      reps: session?.workout && !t.treadmill ? repStats(t, session.workout, durationSec) : undefined,
       ...(strapHr && (a.hrSamples?.length ?? 0) >= 6 ? { avgHr: strapHr.avg, maxHr: strapHr.max, hrSource: 'strap' as const } : {}),
     });
     run.clear();
@@ -337,6 +339,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
     : { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
 
   const liveHr = active.hr && now - active.hr.t < 15_000 ? active.hr.bpm : null;
+  const repPace = session?.workout && phase?.phase === 'run' && !t.treadmill ? currentRepPace(t, session.workout, elapsed) : null;
   const gpsLabel = t.paused
     ? 'Paused'
     : t.treadmill
@@ -373,7 +376,15 @@ function RunSession({ session }: { session: PlannedSession | null }) {
               </Text>
             ) : null}
           </View>
-          <Text style={[font.big, { color: '#fff' }]}>{formatDuration(phase.remainingSec)}</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[font.big, { color: '#fff' }]}>{formatDuration(phase.remainingSec)}</Text>
+            {repPace ? (
+              <Text style={{ color: '#fff', fontWeight: '700' }}>
+                Rep pace {formatPace(units === 'km' ? repPace : (repPace * METERS_PER_UNIT.mi) / 1000, units).split(' ')[0]}
+                {session?.targetPaceSecPerKm ? ` · target ${paceLabel(session.targetPaceSecPerKm, units)}` : ''}
+              </Text>
+            ) : null}
+          </View>
         </View>
       ) : null}
 

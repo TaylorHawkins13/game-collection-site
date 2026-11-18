@@ -30,7 +30,13 @@ export const XP = {
 
 /** Base XP by run length (moving time). */
 export const LENGTH_TIERS: { minMin: number; xp: number; label: string }[] = [
-  { minMin: 90, xp: 90, label: '90+ min' },
+  { minMin: 720, xp: 240, label: '12+ h' },
+  { minMin: 480, xp: 210, label: '8–12 h' },
+  { minMin: 360, xp: 180, label: '6–8 h' },
+  { minMin: 240, xp: 155, label: '4–6 h' },
+  { minMin: 180, xp: 130, label: '3–4 h' },
+  { minMin: 120, xp: 110, label: '2–3 h' },
+  { minMin: 90, xp: 90, label: '90–119 min' },
   { minMin: 60, xp: 75, label: '60–89 min' },
   { minMin: 45, xp: 60, label: '45–59 min' },
   { minMin: 30, xp: 50, label: '30–44 min' },
@@ -62,6 +68,9 @@ export interface RunTarget {
   paceRange?: [number, number];
   /** Races: target pace, sec/km. */
   paceTarget?: number;
+  /** Workouts: target pace for the hard reps, and the average rep pace actually run (sec/km). */
+  repPaceTarget?: number;
+  repPace?: number | null;
 }
 
 export interface RunXpInput {
@@ -118,11 +127,18 @@ function vsTarget(i: RunXpInput, t: RunTarget, pace: number | null, paceEligible
         paceLabel = 'Quicker than easy — no pace bonus';
       }
       // Slower than the range is fine on an easy run: no penalty, no label.
+    } else if (t.repPaceTarget) {
+      // handled below (rep pace, not overall pace)
     } else if (t.paceTarget) {
       const rel = t.paceTarget / pace - 1; // + = quicker than target
       p = rel >= -0.02 ? 0.15 : clamp(rel * 2, -0.1, 0);
       paceLabel = rel >= -0.02 ? 'Hit your target pace' : 'Off your target pace';
     }
+  }
+  if (t.repPaceTarget && t.repPace && i.level !== 'new') {
+    const rel = t.repPaceTarget / t.repPace - 1; // + = quicker than target
+    p = rel >= -0.03 ? 0.15 : clamp(rel * 2, -0.1, 0);
+    paceLabel = rel >= -0.03 ? 'Reps on target pace' : 'Reps slower than target';
   }
   return { length, lengthLabel, pace: p, paceLabel };
 }

@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Platform, Switch, View } from 'react-native';
 import { CustomWeekEditor } from './CustomWeekEditor';
+import { DatePicker, startOptions } from './DatePicker';
 import { PbEditor } from './PbEditor';
 import { currentWeek, templateFromWeek } from '../domain/plan';
 import { phaseFor, phaseLabel, upcomingRaces } from '../domain/races';
@@ -81,6 +82,8 @@ export function PlanView({ header }: { header: ReactNode }) {
   const [pauseReason, setPauseReason] = useState<Pause['reason']>('busy');
   const [healthMsg, setHealthMsg] = useState<string | null>(null);
   const [showGoals, setShowGoals] = useState(false);
+  const [editStart, setEditStart] = useState(false);
+  const [newStart, setNewStart] = useState(today);
   const [importing, setImporting] = useState<'health' | 'strava' | null>(null);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const runImport = async (from: 'health' | 'strava') => {
@@ -151,6 +154,42 @@ export function PlanView({ header }: { header: ReactNode }) {
         </Card>
       ))}
       <Button kind="secondary" title="+ Add a race" onPress={() => router.push('/race/new')} />
+
+      <SectionTitle>Plan start</SectionTitle>
+      <Card>
+        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <View style={{ flex: 1 }}>
+            <H3>
+              {app.plan && app.plan.startDate > today ? 'Starts' : 'Started'} {app.plan ? `${weekdayShort(app.plan.startDate)} ${formatShort(app.plan.startDate)}` : ''}
+            </H3>
+            <Small>Pick a new date to start (or restart) your plan. History, XP and rank always stay.</Small>
+          </View>
+          <Button kind="ghost" title={editStart ? 'Close' : 'Change'} onPress={() => { setEditStart(!editStart); setNewStart(today); }} />
+        </Row>
+        {editStart ? (
+          <>
+            <Row>
+              {startOptions(today).map((o) => (
+                <Chip key={o.label} label={o.label} selected={newStart === o.date} onPress={() => setNewStart(o.date)} />
+              ))}
+            </Row>
+            <DatePicker value={newStart} onChange={setNewStart} min={today} />
+            <Button
+              title={newStart === today ? 'Start today' : `Start on ${weekdayShort(newStart)} ${formatShort(newStart)}`}
+              onPress={() =>
+                confirmDialog(
+                  'Change your plan start?',
+                  'Upcoming sessions are rebuilt from that date. Completed sessions, XP, badges and rank stay as they are.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Change', onPress: () => { s.setPlanStart(newStart); setEditStart(false); } },
+                  ],
+                )
+              }
+            />
+          </>
+        ) : null}
+      </Card>
 
       <SectionTitle>Plan type</SectionTitle>
       <OptionGroup>

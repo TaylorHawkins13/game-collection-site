@@ -1,6 +1,8 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ActivityStats, SplitsTable } from '../../components/ActivityStats';
 import { RouteMap } from '../../components/RouteMap';
+import { RepsTable } from '../../components/RepsTable';
+import { findSession } from '../../domain/engine';
 import { Body, Button, Card, H1, H3, Row, Screen, Small } from '../../components/ui';
 import { formatShort, weekdayLong } from '../../domain/dates';
 import { routineById } from '../../domain/strength';
@@ -27,6 +29,11 @@ export default function ActivityDetail() {
       <Card>
         <ActivityStats a={a} units={app.profile.units} level={app.profile.level} />
       </Card>
+      {a.reps?.length ? (
+        <Card>
+          <RepsTable a={a} units={app.profile.units} target={a.plannedSessionId ? findSession(app, a.plannedSessionId)?.session.targetPaceSecPerKm : undefined} />
+        </Card>
+      ) : null}
       <SplitsTable a={a} units={app.profile.units} />
       {a.xpParts?.length ? (
         <Card>

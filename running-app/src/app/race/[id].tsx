@@ -19,6 +19,10 @@ const DISTANCES: { label: string; m: number }[] = [
   { label: '10K', m: 10000 },
   { label: 'Half', m: 21097.5 },
   { label: 'Marathon', m: 42195 },
+  { label: '50K', m: 50000 },
+  { label: '50 mi', m: 80467 },
+  { label: '100K', m: 100000 },
+  { label: '100 mi', m: 160934 },
 ];
 const TERRAIN: { id: RaceTerrain; label: string }[] = [
   { id: 'road', label: 'Road' },

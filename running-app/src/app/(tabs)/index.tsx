@@ -10,7 +10,7 @@ import { challengeById, challengeProgress } from '../../domain/challenges';
 import { addDays, formatShort, weekdayLong } from '../../domain/dates';
 import { activePause, freeDaysThisWeek, isRestDay, missedThisWeek, pendingCheckIns, todaySessions } from '../../domain/engine';
 import { countsTowardCompletion } from '../../domain/metrics';
-import { currentWeek } from '../../domain/plan';
+import { currentWeek, upcomingPlanStart } from '../../domain/plan';
 import { divisionLabel, divisionProgress, isGated, MAX_DIVISION, gateFor, rankOf, xpToClear } from '../../domain/ranks';
 import { recoveryAdvice } from '../../domain/recovery';
 import { phaseFor, phaseLabel, upcomingRaces } from '../../domain/races';
@@ -59,6 +59,7 @@ export default function Home() {
   const canMoveTomorrow = !!week && tomorrow <= week.end && free.includes(tomorrow);
   const seasonEvent = tickEvents.find((e) => e.type === 'season_reset');
   const nextRace = upcomingRaces(app.races, today)[0];
+  const upcoming = upcomingPlanStart(app.plan, today);
 
   return (
     <Screen>
@@ -95,6 +96,26 @@ export default function Home() {
             You start this season at {divisionLabel(seasonEvent.newDivision)}.
           </Body>
           <Button kind="ghost" title="Let’s go" onPress={actions.clearTickEvents} />
+        </Card>
+      ) : null}
+
+      {upcoming ? (
+        <Card style={{ borderLeftColor: c.primary, borderLeftWidth: 4 }}>
+          <Small style={{ fontWeight: '700', color: c.primary }}>
+            {diffDays(today, upcoming.start) === 1 ? 'STARTS TOMORROW' : `STARTS IN ${diffDays(today, upcoming.start)} DAYS`}
+          </Small>
+          <H2>
+            Your plan starts {weekdayLong(upcoming.start)} {formatShort(upcoming.start)}
+          </H2>
+          <Small>{upcoming.summary}</Small>
+          {upcoming.sessions.slice(0, 5).map((x) => (
+            <Small key={x.id} muted={false}>
+              {formatShort(x.date)} · {x.title}
+              {x.optional ? ' (optional)' : ''}
+            </Small>
+          ))}
+          <Button kind="secondary" title="Start today instead" onPress={() => actions.setPlanStart(today)} />
+          <Small>Fancy a run before then? Use Record — it counts as an extra.</Small>
         </Card>
       ) : null}
 
@@ -171,7 +192,7 @@ export default function Home() {
         />
       ))}
 
-      {!pause && rest ? (
+      {!pause && rest && !upcoming ? (
         <Card>
           <Small style={{ fontWeight: '700', color: c.rest }}>REST DAY</Small>
           <H2>Rest is training</H2>

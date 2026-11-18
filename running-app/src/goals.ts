@@ -21,6 +21,7 @@ export const GOALS: GoalOption[] = [
   { id: '10k', group: 'Distance goals', label: 'Run a 10K', description: 'Build the distance steadily.' },
   { id: 'half', group: 'Distance goals', label: 'Run a half marathon', description: 'Longer-term base building.', levels: ALL_BUT_NEW },
   { id: 'marathon', group: 'Distance goals', label: 'Run a marathon', description: 'Long runs build up gradually over many weeks.', levels: SEASONED },
+  { id: 'ultra', group: 'Distance goals', label: 'Run an ultra (50K+)', description: 'Longer base runs, long runs measured in hours, back-to-backs.', levels: SEASONED },
   { id: '5k_faster', group: 'Get faster', label: 'Get faster at 5K', description: 'Weekly tempo or interval session at your PB-based paces.', levels: ALL_BUT_NEW },
   { id: '10k_faster', group: 'Get faster', label: 'Get faster at 10K', description: 'Quality sessions plus a steady long run.', levels: ALL_BUT_NEW },
   { id: 'half_faster', group: 'Get faster', label: 'Get faster at the half', description: 'Tempo work and longer long runs.', levels: SEASONED },

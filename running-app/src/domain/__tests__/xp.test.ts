@@ -9,7 +9,7 @@ const noBase = { avgDurationSec: null, avgPaceSecPerKm: null };
 const usual = { avgDurationSec: 30 * 60, avgPaceSecPerKm: 360 }; // 30 min at 6:00/km
 
 test('base XP by length tiers', () => {
-  assert.deepEqual([5, 15, 29, 30, 45, 60, 89, 90, 150].map((m) => lengthBase(m * 60).xp), [30, 40, 40, 50, 60, 75, 75, 90, 90]);
+  assert.deepEqual([5, 15, 29, 30, 45, 60, 89, 90, 150].map((m) => lengthBase(m * 60).xp), [30, 40, 40, 50, 60, 75, 75, 90, 110]);
 });
 
 test('planned bonus and half XP for unplanned', () => {

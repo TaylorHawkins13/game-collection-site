@@ -18,6 +18,7 @@ export type GoalId =
   | 'half'
   | 'half_faster'
   | 'marathon'
+  | 'ultra'
   | 'back_to_routine'
   | 'fitness'
   | 'stress';
@@ -190,6 +191,8 @@ export interface Activity {
   distanceM?: number;
   treadmill?: boolean;
   splits?: Split[];
+  /** Hard reps of a structured workout (tempo / intervals / hills). */
+  reps?: { index: number; durationSec: number; distanceM: number; paceSecPerKm: number | null }[];
   route?: RoutePoint[];
   avgHr?: number;
   maxHr?: number;

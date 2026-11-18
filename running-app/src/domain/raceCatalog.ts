@@ -50,6 +50,15 @@ export const RACE_CATALOG: CatalogRace[] = [
   { id: 'valencia-marathon', name: 'Valencia Marathon', place: 'Valencia, Spain', distanceM: M, terrain: 'road', usualMonth: 12 },
   { id: 'tokyo-marathon', name: 'Tokyo Marathon', place: 'Tokyo, Japan', distanceM: M, terrain: 'road', usualMonth: 3 },
   { id: 'sydney-marathon', name: 'Sydney Marathon', place: 'Sydney, Australia', distanceM: M, terrain: 'road', usualMonth: null },
+  // Ultras (distances vary slightly by year/course — adjust if needed).
+  { id: 'two-oceans', name: 'Two Oceans Ultra', place: 'Cape Town, South Africa', distanceM: 56000, terrain: 'road', usualMonth: null, note: 'Usually around Easter.' },
+  { id: 'comrades', name: 'Comrades Marathon', place: 'KwaZulu-Natal, South Africa', distanceM: 88000, terrain: 'road', usualMonth: 6, note: 'Direction (up/down) and distance change by year.' },
+  { id: 'lavaredo', name: 'Lavaredo Ultra Trail', place: 'Cortina, Italy', distanceM: 120000, terrain: 'trail', usualMonth: 6 },
+  { id: 'western-states', name: 'Western States 100', place: 'California, USA', distanceM: 160934, terrain: 'trail', usualMonth: 6, note: 'Entry by lottery.' },
+  { id: 'badwater', name: 'Badwater 135', place: 'California, USA', distanceM: 217000, terrain: 'road', usualMonth: 7, note: 'Invitation only.' },
+  { id: 'leadville', name: 'Leadville Trail 100', place: 'Colorado, USA', distanceM: 160934, terrain: 'trail', usualMonth: 8 },
+  { id: 'utmb', name: 'UTMB', place: 'Chamonix, France', distanceM: 171000, terrain: 'trail', usualMonth: 8, note: 'Qualifying points needed.' },
+  { id: 'javelina', name: 'Javelina Jundred', place: 'Arizona, USA', distanceM: 160934, terrain: 'trail', usualMonth: 10 },
 ];
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

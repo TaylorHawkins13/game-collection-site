@@ -6,11 +6,12 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Body, Button, Card, Chip, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../components/ui';
-import { formatShort, weekdayShort } from '../domain/dates';
+import { formatShort, weekdayLong, weekdayShort } from '../domain/dates';
 import { defaultProfile, type OnboardingAnswers } from '../domain/engine';
 import { createPlan } from '../domain/plan';
 import type { ExperienceLevel, GoalId, IssueId, PersonalBest, WeeklyFrequency } from '../domain/types';
 import { PbEditor } from '../components/PbEditor';
+import { DatePicker, startOptions } from '../components/DatePicker';
 import { sessionSubtitle } from '../components/SessionCard';
 import { pacesFor } from '../domain/pace';
 import { goalsFor, pbsRequired } from '../goals';
@@ -19,7 +20,7 @@ import { requestNotificationPermission } from '../services/notifications';
 import { today, useStore } from '../state/store';
 import { space, useColors } from '../theme';
 
-type Step = 'welcome' | 'level' | 'frequency' | 'goal' | 'pbs' | 'health' | 'issues' | 'plan';
+type Step = 'welcome' | 'level' | 'frequency' | 'goal' | 'pbs' | 'health' | 'issues' | 'start' | 'plan';
 
 const LEVELS: { id: ExperienceLevel; label: string; description: string }[] = [
   { id: 'new', label: 'New to running', description: 'Starting from scratch — walk-run sessions to begin.' },
@@ -48,16 +49,18 @@ export default function Onboarding() {
   const [issues, setIssues] = useState<IssueId[]>([]);
   const [pbs, setPbs] = useState<PersonalBest[]>([]);
   const [goalTimeSec, setGoalTimeSec] = useState<number | undefined>(undefined);
+  const [startDate, setStartDate] = useState(today());
+  const [customStart, setCustomStart] = useState(false);
   const [healthBusy, setHealthBusy] = useState(false);
   const [healthDone, setHealthDone] = useState<boolean | null>(null);
 
-  const answers: OnboardingAnswers | null = level ? { level, frequency, goal, issues, includeQuality, pbs, goalTimeSec } : null;
-  const preview = useMemo(() => (answers ? createPlan(defaultProfile(answers, today()), today()).weeks[0] : null), [level, frequency, goal, issues, includeQuality, pbs]);
+  const answers: OnboardingAnswers | null = level ? { level, frequency, goal, issues, includeQuality, pbs, goalTimeSec, startDate } : null;
+  const preview = useMemo(() => (answers ? createPlan(defaultProfile(answers, today()), startDate).weeks[0] : null), [level, frequency, goal, issues, includeQuality, pbs, startDate]);
 
   const needsFrequency = level === 'new' || level === 'returning';
   const askPbs = level !== 'new' || goal.endsWith('_faster');
   const mustPbs = pbsRequired(level, goal);
-  const order: Step[] = ['welcome', 'level', ...(needsFrequency ? (['frequency'] as Step[]) : []), 'goal', ...(askPbs ? (['pbs'] as Step[]) : []), 'health', 'issues', 'plan'];
+  const order: Step[] = ['welcome', 'level', ...(needsFrequency ? (['frequency'] as Step[]) : []), 'goal', ...(askPbs ? (['pbs'] as Step[]) : []), 'health', 'issues', 'start', 'plan'];
   const next = () => setStep(order[Math.min(order.length - 1, order.indexOf(step) + 1)]);
   const back = () => setStep(order[Math.max(0, order.indexOf(step) - 1)]);
   const progress = order.indexOf(step) / (order.length - 1);
@@ -225,9 +228,29 @@ export default function Onboarding() {
         </View>
       )}
 
+      {step === 'start' && (
+        <View style={{ gap: space.md }}>
+          <H1>When do you want to start?</H1>
+          <Body muted>Week 1 begins on this day. Until then you can still go for runs — they count as extras.</Body>
+          <OptionGroup>
+            {startOptions(today()).map((o) => (
+              <Option key={o.label} label={`${o.label} · ${weekdayShort(o.date)} ${formatShort(o.date)}`} description={o.note} selected={!customStart && startDate === o.date} onPress={() => { setCustomStart(false); setStartDate(o.date); }} />
+            ))}
+            <Option label="Pick a date" selected={customStart} onPress={() => setCustomStart(true)} />
+          </OptionGroup>
+          {customStart ? (
+            <Card>
+              <DatePicker value={startDate} onChange={setStartDate} min={today()} />
+            </Card>
+          ) : null}
+          {footer('Continue', next)}
+        </View>
+      )}
+
       {step === 'plan' && preview && (
         <View style={{ gap: space.md }}>
           <H1>Your first week</H1>
+          {startDate > today() ? <Small muted={false} style={{ fontWeight: '700' }}>Starts {weekdayLong(startDate)} {formatShort(startDate)}</Small> : null}
           <Body muted>{preview.summary}</Body>
           {preview.sessions.map((s) => (
             <Card key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>

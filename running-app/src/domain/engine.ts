@@ -12,11 +12,12 @@ import { matchImportedRun } from './matching.ts';
 import { challengeProgress } from './challenges.ts';
 import { addDays, diffDays, maxKey, minKey, rangeKeys } from './dates.ts';
 import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused, runBaseline } from './metrics.ts';
-import { createPlan, currentWeek, defaultRunsPerWeek, defaultStrengthPerWeek, generateWeek, nextStep, startingStep, stepCap } from './plan.ts';
+import { allSessions, createPlan, currentWeek, defaultRunsPerWeek, defaultStrengthPerWeek, generateWeek, nextStep, startingStep, stepCap } from './plan.ts';
 import { addXp, applyDecay, newRankState, rankOf, reevaluate, softResetDivision } from './ranks.ts';
 import { inFinalTwoWeeks, nextSeason, seasonById, seasonFor } from './season.ts';
 import { mobilityFallback } from './strength.ts';
 import { runXp, sessionXp, XP, type XpPart } from './xp.ts';
+import { averageRepPace } from './reps.ts';
 import type {
   Activity,
   AppState,
@@ -81,6 +82,8 @@ export interface OnboardingAnswers {
   includeQuality: boolean;
   pbs?: PersonalBest[];
   goalTimeSec?: number;
+  /** When week 1 begins (today if omitted). */
+  startDate?: DateKey;
 }
 
 export function defaultProfile(a: OnboardingAnswers, today: DateKey): Profile {
@@ -107,7 +110,8 @@ export function defaultProfile(a: OnboardingAnswers, today: DateKey): Profile {
 
 export function onboard(state: AppState, answers: OnboardingAnswers, today: DateKey, profileOverrides: Partial<Profile> = {}): AppState {
   const profile = { ...defaultProfile(answers, today), ...profileOverrides };
-  const s: AppState = { ...state, profile, plan: createPlan(profile, today), lastTick: today };
+  const start = answers.startDate && answers.startDate > today ? answers.startDate : today;
+  const s: AppState = { ...state, profile, plan: createPlan(profile, start), lastTick: today };
   return { ...s, fitness: fitnessFromPbs(s, today) };
 }
 
@@ -347,6 +351,7 @@ export interface SessionInput {
   distanceM?: number;
   treadmill?: boolean;
   splits?: Activity['splits'];
+  reps?: Activity['reps'];
   route?: Activity['route'];
   avgHr?: number;
   maxHr?: number;
@@ -386,6 +391,8 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
             durationSec: planned.durationMin * 60,
             paceRange: (planned.runType === 'easy' || planned.runType === 'long') && paces ? [paces.easy[0], paces.easy[1]] : undefined,
             paceTarget: planned.runType === 'race' ? planned.targetPaceSecPerKm : undefined,
+            repPaceTarget: planned.workout ? planned.targetPaceSecPerKm : undefined,
+            repPace: planned.workout && input.reps ? averageRepPace(input.reps) : undefined,
           }
         : undefined,
       treadmill: input.treadmill,
@@ -408,6 +415,7 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
     distanceM: input.distanceM,
     treadmill: input.treadmill,
     splits: input.splits,
+    reps: input.reps,
     route: input.route,
     avgHr: input.avgHr,
     maxHr: input.maxHr,
@@ -739,6 +747,28 @@ export function dismissMatch(state: AppState, importedRunId: string): AppState {
 /** Recent runs (last 2 days) still waiting for a check-in. */
 export function pendingCheckIns(state: AppState, today: DateKey) {
   return state.activities.filter((a) => !a.feel && a.kind === 'run' && diffDays(a.date, today) <= 2);
+}
+
+/**
+ * Change when the plan starts. If it hasn't really begun (nothing completed), it's
+ * rebuilt from the new date. If it has, past weeks and all history stay; remaining
+ * planned sessions are cleared and a fresh week 1 of the new block starts on the date.
+ */
+export function setPlanStart(state: AppState, start: DateKey, today: DateKey): AppState {
+  if (!state.plan || !state.profile || start < today) return state;
+  const plan = state.plan;
+  const begun = plan.startDate <= today && allSessions(plan).some((s) => s.status === 'completed');
+  if (!begun) {
+    return { ...state, plan: { ...createPlan(state.profile, start, currentFiveK(state), state.races), step: plan.step } };
+  }
+  const kept = plan.weeks
+    .filter((w) => w.start < start)
+    .map((w) => ({ ...w, sessions: w.sessions.filter((x) => !(x.status === 'planned' && x.date >= today)), end: w.end >= start ? addDays(start, -1) : w.end }));
+  const index = (kept[kept.length - 1]?.index ?? -1) + 1;
+  const week = generateWeek(state.profile, index, start, plan.step, 'hold', currentFiveK(state), state.races);
+  week.summary = 'A fresh start. Same you, same rank — new block.';
+  const s: AppState = { ...state, plan: { ...plan, weeks: [...kept, week] } };
+  return addNotice(s, 'plan', start === today ? 'Your plan restarted today.' : `Your plan restarts on ${start}. Runs before then still count as extras.`, today);
 }
 
 /** Save a PB detected from a run (or entered by hand) and update fitness from it. */

@@ -55,8 +55,11 @@ test('PB-attempt build adds a race-pace workout and grows the long run; taper cu
   // Trail races swap in hills.
   const trail = generateWeek(p, 6, '2026-02-09', 13, 'hold', 1500, [race({ terrain: 'trail' })]);
   assert.equal(trail.sessions.find((s) => s.workout)?.runType, 'hills');
-  // Fun races don't change normal weeks.
-  assert.equal(raceWeekPlan([race({ pbAttempt: false })], '2026-02-09', 'consistent', 1500).race, undefined);
+  // Fun races get no workouts or taper (but long ones still build the long run).
+  const fun = raceWeekPlan([race({ pbAttempt: false })], '2026-02-09', 'consistent', 1500);
+  assert.equal(fun.workout, undefined);
+  assert.ok(fun.longRunMin);
+  assert.equal(raceWeekPlan([race({ pbAttempt: false, distanceM: 5000 })], '2026-02-09', 'consistent', 1500).race, undefined);
 });
 
 test('race week: race on the day, rest the day before (PB), short runs before, recovery after', () => {

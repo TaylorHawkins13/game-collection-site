@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 import { currentPaces } from '../domain/fitness';
 import { paceLabel, type TrainingPaces } from '../domain/pace';
+import { fmtLong } from '../domain/plan';
 import { routineById } from '../domain/strength';
 import type { PlannedSession, Profile } from '../domain/types';
 import { useStore } from '../state/store';
@@ -21,7 +22,7 @@ export function sessionSubtitle(s: PlannedSession, profile?: Profile | null, fit
   }
   if (paces && s.kind === 'run' && !s.walkRun) {
     const easy = `easy ${paceLabel(paces.easy[0], u)}–${paceLabel(paces.easy[1], u)}/${u}`;
-    return s.strides ? `${s.durationMin} min ${easy}, ${s.strides} relaxed strides near the end` : `${s.durationMin} min · ${easy}`;
+    return s.strides ? `${fmtLong(s.durationMin)} ${easy}, ${s.strides} relaxed strides near the end` : `${fmtLong(s.durationMin)} · ${easy}`;
   }
   if (s.kind === 'strength') {
     const r = routineById(s.routineId);
@@ -29,7 +30,7 @@ export function sessionSubtitle(s: PlannedSession, profile?: Profile | null, fit
   }
   if (s.walkRun) return `${s.durationMin} min total, including warm-up and cool-down walks`;
   if (s.strides) return `${s.durationMin} min easy, with ${s.strides} relaxed strides near the end`;
-  return `${s.durationMin} min at a conversational pace`;
+  return `${fmtLong(s.durationMin)} at a conversational pace`;
 }
 
 export function SessionCard({

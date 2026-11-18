@@ -41,6 +41,7 @@ interface Store {
   dismissNotice: (id: string) => void;
   savePersonalBest: (pb: { distance: RaceDistance; timeSec: number }) => void;
   saveRace: (race: Race) => void;
+  setPlanStart: (date: DateKey) => void;
   removeRace: (id: string) => void;
   clearTickEvents: () => void;
   resetAll: () => void;
@@ -107,6 +108,7 @@ export const useStore = create<Store>()(
       },
       savePersonalBest: (pb) => set({ app: E.savePersonalBest(get().app, pb, today()).state }),
       saveRace: (race) => set({ app: E.saveRace(get().app, race, today()) }),
+      setPlanStart: (date) => set({ app: E.setPlanStart(get().app, date, today()) }),
       removeRace: (id) => set({ app: E.removeRace(get().app, id, today()) }),
       clearTickEvents: () => set({ tickEvents: [] }),
       resetAll: () => set({ app: E.createInitialState(today()), sessionEvents: {}, tickEvents: [] }),

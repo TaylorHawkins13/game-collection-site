@@ -62,6 +62,13 @@ export const LADDER: StepTemplate[] = [
   { minutes: 50 },
   { minutes: 55 },
   { minutes: 60 },
+  // Ultra build only (goal 'ultra' caps here; other goals stop at step 18 or below).
+  { minutes: 65 },
+  { minutes: 70 },
+  { minutes: 75 },
+  { minutes: 80 },
+  { minutes: 85 },
+  { minutes: 90 },
 ];
 
 export const FIRST_CONTINUOUS_STEP = 10;
@@ -113,6 +120,8 @@ export function stepCap(goal: GoalId, level: ExperienceLevel): number {
       return 17;
     case 'marathon':
       return 18;
+    case 'ultra':
+      return level === 'experienced' ? 24 : 21;
     default:
       return 12;
   }
@@ -151,6 +160,13 @@ function strengthDates(weekStart: DateKey, runDays: DateKey[], count: number): D
   }
   for (const d of ordered) if (picks.length < count && !picks.includes(d)) picks.push(d);
   return picks.sort();
+}
+
+export function fmtLong(minutes: number): string {
+  if (minutes < 120) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
 }
 
 function round5(n: number): number {
@@ -311,7 +327,7 @@ export function generateWeek(
   const dates = runDates(start, runs, profile.preferredDays);
   const pattern = PATTERNS[runs];
   const recoveryFactor = (directive === 'recovery' ? 0.8 : 1) * rw.volumeFactor;
-  const longGoal = profile.goal === 'half' || profile.goal === 'half_faster' || profile.goal === 'marathon';
+  const longGoal = profile.goal === 'half' || profile.goal === 'half_faster' || profile.goal === 'marathon' || profile.goal === 'ultra';
   // Week 1 is always easy; quality work starts in week 2.
   const raceWorkout =
     !!rw.workout && index > 0 && step >= FIRST_CONTINUOUS_STEP && directive !== 'ease' && directive !== 'recovery' && runs >= 3;
@@ -350,12 +366,21 @@ export function generateWeek(
       qualityLabel: raceWorkout && rw.workout!.kind !== 'hills' ? rw.workout!.label : undefined,
     }),
   );
-  // Race build: grow the long run toward what the race needs (never more than +60% over the normal long run).
+  // Race build: grow the long run toward what the race needs (never more than +60% over the normal
+  // long run, or +100% for ultras). Ultras also get a back-to-back: a medium-long run the day before.
   const longIdx = sessions.findIndex((x) => x.runType === 'long');
   if (rw.longRunMin && longIdx >= 0) {
     const cur = sessions[longIdx].durationMin;
-    const minutes = Math.max(cur, Math.min(rw.longRunMin, Math.round((cur * 1.6) / 5) * 5));
-    sessions[longIdx] = { ...sessions[longIdx], durationMin: minutes, title: `Long run · ${minutes} min`, note: rw.race ? `Building endurance for ${rw.race.name}.` : undefined };
+    const ultra = (rw.race?.distanceM ?? 0) > 43000;
+    const minutes = Math.max(cur, Math.min(rw.longRunMin, Math.round((cur * (ultra ? 2 : 1.6)) / 5) * 5));
+    sessions[longIdx] = { ...sessions[longIdx], durationMin: minutes, title: `Long run · ${fmtLong(minutes)}`, note: rw.race ? `Building endurance for ${rw.race.name}.` : undefined };
+    if (ultra && rw.backToBack) {
+      const dayBefore = addDays(sessions[longIdx].date, -1);
+      const prevIdx = sessions.findIndex((x) => x.kind === 'run' && x.date === dayBefore && !x.workout);
+      const b2b = Math.round((minutes * 0.5) / 5) * 5;
+      if (prevIdx >= 0) sessions[prevIdx] = { ...sessions[prevIdx], runType: 'easy', durationMin: Math.max(sessions[prevIdx].durationMin, b2b), title: `Back-to-back easy run · ${fmtLong(Math.max(sessions[prevIdx].durationMin, b2b))}`, note: 'Ultra training: run tired legs gently, the day before the long run.' };
+      else sessions.push({ id: `w${index}-b2b`, date: dayBefore, kind: 'run', runType: 'easy', step, title: `Back-to-back easy run · ${fmtLong(b2b)}`, durationMin: b2b, optional: false, status: 'planned', note: 'Ultra training: run tired legs gently, the day before the long run.' });
+    }
   }
 
   const strengthCount = Math.max(0, Math.min(2, profile.strengthPerWeek));
@@ -394,14 +419,21 @@ export function generateWeek(
   };
 }
 
-export function createPlan(profile: Profile, today: DateKey): PlanState {
+/** `start` may be today or a future date; week 1 always begins on it. */
+export function createPlan(profile: Profile, start: DateKey, fiveKSec?: number | null, races?: Race[]): PlanState {
   const step = Math.min(stepCap(profile.goal, profile.level), startingStep(profile.level, profile.frequency, profile.pbs));
   return {
-    startDate: today,
+    startDate: start,
     step,
     weeksSinceProgress: 0,
-    weeks: [generateWeek(profile, 0, today, step, 'hold')],
+    weeks: [generateWeek(profile, 0, start, step, 'hold', fiveKSec, races)],
   };
+}
+
+/** Before a (re)started plan begins: the first upcoming week, if today falls before it. */
+export function upcomingPlanStart(plan: PlanState | null, today: DateKey): PlanWeek | undefined {
+  if (!plan || currentWeek(plan, today)) return undefined;
+  return plan.weeks.find((w) => w.start > today);
 }
 
 /** Apply a directive to the step, respecting the goal cap and issue caution. */

@@ -24,14 +24,17 @@ export function nearestStandard(distanceM: number): RaceDistance {
 }
 
 export function taperDays(r: Race): number {
-  return r.distanceM <= 10500 ? 7 : r.distanceM <= 25000 ? 10 : 14;
+  return r.distanceM <= 10500 ? 7 : r.distanceM <= 25000 ? 10 : r.distanceM < 75000 ? 14 : 21;
 }
 
+export const isUltra = (r: Pick<Race, 'distanceM'>) => r.distanceM > 43000;
+
 export function recoveryDays(r: Race): number {
-  const base = r.distanceM <= 5500 ? 2 : r.distanceM <= 10500 ? 4 : r.distanceM <= 25000 ? 7 : 14;
+  const base =
+    r.distanceM <= 5500 ? 2 : r.distanceM <= 10500 ? 4 : r.distanceM <= 25000 ? 7 : r.distanceM <= 43000 ? 14 : r.distanceM <= 55000 ? 18 : r.distanceM <= 110000 ? 24 : 30;
   const terrain = r.terrain === 'trail' ? 1.3 : 1;
   const fun = !r.pbAttempt && r.distanceM <= 10500 ? 0.5 : 1;
-  return Math.max(1, Math.round(base * terrain * fun));
+  return Math.min(35, Math.max(1, Math.round(base * terrain * fun)));
 }
 
 export function upcomingRaces(races: Race[] | undefined, from: DateKey): Race[] {
@@ -47,8 +50,8 @@ export function phaseFor(race: Race, weekStart: DateKey): RacePhase {
   const d = diffDays(weekStart, race.date);
   if (d <= 6) return 'race_week';
   if (d <= 6 + taperDays(race)) return 'taper';
-  if (d <= 4 * 7 + 6) return 'peak';
-  if (d <= 12 * 7 + 6) return 'build';
+  if (d <= (isUltra(race) ? 5 : 4) * 7 + 6) return 'peak';
+  if (d <= (isUltra(race) ? 16 : 12) * 7 + 6) return 'build';
   return 'base';
 }
 
@@ -60,6 +63,8 @@ export interface RaceWeekPlan {
   workout?: { kind: 'tempo' | 'intervals' | 'hills'; targetPace?: number; label: string };
   /** Target minutes for the long run this week (build/peak for 10K+). */
   longRunMin?: number;
+  /** Ultras: add a back-to-back medium-long run the day before the long run. */
+  backToBack?: boolean;
   shortenReps: boolean;
 }
 
@@ -68,6 +73,12 @@ export function racePace(race: Race, fiveKSec: number | null): number | null {
   const km = race.distanceM / 1000;
   if (race.goalTimeSec) return race.goalTimeSec / km;
   if (!fiveKSec) return null;
+  if (isUltra(race)) {
+    // Beyond the marathon, Riegel's 1.06 is too optimistic: use 1.15, and +15% for trail.
+    const marathon = predictTime(fiveKSec, 'marathon');
+    const t = marathon * Math.pow(race.distanceM / 42195, 1.15) * (race.terrain === 'trail' ? 1.15 : 1);
+    return t / km;
+  }
   return predictTime(fiveKSec, nearestStandard(race.distanceM)) / (RACE_METERS[nearestStandard(race.distanceM)] / 1000);
 }
 
@@ -75,7 +86,21 @@ const LONG_TARGET: Record<RaceDistance, number> = { '5k': 50, '10k': 70, half: 1
 
 export function raceWeekPlan(races: Race[] | undefined, weekStart: DateKey, level: ExperienceLevel, fiveKSec: number | null): RaceWeekPlan {
   const race = keyRace(races, weekStart);
-  if (!race) return { phase: 'base', volumeFactor: 1, shortenReps: false };
+  if (!race) {
+    // Fun/training races that are long still need the endurance: build long runs, but no workouts or taper.
+    const long = upcomingRaces(races, weekStart).find((r) => r.distanceM >= 21000 && diffDays(weekStart, r.date) <= 20 * 7);
+    if (long) {
+      const ph = phaseFor(long, weekStart);
+      if (ph === 'build' || ph === 'peak') {
+        const weeksOut = Math.ceil(diffDays(weekStart, long.date) / 7);
+        const progress = Math.min(1, Math.max(0.55, 1 - (weeksOut - 3) * 0.05));
+        const cap = level === 'new' ? 0.6 : level === 'returning' ? 0.8 : 1;
+        const target = isUltra(long) ? (long.distanceM <= 55000 ? 210 : long.distanceM <= 110000 ? 270 : 300) : LONG_TARGET[nearestStandard(long.distanceM)];
+        return { race: long, phase: ph, volumeFactor: 1, shortenReps: false, longRunMin: Math.round((target * progress * cap) / 5) * 5, backToBack: isUltra(long) && (level === 'consistent' || level === 'experienced') };
+      }
+    }
+    return { phase: 'base', volumeFactor: 1, shortenReps: false };
+  }
   const phase = phaseFor(race, weekStart);
   const seasoned = level === 'consistent' || level === 'experienced';
   const std = nearestStandard(race.distanceM);
@@ -86,6 +111,7 @@ export function raceWeekPlan(races: Race[] | undefined, weekStart: DateKey, leve
     if (race.terrain === 'trail') plan.workout = { kind: 'hills', label: 'Hills' };
     else if (std === '5k') plan.workout = { kind: 'intervals', targetPace: pace ?? paces?.interval, label: 'Race-pace intervals' };
     else if (std === '10k') plan.workout = { kind: 'intervals', targetPace: pace ?? paces?.interval, label: '10K-pace intervals' };
+    else if (isUltra(race)) plan.workout = { kind: 'tempo', targetPace: paces?.tempo, label: 'Steady tempo' };
     else plan.workout = { kind: 'tempo', targetPace: pace ?? paces?.tempo, label: std === 'marathon' ? 'Marathon-pace tempo' : 'Half-pace tempo' };
   }
   if ((phase === 'build' || phase === 'peak') && race.distanceM >= 9500) {
@@ -93,7 +119,9 @@ export function raceWeekPlan(races: Race[] | undefined, weekStart: DateKey, leve
     // Grow from ~55% of the target 12 weeks out to 100% at 3 weeks out; beginners cap lower.
     const progress = Math.min(1, Math.max(0.55, 1 - (weeksOut - 3) * 0.05));
     const cap = level === 'new' ? 0.6 : level === 'returning' ? 0.8 : 1;
-    plan.longRunMin = Math.round((LONG_TARGET[std] * progress * cap) / 5) * 5;
+    const target = isUltra(race) ? (race.distanceM <= 55000 ? 210 : race.distanceM <= 110000 ? 270 : 300) : LONG_TARGET[std];
+    plan.longRunMin = Math.round((target * progress * cap) / 5) * 5;
+    plan.backToBack = isUltra(race) && seasoned;
   }
   return plan;
 }

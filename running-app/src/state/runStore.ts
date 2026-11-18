@@ -17,6 +17,8 @@ export interface ActiveRun {
   easeOffSaid: boolean;
   /** Next split index to announce. */
   announcedSplits: number;
+  /** Workout reps already announced. */
+  announcedReps?: number;
   gpsMode: 'background' | 'foreground' | 'none';
   /** Latest heart rate and where it came from. */
   hr?: { bpm: number; t: number; source: 'strap' | 'health' } | null;
@@ -34,6 +36,7 @@ interface RunStore {
   markCue: (i: number) => void;
   setEaseOffSaid: () => void;
   setAnnouncedSplits: (n: number) => void;
+  setAnnouncedReps: (n: number) => void;
   setGpsMode: (m: ActiveRun['gpsMode']) => void;
   pushHr: (bpm: number, source: 'strap' | 'health') => void;
   setStrapStatus: (s: NonNullable<ActiveRun['strapStatus']>) => void;
@@ -82,6 +85,10 @@ export const useRunStore = create<RunStore>()(
       setAnnouncedSplits: (n) => {
         const a = get().active;
         if (a) set({ active: { ...a, announcedSplits: n } });
+      },
+      setAnnouncedReps: (n) => {
+        const a = get().active;
+        if (a) set({ active: { ...a, announcedReps: n } });
       },
       setGpsMode: (m) => {
         const a = get().active;
