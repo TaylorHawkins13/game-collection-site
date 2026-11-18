@@ -1,0 +1,580 @@
+/**
+ * The app's state machine. Every user action and the daily tick go through a
+ * pure function here: (state, input, today) → { state, events }. The store
+ * persists the state; the UI renders the events (XP toasts, badges, notes).
+ */
+import { adaptAfterFeedback, directiveFor } from './adaptation.ts';
+import { BADGES, newlyEarned } from './badges.ts';
+import { challengeProgress } from './challenges.ts';
+import { addDays, diffDays, maxKey, minKey, rangeKeys } from './dates.ts';
+import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused } from './metrics.ts';
+import { createPlan, currentWeek, defaultRunsPerWeek, defaultStrengthPerWeek, generateWeek, nextStep, startingStep, stepCap } from './plan.ts';
+import { addXp, applyDecay, newRankState, rankOf, reevaluate, softResetDivision } from './ranks.ts';
+import { inFinalTwoWeeks, nextSeason, seasonById, seasonFor } from './season.ts';
+import { mobilityFallback } from './strength.ts';
+import { sessionXp, XP } from './xp.ts';
+import type {
+  Activity,
+  AppState,
+  DateKey,
+  EngineEvent,
+  ExperienceLevel,
+  Feel,
+  GoalId,
+  IssueId,
+  Notice,
+  Pause,
+  PlanWeek,
+  PlannedSession,
+  Profile,
+  RecoverySnapshot,
+  Soreness,
+  WeeklyFrequency,
+  XpReason,
+} from './types.ts';
+
+export interface Result {
+  state: AppState;
+  events: EngineEvent[];
+}
+
+let counter = 0;
+export function uid(prefix = 'id'): string {
+  counter = (counter + 1) % 1_000_000;
+  return `${prefix}_${Date.now().toString(36)}_${counter.toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function createInitialState(today: DateKey): AppState {
+  return {
+    version: 1,
+    profile: null,
+    plan: null,
+    activities: [],
+    rank: newRankState(seasonFor(today).id, 0),
+    peakDivisionEver: 0,
+    seasonFinishes: [],
+    badges: {},
+    xpLog: [],
+    restClaims: [],
+    pauses: [],
+    health: { connected: false },
+    notices: [],
+    weeklyTargetPaid: [],
+    challengePaid: [],
+    lastTick: today,
+  };
+}
+
+export interface OnboardingAnswers {
+  level: ExperienceLevel;
+  frequency: WeeklyFrequency | null;
+  goal: GoalId;
+  issues: IssueId[];
+  includeQuality: boolean;
+}
+
+export function defaultProfile(a: OnboardingAnswers, today: DateKey): Profile {
+  return {
+    level: a.level,
+    frequency: a.level === 'new' || a.level === 'returning' ? a.frequency ?? 0 : null,
+    goal: a.goal,
+    issues: a.issues,
+    includeQuality: a.includeQuality,
+    runsPerWeek: defaultRunsPerWeek(a.level),
+    strengthPerWeek: defaultStrengthPerWeek(a.level),
+    preferredDays: [],
+    units: 'km',
+    hideRouteEnds: true,
+    audioCues: true,
+    splitAnnouncements: a.level === 'consistent' || a.level === 'experienced',
+    morningReminder: { enabled: true, hour: 8, minute: 0 },
+    afternoonNudge: { enabled: false, hour: 16, minute: 30 },
+    createdAt: today,
+  };
+}
+
+export function onboard(state: AppState, answers: OnboardingAnswers, today: DateKey, profileOverrides: Partial<Profile> = {}): AppState {
+  const profile = { ...defaultProfile(answers, today), ...profileOverrides };
+  return { ...state, profile, plan: createPlan(profile, today), lastTick: today };
+}
+
+// ───────────────────────────── helpers ─────────────────────────────
+
+function mapSessions(state: AppState, fn: (s: PlannedSession, w: PlanWeek) => PlannedSession): AppState {
+  if (!state.plan) return state;
+  return {
+    ...state,
+    plan: { ...state.plan, weeks: state.plan.weeks.map((w) => ({ ...w, sessions: w.sessions.map((s) => fn(s, w)) })) },
+  };
+}
+
+function replaceWeek(state: AppState, week: PlanWeek): AppState {
+  if (!state.plan) return state;
+  return { ...state, plan: { ...state.plan, weeks: state.plan.weeks.map((w) => (w.index === week.index ? week : w)) } };
+}
+
+export function findSession(state: AppState, id: string): { session: PlannedSession; week: PlanWeek } | null {
+  for (const week of state.plan?.weeks ?? []) {
+    const session = week.sessions.find((s) => s.id === id);
+    if (session) return { session, week };
+  }
+  return null;
+}
+
+function weekContaining(state: AppState, date: DateKey): PlanWeek | undefined {
+  return state.plan?.weeks.find((w) => w.start <= date && date <= w.end);
+}
+
+function addNotice(state: AppState, kind: Notice['kind'], text: string, date: DateKey): AppState {
+  const notice: Notice = { id: uid('n'), date, kind, text };
+  return { ...state, notices: [notice, ...state.notices].slice(0, 30) };
+}
+
+function grantXp(state: AppState, amount: number, reason: XpReason, today: DateKey, events: EngineEvent[], refId?: string): AppState {
+  if (amount <= 0) return state;
+  events.push({ type: 'xp', amount, reason });
+  const r = addXp(state.rank, amount, consistency(state, today));
+  events.push(...r.events);
+  return {
+    ...state,
+    rank: r.state,
+    peakDivisionEver: Math.max(state.peakDivisionEver, r.state.division),
+    xpLog: [{ date: today, amount, reason, refId }, ...state.xpLog].slice(0, 2000),
+  };
+}
+
+function awardBadges(state: AppState, today: DateKey, events: EngineEvent[]): AppState {
+  const ids = newlyEarned(state, today);
+  if (!ids.length) return state;
+  const badges = { ...state.badges };
+  for (const id of ids) {
+    badges[id] = today;
+    events.push({ type: 'badge', id });
+  }
+  return { ...state, badges };
+}
+
+/** Weekly target + challenge bonuses for the week containing `date`. */
+function weeklyBonuses(state: AppState, date: DateKey, today: DateKey, events: EngineEvent[]): AppState {
+  const week = weekContaining(state, date);
+  if (!week) return state;
+  let s = state;
+  const core = week.sessions.filter(countsTowardCompletion);
+  if (core.length > 0 && core.every((x) => x.status === 'completed') && !s.weeklyTargetPaid.includes(week.start)) {
+    s = { ...s, weeklyTargetPaid: [...s.weeklyTargetPaid, week.start] };
+    events.push({ type: 'weekly_target' });
+    s = grantXp(s, XP.weeklyTarget, 'weekly_target', today, events, week.start);
+  }
+  if (!s.challengePaid.includes(week.start) && challengeProgress(week, s.activities, s.restClaims).done) {
+    s = { ...s, challengePaid: [...s.challengePaid, week.start] };
+    events.push({ type: 'challenge', id: week.challengeId });
+    s = grantXp(s, XP.weeklyChallenge, 'weekly_challenge', today, events, week.start);
+  }
+  return s;
+}
+
+function finish(state: AppState, today: DateKey, events: EngineEvent[]): Result {
+  // Completion may have improved enough to open a promotion gate.
+  const r = reevaluate(state.rank, consistency(state, today));
+  events.push(...r.events);
+  let s: AppState = { ...state, rank: r.state, peakDivisionEver: Math.max(state.peakDivisionEver, r.state.division) };
+  s = awardBadges(s, today, events);
+  return { state: s, events };
+}
+
+// ───────────────────────────── daily tick ─────────────────────────────
+
+function markPast(state: AppState, today: DateKey): AppState {
+  return mapSessions(state, (s) => {
+    if (s.status !== 'planned') return s;
+    if (isPaused(state, s.date)) return { ...s, status: 'paused' };
+    if (s.date < today) return { ...s, status: 'missed' };
+    return s;
+  });
+}
+
+function seasonRollover(state: AppState, today: DateKey, events: EngineEvent[]): AppState {
+  const season = seasonFor(today);
+  if (state.rank.seasonId === season.id) return state;
+  const old = seasonById(state.rank.seasonId);
+  const sessions = state.activities.filter((a) => a.date >= old.start && a.date <= old.end).length;
+  const completion = completionRate(state, old.start, old.end, addDays(old.end, 1)).rate;
+  const last28 = addDays(old.end, -27);
+  const activeWeeksLast4 = (state.plan?.weeks ?? []).filter(
+    (w) => w.end >= last28 && w.start <= old.end && w.sessions.some((x) => x.status === 'completed'),
+  ).length;
+  const hadPlan = !!state.plan && state.plan.startDate <= old.end;
+  const finishRec = hadPlan
+    ? {
+        seasonId: old.id,
+        label: `${rankOf(state.rank.division)} – ${old.label}`,
+        division: state.rank.division,
+        sessions,
+        completion,
+      }
+    : null;
+  const consecutive = nextSeason(old).id === season.id;
+  const newDivision = consecutive ? softResetDivision(state.rank.division, { completion, sessions, activeWeeksLast4 }) : 0;
+  events.push({ type: 'season_reset', finish: finishRec, newDivision });
+  let s: AppState = {
+    ...state,
+    rank: newRankState(season.id, newDivision),
+    seasonFinishes: finishRec ? [...state.seasonFinishes, finishRec] : state.seasonFinishes,
+  };
+  s = addNotice(s, 'rank', `A new season has started: ${season.name}. Every season is a fresh climb.`, today);
+  return s;
+}
+
+function rollWeeks(state: AppState, today: DateKey, events: EngineEvent[]): AppState {
+  let s = state;
+  let guard = 0;
+  while (s.plan && s.profile && guard++ < 200) {
+    const plan = s.plan;
+    const last = plan.weeks[plan.weeks.length - 1];
+    if (today <= last.end) break;
+    const profile = s.profile;
+    const nextStart = addDays(last.end, 1);
+
+    // Outcome of the finished week.
+    const core = last.sessions.filter(countsTowardCompletion);
+    const done = core.filter((x) => x.status === 'completed').length;
+    const pausedDays = rangeKeys(last.start, last.end).filter((d) => isPaused(s, d)).length;
+    const feelings = s.activities.filter((a) => a.date >= last.start && a.date <= last.end && a.feel);
+    const gap = daysSinceLastActivity(s, nextStart);
+    const { directive, reason } = directiveFor(
+      { completion: core.length ? done / core.length : 1, completedCount: done, pausedDays, feelings, daysSinceLastActivity: gap },
+      last.index + 1,
+      plan.step,
+    );
+    const { step, progressed } = nextStep(plan.step, directive, {
+      cap: stepCap(profile.goal, profile.level),
+      cautious: profile.issues.length > 0,
+      weeksSinceProgress: plan.weeksSinceProgress,
+    });
+    const week = generateWeek(profile, last.index + 1, nextStart, step, directive);
+    week.summary = reason;
+    s = {
+      ...s,
+      plan: { ...plan, step, weeksSinceProgress: progressed ? 0 : plan.weeksSinceProgress + 1, weeks: [...plan.weeks, week] },
+    };
+
+    // Gentle rank decay, evaluated once per finished week (Gold+ only).
+    if (seasonFor(last.end).id === s.rank.seasonId) {
+      const windowStart = addDays(last.end, -13);
+      const c14 = completionRate(s, windowStart, last.end, nextStart);
+      const pausedInWindow = rangeKeys(windowStart, last.end).some((d) => isPaused(s, d));
+      const d = applyDecay(s.rank, c14.due ? c14.rate : 1, { finalTwoWeeks: inFinalTwoWeeks(last.end), paused: pausedInWindow });
+      if (d.xpLost > 0) {
+        s = { ...s, rank: d.state };
+        events.push({ type: 'decay', xpLost: d.xpLost, division: d.state.division, demoted: d.demoted });
+        s = addNotice(
+          s,
+          'rank',
+          d.demoted
+            ? 'Your rank slipped one division after a quiet couple of weeks. A few planned sessions will win it back.'
+            : `Quiet couple of weeks, so your rank bar dipped slightly (−${d.xpLost} XP). Completing planned sessions stops this.`,
+          today,
+        );
+      }
+    }
+    if (nextStart <= today && addDays(nextStart, 6) >= today) {
+      events.push({ type: 'plan_note', text: reason });
+      s = addNotice(s, 'plan', reason, today);
+    }
+    s = markPast(s, today);
+  }
+  return s;
+}
+
+export function tick(state: AppState, today: DateKey): Result {
+  const events: EngineEvent[] = [];
+  let s = markPast(state, today);
+  s = seasonRollover(s, today, events);
+  s = rollWeeks(s, today, events);
+  s = { ...s, lastTick: today };
+  return finish(s, today, events);
+}
+
+// ───────────────────────────── sessions ─────────────────────────────
+
+export interface SessionInput {
+  id?: string;
+  plannedSessionId?: string;
+  kind: 'run' | 'strength';
+  title: string;
+  startedAt: number;
+  endedAt: number;
+  durationSec: number;
+  distanceM?: number;
+  treadmill?: boolean;
+  splits?: Activity['splits'];
+  route?: Activity['route'];
+  avgHr?: number;
+  maxHr?: number;
+  routineId?: string;
+}
+
+export function completeSession(state: AppState, input: SessionInput, today: DateKey): Result & { activity: Activity } {
+  const events: EngineEvent[] = [];
+  const found = input.plannedSessionId ? findSession(state, input.plannedSessionId) : null;
+  const planned = found && found.session.status !== 'completed' ? found.session : null;
+  const activityId = input.id ?? uid('act');
+
+  let completion = 1;
+  if (planned && planned.kind === 'run' && planned.durationMin > 0) {
+    completion = Math.min(1, input.durationSec / (planned.durationMin * 60));
+  }
+  const extraToday = state.activities.some((a) => a.date === today && !a.plannedSessionId);
+  const xp = planned ? sessionXp(planned.kind, true, completion) : extraToday ? 0 : sessionXp(input.kind, false, 1);
+
+  const activity: Activity = {
+    id: activityId,
+    date: today,
+    startedAt: input.startedAt,
+    endedAt: input.endedAt,
+    kind: planned?.kind ?? input.kind,
+    plannedSessionId: planned?.id,
+    title: input.title,
+    durationSec: Math.round(input.durationSec),
+    distanceM: input.distanceM,
+    treadmill: input.treadmill,
+    splits: input.splits,
+    route: input.route,
+    avgHr: input.avgHr,
+    maxHr: input.maxHr,
+    xpEarned: xp,
+    completion,
+    routineId: input.routineId ?? planned?.routineId,
+  };
+
+  let s: AppState = { ...state, activities: [activity, ...state.activities] };
+  if (planned) {
+    s = mapSessions(s, (x) =>
+      x.id === planned.id
+        ? { ...x, status: 'completed', activityId, date: today, movedFrom: x.date !== today ? x.movedFrom ?? x.date : x.movedFrom }
+        : x,
+    );
+  }
+  const reason: XpReason = !planned ? 'extra_session' : planned.kind === 'run' ? 'run' : 'strength';
+  s = grantXp(s, xp, reason, today, events, activityId);
+  s = weeklyBonuses(s, today, today, events);
+  const r = finish(s, today, events);
+  return { ...r, activity: r.state.activities.find((a) => a.id === activityId)! };
+}
+
+export function submitFeedback(state: AppState, activityId: string, feel: Feel, soreness: Soreness, today: DateKey): Result & { note: string | null } {
+  const events: EngineEvent[] = [];
+  const activity = state.activities.find((a) => a.id === activityId);
+  if (!activity) return { state, events, note: null };
+  const firstTime = !activity.feel;
+  const updated: Activity = { ...activity, feel, soreness, xpEarned: activity.xpEarned + (firstTime ? XP.feedback : 0) };
+  let s: AppState = { ...state, activities: state.activities.map((a) => (a.id === activityId ? updated : a)) };
+  if (firstTime) s = grantXp(s, XP.feedback, 'feedback', today, events, activityId);
+
+  let note: string | null = null;
+  const week = weekContaining(s, activity.date);
+  if (week && s.profile) {
+    const recent = s.activities.filter((a) => a.feel).sort((a, b) => b.startedAt - a.startedAt);
+    const adapted = adaptAfterFeedback(week, updated, recent, s.profile);
+    s = replaceWeek(s, adapted.week);
+    note = adapted.note;
+    if (note) {
+      events.push({ type: 'plan_note', text: note });
+      s = addNotice(s, 'plan', note, today);
+    }
+  }
+  s = weeklyBonuses(s, activity.date, today, events);
+  return { ...finish(s, today, events), note };
+}
+
+// ───────────────────────────── rest & plan edits ─────────────────────────────
+
+export function todaySessions(state: AppState, today: DateKey): PlannedSession[] {
+  return (weekContaining(state, today)?.sessions ?? []).filter((s) => s.date === today && s.status !== 'dropped');
+}
+
+export function isRestDay(state: AppState, today: DateKey): boolean {
+  return !todaySessions(state, today).some((s) => !s.optional && s.status !== 'paused');
+}
+
+export function claimRestDay(state: AppState, today: DateKey): Result {
+  const events: EngineEvent[] = [];
+  if (!state.plan || !isRestDay(state, today) || state.restClaims.includes(today) || isPaused(state, today)) {
+    return { state, events };
+  }
+  let s: AppState = { ...state, restClaims: [...state.restClaims, today] };
+  s = grantXp(s, XP.restDay, 'rest_day', today, events, today);
+  s = weeklyBonuses(s, today, today, events);
+  return finish(s, today, events);
+}
+
+/** Missed core sessions in the current week that the user hasn't dealt with yet. */
+export function missedThisWeek(state: AppState, today: DateKey): PlannedSession[] {
+  const week = state.plan ? currentWeek(state.plan, today) : undefined;
+  return (week?.sessions ?? []).filter((s) => s.status === 'missed' && !s.optional);
+}
+
+/** Days from today to the end of this week with no core session on them. */
+export function freeDaysThisWeek(state: AppState, today: DateKey): DateKey[] {
+  const week = state.plan ? currentWeek(state.plan, today) : undefined;
+  if (!week) return [];
+  return rangeKeys(today, week.end).filter(
+    (d) => !week.sessions.some((s) => s.date === d && !s.optional && s.status !== 'dropped' && s.status !== 'skipped'),
+  );
+}
+
+export function moveSession(state: AppState, sessionId: string, to: DateKey, today: DateKey): AppState {
+  if (to < today) return state;
+  return mapSessions(state, (s, w) =>
+    s.id === sessionId && s.status !== 'completed' && to <= w.end
+      ? { ...s, date: to, status: 'planned', movedFrom: s.movedFrom ?? s.date, note: 'Rescheduled. Flexible is good.' }
+      : s,
+  );
+}
+
+/** "Shorten my week": the session no longer counts toward this week's target. */
+export function dropSession(state: AppState, sessionId: string): AppState {
+  return mapSessions(state, (s) =>
+    s.id === sessionId && s.status !== 'completed' ? { ...s, status: 'dropped', note: 'Removed to shorten the week. No problem.' } : s,
+  );
+}
+
+export function skipSession(state: AppState, sessionId: string): AppState {
+  return mapSessions(state, (s) => (s.id === sessionId && s.status !== 'completed' ? { ...s, status: 'skipped' } : s));
+}
+
+/** Not feeling it? Swap a run for a short mobility session that still counts. */
+export function swapForMobility(state: AppState, sessionId: string): AppState {
+  const routine = mobilityFallback(state.profile?.issues ?? []);
+  return mapSessions(state, (s) =>
+    s.id === sessionId && s.kind === 'run' && s.status !== 'completed'
+      ? {
+          ...s,
+          kind: 'strength',
+          runType: undefined,
+          walkRun: undefined,
+          strides: undefined,
+          step: undefined,
+          title: routine.title,
+          durationMin: routine.durationMin,
+          routineId: routine.id,
+          replacedFrom: 'run',
+          status: 'planned',
+          note: 'Swapped for mobility. It still counts toward your week.',
+        }
+      : s,
+  );
+}
+
+export function pausePlan(state: AppState, from: DateKey, days: number, reason: Pause['reason']): AppState {
+  const pause: Pause = { start: from, end: addDays(from, Math.max(1, days) - 1), reason };
+  let s: AppState = { ...state, pauses: [...state.pauses, pause] };
+  s = mapSessions(s, (x) => (x.status === 'planned' && x.date >= pause.start && x.date <= pause.end ? { ...x, status: 'paused' } : x));
+  return addNotice(s, 'plan', 'Plan paused. Rank decay and missed sessions are on hold. Look after yourself.', from);
+}
+
+export function activePause(state: AppState, today: DateKey): Pause | undefined {
+  return state.pauses.find((p) => p.start <= today && today <= p.end);
+}
+
+export function endPause(state: AppState, today: DateKey): AppState {
+  const p = activePause(state, today);
+  if (!p) return state;
+  const yesterday = addDays(today, -1);
+  const pauses = state.pauses
+    .map((x) => (x === p ? { ...x, end: yesterday } : x))
+    .filter((x) => x.end >= x.start);
+  let s: AppState = { ...state, pauses };
+  s = mapSessions(s, (x) => (x.status === 'paused' && x.date >= today ? { ...x, status: 'planned' } : x));
+  return addNotice(s, 'welcome', 'Welcome back. Start with whatever feels comfortable — the plan will follow your lead.', today);
+}
+
+export function setHealthConnected(state: AppState, connected: boolean, today: DateKey): Result {
+  const events: EngineEvent[] = [];
+  const s: AppState = { ...state, health: { ...state.health, connected, lastSync: Date.now() } };
+  return finish(s, today, events);
+}
+
+export function setRecovery(state: AppState, recovery: RecoverySnapshot): AppState {
+  return { ...state, health: { ...state.health, recovery, lastSync: Date.now() } };
+}
+
+export function markHealthSynced(state: AppState, activityId: string): AppState {
+  return { ...state, activities: state.activities.map((a) => (a.id === activityId ? { ...a, healthSynced: true } : a)) };
+}
+
+const STRUCTURAL: (keyof Profile)[] = ['level', 'frequency', 'goal', 'runsPerWeek', 'strengthPerWeek', 'preferredDays', 'includeQuality', 'issues'];
+
+/** Update settings; structural changes rebuild the rest of the current week. */
+export function updateProfile(state: AppState, patch: Partial<Profile>, today: DateKey): AppState {
+  if (!state.profile || !state.plan) return state;
+  const profile = { ...state.profile, ...patch };
+  let s: AppState = { ...state, profile };
+  const structural = STRUCTURAL.some((k) => JSON.stringify(patch[k] ?? state.profile![k]) !== JSON.stringify(state.profile![k]));
+  if (!structural) return s;
+
+  let plan = s.plan!;
+  if (patch.level && patch.level !== state.profile.level) {
+    plan = { ...plan, step: Math.min(stepCap(profile.goal, profile.level), startingStep(profile.level, profile.frequency)) };
+  } else if (plan.step > stepCap(profile.goal, profile.level)) {
+    plan = { ...plan, step: stepCap(profile.goal, profile.level) };
+  }
+  const week = currentWeek(plan, today);
+  if (!week) return { ...s, plan };
+  const fresh = generateWeek(profile, week.index, week.start, plan.step, week.directive);
+  const kept = week.sessions.filter((x) => x.date < today || x.status !== 'planned');
+  const version = uid('v').slice(-5);
+  const added = fresh.sessions
+    .filter((x) => x.date >= today && !kept.some((k) => k.date === x.date && k.kind === x.kind))
+    .map((x) => ({ ...x, id: `${x.id}-${version}` }));
+  const sessions = [...kept, ...added].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  plan = { ...plan, weeks: plan.weeks.map((w) => (w.index === week.index ? { ...w, sessions } : w)) };
+  return { ...s, plan };
+}
+
+/** A preview of next week at the current step; the real one adapts to how this week goes. */
+export function previewNextWeek(state: AppState, today: DateKey): PlanWeek | null {
+  if (!state.plan || !state.profile) return null;
+  const week = currentWeek(state.plan, today);
+  if (!week) return null;
+  return generateWeek(state.profile, week.index + 1, addDays(week.end, 1), state.plan.step, 'hold');
+}
+
+export function dismissNotice(state: AppState, id: string): AppState {
+  return { ...state, notices: state.notices.map((n) => (n.id === id ? { ...n, dismissed: true } : n)) };
+}
+
+// ───────────────────────────── stats ─────────────────────────────
+
+export function seasonStats(state: AppState, today: DateKey) {
+  const season = seasonFor(today);
+  const acts = state.activities.filter((a) => a.date >= season.start && a.date <= season.end);
+  const from = state.plan ? maxKey(season.start, state.plan.startDate) : season.start;
+  const c = completionRate(state, from, minKey(season.end, today), today);
+  return {
+    season,
+    sessions: acts.length,
+    runs: acts.filter((a) => a.kind === 'run').length,
+    strength: acts.filter((a) => a.kind === 'strength').length,
+    completion: c.rate,
+    completionDone: c.done,
+    completionDue: c.due,
+    xp: state.rank.seasonXp,
+    daysLeft: diffDays(today, season.end),
+  };
+}
+
+export function lifetimeStats(state: AppState) {
+  const runs = state.activities.filter((a) => a.kind === 'run');
+  return {
+    sessions: state.activities.length,
+    runs: runs.length,
+    strength: state.activities.length - runs.length,
+    distanceM: runs.reduce((sum, a) => sum + (a.distanceM ?? 0), 0),
+    durationSec: state.activities.reduce((sum, a) => sum + a.durationSec, 0),
+    activeDays: new Set(state.activities.map((a) => a.date)).size,
+    badges: Object.keys(state.badges).length,
+    totalBadges: BADGES.length,
+    totalXp: state.xpLog.reduce((sum, e) => sum + e.amount, 0),
+  };
+}

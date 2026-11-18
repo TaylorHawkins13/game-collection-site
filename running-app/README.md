@@ -1,0 +1,68 @@
+# Steady — a running app for starting (and restarting)
+
+An iOS + Android app (Expo / React Native) built around **long-term consistency**, not pace or competition. It rewards completing planned sessions, protects beginners from doing too much too soon, and adapts — without guilt — when life gets in the way.
+
+## Run it
+
+Health, Maps and background GPS use native code, so this needs a **development build** (it won't run in Expo Go).
+
+```bash
+cd running-app
+npm install
+npm test             # 40 unit tests for the plan/rank/XP/GPS logic
+npm run typecheck
+
+# Local native builds (needs Xcode / Android Studio):
+npx expo run:ios
+GOOGLE_MAPS_ANDROID_API_KEY=your-key npx expo run:android
+
+# Or build in the cloud, no Xcode needed:
+npx eas-cli@latest build --profile development --platform ios   # or android
+```
+
+Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json` (they're `com.example.steady` placeholders) and replace the template icons in `assets/`. The Android route map needs a Google Maps API key, passed in through the `GOOGLE_MAPS_ANDROID_API_KEY` env var (`app.config.js`) so it's never committed. iOS uses Apple Maps and needs no key.
+
+## How it works
+
+| Area | Where | Notes |
+|---|---|---|
+| Domain logic (pure TS, tested) | `src/domain/` | No React Native imports. `engine.ts` is the state machine: every action is `(state, input, today) → { state, events }`. |
+| Seasonal ranks | `ranks.ts`, `season.ts` | Bronze I → Grandmaster (19 divisions). XP per tier 300 / 450 / 700 / 1000 / 1400 / 1900 / 2500. From Gold up, promotion needs 4-week plan completion of 70–90% plus active weeks; XP earned while gated is banked, not lost. Seasons are calendar quarters, with a soft reset of about one major rank (2 tiers if completion was ≥85%, Bronze I if inactive). |
+| Gentle decay | `ranks.ts#applyDecay` | Gold+ only. Weekly check: under 50% completion over 14 days loses 10% of a tier (20% if under 25%). It never drops more than one major rank below where you started the season, never takes you out of Gold, and never runs in the final 14 days or while the plan is paused. |
+| XP | `xp.ts` | Planned run 50, strength/mobility 30, weekly target +100, weekly challenge +75, check-in +10, logged rest day +10. Unplanned extra session: 15, once a day. Distance and pace earn nothing. |
+| Plans | `plan.ts`, `strength.ts` | One progression ladder: 10 walk-run steps, then continuous easy runs of 20–60 min. Week 1 starts **today**, so the first week is never half-empty. Starting step comes from level + frequency (New: 3× walk-run, 17–23 min; Returning: 20–25 min; Consistent: 25–35 min; Experienced: 4 runs, optional strides). 1–2 optional 8–15 min strength/mobility routines per week, chosen to suit reported issues. Every 4th continuous-running week is a planned recovery week. |
+| Adaptation | `adaptation.ts` | **Noticeable soreness**: the next run within 2 days becomes mobility, and the rest of the week eases. **Two "Hard" in the last three check-ins**: the rest of the week eases and next week eases. **Easy / Just right with ≥75% completion**: next week goes up one step (every other week if you reported issues). **Missed sessions**: reschedule, shorten the week, or let it go, with no penalty; a long gap eases the plan back down. |
+| Life happens | `engine.ts#pausePlan` | Pause for 3, 7 or 14 days (sick, injury, travel, busy). Paused days are left out of every metric and decay is frozen. Resuming starts gently. |
+| Badges | `badges.ts` | First Session, Week 1 Complete, 3-Session Week, Easy Effort, Recovery Aware, Health Connected, 7-Day Streak (the streak is plan-honoured days, so rest days count), Strength Starter, Comeback, Four Steady Weeks, Gold Standard, Season Finisher. None are for speed or distance. |
+| GPS | `domain/gps.ts`, `services/locationTracking.ts` | Background location task (screen off / app backgrounded; Android foreground service) with a foreground fallback. It drops fixes with accuracy over 30 m, jumps over 8 m/s and standing jitter under 3 m. Moving time comes from timestamps, so pausing and backgrounding are exact. Splits are interpolated at each km or mile boundary. Recording works fully offline. The in-progress run is persisted on every batch and resumes after a crash. Treadmill mode takes an optional distance at the end. The privacy setting trims about 200 m from each end of the route on maps and in health exports. |
+| Audio cues | `domain/cues.ts`, `services/guidance.ts` | Walk-run interval prompts, halfway and last-interval cues, and three sparse form reminders for newer runners. One "ease off a little" nudge fires only if a new or returning runner is more than 12% faster than their usual easy pace. Cues are driven from the location task too, so they keep firing with the screen off. |
+| Health | `services/health/index.{ios,android}.ts` | Apple Health (`react-native-health`) and Health Connect (`react-native-health-connect`). Reads heart rate, resting HR and sleep; writes the workout (Health Connect also gets distance and route). Heart rate during a session is pulled from the watch's samples after the run. Short sleep or a raised resting HR shows a gentle "consider an easier session" note; it never forces a change. Calories are not estimated. |
+| Notifications | `services/notifications.ts` | Plan-aware: one notification per session day for the next 7 days, so the text names the real session and rest days stay quiet. Optional single afternoon nudge, cancelled once the session is done. |
+| Storage | `state/store.ts`, `state/runStore.ts` | Local-first (AsyncStorage), no account wall. |
+
+### Screens (`src/app/`, Expo Router)
+
+- **Onboarding**: welcome → starting point → frequency (New/Returning only) → optional goal → health connect (skippable) → optional issues → first week → Home.
+- **Today**: rank and tier, today's session or rest-day card, missed-session options, recovery note, week strip, XP bar (with gate explanation), weekly challenge.
+- **In-session**: big walk-run phase timer, time / distance / pace, pause/resume, finish/discard, treadmill and keep-screen-on toggles; strength sessions get a checklist.
+- **Summary**: XP, promotions, badges, rank bar, the 5-second feel/soreness check-in (which drives adaptation), stats, map, splits, health sync status.
+- **Progress**: rank, season and days left, peak rank, consistency calendar, season stats, how ranks work, badge grid, season finishes, lifetime totals. No leaderboard.
+- **Activity**: runs/strength and season/all-time filters, weekly volume vs plan, completion trend, session list → detail (map, splits, HR, check-in, XP). Pace is shown smaller for beginners.
+- **Plan**: starting point, runs per week, strength count, run days, strides, next-week preview, pause plan, reminder times, units, voice cues, split announcements, route privacy, health connection, reset.
+
+## What has and hasn't been verified
+
+Verified in the build environment:
+- 40 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
+- `tsc` is clean, and Metro bundles for iOS and Android each pull in the right Health module.
+- A headless-browser walkthrough of the web build: onboarding → Home → full walk-run session → check-in → Progress / Activity / detail / Plan → next-day rest state, with zero console errors.
+
+**Not yet verified on a physical device.** Background GPS accuracy, screen-off audio cues (iOS `audio` background mode is enabled), HealthKit / Health Connect permission flows, and notification delivery all need testing on real phones.
+
+## Possible next steps
+
+- Live heart rate during runs (BLE strap or watch companion app). Today HR is read back from Health after the run.
+- Optional Strava export.
+- Move activity history to SQLite once histories get large (routes are stored inline).
+- Optional account and cloud backup.
+- Real app icon and splash; localisation.

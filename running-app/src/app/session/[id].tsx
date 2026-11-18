@@ -1,0 +1,395 @@
+/**
+ * In-session screen. Runs: glanceable stats, walk-run phase guidance, audio
+ * cues, pause/resume, background + screen-off GPS, treadmill mode. Strength:
+ * a simple checklist with a timer.
+ */
+import { router, useLocalSearchParams } from 'expo-router';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { sessionSubtitle } from '../../components/SessionCard';
+import { Body, Button, Card, Chip, H1, H2, H3, ProgressBar, Row, Screen, Small, Stat } from '../../components/ui';
+import { walkRunPhase } from '../../domain/cues';
+import { toDateKey } from '../../domain/dates';
+import { findSession } from '../../domain/engine';
+import { averagePace, currentPace, finalSplits, formatDistance, formatDuration, formatPace, METERS_PER_UNIT, movingMs } from '../../domain/gps';
+import { routineById } from '../../domain/strength';
+import type { PlannedSession } from '../../domain/types';
+import { setAudioEnabled, speak, stopSpeaking } from '../../services/audio';
+import { guidanceTick } from '../../services/guidance';
+import { ensureTrackingAfterRestore, setBackgroundTickListener, startTracking, stopTracking } from '../../services/locationTracking';
+import { cancelTodayNudge } from '../../services/notifications';
+import { syncActivityToHealth } from '../../services/sync';
+import { useRunStore } from '../../state/runStore';
+import { useStore } from '../../state/store';
+import { font, radius, space, useColors } from '../../theme';
+
+function useNow(active: boolean) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [active]);
+  return now;
+}
+
+export default function SessionScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const app = useStore((s) => s.app);
+  const found = id && id !== 'free' ? findSession(app, id) : null;
+  const session = found?.session ?? null;
+  if (session?.kind === 'strength') return <StrengthSession session={session} />;
+  return <RunSession session={session} />;
+}
+
+function close() {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
+// ───────────────────────────── run ─────────────────────────────
+
+function RunSession({ session }: { session: PlannedSession | null }) {
+  const c = useColors();
+  const profile = useStore((s) => s.app.profile)!;
+  const completeSession = useStore((s) => s.completeSession);
+  const active = useRunStore((s) => s.active);
+  const run = useRunStore.getState();
+  const [treadmill, setTreadmill] = useState(false);
+  const [keepAwake, setKeepAwake] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [finishing, setFinishing] = useState(false);
+  const [treadmillKm, setTreadmillKm] = useState('');
+  const now = useNow(!!active);
+  const restored = useRef(false);
+  const units = profile.units;
+
+  // Restore a run after the app was killed mid-session.
+  useEffect(() => {
+    if (active && !restored.current) {
+      restored.current = true;
+      if (!active.tracker.treadmill && !active.tracker.paused) {
+        void ensureTrackingAfterRestore().then((m) => run.setGpsMode(m === 'denied' ? 'none' : m));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    setAudioEnabled(profile.audioCues);
+    setBackgroundTickListener(guidanceTick);
+    return () => setBackgroundTickListener(null);
+  }, [profile.audioCues]);
+
+  useEffect(() => {
+    if (active) guidanceTick();
+  }, [now]);
+
+  // Only release the wake lock if we actually took it (releasing an unheld lock throws).
+  const awake = useRef(false);
+  useEffect(() => {
+    if (keepAwake && active && !awake.current) {
+      awake.current = true;
+      activateKeepAwakeAsync('run').catch(() => (awake.current = false));
+    }
+    const release = () => {
+      if (!awake.current) return;
+      awake.current = false;
+      Promise.resolve(deactivateKeepAwake('run')).catch(() => undefined);
+    };
+    if (!keepAwake || !active) release();
+    return release;
+  }, [keepAwake, !!active]);
+
+  const begin = async () => {
+    setGpsError(null);
+    run.start({ plannedSessionId: session?.id, title: session?.title ?? 'Easy run', units, treadmill });
+    if (!treadmill) {
+      const mode = await startTracking().catch(() => 'denied' as const);
+      if (mode === 'denied') {
+        setGpsError('Location is off, so distance won’t be recorded. Time and guidance still work — or switch to treadmill mode.');
+        run.setGpsMode('none');
+      } else {
+        run.setGpsMode(mode);
+        if (mode === 'foreground') setGpsError('Background location is off: keep the app open for accurate GPS. You can allow “Always” in Settings.');
+      }
+    }
+    guidanceTick();
+  };
+
+  const save = async () => {
+    const a = useRunStore.getState().active;
+    if (!a) return;
+    await stopTracking();
+    stopSpeaking();
+    const end = Date.now();
+    const t = a.tracker.paused ? a.tracker : { ...a.tracker, segments: a.tracker.segments.map((s, i, arr) => (i === arr.length - 1 && !s.end ? { ...s, end } : s)) };
+    const durationSec = movingMs(t, end) / 1000;
+    const manual = parseFloat(treadmillKm.replace(',', '.'));
+    const distanceM = t.treadmill ? (isFinite(manual) && manual > 0 ? manual * METERS_PER_UNIT[units] : undefined) : t.distanceM > 0 ? t.distanceM : undefined;
+    const activityId = completeSession({
+      plannedSessionId: a.plannedSessionId,
+      kind: 'run',
+      title: a.title,
+      startedAt: t.startedAt,
+      endedAt: end,
+      durationSec,
+      distanceM,
+      treadmill: t.treadmill,
+      splits: t.treadmill ? undefined : finalSplits(t, end),
+      route: t.treadmill ? undefined : t.points.map((p) => ({ lat: p.lat, lng: p.lng, t: p.t, ...(p.alt != null ? { alt: Math.round(p.alt) } : {}) })),
+    });
+    run.clear();
+    void cancelTodayNudge(toDateKey());
+    void syncActivityToHealth(activityId);
+    router.replace(`/summary/${activityId}`);
+  };
+
+  const discard = () =>
+    Alert.alert('Discard this session?', 'Nothing will be saved. No XP lost — it just won’t count.', [
+      { text: 'Keep going', style: 'cancel' },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: async () => {
+          await stopTracking();
+          stopSpeaking();
+          run.clear();
+          close();
+        },
+      },
+    ]);
+
+  const finish = () => {
+    const a = useRunStore.getState().active;
+    if (!a) return;
+    if (!a.tracker.paused) run.pause();
+    if (movingMs(a.tracker, Date.now()) < 60_000) {
+      Alert.alert('That was under a minute', 'Save it anyway, or discard?', [
+        { text: 'Resume', onPress: () => run.resume() },
+        { text: 'Discard', style: 'destructive', onPress: discard },
+        { text: 'Save', onPress: () => (a.tracker.treadmill ? setFinishing(true) : void save()) },
+      ]);
+      return;
+    }
+    if (a.tracker.treadmill) setFinishing(true);
+    else void save();
+  };
+
+  // ── pre-start ──
+  if (!active) {
+    return (
+      <Screen edges={['top', 'bottom']}>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Small>{session ? 'Planned session' : 'Extra run'}</Small>
+          <Button kind="ghost" title="Close" onPress={close} />
+        </Row>
+        <H1>{session?.title ?? 'Easy run'}</H1>
+        <Body muted>{session ? sessionSubtitle(session) : 'Unplanned runs earn a little XP. Keep it easy — your plan has your back.'}</Body>
+        {session?.walkRun ? (
+          <Card>
+            <H3>How it goes</H3>
+            <Body>• Walk {session.walkRun.warmupMin} min to warm up</Body>
+            <Body>
+              • Then {session.walkRun.repeats}× run {session.walkRun.runSec < 60 ? `${session.walkRun.runSec} sec` : `${session.walkRun.runSec / 60} min`}, walk{' '}
+              {session.walkRun.walkSec < 60 ? `${session.walkRun.walkSec} sec` : `${session.walkRun.walkSec / 60} min`}
+            </Body>
+            <Body>• Walk {session.walkRun.cooldownMin} min to cool down</Body>
+            <Small>Voice prompts tell you when to switch — no need to look at your phone.</Small>
+          </Card>
+        ) : null}
+        {session?.note ? <Small style={{ fontStyle: 'italic' }}>{session.note}</Small> : null}
+        <Card>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <H3>Treadmill</H3>
+              <Small>No GPS; enter distance at the end if you like.</Small>
+            </View>
+            <Switch value={treadmill} onValueChange={setTreadmill} />
+          </Row>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <H3>Keep screen on</H3>
+              <Small>Optional — recording works with the screen off too.</Small>
+            </View>
+            <Switch value={keepAwake} onValueChange={setKeepAwake} />
+          </Row>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <H3>Voice cues</H3>
+              <Small>Interval prompts and the occasional gentle reminder.</Small>
+            </View>
+            <Switch value={profile.audioCues} onValueChange={(v) => useStore.getState().updateProfile({ audioCues: v })} />
+          </Row>
+        </Card>
+        <Button big title="Start" onPress={() => void begin()} />
+      </Screen>
+    );
+  }
+
+  // ── treadmill finish ──
+  if (finishing) {
+    return (
+      <Screen edges={['top', 'bottom']}>
+        <H1>Nice work</H1>
+        <Body muted>Treadmill distance (optional)</Body>
+        <TextInput
+          value={treadmillKm}
+          onChangeText={setTreadmillKm}
+          keyboardType="decimal-pad"
+          placeholder={`e.g. 3.2 ${units}`}
+          placeholderTextColor={c.textMuted}
+          style={{ ...font.h2, color: c.text, backgroundColor: c.surface, borderRadius: radius.md, padding: space.lg, borderWidth: 1, borderColor: c.border }}
+        />
+        <Button big title="Save session" onPress={() => void save()} />
+        <Button kind="ghost" title="Back to session" onPress={() => { setFinishing(false); run.resume(); }} />
+      </Screen>
+    );
+  }
+
+  // ── active ──
+  const t = active.tracker;
+  const elapsed = movingMs(t, now) / 1000;
+  const plannedSec = (session?.durationMin ?? 0) * 60;
+  const phase = session?.walkRun ? walkRunPhase(session.walkRun, elapsed) : null;
+  const pace = t.treadmill ? null : currentPace(t, now);
+  const avg = t.treadmill ? null : averagePace(t.distanceM, elapsed, units);
+  const phaseColor = phase?.phase === 'run' ? c.primary : phase?.phase === 'walk' ? c.rest : c.accent;
+  const phaseLabel: Record<string, string> = { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
+
+  return (
+    <Screen scroll={false} edges={['top', 'bottom']}>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <Small>{active.title}</Small>
+        <Small>{t.paused ? 'Paused' : active.gpsMode === 'background' ? 'GPS ● recording' : active.gpsMode === 'foreground' ? 'GPS ● keep app open' : t.treadmill ? 'Treadmill' : 'No GPS'}</Small>
+      </Row>
+      {gpsError ? <Small style={{ color: c.danger }}>{gpsError}</Small> : null}
+
+      {phase ? (
+        <View style={{ backgroundColor: phaseColor, borderRadius: radius.lg, padding: space.xl, alignItems: 'center', gap: 4 }} accessibilityLiveRegion="polite">
+          <Text style={{ color: '#fff', fontWeight: '800', letterSpacing: 1 }}>{phaseLabel[phase.phase]}</Text>
+          <Text style={[font.huge, { color: '#fff' }]}>{formatDuration(phase.remainingSec)}</Text>
+          {phase.repeat > 0 && phase.phase !== 'done' ? (
+            <Text style={{ color: '#fff' }}>
+              Interval {phase.repeat} of {session!.walkRun!.repeats}
+            </Text>
+          ) : null}
+        </View>
+      ) : (
+        <View style={{ alignItems: 'center', paddingVertical: space.xl }}>
+          <Text style={[font.huge, { color: c.text }]} accessibilityLabel={`Time ${formatDuration(elapsed)}`}>{formatDuration(elapsed)}</Text>
+          <Small>time</Small>
+        </View>
+      )}
+
+      <Row style={{ flexWrap: 'nowrap' }}>
+        {phase ? <Stat big label="time" value={formatDuration(elapsed)} /> : null}
+        <Stat big label="distance" value={t.treadmill ? '—' : formatDistance(t.distanceM, units).replace(` ${units}`, '')} />
+        <Stat big label={`pace /${units}`} value={formatPace(pace ?? avg, units).split(' ')[0]} />
+      </Row>
+      {plannedSec > 0 && !phase ? (
+        <View style={{ gap: 4 }}>
+          <ProgressBar value={elapsed / plannedSec} />
+          <Small>{elapsed >= plannedSec ? 'Planned time done — finish whenever you like.' : `${formatDuration(plannedSec - elapsed)} to go`}</Small>
+        </View>
+      ) : null}
+      {t.splits.length ? (
+        <Small>
+          Last split: {formatDuration(t.splits[t.splits.length - 1].durationSec)} /{units}
+        </Small>
+      ) : null}
+
+      <View style={{ flex: 1 }} />
+      <View style={{ gap: space.md }}>
+        <Pressable
+          onPress={() => (t.paused ? run.resume() : run.pause())}
+          accessibilityRole="button"
+          accessibilityLabel={t.paused ? 'Resume' : 'Pause'}
+          style={({ pressed }) => ({
+            alignSelf: 'center',
+            width: 112,
+            height: 112,
+            borderRadius: 56,
+            backgroundColor: t.paused ? c.primary : c.surfaceAlt,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text style={{ fontSize: 20, fontWeight: '800', color: t.paused ? c.primaryText : c.text }}>{t.paused ? 'Resume' : 'Pause'}</Text>
+        </Pressable>
+        <Row style={{ justifyContent: 'center' }}>
+          <Button kind="secondary" title="Finish" onPress={finish} />
+          {t.paused ? <Button kind="ghost" title="Discard" onPress={discard} /> : null}
+        </Row>
+      </View>
+    </Screen>
+  );
+}
+
+// ───────────────────────────── strength ─────────────────────────────
+
+function StrengthSession({ session }: { session: PlannedSession }) {
+  const c = useColors();
+  const completeSession = useStore((s) => s.completeSession);
+  const routine = routineById(session.routineId);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [done, setDone] = useState<number[]>([]);
+  const now = useNow(startedAt !== null);
+  const elapsed = startedAt ? (now - startedAt) / 1000 : 0;
+
+  const save = () => {
+    const end = Date.now();
+    const activityId = completeSession({
+      plannedSessionId: session.id,
+      kind: 'strength',
+      title: session.title,
+      startedAt: startedAt ?? end,
+      endedAt: end,
+      durationSec: startedAt ? (end - startedAt) / 1000 : session.durationMin * 60,
+      routineId: session.routineId,
+    });
+    void cancelTodayNudge(toDateKey());
+    void syncActivityToHealth(activityId);
+    router.replace(`/summary/${activityId}`);
+  };
+
+  return (
+    <Screen edges={['top', 'bottom']}>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <Small>{session.replacedFrom ? 'Swapped in for a run' : session.optional ? 'Optional session' : 'Planned session'}</Small>
+        <Button kind="ghost" title="Close" onPress={close} />
+      </Row>
+      <H1>{session.title}</H1>
+      <Body muted>{sessionSubtitle(session)}</Body>
+      {startedAt ? <H2>{formatDuration(elapsed)}</H2> : null}
+      {routine?.exercises.map((e, i) => {
+        const checked = done.includes(i);
+        return (
+          <Card key={e.name} onPress={startedAt ? () => setDone((d) => (checked ? d.filter((x) => x !== i) : [...d, i])) : undefined} style={checked ? { backgroundColor: c.primarySoft } : undefined}>
+            <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+              <View style={{ flex: 1 }}>
+                <H3>{e.name}</H3>
+                <Small>{e.dose} · {e.cue}</Small>
+              </View>
+              {startedAt ? <Chip label={checked ? '✓' : ' '} selected={checked} onPress={() => setDone((d) => (checked ? d.filter((x) => x !== i) : [...d, i]))} /> : null}
+            </Row>
+          </Card>
+        );
+      })}
+      {startedAt ? (
+        <Button big title={done.length === (routine?.exercises.length ?? 0) ? 'Finish session' : 'Finish (that’s enough today)'} onPress={save} />
+      ) : (
+        <Button
+          big
+          title="Start"
+          onPress={() => {
+            setStartedAt(Date.now());
+            speak(`Let's go. ${routine?.exercises[0]?.name ?? ''}.`);
+          }}
+        />
+      )}
+      <Small style={{ textAlign: 'center' }}>Move slowly and comfortably. Skip anything that doesn’t feel right.</Small>
+    </Screen>
+  );
+}

@@ -9,6 +9,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['**/*.test.js'],
-    exclude: ['node_modules/**', '.next/**'],
+    // running-app/ is the separate Expo project (its own `npm test`); without
+    // this, its node_modules' own *.test.js files get swept in.
+    exclude: ['node_modules/**', '.next/**', 'running-app/**'],
   },
 });
