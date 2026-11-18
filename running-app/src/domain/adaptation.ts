@@ -78,7 +78,9 @@ export function adaptAfterFeedback(week: PlanWeek, activity: Activity, recent: A
   } else {
     const lastThree = [activity, ...recent.filter((a) => a.id !== activity.id && a.feel)].slice(0, 3);
     const hard = lastThree.filter((a) => a.feel === 'hard').length;
-    if (activity.feel === 'hard' && hard >= 2) {
+    if (activity.feel === 'hard' && hard >= 2 && profile.planMode === 'custom') {
+      note = 'A couple of sessions have felt hard. It’s your plan — consider making the next one shorter or easier.';
+    } else if (activity.feel === 'hard' && hard >= 2) {
       sessions = sessions.map((s) => (after(s) ? easeSession(s) : s));
       note = 'A couple of sessions have felt hard, so the rest of this week is a little lighter. That’s the plan working, not you failing.';
     } else if (activity.feel === 'hard') {

@@ -46,8 +46,13 @@ const FORM = [
 ];
 
 /** Tempo / interval cues. `pace` is an optional spoken target like "5 minutes 10 per kilometer". */
-export function workoutCues(w: WalkRunStructure, kind: 'tempo' | 'intervals', pace?: string): Cue[] {
-  const effort = kind === 'tempo' ? 'Comfortably hard — you could say a few words, not sentences.' : 'Strong but controlled, about 5K effort.';
+export function workoutCues(w: WalkRunStructure, kind: 'tempo' | 'intervals' | 'hills', pace?: string): Cue[] {
+  const effort =
+    kind === 'tempo'
+      ? 'Comfortably hard — you could say a few words, not sentences.'
+      : kind === 'hills'
+        ? 'Strong uphill effort. Short steps, drive your arms.'
+        : 'Strong but controlled, about 5K effort.';
   const cues: Cue[] = [{ atSec: 0, kind: 'interval', text: `Warm up with ${say(w.warmupMin * 60)} of easy jogging.` }];
   let t = w.warmupMin * 60;
   for (let i = 1; i <= w.repeats; i++) {
@@ -64,8 +69,16 @@ export function workoutCues(w: WalkRunStructure, kind: 'tempo' | 'intervals', pa
 }
 
 export function buildCues(session: PlannedSession, level: ExperienceLevel, spokenTargetPace?: string): Cue[] {
-  if (session.workout && (session.runType === 'tempo' || session.runType === 'intervals')) {
+  if (session.workout && (session.runType === 'tempo' || session.runType === 'intervals' || session.runType === 'hills')) {
     return workoutCues(session.workout, session.runType, spokenTargetPace);
+  }
+  if (session.runType === 'race') {
+    const total = session.durationMin * 60;
+    return [
+      { atSec: 0, kind: 'info', text: `Race day. Start steady — the first few minutes should feel easy.${spokenTargetPace ? ` Target about ${spokenTargetPace}.` : ''}` },
+      { atSec: Math.round(total / 2), kind: 'info', text: 'About halfway. Stay relaxed and keep it steady.' },
+      { atSec: Math.round(total * 0.85), kind: 'info', text: 'Final stretch. Give what you’ve got left.' },
+    ];
   }
   const newer = level === 'new' || level === 'returning';
   let cues: Cue[];

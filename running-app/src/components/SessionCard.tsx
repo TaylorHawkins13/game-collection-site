@@ -12,6 +12,9 @@ import { Body, Button, Card, H2, Row, Small } from './ui';
 export function sessionSubtitle(s: PlannedSession, profile?: Profile | null, fitnessPaces?: TrainingPaces | null): string {
   const paces = profile && profile.level !== 'new' ? fitnessPaces ?? null : null;
   const u = profile?.units ?? 'km';
+  if (s.runType === 'race') {
+    return s.targetPaceSecPerKm ? `Race · target ~${paceLabel(s.targetPaceSecPerKm, u)}/${u} (about ${s.durationMin} min)` : `Race · run it by feel`;
+  }
   if (s.workout) {
     const target = s.targetPaceSecPerKm ? ` · reps at ~${paceLabel(s.targetPaceSecPerKm, u)}/${u}` : ' · by feel';
     return `${s.durationMin} min incl. 10 min warm-up${target}`;
@@ -50,14 +53,14 @@ export function SessionCard({
   return (
     <Card style={done ? { backgroundColor: c.primarySoft, borderColor: c.primarySoft } : undefined}>
       <Small style={{ fontWeight: '700', color: c.primary }}>
-        {done ? 'DONE ✓' : session.optional ? 'OPTIONAL' : session.kind === 'run' ? 'TODAY’S RUN' : 'TODAY’S SESSION'}
+        {done ? 'DONE ✓' : session.runType === 'race' ? 'RACE DAY' : session.optional ? 'OPTIONAL' : session.kind === 'run' ? 'TODAY’S RUN' : 'TODAY’S SESSION'}
       </Small>
       {compact ? <Body>{session.title}</Body> : <H2>{session.title}</H2>}
       <Small>{sessionSubtitle(session, profile, paces)}</Small>
       {session.note ? <Small style={{ fontStyle: 'italic' }}>{session.note}</Small> : null}
       {!done && !paused ? (
         <View style={{ gap: space.sm, marginTop: space.sm }}>
-          <Button title={session.kind === 'run' ? 'Start run' : 'Start session'} big={!compact} onPress={() => router.push(`/session/${session.id}`)} />
+          <Button title={session.runType === 'race' ? 'Start race' : session.kind === 'run' ? 'Start run' : 'Start session'} big={!compact} onPress={() => router.push(`/session/${session.id}`)} />
           {onSwap || onMoveTomorrow ? (
             <Row style={{ justifyContent: 'center' }}>
               {onSwap ? <Button kind="ghost" title="Swap for mobility" onPress={onSwap} /> : null}

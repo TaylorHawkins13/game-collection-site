@@ -114,6 +114,13 @@ export const BADGES: BadgeDef[] = [
     earned: (s) => s.peakDivisionEver >= GOLD_I,
   },
   {
+    id: 'race_day',
+    title: 'Race Day',
+    description: 'Finished a race from your plan.',
+    icon: '🎽',
+    earned: (s) => (s.races ?? []).some((r) => r.result),
+  },
+  {
     id: 'season_finisher',
     title: 'Season Finisher',
     description: 'Was active through the end of a season.',

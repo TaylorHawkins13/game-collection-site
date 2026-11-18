@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { toDateKey } from '../domain/dates';
 import * as E from '../domain/engine';
-import type { AppState, DateKey, EngineEvent, Feel, Pause, Profile, RaceDistance, RecoverySnapshot, Soreness } from '../domain/types';
+import type { AppState, DateKey, EngineEvent, Feel, Pause, Profile, Race, RaceDistance, RecoverySnapshot, Soreness } from '../domain/types';
 
 export const today = (): DateKey => toDateKey(new Date());
 
@@ -37,6 +37,8 @@ interface Store {
   patchActivity: (activityId: string, patch: { avgHr?: number; maxHr?: number }) => void;
   dismissNotice: (id: string) => void;
   savePersonalBest: (pb: { distance: RaceDistance; timeSec: number }) => void;
+  saveRace: (race: Race) => void;
+  removeRace: (id: string) => void;
   clearTickEvents: () => void;
   resetAll: () => void;
 }
@@ -90,6 +92,8 @@ export const useStore = create<Store>()(
         set((s) => ({ app: { ...s.app, activities: s.app.activities.map((a) => (a.id === id ? { ...a, ...patch } : a)) } })),
       dismissNotice: (id) => set({ app: E.dismissNotice(get().app, id) }),
       savePersonalBest: (pb) => set({ app: E.savePersonalBest(get().app, pb, today()).state }),
+      saveRace: (race) => set({ app: E.saveRace(get().app, race, today()) }),
+      removeRace: (id) => set({ app: E.removeRace(get().app, id, today()) }),
       clearTickEvents: () => set({ tickEvents: [] }),
       resetAll: () => set({ app: E.createInitialState(today()), sessionEvents: {}, tickEvents: [] }),
     }),

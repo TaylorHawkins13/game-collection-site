@@ -13,6 +13,8 @@ import { countsTowardCompletion } from '../../domain/metrics';
 import { currentWeek } from '../../domain/plan';
 import { divisionLabel, divisionProgress, isGated, MAX_DIVISION, gateFor, rankOf, xpToClear } from '../../domain/ranks';
 import { recoveryAdvice } from '../../domain/recovery';
+import { phaseFor, phaseLabel, upcomingRaces } from '../../domain/races';
+import { diffDays } from '../../domain/dates';
 import { daysLeft, seasonFor } from '../../domain/season';
 import { XP } from '../../domain/xp';
 import { today as getToday, useStore } from '../../state/store';
@@ -56,6 +58,7 @@ export default function Home() {
   const tomorrow = addDays(today, 1);
   const canMoveTomorrow = !!week && tomorrow <= week.end && free.includes(tomorrow);
   const seasonEvent = tickEvents.find((e) => e.type === 'season_reset');
+  const nextRace = upcomingRaces(app.races, today)[0];
 
   return (
     <Screen>
@@ -114,6 +117,18 @@ export default function Home() {
         <Card style={{ borderLeftColor: c.accent, borderLeftWidth: 4 }}>
           <H3>Recovery check</H3>
           <Body muted>{advice.text}</Body>
+        </Card>
+      ) : null}
+
+      {nextRace && diffDays(today, nextRace.date) <= (nextRace.pbAttempt ? 26 * 7 : 70) ? (
+        <Card onPress={() => router.push(`/race/${nextRace.id}`)} style={{ borderLeftColor: c.accent, borderLeftWidth: 4 }}>
+          <Small style={{ fontWeight: '700', color: c.accent }}>
+            {diffDays(today, nextRace.date) === 0 ? 'RACE DAY' : `RACE IN ${diffDays(today, nextRace.date)} DAY${diffDays(today, nextRace.date) === 1 ? '' : 'S'}`}
+          </Small>
+          <H3>{nextRace.name}</H3>
+          <Small>
+            {formatShort(nextRace.date)} · {nextRace.pbAttempt ? `PB attempt · ${phaseLabel(phaseFor(nextRace, week?.start ?? today))}` : 'For fun'}
+          </Small>
         </Card>
       ) : null}
 
@@ -181,6 +196,7 @@ export default function Home() {
               ? `Weekly target hit ✓ (+${XP.weeklyTarget} XP)`
               : `Complete your planned sessions this week for a +${XP.weeklyTarget} XP bonus.`}
           </Small>
+          {week.phaseNote ? <Small muted={false} style={{ fontWeight: '600' }}>{week.phaseNote}</Small> : null}
           <Small style={{ fontStyle: 'italic' }}>{week.summary}</Small>
         </Card>
       ) : null}

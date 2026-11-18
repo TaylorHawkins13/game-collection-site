@@ -2,7 +2,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Switch, View } from 'react-native';
+import { CustomWeekEditor } from '../../components/CustomWeekEditor';
 import { PbEditor } from '../../components/PbEditor';
+import { currentWeek, templateFromWeek } from '../../domain/plan';
+import { phaseFor, phaseLabel, upcomingRaces } from '../../domain/races';
+import { formatDistance } from '../../domain/gps';
 import { Body, Button, Card, Chip, Divider, H1, H3, Option, OptionGroup, Row, Screen, SectionTitle, Small } from '../../components/ui';
 import { goalLabel, goalsFor } from '../../goals';
 import { currentPaces, direction } from '../../domain/fitness';
@@ -99,6 +103,53 @@ export default function Settings() {
     <Screen>
       <H1>Your plan</H1>
 
+      <SectionTitle>Races</SectionTitle>
+      {upcomingRaces(app.races, today).map((r) => (
+        <Card key={r.id} onPress={() => router.push(`/race/${r.id}`)}>
+          <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+            <View style={{ flex: 1 }}>
+              <H3>{r.name}</H3>
+              <Small>
+                {weekdayShort(r.date)} {formatShort(r.date)} · {formatDistance(r.distanceM, p.units)} · {r.terrain.replace('_', '-')}
+              </Small>
+              <Small muted={false}>
+                {r.pbAttempt ? 'PB attempt' : 'For fun / training'}
+                {r.pbAttempt ? ` · ${phaseLabel(phaseFor(r, today))}` : ''}
+              </Small>
+            </View>
+            <Small style={{ color: c.primary, fontWeight: '700' }}>Edit</Small>
+          </Row>
+        </Card>
+      ))}
+      {(app.races ?? []).filter((r) => r.result).slice(-3).reverse().map((r) => (
+        <Card key={r.id}>
+          <Small>
+            ✓ {r.name} · {formatShort(r.date)} · finished in {formatTime(r.result!.timeSec)}
+          </Small>
+        </Card>
+      ))}
+      <Button kind="secondary" title="+ Add a race" onPress={() => router.push('/race/new')} />
+
+      <SectionTitle>Plan type</SectionTitle>
+      <OptionGroup>
+        <Option
+          label="Steady builds it for me"
+          description="Adapts to your check-ins, fitness and races. Recommended."
+          selected={p.planMode !== 'custom'}
+          onPress={() => update({ planMode: 'adaptive' })}
+        />
+        <Option
+          label="I’ll plan it myself"
+          description="Set your own weekly sessions. Ranks, XP and races still work."
+          selected={p.planMode === 'custom'}
+          onPress={() => {
+            const wk = app.plan ? currentWeek(app.plan, today) : undefined;
+            update({ planMode: 'custom', customWeek: p.customWeek?.length ? p.customWeek : wk ? templateFromWeek(wk) : [] });
+          }}
+        />
+      </OptionGroup>
+      {p.planMode === 'custom' ? <CustomWeekEditor week={p.customWeek ?? []} onChange={(customWeek) => update({ customWeek })} /> : null}
+
       <SectionTitle>Goal & best times</SectionTitle>
       <Card>
         <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
@@ -149,6 +200,8 @@ export default function Settings() {
       />
 
 
+      {p.planMode !== 'custom' ? (
+        <>
       <SectionTitle>Plan</SectionTitle>
       <Card style={{ gap: space.md }}>
         <View style={{ gap: space.sm }}>
@@ -189,6 +242,9 @@ export default function Settings() {
         ) : null}
         <Small>Changes apply from today; finished sessions are never touched.</Small>
       </Card>
+
+        </>
+      ) : null}
 
       {preview ? (
         <Card>

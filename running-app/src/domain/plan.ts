@@ -10,7 +10,8 @@
 import { addDays, diffDays, weekday } from './dates.ts';
 import { pickChallenge } from './challenges.ts';
 import { isFasterGoal, pacesFor, trainingPaces } from './pace.ts';
-import { pickRoutines } from './strength.ts';
+import { applyRaceDays, phaseLabel, raceWeekPlan } from './races.ts';
+import { pickRoutines, routineById } from './strength.ts';
 import type {
   DateKey,
   ExperienceLevel,
@@ -23,6 +24,7 @@ import type {
   WeekDirective,
   WeeklyFrequency,
   PersonalBest,
+  Race,
 } from './types.ts';
 
 export interface StepTemplate {
@@ -181,25 +183,44 @@ export interface BuildRunOptions {
   multiplier: number;
   long: boolean;
   strides: boolean;
-  quality?: 'tempo' | 'intervals';
+  quality?: 'tempo' | 'intervals' | 'hills';
   /** Target pace for the hard reps, sec/km. */
   targetPace?: number;
+  shortenReps?: boolean;
+  qualityLabel?: string;
 }
 
-function qualityRun(id: string, date: DateKey, minutes: number, kind: 'tempo' | 'intervals', step: number, targetPace?: number): PlannedSession {
+export function qualityRun(
+  id: string,
+  date: DateKey,
+  minutes: number,
+  kind: 'tempo' | 'intervals' | 'hills',
+  step: number,
+  targetPace?: number,
+  opts: { shortenReps?: boolean; label?: string } = {},
+): PlannedSession {
   const workout =
     kind === 'tempo'
       ? { warmupMin: 10, runSec: 480, walkSec: 120, repeats: Math.max(2, Math.min(4, Math.floor((minutes - 15) / 10))), cooldownMin: 5 }
-      : { warmupMin: 10, runSec: 180, walkSec: 120, repeats: Math.max(3, Math.min(6, Math.floor((minutes - 15) / 5))), cooldownMin: 5 };
+      : kind === 'hills'
+        ? { warmupMin: 10, runSec: 60, walkSec: 90, repeats: Math.max(5, Math.min(8, Math.floor((minutes - 15) / 2.5))), cooldownMin: 5 }
+        : { warmupMin: 10, runSec: 180, walkSec: 120, repeats: Math.max(3, Math.min(6, Math.floor((minutes - 15) / 5))), cooldownMin: 5 };
+  if (opts.shortenReps) workout.repeats = Math.max(2, workout.repeats - 1);
   const total = walkRunMinutes(workout);
   const work = workout.runSec / 60;
+  const label = opts.label ? `${opts.label}: ` : '';
   return {
     id,
     date,
     kind: 'run',
     runType: kind,
     step,
-    title: kind === 'tempo' ? `Tempo: ${workout.repeats} × ${work} min comfortably hard` : `Intervals: ${workout.repeats} × ${work} min at 5K effort`,
+    title:
+      kind === 'tempo'
+        ? `${label || 'Tempo: '}${workout.repeats} × ${work} min ${opts.label ? 'at race pace' : 'comfortably hard'}`
+        : kind === 'hills'
+          ? `Hills: ${workout.repeats} × 60 sec uphill, jog down`
+          : `${label || 'Intervals: '}${workout.repeats} × ${work} min at ${opts.label ? 'race pace' : '5K effort'}`,
     durationMin: total,
     workout,
     targetPaceSecPerKm: targetPace,
@@ -225,7 +246,7 @@ export function buildRun(id: string, date: DateKey, o: BuildRunOptions): Planned
     };
   }
   const minutes = round5(t.minutes * o.multiplier);
-  if (o.quality) return qualityRun(id, date, minutes, o.quality, o.step, o.targetPace);
+  if (o.quality) return qualityRun(id, date, minutes, o.quality, o.step, o.targetPace, { shortenReps: o.shortenReps, label: o.qualityLabel });
   if (o.strides) {
     return {
       id,
@@ -261,14 +282,41 @@ const SUMMARIES: Record<WeekDirective, string> = {
 };
 
 /** `fiveKSec` is the current fitness estimate; without it, paces come straight from the PBs. */
-export function generateWeek(profile: Profile, index: number, start: DateKey, step: number, directive: WeekDirective, fiveKSec?: number | null): PlanWeek {
+export function generateWeek(
+  profile: Profile,
+  index: number,
+  start: DateKey,
+  step: number,
+  directive: WeekDirective,
+  fiveKSec?: number | null,
+  races?: Race[],
+): PlanWeek {
+  const end = addDays(start, 6);
+  const rw = raceWeekPlan(races, start, profile.level, fiveKSec ?? null);
+  const phaseNote = rw.race && rw.phase !== 'base' ? `${phaseLabel(rw.phase)} · ${rw.race.name} in ${Math.max(0, Math.ceil(diffDays(start, rw.race.date) / 7))} week${Math.ceil(diffDays(start, rw.race.date) / 7) === 1 ? '' : 's'}` : undefined;
+  if (profile.planMode === 'custom') {
+    const custom = customSessions(profile, index, start, fiveKSec ?? null);
+    return {
+      index,
+      start,
+      end,
+      directive: 'hold',
+      sessions: applyRaceDays(custom, races, start, end, fiveKSec ?? null),
+      challengeId: pickChallenge(index, custom.some((x) => x.kind === 'strength')),
+      summary: 'Your own plan. Steady keeps score and slots your races in.',
+      phaseNote,
+    };
+  }
   const runs = Math.max(1, Math.min(5, profile.runsPerWeek));
   const dates = runDates(start, runs, profile.preferredDays);
   const pattern = PATTERNS[runs];
-  const recoveryFactor = directive === 'recovery' ? 0.8 : 1;
+  const recoveryFactor = (directive === 'recovery' ? 0.8 : 1) * rw.volumeFactor;
   const longGoal = profile.goal === 'half' || profile.goal === 'half_faster' || profile.goal === 'marathon';
   // Week 1 is always easy; quality work starts in week 2.
+  const raceWorkout =
+    !!rw.workout && index > 0 && step >= FIRST_CONTINUOUS_STEP && directive !== 'ease' && directive !== 'recovery' && runs >= 3;
   const workoutWeek =
+    !raceWorkout &&
     index > 0 &&
     (isFasterGoal(profile.goal) || (longGoal && profile.level === 'experienced')) &&
     (profile.level === 'experienced' || profile.level === 'consistent') &&
@@ -281,6 +329,7 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
   const longBoost = longGoal && step >= 14 ? 0.1 : 0;
   const quality =
     !workoutWeek &&
+    !raceWorkout &&
     profile.includeQuality &&
     (profile.level === 'experienced' || profile.level === 'consistent') &&
     step >= FIRST_CONTINUOUS_STEP &&
@@ -294,10 +343,20 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
       multiplier: (pattern[i] + (i === runs - 1 && pattern[i] > 1.1 ? longBoost : 0)) * recoveryFactor,
       long: runs >= 2 && i === runs - 1 && pattern[i] > 1.1,
       strides: quality && i === 1,
-      quality: workoutWeek && i === 1 ? workoutKind : undefined,
-      targetPace: workoutWeek && i === 1 && paces ? (workoutKind === 'tempo' ? paces.tempo : paces.interval) : undefined,
+      quality: i === 1 ? (raceWorkout ? rw.workout!.kind : workoutWeek ? workoutKind : undefined) : undefined,
+      targetPace:
+        i !== 1 ? undefined : raceWorkout ? rw.workout!.targetPace : workoutWeek && paces ? (workoutKind === 'tempo' ? paces.tempo : paces.interval) : undefined,
+      shortenReps: rw.shortenReps,
+      qualityLabel: raceWorkout && rw.workout!.kind !== 'hills' ? rw.workout!.label : undefined,
     }),
   );
+  // Race build: grow the long run toward what the race needs (never more than +60% over the normal long run).
+  const longIdx = sessions.findIndex((x) => x.runType === 'long');
+  if (rw.longRunMin && longIdx >= 0) {
+    const cur = sessions[longIdx].durationMin;
+    const minutes = Math.max(cur, Math.min(rw.longRunMin, Math.round((cur * 1.6) / 5) * 5));
+    sessions[longIdx] = { ...sessions[longIdx], durationMin: minutes, title: `Long run · ${minutes} min`, note: rw.race ? `Building endurance for ${rw.race.name}.` : undefined };
+  }
 
   const strengthCount = Math.max(0, Math.min(2, profile.strengthPerWeek));
   const routines = pickRoutines(profile.level, profile.issues, strengthCount, index);
@@ -315,7 +374,7 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
     });
   });
 
-  sessions.sort((a, b) => (a.date === b.date ? a.kind.localeCompare(b.kind) : a.date < b.date ? -1 : 1));
+  const shaped = applyRaceDays(sessions, races, start, end, fiveKSec ?? null);
 
   const runWord = sessions[0]?.walkRun ? 'walk-run sessions' : 'easy runs';
   const summary =
@@ -326,11 +385,12 @@ export function generateWeek(profile: Profile, index: number, start: DateKey, st
   return {
     index,
     start,
-    end: addDays(start, 6),
+    end,
     directive,
-    sessions,
+    sessions: shaped,
     challengeId: pickChallenge(index, profile.strengthPerWeek > 0),
     summary,
+    phaseNote,
   };
 }
 
@@ -374,4 +434,57 @@ export function currentWeek(plan: PlanState, today: DateKey): PlanWeek | undefin
 
 export function allSessions(plan: PlanState | null): PlannedSession[] {
   return plan ? plan.weeks.flatMap((w) => w.sessions) : [];
+}
+
+/** Build a week from the user's own template. */
+export function customSessions(profile: Profile, index: number, start: DateKey, fiveKSec: number | null): PlannedSession[] {
+  const paces = fiveKSec ? trainingPaces(fiveKSec) : pacesFor(profile.pbs ?? [], profile.level);
+  return (profile.customWeek ?? [])
+    .map((slot, i): PlannedSession => {
+      const date = addDays(start, (slot.weekday - weekday(start) + 7) % 7);
+      const id = `w${index}-c${i}`;
+      if (slot.kind === 'strength') {
+        const r = routineById(slot.routineId) ?? routineById('str-foundation')!;
+        return { id, date, kind: 'strength', title: r.title, durationMin: slot.durationMin || r.durationMin, routineId: r.id, optional: !!slot.optional, status: 'planned' };
+      }
+      const t = slot.runType ?? 'easy';
+      if (t === 'tempo' || t === 'intervals' || t === 'hills') {
+        const q = qualityRun(id, date, slot.durationMin, t, FIRST_CONTINUOUS_STEP, paces ? (t === 'tempo' ? paces.tempo : t === 'intervals' ? paces.interval : undefined) : undefined);
+        return { ...q, optional: !!slot.optional };
+      }
+      if (t === 'walk_run') {
+        let best = 0;
+        LADDER.forEach((s, k) => {
+          if (s.walkRun && Math.abs(s.minutes - slot.durationMin) < Math.abs(LADDER[best].minutes - slot.durationMin)) best = k;
+        });
+        return { ...buildRun(id, date, { step: best, multiplier: 1, long: false, strides: false }), optional: !!slot.optional };
+      }
+      const minutes = Math.max(10, slot.durationMin);
+      return {
+        id,
+        date,
+        kind: 'run',
+        runType: t,
+        title: t === 'long' ? `Long run · ${minutes} min` : t === 'strides' ? `Easy run + 6 strides · ${minutes} min` : `Easy run · ${minutes} min`,
+        durationMin: minutes,
+        strides: t === 'strides' ? 6 : undefined,
+        optional: !!slot.optional,
+        status: 'planned',
+      };
+    })
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+/** Turn a generated week into a starting template for "my own plan". */
+export function templateFromWeek(week: PlanWeek): import('./types.ts').CustomSlot[] {
+  return week.sessions
+    .filter((s) => s.runType !== 'race')
+    .map((s) => ({
+      weekday: weekday(s.date),
+      kind: s.kind,
+      runType: s.kind === 'run' ? (s.runType === 'walk' ? 'easy' : (s.runType as 'easy')) : undefined,
+      routineId: s.routineId,
+      durationMin: s.durationMin,
+      optional: s.optional,
+    }));
 }

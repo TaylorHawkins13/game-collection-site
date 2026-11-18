@@ -209,7 +209,7 @@ function RunSession({ session }: { session: PlannedSession | null }) {
             <H3>How it goes</H3>
             <Body>• {session.workout.warmupMin} min easy jog to warm up</Body>
             <Body>
-              • {session.workout.repeats} × {session.workout.runSec / 60} min {session.runType === 'tempo' ? 'comfortably hard' : 'at about 5K effort'}
+              • {session.workout.repeats} × {session.workout.runSec / 60} min {session.runType === 'tempo' ? 'comfortably hard' : session.runType === 'hills' ? 'strong uphill' : 'at about 5K effort'}
               {session.targetPaceSecPerKm ? ` (~${paceLabel(session.targetPaceSecPerKm, units)}/${units}, from your PBs)` : ''}, with {session.workout.walkSec / 60} min easy jog between
             </Body>
             <Body>• {session.workout.cooldownMin} min easy to cool down</Body>
@@ -275,7 +275,13 @@ function RunSession({ session }: { session: PlannedSession | null }) {
   const avg = t.treadmill ? null : averagePace(t.distanceM, elapsed, units);
   const phaseColor = phase?.phase === 'run' ? c.primary : phase?.phase === 'walk' ? c.rest : c.accent;
   const phaseLabel: Record<string, string> = session?.workout
-    ? { warmup: 'WARM-UP JOG', run: session.runType === 'tempo' ? 'TEMPO' : 'HARD', walk: 'EASY JOG', cooldown: 'COOL-DOWN', done: 'ALL DONE' }
+    ? {
+        warmup: 'WARM-UP JOG',
+        run: session.runType === 'tempo' ? 'TEMPO' : session.runType === 'hills' ? 'UPHILL' : 'HARD',
+        walk: session.runType === 'hills' ? 'JOG DOWN' : 'EASY JOG',
+        cooldown: 'COOL-DOWN',
+        done: 'ALL DONE',
+      }
     : { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
 
   const gpsLabel = t.paused

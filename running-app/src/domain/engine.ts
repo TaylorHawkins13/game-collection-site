@@ -27,6 +27,7 @@ import type {
   Notice,
   Pause,
   PersonalBest,
+  Race,
   RaceDistance,
   PlanWeek,
   PlannedSession,
@@ -284,11 +285,13 @@ function rollWeeks(state: AppState, today: DateKey, events: EngineEvent[]): AppS
       cautious: profile.issues.length > 0,
       weeksSinceProgress: plan.weeksSinceProgress,
     });
-    const week = generateWeek(profile, last.index + 1, nextStart, step, directive, currentFiveK(s));
-    week.summary = reason;
+    const custom = profile.planMode === 'custom';
+    const week = generateWeek(profile, last.index + 1, nextStart, custom ? plan.step : step, directive, currentFiveK(s), s.races);
+    if (custom) week.summary = 'Your own plan this week.';
+    else week.summary = reason;
     s = {
       ...s,
-      plan: { ...plan, step, weeksSinceProgress: progressed ? 0 : plan.weeksSinceProgress + 1, weeks: [...plan.weeks, week] },
+      plan: { ...plan, step: custom ? plan.step : step, weeksSinceProgress: progressed && !custom ? 0 : plan.weeksSinceProgress + 1, weeks: [...plan.weeks, week] },
     };
 
     // Gentle rank decay, evaluated once per finished week (Gold+ only).
@@ -391,6 +394,9 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
   const reason: XpReason = !planned ? 'extra_session' : planned.kind === 'run' ? 'run' : 'strength';
   s = grantXp(s, xp, reason, today, events, activityId);
   s = weeklyBonuses(s, today, today, events);
+  if (planned?.raceId) {
+    s = { ...s, races: (s.races ?? []).map((r) => (r.id === planned.raceId ? { ...r, result: { activityId, timeSec: Math.round(input.durationSec) } } : r)) };
+  }
   const pb = possiblePb(s, activity);
   if (pb) events.push({ type: 'possible_pb', ...pb });
   const r = finish(s, today, events);
@@ -544,7 +550,7 @@ export function markHealthSynced(state: AppState, activityId: string): AppState 
   return { ...state, activities: state.activities.map((a) => (a.id === activityId ? { ...a, healthSynced: true } : a)) };
 }
 
-const STRUCTURAL: (keyof Profile)[] = ['level', 'frequency', 'goal', 'runsPerWeek', 'strengthPerWeek', 'preferredDays', 'includeQuality', 'issues', 'pbs'];
+const STRUCTURAL: (keyof Profile)[] = ['level', 'frequency', 'goal', 'runsPerWeek', 'strengthPerWeek', 'preferredDays', 'includeQuality', 'issues', 'pbs', 'planMode', 'customWeek'];
 
 /** Update settings; structural changes rebuild the rest of the current week. */
 export function updateProfile(state: AppState, patch: Partial<Profile>, today: DateKey): AppState {
@@ -566,14 +572,17 @@ export function updateProfile(state: AppState, patch: Partial<Profile>, today: D
   }
   const week = currentWeek(plan, today);
   if (!week) return { ...s, plan };
-  const fresh = generateWeek(profile, week.index, week.start, plan.step, week.directive, currentFiveK(s));
+  const fresh = generateWeek(profile, week.index, week.start, plan.step, week.directive, currentFiveK(s), s.races);
   const kept = week.sessions.filter((x) => x.date < today || x.status !== 'planned');
   const version = uid('v').slice(-5);
   const added = fresh.sessions
     .filter((x) => x.date >= today && !kept.some((k) => k.date === x.date && k.kind === x.kind))
     .map((x) => ({ ...x, id: `${x.id}-${version}` }));
   const sessions = [...kept, ...added].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  plan = { ...plan, weeks: plan.weeks.map((w) => (w.index === week.index ? { ...w, sessions } : w)) };
+  plan = {
+    ...plan,
+    weeks: plan.weeks.map((w) => (w.index === week.index ? { ...w, sessions, phaseNote: fresh.phaseNote, summary: profile.planMode === 'custom' ? fresh.summary : w.summary } : w)),
+  };
   return { ...s, plan };
 }
 
@@ -582,7 +591,39 @@ export function previewNextWeek(state: AppState, today: DateKey): PlanWeek | nul
   if (!state.plan || !state.profile) return null;
   const week = currentWeek(state.plan, today);
   if (!week) return null;
-  return generateWeek(state.profile, week.index + 1, addDays(week.end, 1), state.plan.step, 'hold', currentFiveK(state));
+  return generateWeek(state.profile, week.index + 1, addDays(week.end, 1), state.plan.step, 'hold', currentFiveK(state), state.races);
+}
+
+/** Rebuild the rest of the current week (after races or settings change). */
+function rebuildCurrentWeek(state: AppState, today: DateKey): AppState {
+  if (!state.plan || !state.profile) return state;
+  const week = currentWeek(state.plan, today);
+  if (!week) return state;
+  const fresh = generateWeek(state.profile, week.index, week.start, state.plan.step, week.directive, currentFiveK(state), state.races);
+  const kept = week.sessions.filter((x) => x.date < today || x.status !== 'planned');
+  const version = uid('v').slice(-5);
+  const added = fresh.sessions
+    .filter((x) => x.date >= today && !kept.some((k) => k.date === x.date && k.kind === x.kind))
+    .map((x) => (x.raceId ? x : { ...x, id: `${x.id}-${version}` }));
+  const sessions = [...kept, ...added].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return {
+    ...state,
+    plan: {
+      ...state.plan,
+      weeks: state.plan.weeks.map((w) =>
+        w.index === week.index ? { ...w, sessions, phaseNote: fresh.phaseNote, summary: state.profile!.planMode === 'custom' ? fresh.summary : w.summary } : w,
+      ),
+    },
+  };
+}
+
+export function saveRace(state: AppState, race: Race, today: DateKey): AppState {
+  const races = [...(state.races ?? []).filter((r) => r.id !== race.id), race].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return rebuildCurrentWeek({ ...state, races }, today);
+}
+
+export function removeRace(state: AppState, raceId: string, today: DateKey): AppState {
+  return rebuildCurrentWeek({ ...state, races: (state.races ?? []).filter((r) => r.id !== raceId) }, today);
 }
 
 /** Save a PB detected from a run (or entered by hand) and update fitness from it. */

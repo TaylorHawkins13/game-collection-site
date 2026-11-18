@@ -23,6 +23,30 @@ export type GoalId =
   | 'stress';
 
 export type RaceDistance = '5k' | '10k' | 'half' | 'marathon';
+export type RaceTerrain = 'road' | 'trail' | 'track' | 'cross_country';
+
+export interface Race {
+  id: string;
+  name: string;
+  date: DateKey;
+  distanceM: number;
+  terrain: RaceTerrain;
+  /** PB attempt = "A race": the plan builds, peaks and tapers for it. */
+  pbAttempt: boolean;
+  goalTimeSec?: number;
+  catalogId?: string;
+  result?: { activityId: string; timeSec: number };
+}
+
+/** One slot in a self-built weekly plan. */
+export interface CustomSlot {
+  weekday: number; // 0 = Monday
+  kind: 'run' | 'strength';
+  runType?: 'easy' | 'long' | 'tempo' | 'intervals' | 'hills' | 'walk_run' | 'strides';
+  routineId?: string;
+  durationMin: number;
+  optional?: boolean;
+}
 export type PbRecency = 'recent' | 'one_two_years' | 'older';
 
 export interface PersonalBest {
@@ -43,6 +67,9 @@ export interface Profile {
   pbs: PersonalBest[];
   /** Optional finish-time target for "get faster" goals (seconds). */
   goalTimeSec?: number;
+  /** 'adaptive' (default): Steady builds and adapts the plan. 'custom': the user's own weekly plan. */
+  planMode?: 'adaptive' | 'custom';
+  customWeek?: CustomSlot[];
   /** Experienced/consistent runners may opt into one light quality session (strides). */
   includeQuality: boolean;
   runsPerWeek: number;
@@ -61,7 +88,7 @@ export interface Profile {
   createdAt: DateKey;
 }
 
-export type RunType = 'walk_run' | 'easy' | 'long' | 'strides' | 'walk' | 'tempo' | 'intervals';
+export type RunType = 'walk_run' | 'easy' | 'long' | 'strides' | 'walk' | 'tempo' | 'intervals' | 'hills' | 'race';
 
 export interface WalkRunStructure {
   warmupMin: number;
@@ -95,6 +122,7 @@ export interface PlannedSession {
   targetPaceSecPerKm?: number;
   strides?: number;
   routineId?: string;
+  raceId?: string;
   /** Optional sessions earn XP but never count against completion %. */
   optional: boolean;
   status: SessionStatus;
@@ -116,6 +144,8 @@ export interface PlanWeek {
   sessions: PlannedSession[];
   challengeId: string;
   summary: string;
+  /** e.g. "Build phase · London Marathon in 9 weeks" */
+  phaseNote?: string;
 }
 
 export interface PlanState {
@@ -247,6 +277,7 @@ export interface Fitness {
 export interface AppState {
   version: 1;
   fitness?: Fitness;
+  races?: Race[];
   profile: Profile | null;
   plan: PlanState | null;
   activities: Activity[];
