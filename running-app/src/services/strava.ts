@@ -13,7 +13,7 @@ import { toGpx } from '../domain/gpx';
 import type { Activity, ImportedRun } from '../domain/types';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_STRAVA_CLIENT_ID;
-const TOKEN_URL = process.env.EXPO_PUBLIC_STRAVA_TOKEN_URL;
+const TOKEN_URL = process.env.EXPO_PUBLIC_STRAVA_TOKEN_URL || 'https://kjbguadmsmygiupzbhhy.supabase.co/functions/v1/strava-token';
 const REDIRECT = 'steady://strava';
 const KEY = 'steady.strava.tokens';
 const API = 'https://www.strava.com/api/v3';

@@ -1,7 +1,7 @@
 -- Steady — friends & shared runs.
 --
--- Run once in a NEW Supabase project's SQL Editor (see running-app/README.md → "Friends").
--- Then set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY for the app.
+-- Applied to Steady's Supabase project (kjbguadmsmygiupzbhhy) as migrations
+-- `steady_social` + `steady_social_hardening`. Safe to re-run in a fresh project's SQL Editor.
 --
 -- Privacy model:
 --   * Nothing is public. Profiles, posts and cheers are visible only to you and accepted friends.
@@ -31,6 +31,7 @@ create table if not exists public.friendships (
 create unique index if not exists friendships_pair_idx
   on public.friendships (least(requester, addressee), greatest(requester, addressee));
 create index if not exists friendships_addressee_idx on public.friendships (addressee);
+create index if not exists friendships_requester_idx on public.friendships (requester);
 
 -- ───────────── shared runs ─────────────
 create table if not exists public.shared_runs (
@@ -60,10 +61,15 @@ create table if not exists public.cheers (
   created_at timestamptz not null default now(),
   primary key (run_id, user_id)
 );
+create index if not exists cheers_user_idx on public.cheers (user_id);
 
 -- ───────────── helpers ─────────────
 -- Are a and b accepted friends? SECURITY DEFINER so policies can call it without recursive RLS.
-create or replace function public.are_friends(a uuid, b uuid)
+-- Lives in a `private` schema that the REST API doesn't expose (only policies use it).
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
+create or replace function private.are_friends(a uuid, b uuid)
 returns boolean
 language sql
 stable
@@ -89,9 +95,9 @@ as $$
   where p.friend_code = upper(trim(code)) and p.id <> (select auth.uid());
 $$;
 
-revoke all on function public.are_friends(uuid, uuid) from public, anon;
+revoke all on function private.are_friends(uuid, uuid) from public, anon;
 revoke all on function public.find_by_friend_code(text) from public, anon;
-grant execute on function public.are_friends(uuid, uuid) to authenticated;
+grant execute on function private.are_friends(uuid, uuid) to authenticated;
 grant execute on function public.find_by_friend_code(text) to authenticated;
 
 -- ───────────── row-level security ─────────────
@@ -107,7 +113,7 @@ drop policy if exists profiles_select on public.profiles;
 -- Note: columns are qualified with `profiles.` because friendships also has an `id` column.
 create policy profiles_select on public.profiles for select to authenticated using (
   profiles.id = (select auth.uid())
-  or public.are_friends(profiles.id, (select auth.uid()))
+  or private.are_friends(profiles.id, (select auth.uid()))
   or exists (
     select 1 from public.friendships f
     where (f.requester = profiles.id and f.addressee = (select auth.uid()))
@@ -142,7 +148,7 @@ create policy friendships_delete on public.friendships for delete to authenticat
 -- shared runs: you and your friends can see them; only you post or delete yours.
 drop policy if exists shared_runs_select on public.shared_runs;
 create policy shared_runs_select on public.shared_runs for select to authenticated using (
-  user_id = (select auth.uid()) or public.are_friends(user_id, (select auth.uid()))
+  user_id = (select auth.uid()) or private.are_friends(user_id, (select auth.uid()))
 );
 drop policy if exists shared_runs_insert on public.shared_runs;
 create policy shared_runs_insert on public.shared_runs for insert to authenticated with check (user_id = (select auth.uid()));
@@ -154,13 +160,13 @@ drop policy if exists cheers_select on public.cheers;
 create policy cheers_select on public.cheers for select to authenticated using (
   exists (
     select 1 from public.shared_runs r
-    where r.id = cheers.run_id and (r.user_id = (select auth.uid()) or public.are_friends(r.user_id, (select auth.uid())))
+    where r.id = cheers.run_id and (r.user_id = (select auth.uid()) or private.are_friends(r.user_id, (select auth.uid())))
   )
 );
 drop policy if exists cheers_insert on public.cheers;
 create policy cheers_insert on public.cheers for insert to authenticated with check (
   user_id = (select auth.uid())
-  and exists (select 1 from public.shared_runs r where r.id = cheers.run_id and public.are_friends(r.user_id, (select auth.uid())))
+  and exists (select 1 from public.shared_runs r where r.id = cheers.run_id and private.are_friends(r.user_id, (select auth.uid())))
 );
 drop policy if exists cheers_update on public.cheers;
 create policy cheers_update on public.cheers for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));

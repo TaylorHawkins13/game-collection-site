@@ -25,23 +25,19 @@ npx eas-cli@latest build --profile development --platform ios   # or android
 
 Before shipping, change `ios.bundleIdentifier` / `android.package` in `app.json` (currently `com.taylorhawkins13.steady`) and replace the template icons in `assets/`. The Android route map needs a Google Maps API key, passed in through the `GOOGLE_MAPS_ANDROID_API_KEY` env var (`app.config.js`) so it's never committed. iOS uses Apple Maps and needs no key.
 
-## Switching on Friends
+## Friends (live)
 
-Friends needs a Supabase project. Your current org is on the free plan with both project slots in use, so this is ready but not connected yet.
+Friends runs on Steady's own Supabase project (`kjbguadmsmygiupzbhhy`, eu-west-1). The schema in `supabase/steady-social.sql` is applied (migrations `steady_social` and `steady_social_hardening`), and Supabase's security advisor shows only the intentional friend-code lookup. The project URL and publishable key are built into `services/social.ts` as defaults; publishable keys are meant to ship in apps, and row-level security protects the data. `.env` can override them. Friends is off in the browser preview, which has no outside network.
 
-1. Create a project (free plan: pause one, or upgrade), e.g. **Steady**, in the region nearest your users.
-2. **SQL Editor** → paste and run `supabase/steady-social.sql`. It's safe to run again.
-3. **Authentication → Providers → Email**: keep it on. **Authentication → Email Templates → Magic Link**: add `{{ .Token }}` to the email so it contains the 6-digit code (the app signs in with the code, not a link).
-4. Copy `.env.example` to `.env` and fill in the project URL and publishable (anon) key from **Settings → API**. For EAS builds, add the same two values as EAS environment variables.
-5. Rebuild the app. The Friends screen and the "Post to my friends" button appear automatically.
+One manual step in the Supabase dashboard: **Authentication → Email Templates**. Put `{{ .Token }}` in both **Magic Link** and **Confirm signup**, so sign-in emails contain the 6-digit code the app asks for.
 
-`supabase/rls-tests.sql` checks the access rules (21 cases: outsiders see nothing, nobody can post or cheer as someone else, unfriending hides posts, and more). It runs against plain Postgres with a tiny auth stand-in; the header explains how.
+`supabase/rls-tests.sql` checks the access rules (21 cases). It runs against plain Postgres with a tiny auth stand-in; the header explains how.
 
 ## Switching on Strava
 
 1. Create an API app at strava.com/settings/api. Set **Authorization Callback Domain** to `steady`.
-2. Deploy the token function to your Supabase project: `supabase functions deploy strava-token --no-verify-jwt` and `supabase secrets set STRAVA_CLIENT_ID=… STRAVA_CLIENT_SECRET=…`.
-3. Add `EXPO_PUBLIC_STRAVA_CLIENT_ID=…` and `EXPO_PUBLIC_STRAVA_TOKEN_URL=https://<project>.supabase.co/functions/v1/strava-token` to `.env`, then rebuild.
+2. The token function `strava-token` is already deployed to Steady's Supabase project. Add its secrets in the dashboard (**Edge Functions → strava-token → Secrets**, or `supabase secrets set STRAVA_CLIENT_ID=… STRAVA_CLIENT_SECRET=…`).
+3. Add `EXPO_PUBLIC_STRAVA_CLIENT_ID=…` to `.env` (the token URL is built in), then rebuild.
 
 New Strava API apps start in a limited mode (only your own account can connect) until Strava approves them for more athletes.
 
@@ -100,7 +96,6 @@ Verified in the build environment:
 
 ## Possible next steps
 
-- Connect Friends to a Supabase project (steps above).
 
 - A native Apple Watch app (live HR straight from the watch, and running from the wrist).
 - Instant watch-run recognition with the app closed: Strava webhooks → Supabase function → push notification (needs the Supabase project), or HealthKit background delivery (needs a native AppDelegate hook + entitlement).

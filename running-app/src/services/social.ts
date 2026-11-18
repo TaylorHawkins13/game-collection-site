@@ -6,15 +6,22 @@
  */
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { friendCode, normaliseCode, type SharedRunPayload } from '../domain/social';
 
-const URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Steady's Supabase project. The publishable key is meant to ship inside apps (row-level
+// security protects the data); .env / EAS env vars can override both.
+const DEFAULT_URL = 'https://kjbguadmsmygiupzbhhy.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_G3-n50tOfKr5QSEiDP29Sg_G6QBsLQ9';
+const URL = process.env.EXPO_PUBLIC_SUPABASE_URL || DEFAULT_URL;
+const KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_KEY;
 
 let client: SupabaseClient | null = null;
+// The browser preview runs in a sandbox with no outside network, so Friends stays off there.
+const ENABLED = !!URL && !!KEY && Platform.OS !== 'web';
 export function supabase(): SupabaseClient | null {
-  if (!URL || !KEY) return null;
+  if (!ENABLED) return null;
   if (!client) {
     client = createClient(URL, KEY, {
       auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
@@ -23,7 +30,7 @@ export function supabase(): SupabaseClient | null {
   return client;
 }
 
-export const socialConfigured = () => !!URL && !!KEY;
+export const socialConfigured = () => ENABLED;
 
 export interface MyProfile {
   id: string;
