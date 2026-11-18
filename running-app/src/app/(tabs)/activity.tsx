@@ -1,11 +1,13 @@
 /** Activity history: filters, simple charts (volume + completion trend), chronological list. */
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Pressable, View } from 'react-native';
+import { RouteMap } from '../../components/RouteMap';
 import { BarChart } from '../../components/BarChart';
-import { Body, Card, Chip, H1, H3, Row, Screen, SectionTitle, Small } from '../../components/ui';
+import { Body, Card, Chip, H1, H3, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
 import { formatShort, weekdayShort } from '../../domain/dates';
-import { formatDistance, formatDuration, METERS_PER_UNIT } from '../../domain/gps';
+import { averagePace, formatDistance, formatDuration, formatPace, METERS_PER_UNIT } from '../../domain/gps';
 import { countsTowardCompletion } from '../../domain/metrics';
 import { seasonFor } from '../../domain/season';
 import { today as getToday, useStore } from '../../state/store';
@@ -85,25 +87,39 @@ export default function ActivityTab() {
 
       <SectionTitle>Sessions</SectionTitle>
       {list.length === 0 ? <Body muted>Nothing here yet. Your first session will show up here.</Body> : null}
-      {list.map((a) => (
-        <Card key={a.id} onPress={() => router.push(`/history/${a.id}`)}>
-          <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Small>
-                {weekdayShort(a.date)} {formatShort(a.date)}
-                {a.plannedSessionId ? '' : ' · extra'}
-              </Small>
-              <H3>{a.title}</H3>
-              <Small>
-                {formatDuration(a.durationSec)}
-                {a.distanceM ? ` · ${formatDistance(a.distanceM, units)}` : ''}
-                {a.feel ? ` · felt ${a.feel === 'just_right' ? 'just right' : a.feel}` : ''}
-              </Small>
+      {list.map((a) => {
+        const pace = a.distanceM ? averagePace(a.distanceM, a.durationSec, units) : null;
+        return (
+          <Pressable key={a.id} onPress={() => router.push(`/history/${a.id}`)} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+            <View style={{ backgroundColor: c.surface, marginHorizontal: -space.lg }}>
+              <View style={{ padding: space.lg, gap: space.sm }}>
+                <Row style={{ flexWrap: 'nowrap' }}>
+                  <View
+                    style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name={a.kind === 'run' ? 'walk-outline' : 'barbell-outline'} size={18} color={c.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Small>
+                      {weekdayShort(a.date)} {formatShort(a.date)}
+                      {a.plannedSessionId ? ' · planned' : ' · extra'}
+                      {a.feel ? ` · felt ${a.feel === 'just_right' ? 'just right' : a.feel}` : ''}
+                    </Small>
+                  </View>
+                  <Small style={{ color: c.primary, fontWeight: '700' }}>+{a.xpEarned} XP</Small>
+                </Row>
+                <H3 style={{ fontSize: 18 }}>{a.title}</H3>
+                <StatRow>
+                  {a.kind === 'run' ? <Stat label="Distance" value={formatDistance(a.distanceM, units)} /> : null}
+                  {a.kind === 'run' && pace && !beginner ? <Stat label="Pace" value={formatPace(pace, units)} /> : null}
+                  <Stat label="Time" value={formatDuration(a.durationSec)} />
+                </StatRow>
+              </View>
+              {a.kind === 'run' && !a.treadmill ? <RouteMap route={a.route} hideEnds={app.profile?.hideRouteEnds ?? true} height={160} thumbnail /> : null}
             </View>
-            <Small style={{ color: c.primary, fontWeight: '700' }}>+{a.xpEarned} XP</Small>
-          </Row>
-        </Card>
-      ))}
+          </Pressable>
+        );
+      })}
     </Screen>
   );
 }

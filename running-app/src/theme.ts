@@ -1,12 +1,12 @@
 import { useColorScheme } from 'react-native';
 
 const light = {
-  bg: '#F6F7F4',
+  bg: '#EDEEEC', // grey gutter between flat white sections
   surface: '#FFFFFF',
-  surfaceAlt: '#EEF2EC',
+  surfaceAlt: '#F3F4F2',
   text: '#1D2420',
   textMuted: '#5E6B63',
-  border: '#DDE3DC',
+  border: '#E2E4E1',
   primary: '#2F7D62',
   primaryText: '#FFFFFF',
   primarySoft: '#DCEFE6',
@@ -18,9 +18,9 @@ const light = {
 };
 
 const dark: typeof light = {
-  bg: '#111513',
-  surface: '#1A201C',
-  surfaceAlt: '#232B26',
+  bg: '#000000',
+  surface: '#141816',
+  surfaceAlt: '#1E2420',
   text: '#EDF2EE',
   textMuted: '#9DAAA2',
   border: '#2C3530',

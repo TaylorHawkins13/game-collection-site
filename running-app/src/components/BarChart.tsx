@@ -13,7 +13,8 @@ export interface Bar {
 export function BarChart({ bars, height = 120, format }: { bars: Bar[]; height?: number; format?: (v: number) => string }) {
   const c = useColors();
   const max = Math.max(1, ...bars.map((b) => Math.max(b.value, b.target ?? 0)));
-  const w = 100 / Math.max(6, bars.length); // keep bars slim when there are only a few weeks
+  const slots = Math.max(6, bars.length); // keep bars slim when there are only a few weeks
+  const w = 100 / slots;
   return (
     <View accessible accessibilityLabel={bars.map((b) => `${b.label}: ${format ? format(b.value) : b.value}`).join(', ')}>
       <Svg width="100%" height={height} viewBox={`0 0 100 ${height}`} preserveAspectRatio="none">
@@ -29,9 +30,9 @@ export function BarChart({ bars, height = 120, format }: { bars: Bar[]; height?:
         })}
       </Svg>
       <View style={{ flexDirection: 'row' }}>
-        {bars.map((b, i) => (
+        {Array.from({ length: slots }, (_, i) => (
           <Text key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: c.textMuted }}>
-            {b.label}
+            {bars[i]?.label ?? ''}
           </Text>
         ))}
       </View>

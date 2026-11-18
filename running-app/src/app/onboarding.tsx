@@ -5,7 +5,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Body, Button, Card, Chip, H1, H3, Option, Row, Screen, Small } from '../components/ui';
+import { Body, Button, Card, Chip, H1, H3, Option, OptionGroup, Row, Screen, Small } from '../components/ui';
 import { formatShort, weekdayShort } from '../domain/dates';
 import { defaultProfile, type OnboardingAnswers } from '../domain/engine';
 import { createPlan } from '../domain/plan';
@@ -115,9 +115,11 @@ export default function Onboarding() {
         <View style={{ gap: space.md }}>
           <H1>Where are you starting from?</H1>
           <Body muted>This just sets how gentle your first weeks are. It isn’t a rank, and you can change it anytime.</Body>
-          {LEVELS.map((l) => (
-            <Option key={l.id} label={l.label} description={l.description} selected={level === l.id} onPress={() => setLevel(l.id)} />
-          ))}
+          <OptionGroup>
+            {LEVELS.map((l) => (
+              <Option key={l.id} label={l.label} description={l.description} selected={level === l.id} onPress={() => setLevel(l.id)} />
+            ))}
+          </OptionGroup>
           {footer('Continue', next, !level)}
         </View>
       )}
@@ -126,9 +128,11 @@ export default function Onboarding() {
         <View style={{ gap: space.md }}>
           <H1>How often do you run right now?</H1>
           <Body muted>Roughly, in a typical week lately. Zero is a perfectly good answer.</Body>
-          {([0, 1, 2, 3] as WeeklyFrequency[]).map((f) => (
-            <Option key={f} label={f === 3 ? '3 or more times' : f === 0 ? 'Not at the moment' : `${f} time${f > 1 ? 's' : ''} a week`} selected={frequency === f} onPress={() => setFrequency(f)} />
-          ))}
+          <OptionGroup>
+            {([0, 1, 2, 3] as WeeklyFrequency[]).map((f) => (
+              <Option key={f} label={f === 3 ? '3 or more times' : f === 0 ? 'Not at the moment' : `${f} time${f > 1 ? 's' : ''} a week`} selected={frequency === f} onPress={() => setFrequency(f)} />
+            ))}
+          </OptionGroup>
           {footer('Continue', next, frequency === null, { title: 'Skip', onPress: () => { setFrequency(0); next(); } })}
         </View>
       )}
@@ -137,9 +141,11 @@ export default function Onboarding() {
         <View style={{ gap: space.md }}>
           <H1>Anything you’re working toward?</H1>
           <Body muted>Optional. Your plan stays easy either way.</Body>
-          {GOALS.filter((g) => !g.levels || (level && g.levels.includes(level))).map((g) => (
-            <Option key={g.id} label={g.label} description={g.description} selected={goal === g.id} onPress={() => setGoal(g.id)} />
-          ))}
+          <OptionGroup>
+            {GOALS.filter((g) => !g.levels || (level && g.levels.includes(level))).map((g) => (
+              <Option key={g.id} label={g.label} description={g.description} selected={goal === g.id} onPress={() => setGoal(g.id)} />
+            ))}
+          </OptionGroup>
           {level === 'experienced' || level === 'consistent' ? (
             <Card>
               <H3>Include one light quality session?</H3>

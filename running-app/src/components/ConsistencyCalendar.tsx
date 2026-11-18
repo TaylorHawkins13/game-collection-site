@@ -32,7 +32,7 @@ export function ConsistencyCalendar({ state, from, to, today }: { state: AppStat
               style={{
                 flex: 1,
                 aspectRatio: 1,
-                borderRadius: 5,
+                borderRadius: 999,
                 backgroundColor: d.date < from ? 'transparent' : color(d.state),
                 borderWidth: d.state === 'planned' || d.date === today ? 1.5 : 0,
                 borderColor: d.date === today ? c.text : c.border,
@@ -50,7 +50,7 @@ export function ConsistencyCalendar({ state, from, to, today }: { state: AppStat
           ['Paused', c.rest],
         ].map(([l, col]) => (
           <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: col }} />
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col }} />
             <Text style={{ fontSize: 11, color: c.textMuted }}>{l}</Text>
           </View>
         ))}

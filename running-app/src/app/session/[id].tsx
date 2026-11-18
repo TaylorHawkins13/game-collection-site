@@ -6,13 +6,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, Switch, Text, TextInput, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Alert, Switch, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LiveMap } from '../../components/LiveMap';
 import { sessionSubtitle } from '../../components/SessionCard';
-import { Body, Button, Card, Chip, H1, H2, H3, ProgressBar, Row, Screen, Small, Stat } from '../../components/ui';
+import { Body, Button, Card, Chip, H1, H2, H3, ProgressBar, RoundButton, Row, Screen, Small, Stat, StatRow } from '../../components/ui';
 import { walkRunPhase } from '../../domain/cues';
 import { toDateKey } from '../../domain/dates';
 import { findSession } from '../../domain/engine';
-import { averagePace, currentPace, finalSplits, formatDistance, formatDuration, formatPace, METERS_PER_UNIT, movingMs } from '../../domain/gps';
+import { averagePace, currentPace, finalSplits, formatDuration, formatPace, METERS_PER_UNIT, movingMs } from '../../domain/gps';
 import { routineById } from '../../domain/strength';
 import type { PlannedSession } from '../../domain/types';
 import { setAudioEnabled, speak, stopSpeaking } from '../../services/audio';
@@ -257,73 +260,84 @@ function RunSession({ session }: { session: PlannedSession | null }) {
   const phaseColor = phase?.phase === 'run' ? c.primary : phase?.phase === 'walk' ? c.rest : c.accent;
   const phaseLabel: Record<string, string> = { warmup: 'WARM-UP WALK', run: 'RUN', walk: 'WALK', cooldown: 'COOL-DOWN WALK', done: 'ALL DONE' };
 
+  const gpsLabel = t.paused
+    ? 'Paused'
+    : t.treadmill
+      ? 'Treadmill'
+      : active.gpsMode === 'background'
+        ? 'GPS ● Recording'
+        : active.gpsMode === 'foreground'
+          ? 'GPS ● Keep app open'
+          : 'No GPS';
+
   return (
-    <Screen scroll={false} edges={['top', 'bottom']}>
-      <Row style={{ justifyContent: 'space-between' }}>
-        <Small>{active.title}</Small>
-        <Small>{t.paused ? 'Paused' : active.gpsMode === 'background' ? 'GPS ● recording' : active.gpsMode === 'foreground' ? 'GPS ● keep app open' : t.treadmill ? 'Treadmill' : 'No GPS'}</Small>
-      </Row>
-      {gpsError ? <Small style={{ color: c.danger }}>{gpsError}</Small> : null}
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top', 'bottom']}>
+      <View style={{ paddingHorizontal: space.lg, paddingVertical: space.sm, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: c.text, fontWeight: '700', flex: 1 }} numberOfLines={1}>
+          {active.title}
+        </Text>
+        <Text style={{ color: t.paused ? c.accent : c.primary, fontWeight: '700', fontSize: 13 }}>{gpsLabel}</Text>
+      </View>
+      {gpsError ? <Small style={{ color: c.danger, paddingHorizontal: space.lg, paddingBottom: space.sm }}>{gpsError}</Small> : null}
+
+      {!t.treadmill ? (
+        <View style={{ flex: 1 }}>
+          <LiveMap points={t.points} />
+        </View>
+      ) : null}
 
       {phase ? (
-        <View style={{ backgroundColor: phaseColor, borderRadius: radius.lg, padding: space.xl, alignItems: 'center', gap: 4 }} accessibilityLiveRegion="polite">
-          <Text style={{ color: '#fff', fontWeight: '800', letterSpacing: 1 }}>{phaseLabel[phase.phase]}</Text>
-          <Text style={[font.huge, { color: '#fff' }]}>{formatDuration(phase.remainingSec)}</Text>
-          {phase.repeat > 0 && phase.phase !== 'done' ? (
-            <Text style={{ color: '#fff' }}>
-              Interval {phase.repeat} of {session!.walkRun!.repeats}
-            </Text>
-          ) : null}
-        </View>
-      ) : (
-        <View style={{ alignItems: 'center', paddingVertical: space.xl }}>
-          <Text style={[font.huge, { color: c.text }]} accessibilityLabel={`Time ${formatDuration(elapsed)}`}>{formatDuration(elapsed)}</Text>
-          <Small>time</Small>
-        </View>
-      )}
-
-      <Row style={{ flexWrap: 'nowrap' }}>
-        {phase ? <Stat big label="time" value={formatDuration(elapsed)} /> : null}
-        <Stat big label="distance" value={t.treadmill ? '—' : formatDistance(t.distanceM, units).replace(` ${units}`, '')} />
-        <Stat big label={`pace /${units}`} value={formatPace(pace ?? avg, units).split(' ')[0]} />
-      </Row>
-      {plannedSec > 0 && !phase ? (
-        <View style={{ gap: 4 }}>
-          <ProgressBar value={elapsed / plannedSec} />
-          <Small>{elapsed >= plannedSec ? 'Planned time done — finish whenever you like.' : `${formatDuration(plannedSec - elapsed)} to go`}</Small>
+        <View style={{ backgroundColor: phaseColor, paddingVertical: space.md, paddingHorizontal: space.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }} accessibilityLiveRegion="polite">
+          <View>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{phaseLabel[phase.phase]}</Text>
+            {phase.repeat > 0 && phase.phase !== 'done' ? (
+              <Text style={{ color: '#fff', opacity: 0.9 }}>
+                Interval {phase.repeat} of {session!.walkRun!.repeats}
+              </Text>
+            ) : null}
+          </View>
+          <Text style={[font.big, { color: '#fff' }]}>{formatDuration(phase.remainingSec)}</Text>
         </View>
       ) : null}
-      {t.splits.length ? (
-        <Small>
-          Last split: {formatDuration(t.splits[t.splits.length - 1].durationSec)} /{units}
-        </Small>
-      ) : null}
 
-      <View style={{ flex: 1 }} />
-      <View style={{ gap: space.md }}>
-        <Pressable
-          onPress={() => (t.paused ? run.resume() : run.pause())}
-          accessibilityRole="button"
-          accessibilityLabel={t.paused ? 'Resume' : 'Pause'}
-          style={({ pressed }) => ({
-            alignSelf: 'center',
-            width: 112,
-            height: 112,
-            borderRadius: 56,
-            backgroundColor: t.paused ? c.primary : c.surfaceAlt,
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: pressed ? 0.8 : 1,
-          })}
-        >
-          <Text style={{ fontSize: 20, fontWeight: '800', color: t.paused ? c.primaryText : c.text }}>{t.paused ? 'Resume' : 'Pause'}</Text>
-        </Pressable>
-        <Row style={{ justifyContent: 'center' }}>
-          <Button kind="secondary" title="Finish" onPress={finish} />
-          {t.paused ? <Button kind="ghost" title="Discard" onPress={discard} /> : null}
-        </Row>
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.lg, flex: t.treadmill ? 1 : undefined }}>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: c.textMuted, fontWeight: '500' }}>Time</Text>
+          <Text style={[font.huge, { color: c.text }]} accessibilityLabel={`Time ${formatDuration(elapsed)}`}>
+            {formatDuration(elapsed)}
+          </Text>
+        </View>
+        <StatRow>
+          <Stat big center label={`Distance (${units})`} value={t.treadmill ? '—' : (t.distanceM / METERS_PER_UNIT[units]).toFixed(2)} />
+          <Stat big center label={`Pace (/${units})`} value={formatPace(pace ?? avg, units).split(' ')[0]} />
+        </StatRow>
+        {plannedSec > 0 && !phase ? (
+          <View style={{ gap: 4 }}>
+            <ProgressBar value={elapsed / plannedSec} />
+            <Small style={{ textAlign: 'center' }}>
+              {elapsed >= plannedSec ? 'Planned time done — finish whenever you like.' : `${formatDuration(plannedSec - elapsed)} to go`}
+            </Small>
+          </View>
+        ) : null}
+        {t.splits.length ? (
+          <Small style={{ textAlign: 'center' }}>
+            Last split {formatDuration(t.splits[t.splits.length - 1].durationSec)} /{units}
+          </Small>
+        ) : null}
       </View>
-    </Screen>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: space.xxl, paddingVertical: space.xl }}>
+        {t.paused ? (
+          <>
+            <RoundButton label="Resume" onPress={() => run.resume()} icon={<Ionicons name="play" size={32} color={c.primaryText} style={{ marginLeft: 4 }} />} />
+            <RoundButton label="Finish" kind="neutral" onPress={finish} icon={<Ionicons name="flag" size={28} color={c.text} />} />
+          </>
+        ) : (
+          <RoundButton label="Pause" kind="neutral" size={92} onPress={() => run.pause()} icon={<Ionicons name="pause" size={34} color={c.text} />} />
+        )}
+      </View>
+      {t.paused ? <Button kind="ghost" title="Discard session" onPress={discard} style={{ marginBottom: space.md }} /> : null}
+    </SafeAreaView>
   );
 }
 

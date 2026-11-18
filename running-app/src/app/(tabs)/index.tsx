@@ -76,7 +76,7 @@ export default function Home() {
       </Row>
 
       {seasonEvent && seasonEvent.type === 'season_reset' ? (
-        <Card style={{ borderColor: RANK_COLORS[rankOf(seasonEvent.newDivision)], borderWidth: 2 }}>
+        <Card style={{ borderLeftColor: RANK_COLORS[rankOf(seasonEvent.newDivision)], borderLeftWidth: 4 }}>
           <H3>New season: {season.name}</H3>
           <Body muted>
             {seasonEvent.finish ? `You finished last season at ${divisionLabel(seasonEvent.finish.division)} — that badge is yours for good. ` : ''}
@@ -95,14 +95,14 @@ export default function Home() {
       ) : null}
 
       {notices.map((n) => (
-        <Card key={n.id} style={{ backgroundColor: c.surfaceAlt }}>
+        <Card key={n.id} style={{ borderLeftColor: c.primary, borderLeftWidth: 4 }}>
           <Body>{n.text}</Body>
           <Button kind="ghost" title="Got it" onPress={() => actions.dismissNotice(n.id)} />
         </Card>
       ))}
 
       {advice && advice.level !== 'good' && !rest ? (
-        <Card style={{ borderColor: c.accent, borderWidth: 1.5 }}>
+        <Card style={{ borderLeftColor: c.accent, borderLeftWidth: 4 }}>
           <H3>Recovery check</H3>
           <Body muted>{advice.text}</Body>
         </Card>

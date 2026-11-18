@@ -5,7 +5,7 @@ import { trimRouteEnds } from '../domain/gps';
 import type { RoutePoint } from '../domain/types';
 import { radius, useColors } from '../theme';
 
-export function RouteMap({ route, hideEnds, height = 220 }: { route?: RoutePoint[]; hideEnds: boolean; height?: number }) {
+export function RouteMap({ route, hideEnds, height = 220, thumbnail }: { route?: RoutePoint[]; hideEnds: boolean; height?: number; thumbnail?: boolean }) {
   const c = useColors();
   const shown = useMemo(() => (route ? (hideEnds ? trimRouteEnds(route) : route) : []), [route, hideEnds]);
   const region = useMemo(() => {
@@ -22,6 +22,7 @@ export function RouteMap({ route, hideEnds, height = 220 }: { route?: RoutePoint
   }, [shown]);
 
   if (!region) {
+    if (thumbnail) return null;
     return (
       <View style={{ height: 80, borderRadius: radius.md, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center', padding: 12 }}>
         <Text style={{ color: c.textMuted, textAlign: 'center' }}>
@@ -31,8 +32,9 @@ export function RouteMap({ route, hideEnds, height = 220 }: { route?: RoutePoint
     );
   }
   return (
-    <View style={{ height, borderRadius: radius.md, overflow: 'hidden' }}>
+    <View style={{ height, borderRadius: thumbnail ? 0 : radius.md, overflow: 'hidden' }} pointerEvents={thumbnail ? 'none' : 'auto'}>
       <MapView
+        liteMode={thumbnail}
         style={{ flex: 1 }}
         initialRegion={region}
         scrollEnabled={false}

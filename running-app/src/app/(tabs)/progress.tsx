@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { ConsistencyCalendar, seasonCalendarRange } from '../../components/ConsistencyCalendar';
 import { RankEmblem } from '../../components/RankEmblem';
-import { Body, Button, Card, H1, H2, H3, ProgressBar, Row, Screen, SectionTitle, Small, Stat } from '../../components/ui';
+import { Body, Button, Card, H1, H2, H3, ProgressBar, Row, Screen, SectionTitle, Small, Stat, StatRow } from '../../components/ui';
 import { BADGES } from '../../domain/badges';
 import { formatShort } from '../../domain/dates';
 import { lifetimeStats, seasonStats } from '../../domain/engine';
@@ -52,11 +52,11 @@ export default function Progress() {
 
       <Card>
         <H3>Season so far</H3>
-        <Row style={{ flexWrap: 'nowrap' }}>
-          <Stat label="sessions" value={String(stats.sessions)} />
-          <Stat label="plan completion" value={`${Math.round(stats.completion * 100)}%`} />
-          <Stat label="season XP" value={String(stats.xp)} />
-        </Row>
+        <StatRow>
+          <Stat label="Sessions" value={String(stats.sessions)} />
+          <Stat label="Plan completion" value={`${Math.round(stats.completion * 100)}%`} />
+          <Stat label="Season XP" value={String(stats.xp)} />
+        </StatRow>
         <Small>
           {stats.completionDone} of {stats.completionDue} planned sessions done so far · plan streak {streak} day{streak === 1 ? '' : 's'}
         </Small>
@@ -92,35 +92,41 @@ export default function Progress() {
       </Card>
 
       <SectionTitle>Badges</SectionTitle>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-        {BADGES.map((b) => {
-          const earned = app.badges[b.id];
-          return (
-            <View
-              key={b.id}
-              accessible
-              accessibilityLabel={`${b.title}: ${earned ? 'earned' : 'not yet'}. ${b.description}`}
-              style={{
-                width: '31%',
-                minWidth: 100,
-                flexGrow: 1,
-                backgroundColor: earned ? c.surface : c.surfaceAlt,
-                borderRadius: 14,
-                padding: space.md,
-                alignItems: 'center',
-                gap: 4,
-                opacity: earned ? 1 : 0.55,
-              }}
-            >
-              <Body style={{ fontSize: 30 }}>{earned ? b.icon : '○'}</Body>
-              <Small muted={false} style={{ fontWeight: '600', textAlign: 'center' }}>
-                {b.title}
-              </Small>
-              <Small style={{ textAlign: 'center', fontSize: 11 }}>{earned ? formatShort(earned) : b.description}</Small>
-            </View>
-          );
-        })}
-      </View>
+      <Card>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: space.lg }}>
+          {BADGES.map((b) => {
+            const earned = app.badges[b.id];
+            return (
+              <View
+                key={b.id}
+                accessible
+                accessibilityLabel={`${b.title}: ${earned ? 'earned' : 'not yet'}. ${b.description}`}
+                style={{ width: '33.33%', alignItems: 'center', gap: 4, paddingHorizontal: 4 }}
+              >
+                <View
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: earned ? c.primarySoft : c.surfaceAlt,
+                    borderWidth: 2,
+                    borderColor: earned ? c.primary : c.border,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: earned ? 1 : 0.5,
+                  }}
+                >
+                  <Body style={{ fontSize: 26 }}>{earned ? b.icon : '🔒'}</Body>
+                </View>
+                <Small muted={!earned} style={{ fontWeight: '600', textAlign: 'center' }}>
+                  {b.title}
+                </Small>
+                <Small style={{ textAlign: 'center', fontSize: 11 }}>{earned ? formatShort(earned) : b.description}</Small>
+              </View>
+            );
+          })}
+        </View>
+      </Card>
 
       {app.seasonFinishes.length ? (
         <>
@@ -141,15 +147,15 @@ export default function Progress() {
 
       <SectionTitle>Lifetime</SectionTitle>
       <Card>
-        <Row>
-          <Stat label="sessions" value={String(life.sessions)} />
-          <Stat label="active days" value={String(life.activeDays)} />
-          <Stat label="badges" value={`${life.badges}/${life.totalBadges}`} />
-        </Row>
-        <Row>
-          <Stat label="time moving" value={formatDuration(life.durationSec)} />
-          <Stat label="distance" value={formatDistance(life.distanceM, units)} />
-        </Row>
+        <StatRow>
+          <Stat label="Sessions" value={String(life.sessions)} />
+          <Stat label="Active days" value={String(life.activeDays)} />
+          <Stat label="Badges" value={`${life.badges}/${life.totalBadges}`} />
+        </StatRow>
+        <StatRow>
+          <Stat label="Time moving" value={formatDuration(life.durationSec)} />
+          <Stat label="Distance" value={formatDistance(life.distanceM, units)} />
+        </StatRow>
       </Card>
     </Screen>
   );
