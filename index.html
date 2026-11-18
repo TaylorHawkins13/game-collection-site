@@ -2,26 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Steady</title>
 <style>
-body{margin:0;background:#EDEEEC;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1D2420}
-.wrap{max-width:390px;margin:0 auto;background:#fff;min-height:100vh;padding-bottom:40px}
-h1{font-size:28px;margin:28px 20px 20px;font-weight:700}
-.group{margin:0 16px 16px}
-.gh{background:#FC4C02;color:#fff;padding:16px 18px;border-radius:12px;font-weight:600;font-size:13px;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-.gb{border:1px solid #E2E4E1;border-top:none;border-radius:0 0 12px 12px;background:#fff;margin-top:-4px}
-.opt{padding:16px 18px;border-bottom:1px solid #E2E4E1;display:flex;justify-content:space-between;align-items:center}
-.opt:last-child{border:none}
-.sel{background:#FFF0EB}
-.chk{width:22px;height:22px;border:2px solid #FC4C02;border-radius:50%;color:#FC4C02;display:flex;align-items:center;justify-content:center;font-size:13px}
-.btn{display:block;margin:28px 16px 16px;background:#FC4C02;color:#fff;text-align:center;padding:16px;border-radius:12px;font-weight:700;font-size:17px;text-decoration:none}
-.hide{display:none}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; background: #EDEEEC; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; color: #1D2420; }
+.wrap { max-width: 430px; margin: 0 auto; background: #fff; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom, 24px); }
+h1 { font-size: 28px; font-weight: 700; margin: 0; padding: 28px 20px 8px; line-height: 1.2; }
+.sub { font-size: 15px; color: #5E6B63; margin: 0 20px 24px; line-height: 1.4; }
+.group { margin: 0 16px 20px; }
+.gh { min-height: 52px; background: #FC4C02; color: #fff; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 14px; letter-spacing: 0.4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.gb { border: 1px solid #E2E4E1; border-top: none; border-radius: 0 0 12px 12px; background: #fff; margin-top: -2px; overflow: hidden; }
+.opt { min-height: 52px; padding: 14px 18px; border-bottom: 1px solid #E2E4E1; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+.opt:last-child { border: none; }
+.sel { background: #FFF0EB; }
+.chk { width: 24px; height: 24px; border: 2px solid #FC4C02; border-radius: 50%; color: #FC4C02; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.bottom { position: sticky; bottom: 0; background: #fff; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #E2E4E1; }
+.btn { display: block; min-height: 52px; background: #FC4C02; color: #fff; text-align: center; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 17px; text-decoration: none; line-height: 20px; }
+.hide { display: none; }
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>Any goal?</h1>
+<p class="sub">Optional — your plan stays easy either way.</p>
 <div class="group">
 <div class="gh" onclick="t('g1')">JUST RUN <span id="i1">−</span></div>
 <div class="gb" id="g1">
@@ -44,7 +48,9 @@ h1{font-size:28px;margin:28px 20px 20px;font-weight:700}
 <div class="opt">Get faster at 5K</div>
 </div>
 </div>
+<div class="bottom">
 <a class="btn" href="#">Continue</a>
+</div>
 </div>
 <script>
 function t(id){var e=document.getElementById(id);e.classList.toggle('hide');var i=document.getElementById('i'+id.slice(1));i.textContent=e.classList.contains('hide')?'+':'−';}
