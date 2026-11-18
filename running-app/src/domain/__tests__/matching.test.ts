@@ -27,7 +27,7 @@ test('a watch run on a planned day ticks it off with normal XP and asks for a ch
   assert.equal(todaySessions(r.state, START).find((x) => x.id === planned.id)!.status, 'completed');
   const act = r.state.activities[0];
   assert.equal(act.importedFrom, 'apple_health');
-  assert.equal(act.xpEarned, XP.run);
+  assert.equal(act.xpEarned, 53, 'planned 15–29 min base 40 + hit length 3 + planned 10');
   assert.equal(act.healthSynced, true, 'never written back to Health');
   assert.equal(pendingCheckIns(r.state, START).length, 1);
   assert.equal(pendingCheckIns(submitFeedback(r.state, act.id, 'easy', 'none', START).state, START).length, 0);
@@ -39,10 +39,10 @@ test('every activity counts — odd lengths, rest days, strength — with no que
   const planned = todaySessions(s, START)[0];
   const short = importHistory(s, [watch(START, 6)], START).state;
   assert.equal(todaySessions(short, START).find((x) => x.id === planned.id)!.status, 'completed', 'short run still ticks it off (partial XP)');
-  assert.ok(short.activities[0].xpEarned > 0 && short.activities[0].xpEarned < XP.run);
+  assert.equal(short.activities[0].xpEarned, 42, 'planned base 40, cut short −8, + planned 10');
   const rest = importHistory(s, [watch(addDays(START, 1), 30)], addDays(START, 1)).state;
   assert.equal(rest.activities.length, 1);
-  assert.equal(rest.activities[0].xpEarned, XP.extraSession);
+  assert.equal(rest.activities[0].xpEarned, 25, 'unplanned 30-min run: half of 50');
   const strengthDay = allSessions(s.plan).find((x) => x.kind === 'strength')!;
   const str = importHistory(s, [watch(strengthDay.date, 15, { kind: 'strength', title: 'Traditional Strength Training (Garmin)' })], strengthDay.date).state;
   assert.equal(allSessions(str.plan).find((x) => x.id === strengthDay.id)!.status, 'completed');

@@ -93,3 +93,19 @@ export function daysSinceLastActivity(state: AppState, today: DateKey): number |
   const last = state.activities.reduce<DateKey | null>((m, a) => (!m || a.date > m ? a.date : m), null);
   return last ? diffDays(last, today) : null;
 }
+
+/** Your recent averages (last 8 weeks, up to 20 runs) for XP comparisons. Needs 3+ runs. */
+export function runBaseline(state: AppState, today: DateKey, excludeId?: string): { avgDurationSec: number | null; avgPaceSecPerKm: number | null } {
+  const since = addDays(today, -56);
+  const recorded = state.activities
+    .filter((a) => a.kind === 'run' && a.id !== excludeId && a.date >= since && a.date <= today)
+    .map((a) => ({ t: a.startedAt, d: a.durationSec, m: a.distanceM }));
+  const imported = (state.importedRuns ?? [])
+    .filter((r) => (r.kind ?? 'run') === 'run' && !r.countedActivityId && r.date >= since && r.date <= today)
+    .map((r) => ({ t: r.startedAt, d: r.durationSec, m: r.distanceM }));
+  const runs = [...recorded, ...imported].sort((x, y) => y.t - x.t).slice(0, 20);
+  const avgDurationSec = runs.length >= 3 ? runs.reduce((s, r) => s + r.d, 0) / runs.length : null;
+  const paces = runs.filter((r) => (r.m ?? 0) >= 1000).map((r) => r.d / (r.m! / 1000)).sort((a, b) => a - b);
+  const avgPaceSecPerKm = paces.length >= 3 ? paces[Math.floor(paces.length / 2)] : null;
+  return { avgDurationSec, avgPaceSecPerKm };
+}

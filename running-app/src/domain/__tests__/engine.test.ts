@@ -56,13 +56,14 @@ test('completing a planned run gives 50 XP + feedback bonus; first-session badge
   const s = fresh();
   const today = todaySessions(s, START)[0];
   const r = completeSession(s, { plannedSessionId: today.id, kind: 'run', title: today.title, startedAt: 0, endedAt: 1, durationSec: today.durationMin * 60 }, START);
-  assert.equal(r.activity.xpEarned, XP.run);
+  // 17-min walk-run done in full: 40 (15–29 min) + 3 (hit target length, 10% × 70%) + 10 planned.
+  assert.equal(r.activity.xpEarned, 53);
   assert.ok(r.events.some((e) => e.type === 'badge' && e.id === 'first_session'));
   const f = submitFeedback(r.state, r.activity.id, 'easy', 'none', START);
-  assert.equal(f.state.rank.seasonXp, XP.run + XP.feedback);
+  assert.equal(f.state.rank.seasonXp, 53 + XP.feedback);
   // Feedback is only rewarded once.
   const again = submitFeedback(f.state, r.activity.id, 'hard', 'none', START);
-  assert.equal(again.state.rank.seasonXp, XP.run + XP.feedback);
+  assert.equal(again.state.rank.seasonXp, 53 + XP.feedback);
 });
 
 test('extra unplanned sessions earn a small amount, up to 3 a day', () => {
@@ -73,7 +74,8 @@ test('extra unplanned sessions earn a small amount, up to 3 a day', () => {
     xps.push(r.activity.xpEarned);
     s = r.state;
   }
-  assert.deepEqual(xps, [XP.extraSession, XP.extraSession, XP.extraSession, 0]);
+  // 60-min unplanned run: half of the 75 base.
+  assert.deepEqual(xps, [38, 38, 38, 0]);
 });
 
 test('a full week pays the weekly target bonus and Week 1 badge', () => {

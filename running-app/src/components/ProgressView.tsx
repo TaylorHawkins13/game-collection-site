@@ -70,7 +70,7 @@ export function ProgressView({ header }: { header: ReactNode }) {
       <Card style={{ backgroundColor: c.surfaceAlt }}>
         <H3>How ranks work</H3>
         <Small>
-          Earn XP by completing planned sessions — not by going further or faster. Bronze and Silver never drop. From Gold up, promotions also need steady plan completion, and a
+          Every run earns XP. Planned runs are scored mostly on hitting the plan — the target length and the right pace — and a little on how they compare with your own recent runs. Going longer than planned or rushing an easy run doesn’t earn extra. Bronze and Silver never drop. From Gold up, promotions also need steady plan completion, and a
           very quiet two weeks can dip your progress a little (never more than one rank below where you started the season, and never in the last two weeks).
           {rank.division >= GOLD_I && inFinalTwoWeeks(today) ? ' Rank protection is on: final two weeks of the season.' : ''}
         </Small>

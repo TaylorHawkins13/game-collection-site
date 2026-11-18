@@ -201,6 +201,8 @@ export interface Activity {
   feel?: Feel;
   soreness?: Soreness;
   xpEarned: number;
+  /** How a run's XP was worked out (shown on the summary). */
+  xpParts?: { label: string; amount: number }[];
   /** Fraction of the planned session completed (1 = all of it). */
   completion: number;
   healthSynced?: boolean;

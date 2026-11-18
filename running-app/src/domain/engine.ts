@@ -11,12 +11,12 @@ import { fitnessFromHistory, historySummary, levelHint, mergeImports } from './h
 import { matchImportedRun } from './matching.ts';
 import { challengeProgress } from './challenges.ts';
 import { addDays, diffDays, maxKey, minKey, rangeKeys } from './dates.ts';
-import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused } from './metrics.ts';
+import { completionRate, consistency, countsTowardCompletion, daysSinceLastActivity, isPaused, runBaseline } from './metrics.ts';
 import { createPlan, currentWeek, defaultRunsPerWeek, defaultStrengthPerWeek, generateWeek, nextStep, startingStep, stepCap } from './plan.ts';
 import { addXp, applyDecay, newRankState, rankOf, reevaluate, softResetDivision } from './ranks.ts';
 import { inFinalTwoWeeks, nextSeason, seasonById, seasonFor } from './season.ts';
 import { mobilityFallback } from './strength.ts';
-import { sessionXp, XP } from './xp.ts';
+import { runXp, sessionXp, XP, type XpPart } from './xp.ts';
 import type {
   Activity,
   AppState,
@@ -365,7 +365,36 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
     completion = Math.min(1, input.durationSec / (planned.durationMin * 60));
   }
   const extrasToday = state.activities.filter((a) => a.date === today && !a.plannedSessionId).length;
-  const xp = planned ? sessionXp(planned.kind, true, completion) : extrasToday >= XP.extraPerDay ? 0 : sessionXp(input.kind, false, 1);
+  const kind = planned?.kind ?? input.kind;
+  let xp: number;
+  let xpParts: XpPart[] | undefined;
+  if (!planned && extrasToday >= XP.extraPerDay) {
+    xp = 0;
+    xpParts = [{ label: `Daily limit of ${XP.extraPerDay} extra sessions reached`, amount: 0 }];
+  } else if (kind === 'run') {
+    const paces = currentFiveK(state) ? trainingPaces(currentFiveK(state)!) : null;
+    const r = runXp({
+      durationSec: input.durationSec,
+      distanceM: input.distanceM,
+      planned: !!planned,
+      runType: planned?.runType,
+      level: state.profile?.level ?? 'new',
+      baseline: runBaseline(state, today),
+      easyFastPace: paces?.easy[0] ?? null,
+      target: planned
+        ? {
+            durationSec: planned.durationMin * 60,
+            paceRange: (planned.runType === 'easy' || planned.runType === 'long') && paces ? [paces.easy[0], paces.easy[1]] : undefined,
+            paceTarget: planned.runType === 'race' ? planned.targetPaceSecPerKm : undefined,
+          }
+        : undefined,
+      treadmill: input.treadmill,
+    });
+    xp = r.total;
+    xpParts = r.parts;
+  } else {
+    xp = sessionXp('strength', !!planned, completion);
+  }
 
   const activity: Activity = {
     id: activityId,
@@ -384,6 +413,7 @@ export function completeSession(state: AppState, input: SessionInput, today: Dat
     maxHr: input.maxHr,
     hrSource: input.hrSource,
     xpEarned: xp,
+    xpParts,
     completion,
     routineId: input.routineId ?? planned?.routineId,
   };
@@ -413,7 +443,13 @@ export function submitFeedback(state: AppState, activityId: string, feel: Feel, 
   const activity = state.activities.find((a) => a.id === activityId);
   if (!activity) return { state, events, note: null };
   const firstTime = !activity.feel;
-  const updated: Activity = { ...activity, feel, soreness, xpEarned: activity.xpEarned + (firstTime ? XP.feedback : 0) };
+  const updated: Activity = {
+    ...activity,
+    feel,
+    soreness,
+    xpEarned: activity.xpEarned + (firstTime ? XP.feedback : 0),
+    xpParts: firstTime && activity.xpParts ? [...activity.xpParts, { label: 'Check-in', amount: XP.feedback }] : activity.xpParts,
+  };
   let s: AppState = { ...state, activities: state.activities.map((a) => (a.id === activityId ? updated : a)) };
   if (firstTime) s = grantXp(s, XP.feedback, 'feedback', today, events, activityId);
 

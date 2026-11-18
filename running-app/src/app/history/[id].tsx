@@ -28,6 +28,20 @@ export default function ActivityDetail() {
         <ActivityStats a={a} units={app.profile.units} level={app.profile.level} />
       </Card>
       <SplitsTable a={a} units={app.profile.units} />
+      {a.xpParts?.length ? (
+        <Card>
+          <H3>XP · {a.xpEarned}</H3>
+          {a.xpParts.map((p, i) => (
+            <Row key={i} style={{ justifyContent: 'space-between' }}>
+              <Small muted={false}>{p.label}</Small>
+              <Small muted={false}>
+                {p.amount > 0 && i > 0 ? '+' : ''}
+                {p.amount}
+              </Small>
+            </Row>
+          ))}
+        </Card>
+      ) : null}
       {routine ? (
         <Card>
           <H3>{routine.title}</H3>

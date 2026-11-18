@@ -9,7 +9,7 @@ Health, Maps and background GPS use native code, so this needs a **development b
 ```bash
 cd running-app
 npm install
-npm test             # 76 unit tests for the plan/rank/XP/GPS logic
+npm test             # 83 unit tests for the plan/rank/XP/GPS logic
 npm run typecheck
 
 # Local native builds (needs Xcode / Android Studio):
@@ -52,7 +52,7 @@ New Strava API apps start in a limited mode (only your own account can connect) 
 | Domain logic (pure TS, tested) | `src/domain/` | No React Native imports. `engine.ts` is the state machine: every action is `(state, input, today) → { state, events }`. |
 | Seasonal ranks | `ranks.ts`, `season.ts` | Bronze I → Grandmaster (19 divisions). XP per tier 300 / 450 / 700 / 1000 / 1400 / 1900 / 2500. From Gold up, promotion needs 4-week plan completion of 70–90% plus active weeks; XP earned while gated is banked, not lost. Seasons are calendar quarters, with a soft reset of about one major rank (2 tiers if completion was ≥85%, Bronze I if inactive). |
 | Gentle decay | `ranks.ts#applyDecay` | Gold+ only. Weekly check: under 50% completion over 14 days loses 10% of a tier (20% if under 25%). It never drops more than one major rank below where you started the season, never takes you out of Gold, and never runs in the final 14 days or while the plan is paused. |
-| XP | `xp.ts` | Planned run 50, strength/mobility 30, weekly target +100, weekly challenge +75, check-in +10, logged rest day +10. Unplanned extra session: 15, once a day. Distance and pace earn nothing. |
+| XP | `xp.ts` | **Planned runs:** base from the *planned* length (under 15 min 30 · 15–29 40 · 30–44 50 · 45–59 60 · 60–89 75 · 90+ 90), then weighted 70% on the target (reaching ≥95% of the length +10%, short sessions down to −30%, going over adds nothing; easy/long runs in your easy range +10%, rushing them earns no pace bonus and slower is never penalised; races at target pace +15%, missing it down to −10%) and 30% on your last 8 weeks (length ±15%, pace), plus +10 for doing the session. Floor 80% of base (50% if cut short). **Unplanned runs:** half the base by actual length, adjusted against your averages, up to 3 a day. No pace effect for walk-runs, distance-less treadmill runs or New runners. The summary and activity detail show the breakdown. Strength 30 (extra 15), weekly target +100, weekly challenge +75, check-in +10, logged rest day +10. |
 | Plans | `plan.ts`, `strength.ts` | One progression ladder: 10 walk-run steps, then continuous easy runs of 20–60 min. Week 1 starts **today**, so the first week is never half-empty. Starting step comes from level + frequency (New: 3× walk-run, 17–23 min; Returning: 20–25 min; Consistent: 25–35 min; Experienced: 4 runs, optional strides). 1–2 optional 8–15 min strength/mobility routines per week, chosen to suit reported issues. Every 4th continuous-running week is a planned recovery week. |
 | Goals & PBs | `pace.ts`, `goals.ts`, `components/PbEditor.tsx` | 12 goals in three groups (Just run / Distance / Get faster: 5K, 10K, half, marathon, faster 5K/10K/half…). PBs (5K/10K/half/marathon plus how recent) are required for consistent/experienced runners and "get faster" goals, and optional for returning runners. Each PB becomes a 5K equivalent via Riegel (older results adjusted slower), which sets easy-pace ranges (shown on every run), tempo and interval target paces, the "ease off" voice cue, and a suggested goal time. "Get faster" goals add one tempo or interval session a week from week 2, never in ease or recovery weeks. A recent half or marathon PB starts seasoned runners one step higher. |
 | Fitness tracking | `fitness.ts` | A live 5K-equivalent estimate, starting from PBs and moving with real runs. **Up:** a ≥3 km run faster than the estimate (max 5% per jump); two workouts in a row logged Easy (−1.5%); four comfortable easy runs naturally quicker than the easy range (−1.5%). **Down:** two workouts in a row logged Hard (+2%); three easy runs all Hard and slower than the range (+2%); 14+ days without running (+2% per extra week, max 10%, once per break). Trend moves wait 10 days. Each change retargets upcoming workouts, adds a plain-language note, and a slip blocks that week's step-up. Runs at a race distance that beat a PB offer "Save as my PB". Runners without PBs (except New) get an estimate after 3 comfortable easy runs. Profile → Plan & settings shows the estimate and its history. |
@@ -89,7 +89,7 @@ New Strava API apps start in a limited mode (only your own account can connect) 
 ## What has and hasn't been verified
 
 Verified in the build environment:
-- 76 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
+- 83 unit tests pass (`npm test`), covering ranks, gates, decay floors, soft reset, seasons, plan generation for each starting level, adaptation, cues, GPS filtering, splits, pause and privacy trim, and multi-week engine simulations.
 - `tsc` is clean, and Metro bundles for iOS and Android each pull in the right Health module.
 - A headless-browser walkthrough of the web build: onboarding → Home → full walk-run session → check-in → Progress / Activity / detail / Plan → next-day rest state, with zero console errors.
 

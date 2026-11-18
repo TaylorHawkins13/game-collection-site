@@ -153,6 +153,21 @@ export default function Summary() {
         </View>
       </View>
 
+      {a.xpParts?.length ? (
+        <Card>
+          <H3>How this run’s XP was worked out</H3>
+          {a.xpParts.map((p, i) => (
+            <Row key={i} style={{ justifyContent: 'space-between' }}>
+              <Small muted={false}>{p.label}</Small>
+              <Small muted={false} style={{ fontVariant: ['tabular-nums'], color: p.amount < 0 ? c.danger : c.text }}>
+                {p.amount > 0 && i > 0 ? '+' : ''}
+                {p.amount}
+              </Small>
+            </Row>
+          ))}
+        </Card>
+      ) : null}
+
       {highlights.length ? <Card style={{ gap: space.md }}>{highlights.map((e, i) => <EventLine key={i} e={e} />)}</Card> : null}
 
       <Card>

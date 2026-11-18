@@ -98,7 +98,7 @@ export default function Onboarding() {
         <View style={{ gap: space.lg, paddingTop: space.xxl * 2 }}>
           <H1>Run steady.</H1>
           <Body muted>
-            A calm, flexible plan that rewards showing up — not speed. Missed a day? No drama. Your plan simply adapts.
+            A calm, flexible plan that rewards showing up. Every run earns XP, and hitting what your plan asked for earns the most. Missed a day? No drama — your plan simply adapts.
           </Body>
           <Card>
             <Body>• Easy first week, built for you in under 3 minutes</Body>
